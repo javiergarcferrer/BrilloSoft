@@ -1,6 +1,7 @@
 "use client";
 
 import { format, parseISO, startOfMonth } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   BadgeCheck,
   Banknote,
@@ -79,16 +80,16 @@ export function AccountingView() {
   const columns: Column<Service>[] = [
     {
       key: "date",
-      header: "Service date",
+      header: "Fecha del servicio",
       sortValue: (s) => s.date,
       render: (s) => (
         <div>
           <div className="font-medium text-slate-800">
-            {format(parseISO(s.date), "MMM d, yyyy")}
+            {format(parseISO(s.date), "MMM d, yyyy", { locale: es })}
           </div>
           {s.completedAt && (
             <div className="text-xs text-slate-400">
-              completed {format(parseISO(s.completedAt), "MMM d, HH:mm")}
+              completado {format(parseISO(s.completedAt), "MMM d, HH:mm", { locale: es })}
             </div>
           )}
         </div>
@@ -96,7 +97,7 @@ export function AccountingView() {
     },
     {
       key: "client",
-      header: "Client",
+      header: "Cliente",
       sortValue: (s) => s.clientName.toLowerCase(),
       render: (s) => (
         <div className="flex items-center gap-2">
@@ -109,7 +110,7 @@ export function AccountingView() {
     },
     {
       key: "team",
-      header: "Team",
+      header: "Equipo",
       hideOnMobile: true,
       render: (s) => {
         const team = getTeam(teams, s.teamId);
@@ -125,7 +126,7 @@ export function AccountingView() {
     },
     {
       key: "amount",
-      header: "Amount",
+      header: "Monto",
       align: "right",
       sortValue: (s) => serviceAmount(s),
       render: (s) => (
@@ -136,7 +137,7 @@ export function AccountingView() {
     },
     {
       key: "status",
-      header: "Entry",
+      header: "Registro",
       align: "center",
       sortValue: (s) => (s.accountingStatus === "pending" ? 0 : 1),
       render: (s) =>
@@ -147,16 +148,16 @@ export function AccountingView() {
             onClick={(e) => {
               e.stopPropagation();
               markDigitized(s.id);
-              toastSuccess("Digitized", `${s.clientName} · ${formatCurrency(serviceAmount(s))}`);
+              toastSuccess("Registrado", `${s.clientName} · ${formatCurrency(serviceAmount(s))}`);
             }}
           >
             <Check className="size-4" />
-            Digitize
+            Registrar
           </Button>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
             <BadgeCheck className="size-4" />
-            Recorded
+            Registrado
           </span>
         ),
     },
@@ -165,13 +166,13 @@ export function AccountingView() {
   return (
     <div>
       <PageHeader
-        title="Accounting"
-        description="Executed services and the movements waiting to be entered into your accounting system."
+        title="Contabilidad"
+        description="Servicios ejecutados y los movimientos por registrar en tu sistema contable."
         actions={
           pending.length > 0 ? (
-            <Button onClick={() => { markAll(); toastSuccess("All caught up", `${pending.length} movements digitized.`); }}>
+            <Button onClick={() => { markAll(); toastSuccess("Todo al día", `${pending.length} movimientos registrados.`); }}>
               <CheckCheck className="size-4" />
-              Digitize all
+              Registrar todo
             </Button>
           ) : undefined
         }
@@ -185,12 +186,12 @@ export function AccountingView() {
             </span>
             <div>
               <p className="font-semibold text-amber-900">
-                {pending.length} service{pending.length > 1 ? "s" : ""} awaiting
-                entry
+                {pending.length} servicio{pending.length > 1 ? "s" : ""} por
+                registrar
               </p>
               <p className="text-sm text-amber-700">
-                {formatCurrency(pendingValue)} ready to digitize into the
-                accounting system.
+                {formatCurrency(pendingValue)} listos para registrar en el
+                sistema contable.
               </p>
             </div>
           </div>
@@ -200,26 +201,26 @@ export function AccountingView() {
       {hydrated && (
         <div className="mb-5 grid gap-4 sm:grid-cols-3">
           <StatCard
-            label="Awaiting entry"
+            label="Por registrar"
             value={formatCurrency(pendingValue)}
             icon={Clock}
             iconClass="bg-amber-50 text-amber-600"
-            footer={`${pending.length} movements`}
+            footer={`${pending.length} movimientos`}
             highlight={pending.length > 0}
           />
           <StatCard
-            label="Digitized this month"
+            label="Registrado este mes"
             value={formatCurrency(digitizedValue)}
             icon={BadgeCheck}
             iconClass="bg-emerald-50 text-emerald-600"
-            footer={`${digitizedThisMonth.length} movements`}
+            footer={`${digitizedThisMonth.length} movimientos`}
           />
           <StatCard
-            label="Revenue this month"
+            label="Ingresos del mes"
             value={formatCurrency(revenueMonth)}
             icon={Wallet}
             iconClass="bg-brand-50 text-brand-600"
-            footer="Completed services"
+            footer="Servicios completados"
           />
         </div>
       )}
@@ -229,8 +230,8 @@ export function AccountingView() {
       ) : movements.length === 0 ? (
         <EmptyState
           icon={Banknote}
-          title="Nothing to record yet"
-          description="When a coordinator marks a service complete, it shows up here for digitization."
+          title="Nada por registrar aún"
+          description="Cuando un coordinador completa un servicio, aparece aquí para registrarlo."
         />
       ) : (
         <DataTable
@@ -244,22 +245,22 @@ export function AccountingView() {
             return team ? teamColor(team.colorKey).hex : undefined;
           }}
           searchText={(s) => s.clientName}
-          searchPlaceholder="Search by client…"
+          searchPlaceholder="Buscar por cliente…"
           filters={
             <FilterChips
               value={filter}
               onChange={setFilter}
               options={[
-                { value: "all", label: "All", count: movements.length },
+                { value: "all", label: "Todos", count: movements.length },
                 {
                   value: "pending",
-                  label: "Awaiting entry",
+                  label: "Por registrar",
                   hex: "#f59e0b",
                   count: pending.length,
                 },
                 {
                   value: "digitized",
-                  label: "Digitized",
+                  label: "Registrado",
                   hex: "#10b981",
                   count: movements.length - pending.length,
                 },
@@ -276,7 +277,7 @@ export function AccountingView() {
         onDigitize={() => {
           if (detail) {
             markDigitized(detail.id);
-            toastSuccess("Digitized", `${detail.clientName} recorded.`);
+            toastSuccess("Registrado", `${detail.clientName} registrado.`);
             setDetail(null);
           }
         }}
@@ -303,21 +304,21 @@ function MovementDetail({
     <Drawer
       open={!!service}
       onClose={onClose}
-      eyebrow="Movement"
+      eyebrow="Movimiento"
       title={service.clientName}
-      subtitle={`${format(parseISO(service.date), "EEEE, MMM d, yyyy")} · ${teamName ?? "Unassigned"}`}
+      subtitle={`${format(parseISO(service.date), "EEEE, MMM d, yyyy", { locale: es })} · ${teamName ?? "Sin asignar"}`}
       widthClass="sm:w-[32rem]"
       footer={
         service.accountingStatus === "pending" ? (
           <Button className="w-full" onClick={onDigitize}>
             <Check className="size-4" />
-            Mark as digitized
+            Marcar como registrado
           </Button>
         ) : (
           <div className="text-center text-sm text-slate-400">
-            Recorded
+            Registrado
             {service.digitizedAt
-              ? ` on ${format(parseISO(service.digitizedAt), "MMM d, yyyy")}`
+              ? ` el ${format(parseISO(service.digitizedAt), "MMM d, yyyy", { locale: es })}`
               : ""}
           </div>
         )
@@ -352,7 +353,7 @@ function MovementDetail({
 
         <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
           <span className="text-sm font-medium text-slate-500">
-            Total (incl. {service.taxRate}% tax)
+            Total (incl. ITBIS {service.taxRate}%)
           </span>
           <span className="text-lg font-bold text-slate-900">
             {formatCurrency(serviceAmount(service))}

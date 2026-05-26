@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   ArrowRight,
   Building2,
@@ -46,7 +47,7 @@ export function DashboardView() {
   if (!hydrated) {
     return (
       <div>
-        <PageHeader title="Dashboard" description="Loading your overview…" />
+        <PageHeader title="Panel" description="Cargando tu resumen…" />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-32" />
@@ -67,38 +68,38 @@ export function DashboardView() {
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        description={`Operations overview · ${format(new Date(), "EEEE, MMMM d")}`}
+        title="Panel"
+        description={`Resumen de operaciones · ${format(new Date(), "EEEE, MMMM d", { locale: es })}`}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Revenue this month"
+          label="Ingresos del mes"
           value={formatCurrency(m.revenueMTD)}
           icon={TrendingUp}
           iconClass="bg-emerald-50 text-emerald-600"
-          footer={`${m.completedMTD} services completed`}
+          footer={`${m.completedMTD} servicios completados`}
         />
         <StatCard
-          label="Active clients"
+          label="Clientes activos"
           value={m.activeClients}
           icon={Building2}
           iconClass="bg-violet-50 text-violet-600"
-          footer={`${formatCurrency(m.mrr)}/mo recurring`}
+          footer={`${formatCurrency(m.mrr)}/mes recurrente`}
         />
         <StatCard
-          label="Open pipeline"
+          label="Pipeline abierto"
           value={formatCurrency(m.pipelineValue)}
           icon={FileText}
           iconClass="bg-blue-50 text-blue-600"
-          footer="Draft + sent quotes"
+          footer="Borradores + enviadas"
         />
         <StatCard
-          label="Awaiting entry"
+          label="Por registrar"
           value={formatCurrency(m.pendingDigitValue)}
           icon={Wallet}
           iconClass="bg-amber-50 text-amber-600"
-          footer={`${m.pendingDigitCount} to digitize`}
+          footer={`${m.pendingDigitCount} por registrar`}
           highlight={m.pendingDigitCount > 0}
         />
       </div>
@@ -110,20 +111,20 @@ export function DashboardView() {
             <AttentionCard
               tone="amber"
               icon={CircleAlert}
-              title={`${m.unassignedCount} unassigned job${m.unassignedCount > 1 ? "s" : ""}`}
-              description="Jobs without a crew need scheduling."
+              title={`${m.unassignedCount} trabajo${m.unassignedCount > 1 ? "s" : ""} sin asignar`}
+              description="Los trabajos sin equipo necesitan programarse."
               href="/calendar"
-              cta="Assign on calendar"
+              cta="Asignar en calendario"
             />
           )}
           {m.pendingDigitCount > 0 && (
             <AttentionCard
               tone="brand"
               icon={Wallet}
-              title={`${m.pendingDigitCount} movement${m.pendingDigitCount > 1 ? "s" : ""} to record`}
-              description={`${formatCurrency(m.pendingDigitValue)} waiting for the accountant.`}
+              title={`${m.pendingDigitCount} movimiento${m.pendingDigitCount > 1 ? "s" : ""} por registrar`}
+              description={`${formatCurrency(m.pendingDigitValue)} a la espera de contabilidad.`}
               href="/accounting"
-              cta="Review accounting"
+              cta="Ir a contabilidad"
             />
           )}
         </div>
@@ -133,8 +134,8 @@ export function DashboardView() {
         {/* Revenue trend */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Revenue trend</CardTitle>
-            <span className="text-xs text-slate-400">Last 6 months</span>
+            <CardTitle>Tendencia de ingresos</CardTitle>
+            <span className="text-xs text-slate-400">Últimos 6 meses</span>
           </CardHeader>
           <CardBody>
             <div className="h-64">
@@ -163,7 +164,7 @@ export function DashboardView() {
                     tickFormatter={(v) => formatCompactCurrency(Number(v))}
                   />
                   <Tooltip
-                    formatter={(v) => [formatCurrency(Number(v)), "Revenue"]}
+                    formatter={(v) => [formatCurrency(Number(v)), "Ingresos"]}
                     contentStyle={{
                       borderRadius: 12,
                       border: "1px solid #e2e8f0",
@@ -187,13 +188,13 @@ export function DashboardView() {
         {/* Services by status */}
         <Card>
           <CardHeader>
-            <CardTitle>Service status</CardTitle>
-            <span className="text-xs text-slate-400">This month</span>
+            <CardTitle>Estado de servicios</CardTitle>
+            <span className="text-xs text-slate-400">Este mes</span>
           </CardHeader>
           <CardBody>
             {statusData.length === 0 ? (
               <p className="py-12 text-center text-sm text-slate-400">
-                No services this month.
+                Sin servicios este mes.
               </p>
             ) : (
               <>
@@ -265,8 +266,8 @@ export function DashboardView() {
         {/* Team load (resource flow) */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Crew workload</CardTitle>
-            <span className="text-xs text-slate-400">Next 7 days</span>
+            <CardTitle>Carga de trabajo</CardTitle>
+            <span className="text-xs text-slate-400">Próximos 7 días</span>
           </CardHeader>
           <CardBody className="space-y-4">
             {m.teamLoad.map((t) => {
@@ -282,7 +283,7 @@ export function DashboardView() {
                       {t.name}
                     </span>
                     <span className="text-slate-500">
-                      {t.hours.toFixed(1)}h · {t.jobs} jobs
+                      {t.hours.toFixed(1)}h · {t.jobs} trabajos
                     </span>
                   </div>
                   <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
@@ -299,7 +300,7 @@ export function DashboardView() {
             })}
             {m.teamLoad.length === 0 && (
               <p className="py-6 text-center text-sm text-slate-400">
-                No active teams.
+                Sin equipos activos.
               </p>
             )}
           </CardBody>
@@ -308,12 +309,12 @@ export function DashboardView() {
         {/* Quote pipeline */}
         <Card>
           <CardHeader>
-            <CardTitle>Quote pipeline</CardTitle>
+            <CardTitle>Embudo de cotizaciones</CardTitle>
             <Link
               href="/quotes"
               className="text-xs font-medium text-brand-600 hover:text-brand-700"
             >
-              View all
+              Ver todo
             </Link>
           </CardHeader>
           <CardBody className="space-y-3">

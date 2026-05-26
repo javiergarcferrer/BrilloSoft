@@ -1,6 +1,7 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   Ban,
   Check,
@@ -54,7 +55,7 @@ export function ServiceDrawer({
     <Drawer
       open={open}
       onClose={onClose}
-      eyebrow={`${SERVICE_TYPE_META[service.type].label} · ${format(parseISO(service.date), "EEE, MMM d")}`}
+      eyebrow={`${SERVICE_TYPE_META[service.type].label} · ${format(parseISO(service.date), "EEE, MMM d", { locale: es })}`}
       title={service.title}
       subtitle={service.clientName}
       widthClass="sm:w-[34rem]"
@@ -65,15 +66,15 @@ export function ServiceDrawer({
             size="sm"
             onClick={() => {
               deleteService(service.id);
-              toastInfo("Service removed", service.title);
+              toastInfo("Servicio eliminado", service.title);
               onClose();
             }}
           >
             <Trash2 className="size-4" />
-            Delete
+            Eliminar
           </Button>
           <Button variant="outline" onClick={onClose}>
-            Close
+            Cerrar
           </Button>
         </div>
       }
@@ -97,11 +98,11 @@ export function ServiceDrawer({
               size="sm"
               variant="outline"
               onClick={() =>
-                transition("in_progress", "Job started", service.title)
+                transition("in_progress", "Servicio iniciado", service.title)
               }
             >
               <Play className="size-4" />
-              Start
+              Iniciar
             </Button>
           )}
           {service.status !== "completed" && service.status !== "cancelled" && (
@@ -110,13 +111,13 @@ export function ServiceDrawer({
               onClick={() =>
                 transition(
                   "completed",
-                  "Marked complete",
-                  "Sent to accounting for entry.",
+                  "Servicio completado",
+                  "Enviado a contabilidad para registro.",
                 )
               }
             >
               <Check className="size-4" />
-              Complete
+              Completar
             </Button>
           )}
           {service.status === "completed" && (
@@ -124,11 +125,11 @@ export function ServiceDrawer({
               size="sm"
               variant="outline"
               onClick={() =>
-                transition("scheduled", "Re-opened", service.title)
+                transition("scheduled", "Reabierto", service.title)
               }
             >
               <RotateCcw className="size-4" />
-              Re-open
+              Reabrir
             </Button>
           )}
           {service.status !== "cancelled" &&
@@ -137,11 +138,11 @@ export function ServiceDrawer({
                 size="sm"
                 variant="ghost"
                 onClick={() =>
-                  transition("cancelled", "Job cancelled", service.title)
+                  transition("cancelled", "Servicio cancelado", service.title)
                 }
               >
                 <Ban className="size-4" />
-                Cancel
+                Cancelar
               </Button>
             )}
           {service.status === "cancelled" && (
@@ -151,13 +152,13 @@ export function ServiceDrawer({
               onClick={() =>
                 transition(
                   service.teamId ? "scheduled" : "unassigned",
-                  "Restored",
+                  "Restaurado",
                   service.title,
                 )
               }
             >
               <RotateCcw className="size-4" />
-              Restore
+              Restaurar
             </Button>
           )}
         </div>
@@ -165,16 +166,16 @@ export function ServiceDrawer({
         {service.accountingStatus !== "not_applicable" && (
           <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600">
             <CheckCheck className="size-4 text-slate-400" />
-            Accounting:{" "}
+            Contabilidad:{" "}
             <span className="font-medium text-slate-700">
               {service.accountingStatus === "pending"
-                ? "awaiting entry"
-                : "digitized"}
+                ? "por registrar"
+                : "registrado"}
             </span>
           </div>
         )}
 
-        <Field label="Assigned team">
+        <Field label="Equipo asignado">
           <Select
             value={service.teamId ?? ""}
             onChange={(e) => {
@@ -182,12 +183,12 @@ export function ServiceDrawer({
               assignTeam(service.id, v);
               const t = teams.find((x) => x.id === v);
               toastSuccess(
-                t ? `Assigned to ${t.name}` : "Unassigned",
+                t ? `Asignado a ${t.name}` : "Sin asignar",
                 service.title,
               );
             }}
           >
-            <option value="">Unassigned</option>
+            <option value="">Sin asignar</option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
@@ -197,14 +198,14 @@ export function ServiceDrawer({
         </Field>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Field label="Date">
+          <Field label="Fecha">
             <Input
               type="date"
               value={service.date}
               onChange={(e) => moveService(service.id, e.target.value)}
             />
           </Field>
-          <Field label="Start time">
+          <Field label="Hora de inicio">
             <Input
               type="time"
               value={service.startTime}
@@ -213,7 +214,7 @@ export function ServiceDrawer({
               }
             />
           </Field>
-          <Field label="Duration (min)">
+          <Field label="Duración (min)">
             <Input
               type="number"
               min={15}
@@ -237,7 +238,7 @@ export function ServiceDrawer({
 
         <div>
           <h4 className="mb-2 text-sm font-semibold text-slate-900">
-            Line items
+            Conceptos
           </h4>
           <div className="overflow-hidden rounded-xl border border-slate-100">
             {service.lines.map((l, i) => (
@@ -263,7 +264,7 @@ export function ServiceDrawer({
 
         {team && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-sm text-slate-500">Crew:</span>
+            <span className="text-sm text-slate-500">Cuadrilla:</span>
             {team.members.map((m) => (
               <Badge key={m} className="bg-slate-100 text-slate-600">
                 {m}

@@ -38,12 +38,12 @@ export function TeamsView() {
   return (
     <div>
       <PageHeader
-        title="Teams"
-        description="Crews you can assign to scheduled jobs."
+        title="Equipos"
+        description="Cuadrillas que puedes asignar a los servicios."
         actions={
           <Button onClick={() => setEditing("new")}>
             <Plus className="size-4" />
-            New team
+            Nuevo equipo
           </Button>
         }
       />
@@ -81,8 +81,8 @@ export function TeamsView() {
                             {team.name}
                           </h3>
                           <p className="text-xs text-slate-500">
-                            {team.members.length} members ·{" "}
-                            {upcomingFor(team.id)} upcoming
+                            {team.members.length} miembros ·{" "}
+                            {upcomingFor(team.id)} próximos
                           </p>
                         </div>
                       </div>
@@ -90,14 +90,14 @@ export function TeamsView() {
                         <button
                           onClick={() => setEditing(team)}
                           className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                          aria-label="Edit team"
+                          aria-label="Editar equipo"
                         >
                           <Pencil className="size-4" />
                         </button>
                         <button
                           onClick={() => setToDelete(team)}
                           className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                          aria-label="Delete team"
+                          aria-label="Eliminar equipo"
                         >
                           <Trash2 className="size-4" />
                         </button>
@@ -114,7 +114,7 @@ export function TeamsView() {
                       ))}
                       {team.members.length === 0 && (
                         <span className="text-xs text-slate-400">
-                          No members yet
+                          Sin miembros aún
                         </span>
                       )}
                     </div>
@@ -132,10 +132,10 @@ export function TeamsView() {
         onSave={(data, id) => {
           if (id) {
             updateTeam(id, data);
-            toastSuccess("Team updated", data.name);
+            toastSuccess("Equipo actualizado", data.name);
           } else {
             addTeam({ ...data, active: true });
-            toastSuccess("Team created", data.name);
+            toastSuccess("Equipo creado", data.name);
           }
           setEditing(null);
         }}
@@ -147,12 +147,12 @@ export function TeamsView() {
         onConfirm={() => {
           if (toDelete) {
             removeTeam(toDelete.id);
-            toastSuccess("Team removed", "Assigned jobs were set to unassigned.");
+            toastSuccess("Equipo eliminado", "Los servicios asignados quedaron sin asignar.");
           }
         }}
-        title={`Delete ${toDelete?.name ?? "team"}?`}
-        description="Any jobs assigned to this team will become unassigned."
-        confirmLabel="Delete"
+        title={`¿Eliminar ${toDelete?.name ?? "equipo"}?`}
+        description="Los servicios asignados a este equipo quedarán sin asignar."
+        confirmLabel="Eliminar"
         tone="danger"
       />
     </div>
@@ -202,13 +202,13 @@ function TeamEditorDrawer({
     <Drawer
       open={open}
       onClose={onClose}
-      eyebrow={team ? "Edit team" : "New team"}
-      title={team ? team.name : "Create a crew"}
+      eyebrow={team ? "Editar equipo" : "Nuevo equipo"}
+      title={team ? team.name : "Crear una cuadrilla"}
       widthClass="sm:w-[26rem]"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             disabled={!name.trim()}
@@ -216,17 +216,17 @@ function TeamEditorDrawer({
               onSave({ name: name.trim(), colorKey, members }, team?.id)
             }
           >
-            {team ? "Save changes" : "Create team"}
+            {team ? "Guardar cambios" : "Crear equipo"}
           </Button>
         </div>
       }
     >
       <div className="space-y-5">
-        <Field label="Team name">
+        <Field label="Nombre del equipo">
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. North Crew"
+            placeholder="ej. Cuadrilla Norte"
             autoFocus
           />
         </Field>
@@ -249,7 +249,7 @@ function TeamEditorDrawer({
           </div>
         </Field>
 
-        <Field label="Members">
+        <Field label="Miembros">
           <div className="flex gap-2">
             <Input
               value={newMember}
@@ -260,7 +260,7 @@ function TeamEditorDrawer({
                   addMember();
                 }
               }}
-              placeholder="Add a name and press Enter"
+              placeholder="Escribe un nombre y pulsa Enter"
             />
             <Button variant="outline" size="icon" type="button" onClick={addMember}>
               <UserPlus className="size-4" />

@@ -16,7 +16,7 @@ import type { Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ServiceChip } from "./service-chip";
 
-const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 export function MonthView({
   current,
@@ -131,7 +131,7 @@ export function MonthView({
                     }}
                     className="rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium text-slate-500 hover:bg-slate-100"
                   >
-                    +{dayServices.length - 3} more
+                    +{dayServices.length - 3} más
                   </button>
                 )}
               </div>

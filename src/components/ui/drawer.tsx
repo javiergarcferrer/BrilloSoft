@@ -78,7 +78,7 @@ export function Drawer({
               <button
                 onClick={onClose}
                 className="-mr-1 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                aria-label="Close"
+                aria-label="Cerrar"
               >
                 <X className="size-5" />
               </button>

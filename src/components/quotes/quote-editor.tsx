@@ -1,6 +1,7 @@
 "use client";
 
 import { addDays, format, getDay } from "date-fns";
+import { es } from "date-fns/locale";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { LineItem, Quote, QuoteType, Recurrence } from "@/lib/types";
@@ -14,7 +15,7 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import { Segmented } from "@/components/ui/segmented";
 import { toastSuccess } from "@/components/ui/toast";
 
-const todayStr = () => format(new Date(), "yyyy-MM-dd");
+const todayStr = () => format(new Date(), "yyyy-MM-dd", { locale: es });
 
 interface FormState {
   id: string;
@@ -55,11 +56,11 @@ function blankForm(nextNumber: string): FormState {
       dayOfMonth: 1,
       startDate: todayStr(),
     },
-    oneOffDate: format(addDays(new Date(), 3), "yyyy-MM-dd"),
+    oneOffDate: format(addDays(new Date(), 3), "yyyy-MM-dd", { locale: es }),
     lines: [{ id: uid("li"), description: "", quantity: 1, unitPrice: 0 }],
     taxRate: 18,
     discount: 0,
-    validUntil: format(addDays(new Date(), 30), "yyyy-MM-dd"),
+    validUntil: format(addDays(new Date(), 30), "yyyy-MM-dd", { locale: es }),
     notes: "",
     status: "draft",
     createdAt: new Date().toISOString(),
@@ -150,7 +151,7 @@ export function QuoteEditor({
       generatedServiceIds: form.generatedServiceIds,
     };
     upsertQuote(quoteOut);
-    toastSuccess(quote ? "Quote updated" : "Quote created", `${form.number} · ${form.clientName || "Untitled"}`);
+    toastSuccess(quote ? "Cotización actualizada" : "Cotización creada", `${form.number} · ${form.clientName || "Sin título"}`);
     onClose();
   };
 
@@ -158,8 +159,8 @@ export function QuoteEditor({
     <Drawer
       open={open}
       onClose={onClose}
-      eyebrow={quote ? `Edit ${quote.number}` : "New quote"}
-      title={quote ? quote.clientName || "Quote" : "Create a quote"}
+      eyebrow={quote ? `Editar ${quote.number}` : "Nueva cotización"}
+      title={quote ? quote.clientName || "Cotización" : "Crear una cotización"}
       widthClass="sm:w-[40rem]"
       footer={
         <div className="flex items-center justify-between gap-3">
@@ -171,10 +172,10 @@ export function QuoteEditor({
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
-              Cancel
+              Cancelar
             </Button>
             <Button disabled={!form.clientName.trim()} onClick={save}>
-              {quote ? "Save changes" : "Create quote"}
+              {quote ? "Guardar cambios" : "Crear cotización"}
             </Button>
           </div>
         </div>
@@ -182,36 +183,36 @@ export function QuoteEditor({
     >
       <div className="space-y-6">
         <section>
-          <h4 className="mb-3 text-sm font-semibold text-slate-900">Client</h4>
+          <h4 className="mb-3 text-sm font-semibold text-slate-900">Cliente</h4>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Client name" className="sm:col-span-2">
+            <Field label="Nombre del cliente" className="sm:col-span-2">
               <Input
                 value={form.clientName}
                 onChange={(e) => set("clientName", e.target.value)}
-                placeholder="Company or person"
+                placeholder="Empresa o persona"
                 autoFocus
               />
             </Field>
-            <Field label="Contact person">
+            <Field label="Persona de contacto">
               <Input
                 value={form.contactName}
                 onChange={(e) => set("contactName", e.target.value)}
               />
             </Field>
-            <Field label="Phone">
+            <Field label="Teléfono">
               <Input
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
               />
             </Field>
-            <Field label="Email">
+            <Field label="Correo">
               <Input
                 type="email"
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
               />
             </Field>
-            <Field label="Address">
+            <Field label="Dirección">
               <Input
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
@@ -222,19 +223,19 @@ export function QuoteEditor({
 
         <section>
           <h4 className="mb-3 text-sm font-semibold text-slate-900">
-            Service type
+            Tipo de servicio
           </h4>
           <Segmented<QuoteType>
             value={form.type}
             onChange={(v) => set("type", v)}
             options={[
-              { value: "one_off", label: "One-off" },
-              { value: "recurring", label: "Recurring" },
+              { value: "one_off", label: "Puntual" },
+              { value: "recurring", label: "Recurrente" },
             ]}
           />
           <div className="mt-4">
             {form.type === "one_off" ? (
-              <Field label="Service date" className="sm:max-w-xs">
+              <Field label="Fecha del servicio" className="sm:max-w-xs">
                 <Input
                   type="date"
                   value={form.oneOffDate}
@@ -249,7 +250,7 @@ export function QuoteEditor({
                     onChange={(r) => set("recurrence", r)}
                   />
                 </div>
-                <Field label="Starts on" className="sm:max-w-xs">
+                <Field label="Comienza el" className="sm:max-w-xs">
                   <Input
                     type="date"
                     value={form.recurrence.startDate}
@@ -268,7 +269,7 @@ export function QuoteEditor({
 
         <section>
           <h4 className="mb-3 text-sm font-semibold text-slate-900">
-            Line items
+            Conceptos
           </h4>
           <LineItemsEditor
             lines={form.lines}
@@ -279,7 +280,7 @@ export function QuoteEditor({
         <section className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Tax rate (%)">
+              <Field label="ITBIS (%)">
                 <Input
                   type="number"
                   min={0}
@@ -288,7 +289,7 @@ export function QuoteEditor({
                   onChange={(e) => set("taxRate", Number(e.target.value))}
                 />
               </Field>
-              <Field label="Discount">
+              <Field label="Descuento">
                 <Input
                   type="number"
                   min={0}
@@ -298,7 +299,7 @@ export function QuoteEditor({
                 />
               </Field>
             </div>
-            <Field label="Valid until">
+            <Field label="Válida hasta">
               <Input
                 type="date"
                 value={form.validUntil}
@@ -315,11 +316,11 @@ export function QuoteEditor({
           </div>
         </section>
 
-        <Field label="Notes">
+        <Field label="Notas">
           <Textarea
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
-            placeholder="Internal notes, special instructions…"
+            placeholder="Notas internas, instrucciones especiales…"
           />
         </Field>
       </div>

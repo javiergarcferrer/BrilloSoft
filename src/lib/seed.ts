@@ -15,6 +15,7 @@ import type {
   Service,
   ServiceStatus,
   Team,
+  User,
 } from "./types";
 import { uid } from "./utils";
 
@@ -29,10 +30,22 @@ function cloneLines(lines: LineItem[]): LineItem[] {
 }
 
 export interface SeedData {
+  users: User[];
   teams: Team[];
   clients: Client[];
   quotes: Quote[];
   services: Service[];
+}
+
+export function buildUsers(): User[] {
+  return [
+    { id: "user_admin", name: "Javier García", role: "admin", email: "javier@vistaverde.do", colorKey: "violet" },
+    { id: "user_coord", name: "Lourdes Castillo", role: "coordinator", email: "lourdes@vistaverde.do", colorKey: "sky" },
+    { id: "user_sup_south", name: "Carlos Núñez", role: "supervisor", email: "carlos@vistaverde.do", colorKey: "lime", teamId: "team_south" },
+    { id: "user_sup_north", name: "Ana Reyes", role: "supervisor", email: "ana@vistaverde.do", colorKey: "indigo", teamId: "team_north" },
+    { id: "user_fin", name: "Patricia Méndez", role: "finance", email: "patricia@vistaverde.do", colorKey: "orange" },
+    { id: "user_sales", name: "Roberto Sánchez", role: "sales", email: "roberto@vistaverde.do", colorKey: "fuchsia" },
+  ];
 }
 
 export function buildSeed(): SeedData {
@@ -396,5 +409,5 @@ export function buildSeed(): SeedData {
     },
   ];
 
-  return { teams, clients, quotes, services };
+  return { users: buildUsers(), teams, clients, quotes, services };
 }

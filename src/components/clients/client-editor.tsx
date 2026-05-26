@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Client, LineItem, Recurrence } from "@/lib/types";
@@ -12,7 +13,7 @@ import { Drawer } from "@/components/ui/drawer";
 import { Field, Input, Select } from "@/components/ui/field";
 import { toastSuccess } from "@/components/ui/toast";
 
-const todayStr = () => format(new Date(), "yyyy-MM-dd");
+const todayStr = () => format(new Date(), "yyyy-MM-dd", { locale: es });
 
 interface FormState {
   id: string;
@@ -47,7 +48,7 @@ function blank(): FormState {
       dayOfMonth: 1,
       startDate: todayStr(),
     },
-    templateTitle: "Recurring cleaning service",
+    templateTitle: "Servicio de limpieza recurrente",
     durationMin: 120,
     preferredTeamId: "",
     lines: [{ id: uid("li"), description: "", quantity: 1, unitPrice: 0 }],
@@ -129,9 +130,9 @@ export function ClientEditor({
     upsertClient(out);
     if (!client) {
       generate(out.id, 4);
-      toastSuccess("Client created", `${out.name} · 4 services scheduled`);
+      toastSuccess("Cliente creado", `${out.name} · 4 servicios programados`);
     } else {
-      toastSuccess("Client updated", out.name);
+      toastSuccess("Cliente actualizado", out.name);
     }
     onClose();
   };
@@ -140,52 +141,52 @@ export function ClientEditor({
     <Drawer
       open={open}
       onClose={onClose}
-      eyebrow={client ? "Edit client" : "New client"}
-      title={client ? client.name : "Create a recurring client"}
+      eyebrow={client ? "Editar cliente" : "Nuevo cliente"}
+      title={client ? client.name : "Crear un cliente recurrente"}
       widthClass="sm:w-[38rem]"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            Cancelar
           </Button>
           <Button disabled={!form.name.trim()} onClick={save}>
-            {client ? "Save changes" : "Create client"}
+            {client ? "Guardar cambios" : "Crear cliente"}
           </Button>
         </div>
       }
     >
       <div className="space-y-6">
         <section>
-          <h4 className="mb-3 text-sm font-semibold text-slate-900">Details</h4>
+          <h4 className="mb-3 text-sm font-semibold text-slate-900">Datos</h4>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Client name" className="sm:col-span-2">
+            <Field label="Nombre del cliente" className="sm:col-span-2">
               <Input
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
-                placeholder="Company or person"
+                placeholder="Empresa o persona"
                 autoFocus
               />
             </Field>
-            <Field label="Contact person">
+            <Field label="Persona de contacto">
               <Input
                 value={form.contactName}
                 onChange={(e) => set("contactName", e.target.value)}
               />
             </Field>
-            <Field label="Phone">
+            <Field label="Teléfono">
               <Input
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
               />
             </Field>
-            <Field label="Email">
+            <Field label="Correo">
               <Input
                 type="email"
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
               />
             </Field>
-            <Field label="Address">
+            <Field label="Dirección">
               <Input
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
@@ -195,7 +196,7 @@ export function ClientEditor({
         </section>
 
         <section>
-          <h4 className="mb-3 text-sm font-semibold text-slate-900">Schedule</h4>
+          <h4 className="mb-3 text-sm font-semibold text-slate-900">Frecuencia</h4>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <RecurrenceEditor
@@ -203,12 +204,12 @@ export function ClientEditor({
                 onChange={(r) => set("recurrence", r)}
               />
             </div>
-            <Field label="Preferred team">
+            <Field label="Equipo preferido">
               <Select
                 value={form.preferredTeamId}
                 onChange={(e) => set("preferredTeamId", e.target.value)}
               >
-                <option value="">No default — assign later</option>
+                <option value="">Sin equipo — asignar luego</option>
                 {teams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -216,7 +217,7 @@ export function ClientEditor({
                 ))}
               </Select>
             </Field>
-            <Field label="Duration (minutes)">
+            <Field label="Duración (min)">
               <Input
                 type="number"
                 min={15}
@@ -230,9 +231,9 @@ export function ClientEditor({
 
         <section>
           <h4 className="mb-3 text-sm font-semibold text-slate-900">
-            Service template
+            Plantilla de servicio
           </h4>
-          <Field label="Service title" className="mb-3">
+          <Field label="Título del servicio" className="mb-3">
             <Input
               value={form.templateTitle}
               onChange={(e) => set("templateTitle", e.target.value)}
@@ -242,7 +243,7 @@ export function ClientEditor({
             lines={form.lines}
             onChange={(lines) => set("lines", lines)}
           />
-          <Field label="Tax rate (%)" className="mt-3 sm:max-w-[10rem]">
+          <Field label="ITBIS (%)" className="mt-3 sm:max-w-[10rem]">
             <Input
               type="number"
               min={0}

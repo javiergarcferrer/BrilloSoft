@@ -8,7 +8,18 @@
 
 export type ID = string;
 
-export type Role = "admin" | "coordinator" | "accountant";
+export type Role = "admin" | "coordinator" | "supervisor" | "finance" | "sales";
+
+export interface User {
+  id: ID;
+  name: string;
+  role: Role;
+  email?: string;
+  /** key into TEAM_PALETTE for the avatar color */
+  colorKey: string;
+  /** supervisors are tied to the crew they run */
+  teamId?: ID;
+}
 
 /* ------------------------------ Teams ------------------------------ */
 

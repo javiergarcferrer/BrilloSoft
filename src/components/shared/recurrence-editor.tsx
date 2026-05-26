@@ -16,7 +16,7 @@ export function RecurrenceEditor({
 
   return (
     <div className="space-y-3">
-      <Field label="Frequency">
+      <Field label="Frecuencia">
         <Select
           value={value.frequency}
           onChange={(e) => setFreq(e.target.value as Frequency)}
@@ -30,7 +30,7 @@ export function RecurrenceEditor({
       </Field>
 
       {value.frequency === "monthly" ? (
-        <Field label="Day of month">
+        <Field label="Día del mes">
           <Select
             value={value.dayOfMonth ?? 1}
             onChange={(e) =>
@@ -45,7 +45,7 @@ export function RecurrenceEditor({
           </Select>
         </Field>
       ) : (
-        <Field label="Day of week">
+        <Field label="Día de la semana">
           <div className="flex gap-1.5">
             {WEEKDAYS_SHORT.map((label, idx) => {
               const active = (value.weekday ?? 1) === idx;

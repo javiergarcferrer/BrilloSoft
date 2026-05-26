@@ -6,11 +6,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/modal";
 import { toastInfo } from "@/components/ui/toast";
-import { NAV, NAV_GROUPS, type NavItem } from "./nav";
+import { MODULES, NAV_GROUPS, type ModuleItem } from "./nav";
+import { ProfileSwitcher } from "./profile-switcher";
 
 function useBadgeCounts() {
   const hydrated = useHydrated();
@@ -25,12 +27,17 @@ function useBadgeCounts() {
 
 function Wordmark() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-2.5">
+    <Link href="/" className="flex items-center gap-2.5">
       <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-sm">
         <Sparkles className="size-5" />
       </span>
-      <span className="text-[17px] font-bold tracking-tight text-slate-900">
-        Brillo<span className="text-brand-600">Soft</span>
+      <span className="leading-tight">
+        <span className="block text-[17px] font-bold tracking-tight text-slate-900">
+          Brillo<span className="text-brand-600">Soft</span>
+        </span>
+        <span className="block text-[11px] font-medium text-slate-400">
+          Vista Verde
+        </span>
       </span>
     </Link>
   );
@@ -52,7 +59,7 @@ function NavLink({
   layoutId,
   onClick,
 }: {
-  item: NavItem;
+  item: ModuleItem;
   active: boolean;
   badge: number;
   layoutId: string;
@@ -86,11 +93,13 @@ function NavLink({
 
 function SidebarContent({
   pathname,
+  modules,
   counts,
   onNavigate,
   onReset,
 }: {
   pathname: string;
+  modules: ModuleItem[];
   counts: { unassigned: number; pendingDigit: number };
   onNavigate?: () => void;
   onReset: () => void;
@@ -98,12 +107,16 @@ function SidebarContent({
   const navId = useId();
   return (
     <div className="flex h-full flex-col">
-      <div className="px-5 py-5">
+      <div className="px-5 pt-5">
         <Wordmark />
       </div>
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3">
+      <div className="px-3 pb-2 pt-4">
+        <ProfileSwitcher />
+      </div>
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2">
         {NAV_GROUPS.map((group) => {
-          const items = NAV.filter((n) => n.group === group);
+          const items = modules.filter((n) => n.group === group);
+          if (items.length === 0) return null;
           return (
             <div key={group}>
               <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
@@ -131,10 +144,10 @@ function SidebarContent({
           className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
         >
           <RotateCcw className="size-4" />
-          Reset demo data
+          Restablecer datos
         </button>
         <p className="mt-2 px-3 text-[11px] leading-relaxed text-slate-400">
-          MVP preview — data is saved locally in this browser.
+          Vista previa MVP — los datos se guardan en este navegador.
         </p>
       </div>
     </div>
@@ -144,6 +157,7 @@ function SidebarContent({
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const counts = useBadgeCounts();
+  const { can } = usePermissions();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const resetAll = useStore((s) => s.resetAll);
@@ -152,7 +166,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setMobileOpen(false);
   }, [pathname]);
 
-  const primary = NAV.filter((n) => n.primary);
+  const modules = MODULES.filter((m) => can(m.key));
+  const bottomBar = modules.slice(0, 5);
 
   return (
     <div className="min-h-dvh">
@@ -160,6 +175,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-white lg:block">
         <SidebarContent
           pathname={pathname}
+          modules={modules}
           counts={counts}
           onReset={() => setConfirmReset(true)}
         />
@@ -171,7 +187,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button
           onClick={() => setMobileOpen(true)}
           className="rounded-xl p-2 text-slate-600 transition-colors hover:bg-slate-100"
-          aria-label="Open menu"
+          aria-label="Abrir menú"
         >
           <Menu className="size-6" />
         </button>
@@ -198,12 +214,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <button
                 onClick={() => setMobileOpen(false)}
                 className="absolute right-3 top-4 rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-                aria-label="Close menu"
+                aria-label="Cerrar menú"
               >
                 <X className="size-5" />
               </button>
               <SidebarContent
                 pathname={pathname}
+                modules={modules}
                 counts={counts}
                 onNavigate={() => setMobileOpen(false)}
                 onReset={() => {
@@ -225,7 +242,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom tab bar */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden">
-        {primary.map((item) => {
+        {bottomBar.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.href);
           const badge = item.badge ? counts[item.badge] : 0;
@@ -257,11 +274,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onClose={() => setConfirmReset(false)}
         onConfirm={() => {
           resetAll();
-          toastInfo("Demo data reset", "All sample records were restored.");
+          toastInfo("Datos restablecidos", "Se restauraron los registros de ejemplo.");
         }}
-        title="Reset demo data?"
-        description="This restores the original sample clients, quotes and services. Any changes you made will be lost."
-        confirmLabel="Reset"
+        title="¿Restablecer los datos de ejemplo?"
+        description="Se restauran los clientes, cotizaciones y servicios de ejemplo. Se perderán los cambios que hayas hecho."
+        confirmLabel="Restablecer"
         tone="danger"
       />
     </div>

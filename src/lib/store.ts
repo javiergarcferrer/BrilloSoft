@@ -3,6 +3,7 @@
 import { addDays, format, startOfDay } from "date-fns";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { DEFAULT_ACCESS, type ModuleKey } from "./permissions";
 import { nextOccurrences } from "./recurrence";
 import { buildSeed } from "./seed";
 import type {
@@ -10,11 +11,18 @@ import type {
   ID,
   LineItem,
   Quote,
+  Role,
   Service,
   ServiceStatus,
   Team,
+  User,
 } from "./types";
 import { uid } from "./utils";
+
+const cloneAccess = (): Record<Role, ModuleKey[]> =>
+  Object.fromEntries(
+    Object.entries(DEFAULT_ACCESS).map(([r, keys]) => [r, [...keys]]),
+  ) as Record<Role, ModuleKey[]>;
 
 const nowIso = () => new Date().toISOString();
 const todayStr = () => format(startOfDay(new Date()), "yyyy-MM-dd");
@@ -22,10 +30,20 @@ const cloneLines = (lines: LineItem[]): LineItem[] =>
   lines.map((l) => ({ ...l, id: uid("li") }));
 
 export interface DataState {
+  users: User[];
+  currentUserId: ID;
+  access: Record<Role, ModuleKey[]>;
   teams: Team[];
   clients: Client[];
   quotes: Quote[];
   services: Service[];
+
+  /* users & access */
+  setCurrentUser: (id: ID) => void;
+  addUser: (user: Omit<User, "id">) => User;
+  updateUser: (id: ID, patch: Partial<User>) => void;
+  removeUser: (id: ID) => void;
+  setRoleAccess: (role: Role, key: ModuleKey, enabled: boolean) => void;
 
   /* teams */
   addTeam: (team: Omit<Team, "id" | "createdAt">) => Team;
@@ -135,6 +153,29 @@ export const useStore = create<DataState>()(
   persist(
     (set, get) => ({
       ...buildSeed(),
+      currentUserId: "user_admin",
+      access: cloneAccess(),
+
+      setCurrentUser: (id) => set({ currentUserId: id }),
+      addUser: (user) => {
+        const created: User = { ...user, id: uid("user") };
+        set((s) => ({ users: [...s.users, created] }));
+        return created;
+      },
+      updateUser: (id, patch) =>
+        set((s) => ({
+          users: s.users.map((u) => (u.id === id ? { ...u, ...patch } : u)),
+        })),
+      removeUser: (id) =>
+        set((s) => ({ users: s.users.filter((u) => u.id !== id) })),
+      setRoleAccess: (role, key, enabled) =>
+        set((s) => {
+          const cur = s.access[role] ?? [];
+          const next = enabled
+            ? Array.from(new Set([...cur, key]))
+            : cur.filter((k) => k !== key);
+          return { access: { ...s.access, [role]: next } };
+        }),
 
       addTeam: (team) => {
         const created: Team = { ...team, id: uid("team"), createdAt: nowIso() };
@@ -317,13 +358,17 @@ export const useStore = create<DataState>()(
           ),
         })),
 
-      resetAll: () => set({ ...buildSeed() }),
+      resetAll: () =>
+        set({ ...buildSeed(), currentUserId: "user_admin", access: cloneAccess() }),
     }),
     {
       name: "brillosoft-store-v1",
       version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
+        users: s.users,
+        currentUserId: s.currentUserId,
+        access: s.access,
         teams: s.teams,
         clients: s.clients,
         quotes: s.quotes,

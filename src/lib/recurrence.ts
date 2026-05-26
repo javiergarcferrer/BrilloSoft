@@ -12,21 +12,21 @@ import {
 } from "date-fns";
 import type { Frequency, Recurrence } from "./types";
 
-export const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+export const WEEKDAYS_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const WEEKDAYS_LONG = [
-  "Sundays",
-  "Mondays",
-  "Tuesdays",
-  "Wednesdays",
-  "Thursdays",
-  "Fridays",
-  "Saturdays",
+  "domingos",
+  "lunes",
+  "martes",
+  "miércoles",
+  "jueves",
+  "viernes",
+  "sábados",
 ];
 
 export const FREQUENCY_OPTIONS: { value: Frequency; label: string }[] = [
-  { value: "weekly", label: "Weekly" },
-  { value: "biweekly", label: "Bi-weekly" },
-  { value: "monthly", label: "Monthly" },
+  { value: "weekly", label: "Semanal" },
+  { value: "biweekly", label: "Quincenal" },
+  { value: "monthly", label: "Mensual" },
 ];
 
 export function ordinal(n: number): string {
@@ -41,12 +41,12 @@ export function frequencyLabel(f: Frequency): string {
 
 export function recurrenceLabel(r: Recurrence): string {
   if (r.frequency === "monthly") {
-    return `Monthly on the ${ordinal(r.dayOfMonth ?? 1)}`;
+    return `Mensual el día ${r.dayOfMonth ?? 1}`;
   }
   const wd = WEEKDAYS_LONG[r.weekday ?? 1];
-  if (r.frequency === "biweekly") return `Every 2 weeks on ${wd}`;
-  if ((r.interval ?? 1) > 1) return `Every ${r.interval} weeks on ${wd}`;
-  return `Weekly on ${wd}`;
+  if (r.frequency === "biweekly") return `Quincenal los ${wd}`;
+  if ((r.interval ?? 1) > 1) return `Cada ${r.interval} semanas los ${wd}`;
+  return `Semanal los ${wd}`;
 }
 
 function clampToMonth(year: number, monthIndex: number, day: number): Date {

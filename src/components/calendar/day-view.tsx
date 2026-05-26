@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { CalendarPlus, Clock } from "lucide-react";
 import { SERVICE_STATUS_META, teamColor } from "@/lib/colors";
 import { getTeam, serviceAmount } from "@/lib/selectors";
@@ -34,15 +35,15 @@ export function DayView({
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
         <div>
           <h3 className="font-semibold text-slate-900">
-            {format(current, "EEEE")}
+            {format(current, "EEEE", { locale: es })}
           </h3>
           <p className="text-sm text-slate-500">
-            {format(current, "MMMM d, yyyy")}
+            {format(current, "MMMM d, yyyy", { locale: es })}
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={() => onAddOn(dateStr)}>
           <CalendarPlus className="size-4" />
-          Add
+          Agregar
         </Button>
       </div>
 
@@ -50,8 +51,8 @@ export function DayView({
         <div className="p-6">
           <EmptyState
             icon={Clock}
-            title="No services this day"
-            description="Tap “Add” to schedule a job, or drag one here from another day."
+            title="Sin servicios este día"
+            description="Toca “Agregar” para programar un servicio, o arrastra uno aquí desde otro día."
           />
         </div>
       ) : (

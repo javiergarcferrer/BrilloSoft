@@ -1,69 +1,96 @@
 import {
   Building2,
   CalendarDays,
+  ClipboardList,
   FileText,
   LayoutDashboard,
+  ShieldCheck,
   Users,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import type { ModuleKey } from "@/lib/permissions";
 
-export interface NavItem {
+export interface ModuleItem {
+  key: ModuleKey;
   href: string;
   label: string;
   icon: LucideIcon;
   group: string;
-  /** shown in the mobile bottom tab bar */
-  primary: boolean;
-  /** which live counter (if any) drives the badge */
   badge?: "unassigned" | "pendingDigit";
 }
 
-export const NAV: NavItem[] = [
+export const MODULES: ModuleItem[] = [
   {
+    key: "dashboard",
     href: "/dashboard",
-    label: "Dashboard",
+    label: "Panel",
     icon: LayoutDashboard,
-    group: "Overview",
-    primary: true,
+    group: "General",
   },
   {
+    key: "calendar",
     href: "/calendar",
-    label: "Calendar",
+    label: "Calendario",
     icon: CalendarDays,
-    group: "Operations",
-    primary: true,
+    group: "Operaciones",
     badge: "unassigned",
   },
   {
-    href: "/quotes",
-    label: "Quotes",
-    icon: FileText,
-    group: "Operations",
-    primary: true,
+    key: "my_jobs",
+    href: "/my-jobs",
+    label: "Mis trabajos",
+    icon: ClipboardList,
+    group: "Operaciones",
   },
   {
-    href: "/clients",
-    label: "Clients",
-    icon: Building2,
-    group: "Operations",
-    primary: true,
-  },
-  {
+    key: "teams",
     href: "/teams",
-    label: "Teams",
+    label: "Equipos",
     icon: Users,
-    group: "Operations",
-    primary: false,
+    group: "Operaciones",
   },
   {
+    key: "clients",
+    href: "/clients",
+    label: "Clientes",
+    icon: Building2,
+    group: "Comercial",
+  },
+  {
+    key: "quotes",
+    href: "/quotes",
+    label: "Cotizaciones",
+    icon: FileText,
+    group: "Comercial",
+  },
+  {
+    key: "accounting",
     href: "/accounting",
-    label: "Accounting",
+    label: "Contabilidad",
     icon: Wallet,
-    group: "Finance",
-    primary: true,
+    group: "Finanzas",
     badge: "pendingDigit",
+  },
+  {
+    key: "users",
+    href: "/users",
+    label: "Usuarios",
+    icon: ShieldCheck,
+    group: "Administración",
   },
 ];
 
-export const NAV_GROUPS = ["Overview", "Operations", "Finance"];
+export const NAV_GROUPS = [
+  "General",
+  "Operaciones",
+  "Comercial",
+  "Finanzas",
+  "Administración",
+];
+
+/** First accessible href for a set of module keys, honoring nav order. */
+export function defaultHrefFor(accessibleKeys: ModuleKey[]): string {
+  const found = MODULES.find((m) => accessibleKeys.includes(m.key));
+  return found?.href ?? "/dashboard";
+}

@@ -25,9 +25,9 @@ export function LineItemsEditor({
   return (
     <div className="space-y-2">
       <div className="hidden grid-cols-[1fr_4.5rem_6.5rem_6rem_2rem] items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400 sm:grid">
-        <span>Description</span>
-        <span className="text-center">Qty</span>
-        <span className="text-right">Unit price</span>
+        <span>Descripción</span>
+        <span className="text-center">Cant.</span>
+        <span className="text-right">Precio unit.</span>
         <span className="text-right">Total</span>
         <span />
       </div>
@@ -38,14 +38,14 @@ export function LineItemsEditor({
           className="relative rounded-xl border border-slate-200 p-3 sm:grid sm:grid-cols-[1fr_4.5rem_6.5rem_6rem_2rem] sm:items-center sm:gap-2 sm:border-0 sm:p-0"
         >
           <Input
-            placeholder="Service description"
+            placeholder="Descripción del servicio"
             value={l.description}
             onChange={(e) => update(l.id, { description: e.target.value })}
           />
           <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-0 sm:contents">
             <label className="sm:contents">
               <span className="mb-1 block text-[11px] text-slate-400 sm:hidden">
-                Qty
+                Cant.
               </span>
               <Input
                 type="number"
@@ -60,7 +60,7 @@ export function LineItemsEditor({
             </label>
             <label className="sm:contents">
               <span className="mb-1 block text-[11px] text-slate-400 sm:hidden">
-                Unit price
+                Precio unit.
               </span>
               <Input
                 type="number"
@@ -86,7 +86,7 @@ export function LineItemsEditor({
             className={cn(
               "absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500 sm:static sm:justify-self-center",
             )}
-            aria-label="Remove line"
+            aria-label="Eliminar línea"
           >
             <Trash2 className="size-4" />
           </button>
@@ -95,7 +95,7 @@ export function LineItemsEditor({
 
       <Button variant="outline" size="sm" type="button" onClick={add}>
         <Plus className="size-4" />
-        Add line
+        Agregar línea
       </Button>
     </div>
   );

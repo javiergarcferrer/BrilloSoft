@@ -91,7 +91,7 @@ export function Toaster() {
               <button
                 onClick={() => dismiss(t.id)}
                 className="rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                aria-label="Dismiss"
+                aria-label="Cerrar"
               >
                 <X className="size-4" />
               </button>

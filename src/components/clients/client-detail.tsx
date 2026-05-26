@@ -1,6 +1,7 @@
 "use client";
 
 import { format, isBefore, parseISO, startOfDay } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   CalendarPlus,
   Mail,

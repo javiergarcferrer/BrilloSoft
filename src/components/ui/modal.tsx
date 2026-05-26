@@ -66,8 +66,8 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel = "Confirmar",
+  cancelLabel = "Cancelar",
   tone = "primary",
 }: {
   open: boolean;

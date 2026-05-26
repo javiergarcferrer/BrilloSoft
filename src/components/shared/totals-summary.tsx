@@ -42,9 +42,9 @@ export function TotalsSummary({
     <div className="space-y-1.5 text-sm">
       <Row label="Subtotal" value={formatCurrency(t.subtotal)} />
       {t.discount > 0 && (
-        <Row label="Discount" value={`– ${formatCurrency(t.discount)}`} muted />
+        <Row label="Descuento" value={`– ${formatCurrency(t.discount)}`} muted />
       )}
-      <Row label={`Tax (${taxRate || 0}%)`} value={formatCurrency(t.tax)} muted />
+      <Row label={`ITBIS (${taxRate || 0}%)`} value={formatCurrency(t.tax)} muted />
       <div className="flex items-center justify-between border-t border-slate-200 pt-2 text-base">
         <span className="font-semibold text-slate-900">Total</span>
         <span className="font-bold tabular-nums text-slate-900">

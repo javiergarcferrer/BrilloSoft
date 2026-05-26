@@ -7,6 +7,7 @@ import {
   isToday,
   startOfWeek,
 } from "date-fns";
+import { es } from "date-fns/locale";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import type { Service } from "@/lib/types";
@@ -62,7 +63,7 @@ export function WeekView({
                 )}
               >
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                  {format(day, "EEE")}
+                  {format(day, "EEE", { locale: es })}
                 </div>
                 <div
                   className={cn(
@@ -102,7 +103,7 @@ export function WeekView({
                   />
                 ))}
                 <span className="mt-1 hidden items-center justify-center gap-1 rounded-md py-1 text-[11px] font-medium text-slate-300 group-hover:flex">
-                  <Plus className="size-3" /> Add
+                  <Plus className="size-3" /> Agregar
                 </span>
               </div>
             </div>

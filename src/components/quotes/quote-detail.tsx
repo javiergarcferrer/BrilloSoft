@@ -1,6 +1,7 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   CalendarClock,
   Check,
@@ -66,20 +67,20 @@ export function QuoteDetail({
     quote.type === "recurring" && quote.recurrence
       ? recurrenceLabel(quote.recurrence)
       : quote.oneOffDate
-        ? `One-off on ${format(parseISO(quote.oneOffDate), "EEE, MMM d, yyyy")}`
-        : "One-off service";
+        ? `Puntual el ${format(parseISO(quote.oneOffDate), "EEE, MMM d, yyyy", { locale: es })}`
+        : "Servicio puntual";
 
   const handleAccept = () => {
     const res = acceptQuote(quote.id);
     if (quote.type === "recurring") {
       toastSuccess(
-        "Quote accepted",
-        `New client added with ${res.serviceIds.length} scheduled services.`,
+        "Cotización aceptada",
+        `Cliente nuevo agregado con ${res.serviceIds.length} servicios programados.`,
       );
     } else {
       toastSuccess(
-        "Quote accepted",
-        "A one-off job was added to the calendar as unassigned.",
+        "Cotización aceptada",
+        "Se agregó un servicio puntual al calendario, sin asignar.",
       );
     }
     onClose();
@@ -112,8 +113,8 @@ export function QuoteDetail({
             <Sparkles className="mt-0.5 size-4 shrink-0 text-emerald-500" />
             <p>
               {quote.clientId
-                ? "Converted to a recurring client. Generated jobs are on the calendar."
-                : "Converted to a one-off job on the calendar."}
+                ? "Convertida en cliente recurrente. Los trabajos generados están en el calendario."
+                : "Convertida en un servicio puntual en el calendario."}
             </p>
           </div>
         )}
@@ -130,7 +131,7 @@ export function QuoteDetail({
 
         <div>
           <h4 className="mb-2 text-sm font-semibold text-slate-900">
-            Line items
+            Conceptos
           </h4>
           <div className="overflow-hidden rounded-xl border border-slate-100">
             {quote.lines.map((l, i) => (
@@ -164,7 +165,7 @@ export function QuoteDetail({
 
         {quote.notes && (
           <div>
-            <h4 className="mb-1.5 text-sm font-semibold text-slate-900">Notes</h4>
+            <h4 className="mb-1.5 text-sm font-semibold text-slate-900">Notas</h4>
             <p className="text-sm text-slate-500">{quote.notes}</p>
           </div>
         )}
@@ -180,28 +181,28 @@ export function QuoteDetail({
           size="sm"
           onClick={() => {
             deleteQuote(quote!.id);
-            toastInfo("Quote deleted", quote!.number);
+            toastInfo("Cotización eliminada", quote!.number);
             onClose();
           }}
         >
           <Trash2 className="size-4" />
-          Delete
+          Eliminar
         </Button>
         <div className="flex-1" />
         <Button variant="outline" onClick={() => onEdit(quote!)}>
           <Pencil className="size-4" />
-          Edit
+          Editar
         </Button>
 
         {quote!.status === "draft" && (
           <Button
             onClick={() => {
               setQuoteStatus(quote!.id, "sent");
-              toastSuccess("Marked as sent", quote!.number);
+              toastSuccess("Marcada como enviada", quote!.number);
             }}
           >
             <Send className="size-4" />
-            Mark sent
+            Marcar enviada
           </Button>
         )}
 
@@ -211,15 +212,15 @@ export function QuoteDetail({
               variant="outline"
               onClick={() => {
                 setQuoteStatus(quote!.id, "rejected");
-                toastInfo("Quote rejected", quote!.number);
+                toastInfo("Cotización rechazada", quote!.number);
               }}
             >
               <X className="size-4" />
-              Reject
+              Rechazar
             </Button>
             <Button onClick={handleAccept}>
               <Check className="size-4" />
-              Accept
+              Aceptar
             </Button>
           </>
         )}
@@ -229,10 +230,10 @@ export function QuoteDetail({
             variant="outline"
             onClick={() => {
               setQuoteStatus(quote!.id, "draft");
-              toastInfo("Re-opened as draft", quote!.number);
+              toastInfo("Reabierta como borrador", quote!.number);
             }}
           >
-            Re-open
+            Reabrir
           </Button>
         )}
       </div>

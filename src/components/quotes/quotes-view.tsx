@@ -1,6 +1,7 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 import { CalendarClock, FileText, Plus, Repeat } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -60,20 +61,20 @@ export function QuotesView() {
   const columns: Column<Quote>[] = [
     {
       key: "number",
-      header: "Quote",
+      header: "Cotización",
       sortValue: (q) => parseInt(q.number.replace(/\D/g, ""), 10) || 0,
       render: (q) => (
         <div>
           <div className="font-semibold text-slate-900">{q.number}</div>
           <div className="text-xs text-slate-400">
-            {format(parseISO(q.createdAt.slice(0, 10)), "MMM d")}
+            {format(parseISO(q.createdAt.slice(0, 10)), "MMM d", { locale: es })}
           </div>
         </div>
       ),
     },
     {
       key: "client",
-      header: "Client",
+      header: "Cliente",
       sortValue: (q) => q.clientName.toLowerCase(),
       render: (q) => (
         <div className="flex items-center gap-2">
@@ -91,27 +92,27 @@ export function QuotesView() {
     },
     {
       key: "schedule",
-      header: "Schedule",
+      header: "Frecuencia",
       hideOnMobile: true,
       render: (q) => (
         <span className="text-sm text-slate-500">
           {q.type === "recurring" && q.recurrence
             ? recurrenceLabel(q.recurrence)
             : q.oneOffDate
-              ? format(parseISO(q.oneOffDate), "MMM d, yyyy")
+              ? format(parseISO(q.oneOffDate), "MMM d, yyyy", { locale: es })
               : "—"}
         </span>
       ),
     },
     {
       key: "status",
-      header: "Status",
+      header: "Estado",
       sortValue: (q) => QUOTE_STATUS_ORDER.indexOf(q.status),
       render: (q) => <StatusBadge meta={QUOTE_STATUS_META[q.status]} />,
     },
     {
       key: "amount",
-      header: "Amount",
+      header: "Monto",
       align: "right",
       sortValue: (q) => quoteAmount(q),
       render: (q) => (
@@ -123,7 +124,7 @@ export function QuotesView() {
   ];
 
   const statusOptions = [
-    { value: "all", label: "All", count: quotes.length },
+    { value: "all", label: "Todos", count: quotes.length },
     ...QUOTE_STATUS_ORDER.map((s) => ({
       value: s,
       label: QUOTE_STATUS_META[s].label,
@@ -135,12 +136,12 @@ export function QuotesView() {
   return (
     <div>
       <PageHeader
-        title="Quotes"
-        description="Build line-item quotes, then accept to spin up jobs or recurring clients."
+        title="Cotizaciones"
+        description="Crea cotizaciones por conceptos y, al aceptarlas, genera trabajos o clientes recurrentes."
         actions={
           <Button onClick={() => setEditorTarget("new")}>
             <Plus className="size-4" />
-            New quote
+            Nueva cotización
           </Button>
         }
       />
@@ -148,19 +149,19 @@ export function QuotesView() {
       {hydrated && (
         <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Card className="p-4">
-            <p className="text-xs font-medium text-slate-500">Open pipeline</p>
+            <p className="text-xs font-medium text-slate-500">Pipeline abierto</p>
             <p className="mt-1 text-xl font-bold text-slate-900">
               {formatCurrency(pipeline)}
             </p>
           </Card>
           <Card className="p-4">
-            <p className="text-xs font-medium text-slate-500">Accepted value</p>
+            <p className="text-xs font-medium text-slate-500">Valor aceptado</p>
             <p className="mt-1 text-xl font-bold text-emerald-600">
               {formatCurrency(acceptedValue)}
             </p>
           </Card>
           <Card className="col-span-2 p-4 sm:col-span-1">
-            <p className="text-xs font-medium text-slate-500">Total quotes</p>
+            <p className="text-xs font-medium text-slate-500">Cotizaciones totales</p>
             <p className="mt-1 text-xl font-bold text-slate-900">
               {quotes.length}
             </p>
@@ -173,12 +174,12 @@ export function QuotesView() {
       ) : quotes.length === 0 ? (
         <EmptyState
           icon={FileText}
-          title="No quotes yet"
-          description="Create your first quote to start building your pipeline."
+          title="Aún no hay cotizaciones"
+          description="Crea tu primera cotización para empezar tu pipeline."
           action={
             <Button onClick={() => setEditorTarget("new")}>
               <Plus className="size-4" />
-              New quote
+              Nueva cotización
             </Button>
           }
         />
@@ -190,7 +191,7 @@ export function QuotesView() {
           onRowClick={(q) => setDetail(q)}
           initialSort={{ key: "number", dir: "desc" }}
           searchText={(q) => `${q.number} ${q.clientName} ${q.contactName ?? ""}`}
-          searchPlaceholder="Search quotes…"
+          searchPlaceholder="Buscar cotizaciones…"
           filters={
             <FilterChips
               value={statusFilter}

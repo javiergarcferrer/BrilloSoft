@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { LineItem, Service, ServiceType } from "@/lib/types";
@@ -63,8 +64,8 @@ export function NewServiceDrawer({
     const id = uid("svc");
     const svc: Service = {
       id,
-      title: title.trim() || "Cleaning service",
-      clientName: clientName.trim() || "Walk-in",
+      title: title.trim() || "Servicio de limpieza",
+      clientName: clientName.trim() || "Cliente directo",
       address: address || undefined,
       date,
       startTime,
@@ -78,7 +79,7 @@ export function NewServiceDrawer({
       createdAt: new Date().toISOString(),
     };
     upsertService(svc);
-    toastSuccess("Service created", `${svc.title} · ${format(new Date(date), "MMM d")}`);
+    toastSuccess("Servicio creado", `${svc.title} · ${format(new Date(date), "MMM d", { locale: es })}`);
     onCreated?.(id);
     onClose();
   };
@@ -87,8 +88,8 @@ export function NewServiceDrawer({
     <Drawer
       open={open}
       onClose={onClose}
-      eyebrow="New service"
-      title="Schedule a job"
+      eyebrow="Nuevo servicio"
+      title="Programar un servicio"
       widthClass="sm:w-[36rem]"
       footer={
         <div className="flex items-center justify-between gap-3">
@@ -100,31 +101,31 @@ export function NewServiceDrawer({
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
-              Cancel
+              Cancelar
             </Button>
-            <Button onClick={create}>Create service</Button>
+            <Button onClick={create}>Crear servicio</Button>
           </div>
         </div>
       }
     >
       <div className="space-y-5">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Service title" className="sm:col-span-2">
+          <Field label="Título del servicio" className="sm:col-span-2">
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Deep clean"
+              placeholder="ej. Limpieza profunda"
               autoFocus
             />
           </Field>
-          <Field label="Client">
+          <Field label="Cliente">
             <Input
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              placeholder="Client name"
+              placeholder="Nombre del cliente"
             />
           </Field>
-          <Field label="Address">
+          <Field label="Dirección">
             <Input
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -136,27 +137,27 @@ export function NewServiceDrawer({
           value={type}
           onChange={setType}
           options={[
-            { value: "one_off", label: "One-off" },
-            { value: "recurring", label: "Recurring" },
+            { value: "one_off", label: "Puntual" },
+            { value: "recurring", label: "Recurrente" },
           ]}
         />
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Field label="Date" className="col-span-2 sm:col-span-2">
+          <Field label="Fecha" className="col-span-2 sm:col-span-2">
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
           </Field>
-          <Field label="Time">
+          <Field label="Hora">
             <Input
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
             />
           </Field>
-          <Field label="Duration">
+          <Field label="Duración">
             <Input
               type="number"
               min={15}
@@ -167,9 +168,9 @@ export function NewServiceDrawer({
           </Field>
         </div>
 
-        <Field label="Assign team">
+        <Field label="Asignar equipo">
           <Select value={teamId} onChange={(e) => setTeamId(e.target.value)}>
-            <option value="">Leave unassigned</option>
+            <option value="">Dejar sin asignar</option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
@@ -180,12 +181,12 @@ export function NewServiceDrawer({
 
         <div>
           <h4 className="mb-2 text-sm font-semibold text-slate-900">
-            Line items
+            Conceptos
           </h4>
           <LineItemsEditor lines={lines} onChange={setLines} />
         </div>
 
-        <Field label="Tax rate (%)" className="sm:max-w-[10rem]">
+        <Field label="ITBIS (%)" className="sm:max-w-[10rem]">
           <Input
             type="number"
             min={0}

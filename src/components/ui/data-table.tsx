@@ -86,7 +86,7 @@ export function DataTable<T>({
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={searchPlaceholder ?? "Search…"}
+                placeholder={searchPlaceholder ?? "Buscar…"}
                 className={cn(inputBase, "h-10 pl-9")}
               />
             </div>
@@ -189,7 +189,7 @@ export function DataTable<T>({
           <div className="p-8">
             {emptyState ?? (
               <p className="text-center text-sm text-slate-400">
-                No results found.
+                Sin resultados.
               </p>
             )}
           </div>

@@ -10,6 +10,7 @@ import {
   parseISO,
   startOfWeek,
 } from "date-fns";
+import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -83,13 +84,13 @@ export function CalendarView() {
   );
 
   const periodLabel = (() => {
-    if (view === "month") return format(current, "MMMM yyyy");
-    if (view === "day") return format(current, "EEEE, MMM d");
+    if (view === "month") return format(current, "MMMM yyyy", { locale: es });
+    if (view === "day") return format(current, "EEEE, MMM d", { locale: es });
     const ws = startOfWeek(current, { weekStartsOn: 1 });
     const we = endOfWeek(current, { weekStartsOn: 1 });
     return isSameMonth(ws, we)
-      ? `${format(ws, "MMM d")} – ${format(we, "d")}`
-      : `${format(ws, "MMM d")} – ${format(we, "MMM d")}`;
+      ? `${format(ws, "MMM d", { locale: es })} – ${format(we, "d", { locale: es })}`
+      : `${format(ws, "MMM d", { locale: es })} – ${format(we, "MMM d", { locale: es })}`;
   })();
 
   const step = (dir: number) => {
@@ -104,7 +105,7 @@ export function CalendarView() {
   };
   const handleMove = (id: string, date: string) => {
     moveService(id, date);
-    toastSuccess("Rescheduled", format(parseISO(date), "EEE, MMM d"));
+    toastSuccess("Reprogramado", format(parseISO(date), "EEE, MMM d", { locale: es }));
   };
   const openDay = (date: string) => {
     setCurrent(parseISO(date));
@@ -112,16 +113,16 @@ export function CalendarView() {
   };
 
   const teamOptions = [
-    { value: "all", label: "All crews" },
+    { value: "all", label: "Todos los equipos" },
     ...teams.map((t) => ({
       value: t.id,
       label: t.name,
       hex: teamColor(t.colorKey).hex,
     })),
-    { value: "unassigned", label: "Unassigned", hex: "#f59e0b" },
+    { value: "unassigned", label: "Sin asignar", hex: "#f59e0b" },
   ];
   const statusOptions = [
-    { value: "all", label: "All" },
+    { value: "all", label: "Todos" },
     ...SERVICE_STATUS_ORDER.map((s) => ({
       value: s,
       label: SERVICE_STATUS_META[s].label,
@@ -132,8 +133,8 @@ export function CalendarView() {
   return (
     <div>
       <PageHeader
-        title="Calendar"
-        description="Organize crews across one-off and recurring jobs."
+        title="Calendario"
+        description="Organiza los equipos en servicios puntuales y recurrentes."
         actions={
           <>
             <Link
@@ -141,11 +142,11 @@ export function CalendarView() {
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
             >
               <Users className="size-4" />
-              <span className="hidden sm:inline">Teams</span>
+              <span className="hidden sm:inline">Equipos</span>
             </Link>
             <Button onClick={() => openNew(format(current, "yyyy-MM-dd"))}>
               <Plus className="size-4" />
-              <span className="hidden sm:inline">New service</span>
+              <span className="hidden sm:inline">Nuevo servicio</span>
             </Button>
           </>
         }
@@ -158,7 +159,7 @@ export function CalendarView() {
             <button
               onClick={() => step(-1)}
               className="rounded-l-xl p-2 text-slate-500 transition-colors hover:bg-slate-50"
-              aria-label="Previous"
+              aria-label="Anterior"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -166,12 +167,12 @@ export function CalendarView() {
               onClick={() => setCurrent(new Date())}
               className="border-x border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
             >
-              Today
+              Hoy
             </button>
             <button
               onClick={() => step(1)}
               className="rounded-r-xl p-2 text-slate-500 transition-colors hover:bg-slate-50"
-              aria-label="Next"
+              aria-label="Siguiente"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -184,9 +185,9 @@ export function CalendarView() {
           value={view}
           onChange={setView}
           options={[
-            { value: "month", label: "Month" },
-            { value: "week", label: "Week" },
-            { value: "day", label: "Day" },
+            { value: "month", label: "Mes" },
+            { value: "week", label: "Semana" },
+            { value: "day", label: "Día" },
           ]}
         />
       </div>
@@ -211,7 +212,7 @@ export function CalendarView() {
           <div className="mb-2 flex items-center gap-2 px-1">
             <span className="size-2 rounded-full bg-amber-500" />
             <p className="text-sm font-semibold text-amber-900">
-              Needs a crew · {unassigned.length}
+              Necesitan equipo · {unassigned.length}
             </p>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -233,7 +234,7 @@ export function CalendarView() {
                   {s.title}
                 </span>
                 <span className="mt-1 text-xs font-medium text-amber-700">
-                  {format(parseISO(s.date), "EEE, MMM d")} · {s.startTime}
+                  {format(parseISO(s.date), "EEE, MMM d", { locale: es })} · {s.startTime}
                 </span>
               </button>
             ))}
@@ -284,7 +285,7 @@ export function CalendarView() {
           </span>
         ))}
         <span className="text-slate-300">·</span>
-        <span>Left bar = crew color</span>
+        <span>Barra izquierda = color del equipo</span>
       </div>
 
       <ServiceDrawer

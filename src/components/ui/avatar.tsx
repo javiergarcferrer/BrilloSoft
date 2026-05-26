@@ -26,7 +26,7 @@ export function TeamAvatar({
           SIZES[size],
           className,
         )}
-        title="Unassigned"
+        title="Sin asignar"
       >
         ?
       </span>

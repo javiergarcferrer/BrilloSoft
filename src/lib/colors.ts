@@ -42,8 +42,8 @@ export interface StatusMeta {
 
 export const SERVICE_STATUS_META: Record<ServiceStatus, StatusMeta> = {
   unassigned: {
-    label: "Unassigned",
-    rationale: "Amber draws the eye — this job still needs a team.",
+    label: "Sin asignar",
+    rationale: "El ámbar llama la atención — falta asignar un equipo.",
     hex: "#f59e0b",
     dot: "bg-amber-500",
     text: "text-amber-700",
@@ -52,8 +52,8 @@ export const SERVICE_STATUS_META: Record<ServiceStatus, StatusMeta> = {
     solid: "bg-amber-500 text-white",
   },
   scheduled: {
-    label: "Scheduled",
-    rationale: "Blue reads as calm and dependable — it's planned.",
+    label: "Programado",
+    rationale: "El azul transmite calma y orden — está planificado.",
     hex: "#3b82f6",
     dot: "bg-blue-500",
     text: "text-blue-700",
@@ -62,8 +62,8 @@ export const SERVICE_STATUS_META: Record<ServiceStatus, StatusMeta> = {
     solid: "bg-blue-500 text-white",
   },
   in_progress: {
-    label: "In progress",
-    rationale: "Cyan + pulse signals live activity happening now.",
+    label: "En curso",
+    rationale: "Cian + pulso indica actividad en este momento.",
     hex: "#06b6d4",
     dot: "bg-cyan-500",
     text: "text-cyan-700",
@@ -72,8 +72,8 @@ export const SERVICE_STATUS_META: Record<ServiceStatus, StatusMeta> = {
     solid: "bg-cyan-500 text-white",
   },
   completed: {
-    label: "Completed",
-    rationale: "Green = achievement; value is realized.",
+    label: "Completado",
+    rationale: "Verde = logro; el valor está realizado.",
     hex: "#10b981",
     dot: "bg-emerald-500",
     text: "text-emerald-700",
@@ -83,8 +83,8 @@ export const SERVICE_STATUS_META: Record<ServiceStatus, StatusMeta> = {
     solid: "bg-emerald-500 text-white",
   },
   cancelled: {
-    label: "Cancelled",
-    rationale: "Slate recedes — de-emphasised, no action needed.",
+    label: "Cancelado",
+    rationale: "El gris se atenúa — sin acción requerida.",
     hex: "#94a3b8",
     dot: "bg-slate-400",
     text: "text-slate-500",
@@ -96,8 +96,8 @@ export const SERVICE_STATUS_META: Record<ServiceStatus, StatusMeta> = {
 
 export const QUOTE_STATUS_META: Record<QuoteStatus, StatusMeta> = {
   draft: {
-    label: "Draft",
-    rationale: "Slate — a work in progress, not yet in play.",
+    label: "Borrador",
+    rationale: "Gris — trabajo en progreso, aún no en juego.",
     hex: "#94a3b8",
     dot: "bg-slate-400",
     text: "text-slate-500",
@@ -106,8 +106,8 @@ export const QUOTE_STATUS_META: Record<QuoteStatus, StatusMeta> = {
     solid: "bg-slate-400 text-white",
   },
   sent: {
-    label: "Sent",
-    rationale: "Blue — out for review, awaiting the client.",
+    label: "Enviada",
+    rationale: "Azul — enviada, a la espera del cliente.",
     hex: "#3b82f6",
     dot: "bg-blue-500",
     text: "text-blue-700",
@@ -116,8 +116,8 @@ export const QUOTE_STATUS_META: Record<QuoteStatus, StatusMeta> = {
     solid: "bg-blue-500 text-white",
   },
   accepted: {
-    label: "Accepted",
-    rationale: "Green — a win; revenue is now in motion.",
+    label: "Aceptada",
+    rationale: "Verde — ganada; los ingresos están en marcha.",
     hex: "#10b981",
     dot: "bg-emerald-500",
     text: "text-emerald-700",
@@ -127,8 +127,8 @@ export const QUOTE_STATUS_META: Record<QuoteStatus, StatusMeta> = {
     solid: "bg-emerald-500 text-white",
   },
   rejected: {
-    label: "Rejected",
-    rationale: "Rose — closed lost; clearly negative but not alarming.",
+    label: "Rechazada",
+    rationale: "Rosa — cerrada perdida; negativa pero sin alarma.",
     hex: "#f43f5e",
     dot: "bg-rose-500",
     text: "text-rose-700",
@@ -141,7 +141,7 @@ export const QUOTE_STATUS_META: Record<QuoteStatus, StatusMeta> = {
 export const ACCOUNTING_STATUS_META: Record<AccountingStatus, StatusMeta> = {
   not_applicable: {
     label: "—",
-    rationale: "Slate — nothing to reconcile yet.",
+    rationale: "Gris — nada por conciliar aún.",
     hex: "#94a3b8",
     dot: "bg-slate-300",
     text: "text-slate-400",
@@ -150,8 +150,8 @@ export const ACCOUNTING_STATUS_META: Record<AccountingStatus, StatusMeta> = {
     solid: "bg-slate-300 text-white",
   },
   pending: {
-    label: "Awaiting entry",
-    rationale: "Amber — the accountant must digitize this movement.",
+    label: "Por registrar",
+    rationale: "Ámbar — contabilidad debe digitalizar este movimiento.",
     hex: "#f59e0b",
     dot: "bg-amber-500",
     text: "text-amber-700",
@@ -160,8 +160,8 @@ export const ACCOUNTING_STATUS_META: Record<AccountingStatus, StatusMeta> = {
     solid: "bg-amber-500 text-white",
   },
   digitized: {
-    label: "Digitized",
-    rationale: "Green — recorded in the accounting system.",
+    label: "Registrado",
+    rationale: "Verde — registrado en el sistema contable.",
     hex: "#10b981",
     dot: "bg-emerald-500",
     text: "text-emerald-700",
@@ -181,13 +181,13 @@ export interface TypeMeta {
 
 export const SERVICE_TYPE_META: Record<ServiceType, TypeMeta> = {
   one_off: {
-    label: "One-off",
+    label: "Puntual",
     hex: "#64748b",
     dot: "bg-slate-400",
     badge: "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-500/20",
   },
   recurring: {
-    label: "Recurring",
+    label: "Recurrente",
     hex: "#8b5cf6",
     dot: "bg-violet-500",
     badge: "bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-600/20",

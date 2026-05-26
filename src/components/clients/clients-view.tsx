@@ -1,6 +1,7 @@
 "use client";
 
 import { format, isBefore, parseISO, startOfDay } from "date-fns";
+import { es } from "date-fns/locale";
 import { Building2, Plus, Repeat } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -57,7 +58,7 @@ export function ClientsView() {
   const columns: Column<Client>[] = [
     {
       key: "name",
-      header: "Client",
+      header: "Cliente",
       sortValue: (c) => c.name.toLowerCase(),
       render: (c) => (
         <div>
@@ -70,7 +71,7 @@ export function ClientsView() {
     },
     {
       key: "recurrence",
-      header: "Schedule",
+      header: "Frecuencia",
       hideOnMobile: true,
       render: (c) => (
         <span className="inline-flex items-center gap-1.5 text-sm text-slate-500">
@@ -81,7 +82,7 @@ export function ClientsView() {
     },
     {
       key: "team",
-      header: "Team",
+      header: "Equipo",
       hideOnMobile: true,
       render: (c) => {
         const team = getTeam(teams, c.serviceTemplate.preferredTeamId);
@@ -89,7 +90,7 @@ export function ClientsView() {
           <div className="flex items-center gap-2">
             <TeamAvatar team={team} size="sm" />
             <span className="text-sm text-slate-600">
-              {team?.name ?? "Unassigned"}
+              {team?.name ?? "Sin asignar"}
             </span>
           </div>
         );
@@ -97,21 +98,21 @@ export function ClientsView() {
     },
     {
       key: "next",
-      header: "Next service",
+      header: "Próximo servicio",
       hideOnMobile: true,
       sortValue: (c) => nextServiceDate(c.id) ?? "9999",
       render: (c) => {
         const d = nextServiceDate(c.id);
         return (
           <span className="text-sm text-slate-600">
-            {d ? format(parseISO(d), "MMM d") : "—"}
+            {d ? format(parseISO(d), "MMM d", { locale: es }) : "—"}
           </span>
         );
       },
     },
     {
       key: "value",
-      header: "Monthly",
+      header: "Mensual",
       align: "right",
       sortValue: (c) => clientMonthlyValue(c),
       render: (c) => (
@@ -122,7 +123,7 @@ export function ClientsView() {
     },
     {
       key: "status",
-      header: "Status",
+      header: "Estado",
       align: "center",
       sortValue: (c) => (c.active ? 0 : 1),
       render: (c) => (
@@ -136,7 +137,7 @@ export function ClientsView() {
           <span
             className={`size-1.5 rounded-full ${c.active ? "bg-emerald-500" : "bg-slate-400"}`}
           />
-          {c.active ? "Active" : "Paused"}
+          {c.active ? "Activo" : "En pausa"}
         </Badge>
       ),
     },
@@ -145,12 +146,12 @@ export function ClientsView() {
   return (
     <div>
       <PageHeader
-        title="Clients"
-        description="Recurring accounts and the schedules that feed the calendar."
+        title="Clientes"
+        description="Cuentas recurrentes y los horarios que alimentan el calendario."
         actions={
           <Button onClick={() => setEditorTarget("new")}>
             <Plus className="size-4" />
-            New client
+            Nuevo cliente
           </Button>
         }
       />
@@ -158,20 +159,20 @@ export function ClientsView() {
       {hydrated && (
         <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Card className="p-4">
-            <p className="text-xs font-medium text-slate-500">Active clients</p>
+            <p className="text-xs font-medium text-slate-500">Clientes activos</p>
             <p className="mt-1 text-xl font-bold text-slate-900">{activeCount}</p>
           </Card>
           <Card className="p-4">
             <p className="text-xs font-medium text-slate-500">
-              Recurring revenue
+              Ingresos recurrentes
             </p>
             <p className="mt-1 text-xl font-bold text-emerald-600">
               {formatCurrency(mrr)}
-              <span className="text-xs font-medium text-slate-400">/mo</span>
+              <span className="text-xs font-medium text-slate-400">/mes</span>
             </p>
           </Card>
           <Card className="col-span-2 p-4 sm:col-span-1">
-            <p className="text-xs font-medium text-slate-500">Total clients</p>
+            <p className="text-xs font-medium text-slate-500">Clientes totales</p>
             <p className="mt-1 text-xl font-bold text-slate-900">
               {clients.length}
             </p>
@@ -184,12 +185,12 @@ export function ClientsView() {
       ) : clients.length === 0 ? (
         <EmptyState
           icon={Building2}
-          title="No clients yet"
-          description="Accept a recurring quote, or add a client manually to start scheduling."
+          title="Aún no hay clientes"
+          description="Acepta una cotización recurrente o agrega un cliente manualmente para empezar a programar."
           action={
             <Button onClick={() => setEditorTarget("new")}>
               <Plus className="size-4" />
-              New client
+              Nuevo cliente
             </Button>
           }
         />
@@ -205,22 +206,22 @@ export function ClientsView() {
             return team ? teamColor(team.colorKey).hex : undefined;
           }}
           searchText={(c) => `${c.name} ${c.contactName ?? ""} ${c.address ?? ""}`}
-          searchPlaceholder="Search clients…"
+          searchPlaceholder="Buscar clientes…"
           filters={
             <FilterChips
               value={filter}
               onChange={setFilter}
               options={[
-                { value: "all", label: "All", count: clients.length },
+                { value: "all", label: "Todos", count: clients.length },
                 {
                   value: "active",
-                  label: "Active",
+                  label: "Activo",
                   hex: "#10b981",
                   count: activeCount,
                 },
                 {
                   value: "paused",
-                  label: "Paused",
+                  label: "En pausa",
                   hex: "#94a3b8",
                   count: clients.length - activeCount,
                 },
