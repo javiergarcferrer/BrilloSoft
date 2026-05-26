@@ -68,7 +68,7 @@ export function ClientDetail({
     <Drawer
       open={!!client}
       onClose={onClose}
-      eyebrow="Client"
+      eyebrow="Cliente"
       title={client.name}
       subtitle={recurrenceLabel(client.recurrence)}
       widthClass="sm:w-[34rem]"
@@ -80,37 +80,37 @@ export function ClientDetail({
             onClick={() => {
               toggleActive(client.id);
               toastSuccess(
-                client.active ? "Client paused" : "Client resumed",
+                client.active ? "Cliente en pausa" : "Cliente reanudado",
                 client.name,
               );
             }}
           >
             {client.active ? (
               <>
-                <Pause className="size-4" /> Pause
+                <Pause className="size-4" /> Pausar
               </>
             ) : (
               <>
-                <Play className="size-4" /> Resume
+                <Play className="size-4" /> Reanudar
               </>
             )}
           </Button>
           <div className="flex-1" />
           <Button variant="outline" onClick={() => onEdit(client)}>
             <Pencil className="size-4" />
-            Edit
+            Editar
           </Button>
           <Button
             onClick={() => {
               const ids = generate(client.id, 4);
               toastSuccess(
-                "Services generated",
-                `${ids.length} new jobs added to the calendar.`,
+                "Servicios generados",
+                `${ids.length} nuevos trabajos agregados al calendario.`,
               );
             }}
           >
             <CalendarPlus className="size-4" />
-            Generate next 4
+            Generar próximos 4
           </Button>
         </div>
       }
@@ -118,19 +118,19 @@ export function ClientDetail({
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-            <p className="text-xs font-medium text-slate-500">Monthly value</p>
+            <p className="text-xs font-medium text-slate-500">Valor mensual</p>
             <p className="mt-1 text-xl font-bold text-slate-900">
               {formatCurrency(clientMonthlyValue(client))}
             </p>
           </div>
           <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-            <p className="text-xs font-medium text-slate-500">Status</p>
+            <p className="text-xs font-medium text-slate-500">Estado</p>
             <p
               className={`mt-1 text-xl font-bold ${
                 client.active ? "text-emerald-600" : "text-slate-400"
               }`}
             >
-              {client.active ? "Active" : "Paused"}
+              {client.active ? "Activo" : "En pausa"}
             </p>
           </div>
         </div>
@@ -147,11 +147,11 @@ export function ClientDetail({
 
         <div>
           <h4 className="mb-2 text-sm font-semibold text-slate-900">
-            Upcoming services
+            Próximos servicios
           </h4>
           {upcoming.length === 0 ? (
             <p className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
-              No upcoming services scheduled. Use “Generate next 4”.
+              No hay próximos servicios. Usa “Generar próximos 4”.
             </p>
           ) : (
             <div className="space-y-2">
@@ -169,10 +169,10 @@ export function ClientDetail({
                       />
                       <div>
                         <p className="text-sm font-medium text-slate-800">
-                          {format(parseISO(s.date), "EEE, MMM d")}
+                          {format(parseISO(s.date), "EEE, MMM d", { locale: es })}
                         </p>
                         <p className="text-xs text-slate-400">
-                          {s.startTime} · {team?.name ?? "Unassigned"}
+                          {s.startTime} · {team?.name ?? "Sin asignar"}
                         </p>
                       </div>
                     </div>
@@ -186,7 +186,7 @@ export function ClientDetail({
 
         <div className="rounded-xl bg-slate-50 p-4">
           <h4 className="mb-2 text-sm font-semibold text-slate-900">
-            Service template
+            Plantilla de servicio
           </h4>
           <TotalsSummary
             lines={client.serviceTemplate.lines}
