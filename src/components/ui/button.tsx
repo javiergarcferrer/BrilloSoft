@@ -1,70 +1,42 @@
-"use client";
-
-import { motion, type HTMLMotionProps } from "framer-motion";
-import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ComponentProps } from "react";
 
-type Variant =
-  | "primary"
-  | "secondary"
-  | "outline"
-  | "ghost"
-  | "subtle"
-  | "danger";
-type Size = "sm" | "md" | "lg" | "icon" | "icon-sm";
+type Variant = "primary" | "secondary" | "white" | "ghost";
+type Size = "sm" | "md" | "lg";
 
-const VARIANTS: Record<Variant, string> = {
-  primary:
-    "bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 shadow-sm",
+const variants: Record<Variant, string> = {
+  primary: "bg-brand-600 text-white hover:bg-brand-700 shadow-card",
   secondary:
-    "bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 shadow-sm",
-  outline:
-    "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400",
-  ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-  subtle: "bg-brand-50 text-brand-700 hover:bg-brand-100",
-  danger: "bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 shadow-sm",
+    "bg-transparent text-brand-700 ring-1 ring-inset ring-brand-600/25 hover:bg-brand-50",
+  white: "bg-white text-brand-700 hover:bg-brand-50 shadow-card",
+  ghost: "bg-transparent text-ink hover:bg-brand-50",
 };
 
-const SIZES: Record<Size, string> = {
-  sm: "h-8 px-3 text-sm gap-1.5 rounded-lg",
-  md: "h-10 px-4 text-sm gap-2 rounded-xl",
-  lg: "h-12 px-5 text-[15px] gap-2 rounded-xl",
-  icon: "h-10 w-10 rounded-xl",
-  "icon-sm": "h-8 w-8 rounded-lg",
+const sizes: Record<Size, string> = {
+  sm: "h-9 px-4 text-sm",
+  md: "h-11 px-5 text-sm",
+  lg: "h-12 px-7 text-base",
 };
 
-export interface ButtonProps
-  extends Omit<HTMLMotionProps<"button">, "ref" | "children"> {
-  variant?: Variant;
-  size?: Size;
-  loading?: boolean;
-  children?: React.ReactNode;
-}
-
+/**
+ * Link-styled button. Every CTA on the site is a link (WhatsApp, email, or an
+ * in-page anchor), so this renders an <a>.
+ */
 export function Button({
   variant = "primary",
   size = "md",
-  loading = false,
   className,
-  children,
-  disabled,
   ...props
-}: ButtonProps) {
+}: ComponentProps<"a"> & { variant?: Variant; size?: Size }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 420, damping: 26 }}
+    <a
       className={cn(
-        "relative inline-flex items-center justify-center font-medium select-none transition-colors duration-150 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap",
-        VARIANTS[variant],
-        SIZES[size],
+        "inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight transition-colors duration-200 focus-visible:outline-none",
+        variants[variant],
+        sizes[size],
         className,
       )}
-      disabled={disabled || loading}
       {...props}
-    >
-      {loading && <Loader2 className="size-4 animate-spin" />}
-      {children}
-    </motion.button>
+    />
   );
 }

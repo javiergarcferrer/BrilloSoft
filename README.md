@@ -1,67 +1,60 @@
-# BrilloSoft
+# Vista Verde
 
-Operations CRM for a cleaning-services company. One workspace for the three
-roles that run the business:
+Marketing website for **Vista Verde**, a cleaning & maintenance company in the
+Dominican Republic specializing in the careful treatment of delicate materials —
+upholstery, curtains, carpets, furniture and wood — using professional Ecolab
+products.
 
-- **Coordinator** — an interactive calendar (month / week / day) to organize
-  crews across one-off and recurring jobs, with drag-to-reschedule, an
-  "needs a crew" worklist, and a live status flow (unassigned → scheduled →
-  in progress → completed).
-- **Sales / quoting** — line-item quotes that are either one-off or recurring.
-  Accepting a quote spins up a one-off job, or a recurring **client** plus its
-  first scheduled services.
-- **Accountant** — a digitization queue: every completed service becomes a
-  movement that must be recorded in the accounting system.
-- **Admin** — a KPI + resource-flow dashboard (revenue, pipeline, recurring
-  revenue, crew workload, service mix).
-
-## This is the Vercel-only MVP
-
-There is **no backend yet**. All data lives in a local, `localStorage`-backed
-store (`src/lib/store.ts`) seeded with realistic sample data. The store's
-action surface is intentionally shaped like a database API so it can be swapped
-for **Supabase** later with minimal churn in the UI. Deploys to Vercel
-zero-config.
+This is a redesign of the original Webflow site, rebuilt as a fast, static
+Next.js app ready to deploy on Vercel.
 
 ## Stack
 
-- Next.js 16 (App Router) + React 19 + TypeScript
-- Tailwind CSS v4 (CSS-first theme in `src/app/globals.css`)
-- Zustand (persisted) for state
-- Framer Motion for high-feedback interactions
-- Recharts for dashboard charts
-- date-fns, lucide-react
+- **Next.js 16** (App Router, Turbopack) + **React 19**
+- **Tailwind CSS v4** (design tokens in `src/app/globals.css` `@theme`)
+- **framer-motion** for scroll reveals, **lucide-react** for icons
+- **No backend** — every call-to-action is a WhatsApp, email or Instagram link
 
 ## Develop
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
-npm run build    # production build
+npm run dev        # http://localhost:3000
 ```
 
-## Design system
+Other scripts:
 
-- **Neuropsychological color coding** lives in `src/lib/colors.ts`: amber =
-  needs action, blue = planned, cyan = active now, green = success/value,
-  rose = closed, violet = recurring, slate = inactive. Crews get their own
-  saturated palette shown as a stripe so they never fight the status pastels.
-- Reusable primitives in `src/components/ui` (Button, Drawer, Modal, Toaster,
-  sortable/filterable `DataTable`, StatCard, …). Every table view filters,
-  sorts and is responsive; every page is mobile + desktop optimized.
-
-## Map
-
-```
-src/lib/        types, store, seed, recurrence, selectors, colors, utils
-src/components/ ui/ (primitives) · layout/ · calendar/ · quotes/ · clients/
-                accounting/ · dashboard/ · teams/ · services/ · shared/
-src/app/        dashboard · calendar · quotes · clients · accounting · teams
+```bash
+npm run build      # production build (also typechecks)
+npm run lint       # ESLint
+npx tsc --noEmit   # typecheck only
 ```
 
-## Next steps toward production
+## Editing content
 
-1. Add Supabase: create tables mirroring `src/lib/types.ts`, replace the
-   Zustand persist layer with Supabase queries behind the same action names.
-2. Auth + role gating (coordinator / accountant / admin).
-3. Real accounting integration for the digitization step.
+All business copy and data live in one file: **`src/lib/site.ts`**
+
+- `SITE` — name, tagline, contact details (email, WhatsApp, Instagram), coverage
+- `NAV_LINKS` — header / footer navigation
+- `SERVICES` — the service cards
+- `PROCESS` — the three-step process
+- `CLIENTS` — client brands shown in the trust strip
+- `STATS` — the figures in the "Nosotros" section
+
+The page is composed in `src/app/page.tsx` from section components in
+`src/components/sections/`.
+
+## Adding real photography
+
+The redesign is intentionally photo-free so it deploys immediately, using
+gradients and typography. To add real photos:
+
+1. Drop images in `public/` (e.g. `public/hero.jpg`).
+2. Use `next/image` in the relevant section, e.g.
+   `import Image from "next/image"` then `<Image src="/hero.jpg" … />`.
+
+## Deploy to Vercel
+
+Push the repo and import it in Vercel — the framework preset is pinned to
+Next.js in `vercel.json`, so no extra configuration is needed. Set the custom
+domain (`vistaverde.do`) in the Vercel dashboard.
