@@ -1,33 +1,40 @@
 @AGENTS.md
 
-# BrilloSoft — project notes
+# Vista Verde — project notes
 
-Operations CRM for a cleaning company (coordinator + quoting + accountant +
-admin). **Vercel-only MVP: no backend.** State is a persisted Zustand store
-seeded with sample data.
+Marketing website for **Vista Verde**, a cleaning & maintenance company in the
+Dominican Republic specializing in delicate materials (upholstery, curtains,
+carpets, wood) using Ecolab products. **Static Vercel site, no backend** — all
+CTAs are WhatsApp / email / Instagram links.
 
 ## Commands
 
-- `npm run dev` — dev server
-- `npm run build` — production build (also typechecks + lints)
+- `npm run dev` — dev server (Turbopack)
+- `npm run build` — production build (Turbopack; also typechecks)
+- `npm run lint` — ESLint
 - `npx tsc --noEmit` — typecheck only
 
 ## Architecture
 
-- `src/lib/types.ts` — domain model (Team, Quote, Client, Service, …). The
-  single source of truth; Supabase tables should mirror these 1:1.
-- `src/lib/store.ts` — Zustand + `persist` (localStorage key
-  `brillosoft-store-v1`). Action names (`acceptQuote`, `generateServicesForClient`,
-  `markDigitized`, …) are the seam to swap in Supabase later.
-- `src/lib/colors.ts` — neuropsychological status colors. **Class strings must
-  stay literal** so Tailwind's scanner emits them.
-- `src/lib/selectors.ts` / `recurrence.ts` — derived metrics & schedule math.
-- Pages are thin server wrappers around `*-view.tsx` client components.
-- Data-driven UI is gated on `useHydrated()` (renders skeletons first) so SSR
-  and the first client render match.
+- Next.js 16 App Router, React 19, Tailwind v4, framer-motion, lucide-react.
+- `src/lib/site.ts` — **single source of truth** for copy, contact details,
+  services, process steps, clients, stats. Edit content here.
+- `src/app/layout.tsx` — fonts (Fraunces display + Inter sans via `next/font`),
+  metadata/SEO, renders the header + footer around the page.
+- `src/app/page.tsx` — composes the one-page site from `components/sections/*`.
+- `src/components/sections/*` — Hero, Services, Process, Ecolab, Nosotros,
+  Clients, Contacto. Server Components that wrap content in `<Reveal>`.
+- `src/components/reveal.tsx` and `site-header.tsx` — the only Client
+  Components (framer-motion / interactivity).
+- `src/components/ui/*` — primitives (Button, Container, Logo, icon map).
+- SEO files: `app/sitemap.ts`, `app/robots.ts`, `app/opengraph-image.tsx`,
+  `app/icon.svg`.
 
 ## Conventions
 
-- Tailwind v4, theme in `globals.css` (`brand` scale + surfaces). No tailwind.config.
-- Use the `ui/` primitives; don't hand-roll buttons/inputs/drawers.
-- Keep everything responsive (mobile bottom-nav + desktop sidebar in `layout/`).
+- Tailwind v4 with tokens in `globals.css` `@theme` (forest/sage `brand` scale +
+  cream surfaces). **Keep class strings literal** so Tailwind's scanner emits
+  them — no dynamic class construction.
+- Copy is Spanish (es-DO). Display serif headings, sans body.
+- lucide-react 1.x dropped brand icons, so Instagram uses a local SVG glyph
+  (`components/ui/instagram-glyph.tsx`).
