@@ -1,37 +1,48 @@
 @import "tailwindcss";
 
 /*
-  BrilloSoft design system
+  Vista Verde — design system
   --------------------------------------------------------------------------
-  Light, fresh surface palette (evokes "clean / shine") with a teal brand.
-  Semantic status colors live in src/lib/colors.ts as literal class strings
-  so Tailwind's scanner can see them.
+  An elegant, eco-forward palette: deep forest greens, fresh leaf accents and
+  a warm sand highlight over a soft, clean canvas. Display type is a refined
+  serif (Fraunces); body is Inter. Both are wired through next/font in
+  layout.tsx and exposed here as --font-display / --font-sans.
 */
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
 
-  /* Brand — fresh teal (trust + cleanliness) */
-  --color-brand-50: #f0fdfa;
-  --color-brand-100: #ccfbf1;
-  --color-brand-200: #99f6e4;
-  --color-brand-300: #5eead4;
-  --color-brand-400: #2dd4bf;
-  --color-brand-500: #14b8a6;
-  --color-brand-600: #0d9488;
-  --color-brand-700: #0f766e;
-  --color-brand-800: #115e59;
-  --color-brand-900: #134e4a;
-  --color-brand-950: #042f2e;
+  /* Brand — forest / leaf green */
+  --color-brand-50: #eef7f1;
+  --color-brand-100: #d6ecdd;
+  --color-brand-200: #aedcbd;
+  --color-brand-300: #7cc497;
+  --color-brand-400: #4aa771;
+  --color-brand-500: #2f8c59;
+  --color-brand-600: #1f6f46;
+  --color-brand-700: #1a5a3a;
+  --color-brand-800: #184a31;
+  --color-brand-900: #143c29;
+  --color-brand-950: #0a2318;
 
-  /* App surfaces */
-  --color-canvas: #f5f7f9;
+  /* Sand — warm, understated accent for elegance */
+  --color-sand-50: #faf7ef;
+  --color-sand-100: #f3ecda;
+  --color-sand-200: #e7d8b6;
+  --color-sand-300: #d8be8a;
+  --color-sand-400: #c9a86a;
+  --color-sand-500: #b8924f;
+  --color-sand-600: #9a7740;
+
+  /* Surfaces */
+  --color-canvas: #f6f8f4;
   --color-surface: #ffffff;
-  --color-ink: #0f172a;
-  --color-ink-soft: #475569;
-  --color-hairline: #e7ebef;
+  --color-cream: #f4f2e9;
+  --color-ink: #11201a;
+  --color-ink-soft: #46564d;
+  --color-hairline: #e3eae2;
 
   --radius-xs: 0.375rem;
   --radius-sm: 0.5rem;
@@ -39,18 +50,21 @@
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
   --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
 
-  --shadow-soft: 0 1px 2px 0 rgb(15 23 42 / 0.04),
-    0 1px 3px 0 rgb(15 23 42 / 0.06);
-  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04),
-    0 4px 16px -4px rgb(15 23 42 / 0.08);
-  --shadow-pop: 0 8px 30px -6px rgb(15 23 42 / 0.18),
-    0 2px 8px -2px rgb(15 23 42 / 0.10);
+  --shadow-soft: 0 1px 2px 0 rgb(16 32 24 / 0.04),
+    0 1px 3px 0 rgb(16 32 24 / 0.06);
+  --shadow-card: 0 1px 2px rgb(16 32 24 / 0.04),
+    0 8px 24px -8px rgb(16 32 24 / 0.12);
+  --shadow-pop: 0 18px 48px -12px rgb(16 32 24 / 0.22),
+    0 6px 16px -8px rgb(16 32 24 / 0.14);
+  --shadow-brand: 0 16px 40px -16px rgb(31 111 70 / 0.55);
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
   }
@@ -64,7 +78,7 @@
   }
 
   ::selection {
-    background-color: color-mix(in oklab, var(--color-brand-500) 28%, white);
+    background-color: color-mix(in oklab, var(--color-brand-500) 26%, white);
     color: var(--color-brand-950);
   }
 
@@ -74,84 +88,106 @@
     border-radius: 4px;
   }
 
-  /* Refined scrollbars */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: #c2d2c8 transparent;
   }
   *::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   *::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
+    background-color: #c2d2c8;
     border-radius: 9999px;
     border: 3px solid transparent;
     background-clip: content-box;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background-color: #94a3b8;
+    background-color: #9db3a5;
+  }
+}
+
+@layer components {
+  /* Display headings: tighter tracking, optical balance. */
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+  }
+
+  /* Small eyebrow / kicker label above section titles. */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-brand-600);
   }
 }
 
 /* ------------------------------------------------------------------ */
-/* Motion primitives                                                   */
+/* Motion                                                              */
 /* ------------------------------------------------------------------ */
-@keyframes bs-shimmer {
+@keyframes vv-float {
+  0%,
   100% {
-    transform: translateX(100%);
+    transform: translateY(0) rotate(var(--vv-rot, 0deg));
+  }
+  50% {
+    transform: translateY(-14px) rotate(var(--vv-rot, 0deg));
   }
 }
-@keyframes bs-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
+
+@keyframes vv-marquee {
   to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Scroll-reveal — paired with the <Reveal> client component. */
+.reveal-ready .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+.reveal-ready .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.vv-float {
+  animation: vv-float 9s ease-in-out infinite;
+}
+
+.vv-marquee {
+  animation: vv-marquee 32s linear infinite;
+}
+.vv-marquee-group:hover .vv-marquee {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal-ready .reveal {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
+    transition: none;
   }
-}
-@keyframes bs-pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, currentColor 45%, transparent);
-  }
-  70% {
-    box-shadow: 0 0 0 6px color-mix(in oklab, currentColor 0%, transparent);
-  }
-  100% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, currentColor 0%, transparent);
+  .vv-float,
+  .vv-marquee {
+    animation: none;
   }
 }
 
-.bs-skeleton {
-  position: relative;
-  overflow: hidden;
-  background-color: #eef1f4;
-}
-.bs-skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0.65) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: bs-shimmer 1.4s infinite;
-}
-
-.bs-fade-in {
-  animation: bs-fade-in 0.28s ease-out both;
-}
-
-.bs-pulse-dot {
-  animation: bs-pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Hide scrollbar utility (used in horizontal nav/calendar strips) */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
