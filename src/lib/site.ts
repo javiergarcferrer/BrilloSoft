@@ -2,14 +2,16 @@
  * Vista Verde — single source of truth for site content.
  *
  * Everything the marketing site renders (contact channels, services, process,
- * client list, copy) lives here so the components stay presentational and the
- * business can update wording in one place.
+ * clients, copy, image paths) lives here so the components stay presentational
+ * and the business can update content in one place.
+ *
+ * Image assets under /public/images were migrated from the original Webflow
+ * site (www.vistaverde.do).
  */
 
 export const site = {
   name: "Vista Verde",
   tagline: "Cuidamos tus espacios",
-  /** Short value proposition used in hero + metadata. */
   pitch:
     "Limpieza y mantenimiento profesional para hogares y empresas. Especialistas en superficies delicadas, con más de 15 años cuidando cada espacio como si fuera propio.",
   description:
@@ -21,13 +23,21 @@ export const site = {
   country: "República Dominicana",
 
   phoneDisplay: "+1 (809) 890-8548",
-  /** E.164 without the leading + — used for wa.me / tel: links. */
   phoneE164: "18098908548",
   email: "vistaverde.services@gmail.com",
   instagram: {
     handle: "@vistaverde.services",
     url: "https://www.instagram.com/vistaverde.services",
   },
+} as const;
+
+/** Key image assets (migrated from Webflow). */
+export const assets = {
+  logo: "/images/vista-verde-logo.png",
+  hero: "/images/dsc06838.jpg",
+  eco: "/images/pexels-shvets.jpg",
+  ecolabLogo: "/images/ecolab-logo.svg",
+  dossier: "/images/dossier-servicios.pdf",
 } as const;
 
 /** Build a WhatsApp deep-link, optionally pre-filling a message. */
@@ -77,6 +87,7 @@ export interface Service {
   summary: string;
   items: string[];
   icon: IconName;
+  image: string;
 }
 
 export const services: Service[] = [
@@ -92,6 +103,7 @@ export const services: Service[] = [
       "Colchones y cabeceras",
     ],
     icon: "sofa",
+    image: "/images/dsc06826.jpg",
   },
   {
     id: "superficies",
@@ -105,6 +117,7 @@ export const services: Service[] = [
       "Pulido y sellado",
     ],
     icon: "sparkles",
+    image: "/images/dsc06808.jpg",
   },
   {
     id: "integral",
@@ -118,6 +131,7 @@ export const services: Service[] = [
       "Mantenimiento recurrente",
     ],
     icon: "home",
+    image: "/images/dsc06813.jpg",
   },
 ];
 
@@ -195,10 +209,41 @@ export const processSteps: ProcessStep[] = [
   },
 ];
 
-/** Brands that have trusted Vista Verde (from the existing site). */
-export const clients: string[] = [
-  "Trattoria",
-  "Acrópolis Business Mall",
-  "Beforeboarding",
-  "Taco Bell",
+export interface Client {
+  name: string;
+  logo: string;
+}
+
+/** Brands that trust Vista Verde — logos migrated from the existing site. */
+export const clients: Client[] = [
+  { name: "Trattoria", logo: "/images/client-trattoria.svg" },
+  { name: "Acrópolis Business Mall", logo: "/images/client-acropolis.webp" },
+  { name: "Taco Bell", logo: "/images/client-taco-bell.svg" },
+  { name: "Estrellas Orientales", logo: "/images/client-estrellas.png" },
+  { name: "Sigma", logo: "/images/client-sigma.png" },
+  { name: "El Catador", logo: "/images/client-elcatador.png" },
+  { name: "Beforeboarding", logo: "/images/client-beforeboarding.png" },
+  { name: "Okazu", logo: "/images/client-okazu.png" },
+  { name: "LAM", logo: "/images/client-lam.png" },
+];
+
+export interface GalleryPhoto {
+  src: string;
+  alt: string;
+}
+
+/** Real work photos used in the "nosotros" collage. */
+export const galleryPhotos: GalleryPhoto[] = [
+  {
+    src: "/images/dsc06740.jpg",
+    alt: "El equipo de Vista Verde en una jornada de trabajo",
+  },
+  {
+    src: "/images/pexels-danilyuk.jpg",
+    alt: "Limpieza profesional de superficies delicadas",
+  },
+  {
+    src: "/images/img-4960.jpg",
+    alt: "Resultados impecables de Vista Verde",
+  },
 ];

@@ -1,5 +1,27 @@
+/* eslint-disable @next/next/no-img-element */
+import { assets, site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
+/** The real Vista Verde wordmark (migrated from Webflow). */
+export function BrandLogo({ className }: { className?: string }) {
+  return (
+    <a
+      href="#top"
+      className={cn("inline-flex items-center", className)}
+      aria-label={`${site.name} — inicio`}
+    >
+      <img
+        src={assets.logo}
+        alt={site.name}
+        className="h-9 w-auto sm:h-10"
+        width={760}
+        height={211}
+      />
+    </a>
+  );
+}
+
+/** Small decorative leaf glyph. */
 export function Leafmark({ className }: { className?: string }) {
   return (
     <span
@@ -25,6 +47,8 @@ export function Leafmark({ className }: { className?: string }) {
   );
 }
 
+/** Text wordmark for dark surfaces (footer), where the green PNG logo
+ *  wouldn't contrast. */
 export function Logo({
   className,
   tone = "dark",
@@ -36,7 +60,7 @@ export function Logo({
     <a
       href="#top"
       className={cn("group inline-flex items-center gap-2.5", className)}
-      aria-label="Vista Verde — inicio"
+      aria-label={`${site.name} — inicio`}
     >
       <Leafmark className="size-9 transition-transform duration-300 group-hover:-rotate-6" />
       <span className="leading-none">

@@ -1,5 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 import { ArrowRight, Leaf, Recycle, ShieldCheck } from "lucide-react";
-import { DEFAULT_WHATSAPP_MESSAGE, whatsappUrl } from "@/lib/site";
+import Image from "next/image";
+import { assets, DEFAULT_WHATSAPP_MESSAGE, whatsappUrl } from "@/lib/site";
 import { WhatsappIcon } from "./brand-icons";
 import { Button } from "./button";
 import { Reveal } from "./reveal";
@@ -68,27 +70,26 @@ export function Eco() {
         </Reveal>
 
         <Reveal delay={120}>
-          <div className="relative mx-auto aspect-square w-full max-w-sm">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-brand-100 to-brand-200/40" />
-            <div className="absolute inset-7 rounded-full border border-brand-200" />
-            <div className="absolute inset-0 grid place-items-center text-center">
-              <div>
-                <span className="vv-float mx-auto inline-flex size-24 items-center justify-center rounded-full bg-brand-600 text-white shadow-brand">
-                  <Leaf className="size-11" strokeWidth={1.5} />
-                </span>
-                <p className="font-display mt-5 text-2xl font-semibold leading-tight text-brand-800">
-                  Limpieza
-                  <br />
-                  eco-consciente
-                </p>
-              </div>
+          <div className="relative mx-auto w-full max-w-md">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl shadow-pop">
+              <Image
+                src={assets.eco}
+                alt="Limpieza eco-consciente con productos Ecolab"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+              />
             </div>
-            <span className="absolute right-2 top-8 rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand-700 shadow-card ring-1 ring-black/5">
-              Productos Ecolab
-            </span>
-            <span className="absolute bottom-10 left-0 rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand-700 shadow-card ring-1 ring-black/5">
-              100% seguro
-            </span>
+            <div className="absolute -bottom-5 -left-5 rounded-2xl bg-white p-4 shadow-card ring-1 ring-black/5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-ink-soft">
+                Trabajamos con
+              </p>
+              <img
+                src={assets.ecolabLogo}
+                alt="Ecolab"
+                className="mt-1.5 h-7 w-auto"
+              />
+            </div>
           </div>
         </Reveal>
       </div>

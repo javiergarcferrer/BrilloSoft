@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { clients } from "@/lib/site";
 import { Reveal } from "./reveal";
 import { SectionHeading } from "./section-heading";
@@ -21,15 +22,18 @@ export function Clients() {
         </Reveal>
 
         <Reveal className="mt-12">
-          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-hairline bg-hairline sm:grid-cols-3">
             {clients.map((client) => (
               <li
-                key={client}
-                className="flex items-center justify-center rounded-2xl border border-hairline bg-surface px-6 py-9 text-center shadow-soft transition-colors duration-300 hover:border-brand-200"
+                key={client.logo}
+                className="group flex items-center justify-center bg-surface px-6 py-10 sm:py-12"
               >
-                <span className="font-display text-lg font-semibold text-ink/75">
-                  {client}
-                </span>
+                <img
+                  src={client.logo}
+                  alt={client.name}
+                  loading="lazy"
+                  className="max-h-12 w-auto max-w-[72%] object-contain opacity-90 transition duration-300 group-hover:scale-105 group-hover:opacity-100"
+                />
               </li>
             ))}
           </ul>

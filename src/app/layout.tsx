@@ -50,11 +50,13 @@ export const metadata: Metadata = {
     siteName: site.name,
     title,
     description: site.description,
+    images: [{ url: "/images/dsc06838.jpg", alt: title }],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description: site.description,
+    images: ["/images/dsc06838.jpg"],
   },
   robots: {
     index: true,

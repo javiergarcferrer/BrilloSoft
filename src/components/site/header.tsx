@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { WhatsappIcon } from "./brand-icons";
 import { Button } from "./button";
-import { Logo } from "./logo";
+import { BrandLogo } from "./logo";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -35,12 +35,12 @@ export function Header() {
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-300",
         scrolled || open
-          ? "border-b border-hairline/80 bg-canvas/85 backdrop-blur-md"
-          : "border-b border-transparent",
+          ? "border-b border-hairline/80 bg-canvas/90 backdrop-blur-md"
+          : "border-b border-transparent bg-canvas/60 backdrop-blur-sm",
       )}
     >
       <div className="mx-auto flex h-[4.5rem] max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
-        <Logo />
+        <BrandLogo />
 
         <nav className="hidden items-center gap-0.5 md:flex">
           {navLinks.map((link) => (
