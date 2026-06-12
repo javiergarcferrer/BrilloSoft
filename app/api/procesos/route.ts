@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
   try {
     const result = await listProcesos({
       q: sp.get("q") ?? undefined,
+      proceso: sp.get("proceso") ?? undefined,
       estado: sp.get("estado") ?? undefined,
       modalidad: sp.get("modalidad") ?? undefined,
       startdate: sp.get("startdate") ?? undefined,

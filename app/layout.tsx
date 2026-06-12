@@ -27,14 +27,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </span>
               </span>
             </Link>
-            <a
-              href="https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden text-sm text-slate-300 hover:text-white sm:block"
-            >
-              API DGCP ↗
-            </a>
+            <nav className="flex items-center gap-4 text-sm">
+              <Link href="/seguimiento" className="text-slate-300 hover:text-white">
+                ★ Seguimiento
+              </Link>
+              <a
+                href="https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden text-slate-300 hover:text-white sm:block"
+              >
+                API DGCP ↗
+              </a>
+            </nav>
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>

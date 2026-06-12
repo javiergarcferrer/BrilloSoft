@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
-import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
+import ProcesoCard from "@/components/proceso-card";
 
 const ESTADOS = [
   "Proceso publicado",
@@ -116,6 +115,34 @@ export default function Buscador() {
   }, [data, orden]);
 
   const enBusqueda = q.trim().length > 0;
+
+  const exportarCsv = () => {
+    const cols: [string, (p: Proceso) => string | number][] = [
+      ["codigo_proceso", (p) => p.codigo_proceso],
+      ["titulo", (p) => p.titulo],
+      ["unidad_compra", (p) => p.unidad_compra],
+      ["modalidad", (p) => p.modalidad],
+      ["estado", (p) => p.estado_proceso],
+      ["monto_estimado", (p) => p.monto_estimado],
+      ["divisa", (p) => p.divisa],
+      ["fecha_publicacion", (p) => p.fecha_publicacion],
+      ["fecha_fin_recepcion_ofertas", (p) => p.fecha_fin_recepcion_ofertas],
+      ["url_portal", (p) => p.url],
+    ];
+    const esc = (v: string | number) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lineas = [
+      cols.map(([h]) => h).join(","),
+      ...ordenados.map((p) => cols.map(([, f]) => esc(f(p))).join(",")),
+    ];
+    const blob = new Blob(["﻿" + lineas.join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `licitaciones-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
 
   return (
     <div className="space-y-5">
@@ -275,6 +302,14 @@ export default function Buscador() {
                 : ""}
             </span>
           ) : null}
+          {!loading && ordenados.length > 0 && (
+            <button
+              onClick={exportarCsv}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1 hover:border-emerald-500 hover:text-emerald-700"
+            >
+              ⬇ Exportar CSV
+            </button>
+          )}
           {!enBusqueda && data && data.pages > 1 && (
             <span className="flex items-center gap-2">
               <button
@@ -319,76 +354,5 @@ export default function Buscador() {
         )}
       </section>
     </div>
-  );
-}
-
-function ProcesoCard({ p }: { p: Proceso }) {
-  const dias = diasHasta(p.fecha_fin_recepcion_ofertas);
-  const abierto = p.estado_proceso === "Proceso publicado";
-  let cierreBadge: { texto: string; clase: string } | null = null;
-  if (dias !== null) {
-    if (dias < 0) {
-      cierreBadge = { texto: "Recepción cerrada", clase: "bg-slate-100 text-slate-500" };
-    } else if (dias <= 2) {
-      cierreBadge = { texto: `Cierra en ${dias === 0 ? "horas" : `${dias} d`}`, clase: "bg-red-100 text-red-700" };
-    } else if (dias <= 7) {
-      cierreBadge = { texto: `Cierra en ${dias} días`, clase: "bg-amber-100 text-amber-700" };
-    } else {
-      cierreBadge = { texto: `Cierra en ${dias} días`, clase: "bg-emerald-100 text-emerald-700" };
-    }
-  }
-
-  return (
-    <article className="flex flex-col rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:ring-emerald-400">
-      <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium">
-        <span
-          className={`rounded-full px-2 py-0.5 ${
-            abierto ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-600"
-          }`}
-        >
-          {p.estado_proceso}
-        </span>
-        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-sky-700">
-          {p.modalidad}
-        </span>
-        {p.dirigido_mipymes === "Si" && (
-          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-violet-700">
-            MIPYMES
-          </span>
-        )}
-        {cierreBadge && (
-          <span className={`rounded-full px-2 py-0.5 ${cierreBadge.clase}`}>
-            {cierreBadge.texto}
-          </span>
-        )}
-      </div>
-
-      <h2 className="mt-2 line-clamp-2 font-semibold leading-snug">
-        <Link
-          href={`/procesos/${encodeURIComponent(p.codigo_proceso)}`}
-          className="hover:text-emerald-700"
-        >
-          {p.titulo || p.descripcion || p.codigo_proceso}
-        </Link>
-      </h2>
-      <p className="mt-1 line-clamp-1 text-sm text-slate-500">{p.unidad_compra}</p>
-
-      <div className="mt-3 flex flex-1 items-end justify-between gap-2 text-sm">
-        <div>
-          <div className="font-semibold text-slate-900">
-            {formatMonto(p.monto_estimado, p.divisa)}
-          </div>
-          <div className="text-xs text-slate-500">
-            Publicado {formatFecha(p.fecha_publicacion)} · {p.codigo_proceso}
-          </div>
-        </div>
-        <Link
-          href={`/procesos/${encodeURIComponent(p.codigo_proceso)}`}
-          className="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
-        >
-          Ver detalle
-        </Link>
-      </div>
-    </article>
   );
 }

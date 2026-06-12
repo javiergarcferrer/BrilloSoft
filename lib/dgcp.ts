@@ -160,6 +160,7 @@ export interface SearchResult {
  */
 export async function listProcesos(opts: {
   q?: string;
+  proceso?: string;
   estado?: string;
   modalidad?: string;
   startdate?: string;
@@ -170,6 +171,7 @@ export async function listProcesos(opts: {
   limit?: number;
 }): Promise<SearchResult> {
   const common: Params = {
+    proceso: opts.proceso,
     estado: opts.estado,
     modalidad: opts.modalidad,
     startdate: opts.startdate,
