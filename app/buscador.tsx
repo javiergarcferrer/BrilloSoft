@@ -538,7 +538,7 @@ export default function Buscador() {
             ) : null}
           </span>
 
-          <span className="flex items-center gap-2">
+          <span className="flex flex-wrap items-center gap-2">
             {!loading && ordenados.length > 0 && (
               <>
                 <button
@@ -559,7 +559,7 @@ export default function Buscador() {
               </>
             )}
             {!enBusqueda && data && data.pages > 1 && (
-              <span className="flex items-center gap-2">
+              <span className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1 || loading}
