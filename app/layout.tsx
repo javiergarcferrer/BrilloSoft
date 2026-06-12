@@ -3,9 +3,19 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Licitaciones RD — Oportunidades de compras públicas",
+  title: {
+    default: "Licitaciones RD — Oportunidades de compras públicas",
+    template: "%s · Licitaciones RD",
+  },
   description:
-    "Explora y busca procesos de compras y licitaciones del Estado dominicano usando los datos abiertos de la DGCP.",
+    "Explora y busca procesos de compras y licitaciones del Estado dominicano usando los datos abiertos de la DGCP: filtros por institución, precios históricos de adjudicación y guía para ofertar.",
+  openGraph: {
+    title: "Licitaciones RD",
+    description:
+      "Encuentra oportunidades de compras públicas en República Dominicana y aprende cómo ofertar.",
+    locale: "es_DO",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

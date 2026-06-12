@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getProceso, normalize, type Documento } from "@/lib/dgcp";
 import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
 import PreciosHistoricos from "./precios";
+import Compartir from "@/components/compartir";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -74,9 +75,12 @@ export default async function ProcesoPage({
 
   return (
     <div className="space-y-5">
-      <Link href="/" className="text-sm text-emerald-700 hover:underline">
-        ← Volver al buscador
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Link href="/" className="text-sm text-emerald-700 hover:underline">
+          ← Volver al buscador
+        </Link>
+        <Compartir titulo={p.titulo} />
+      </div>
 
       <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
