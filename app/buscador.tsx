@@ -178,6 +178,13 @@ export default function Buscador() {
 
   const enBusqueda = q.trim().length > 0;
 
+  // En modo búsqueda pueden llegar cientos de coincidencias: renderiza por tandas.
+  const [visibles, setVisibles] = useState(24);
+  useEffect(() => {
+    setVisibles(24);
+  }, [data]);
+  const listaVisible = enBusqueda ? ordenados.slice(0, visibles) : ordenados;
+
   const exportarCsv = () => {
     const cols: [string, (p: Proceso) => string | number][] = [
       ["codigo_proceso", (p) => p.codigo_proceso],
@@ -452,11 +459,23 @@ export default function Buscador() {
             el filtro de estado.
           </div>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {ordenados.map((p) => (
-              <ProcesoCard key={p.codigo_proceso} p={p} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-3 md:grid-cols-2">
+              {listaVisible.map((p) => (
+                <ProcesoCard key={p.codigo_proceso} p={p} />
+              ))}
+            </div>
+            {enBusqueda && ordenados.length > visibles && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => setVisibles((v) => v + 24)}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:border-emerald-500 hover:text-emerald-700"
+                >
+                  Mostrar más ({ordenados.length - visibles} restantes)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>
