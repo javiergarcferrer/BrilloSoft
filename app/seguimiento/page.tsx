@@ -53,7 +53,7 @@ export default function SeguimientoPage() {
   return (
     <div className="space-y-5">
       <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h1 className="text-xl font-semibold">★ Mi seguimiento</h1>
+        <h1 className="text-xl font-semibold">Mi seguimiento</h1>
         <p className="mt-1 text-sm text-slate-500">
           Los procesos que marcaste con la estrella, ordenados por cierre más próximo.
           Se guardan en este navegador.

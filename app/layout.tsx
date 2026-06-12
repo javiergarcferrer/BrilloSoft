@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Guía
               </Link>
               <Link href="/seguimiento" className="text-slate-300 hover:text-white">
-                ★ Seguimiento
+                Seguimiento
               </Link>
               <a
                 href="https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html"

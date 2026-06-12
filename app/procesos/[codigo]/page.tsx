@@ -491,7 +491,12 @@ function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) 
             : "border-slate-200 hover:border-emerald-400 hover:bg-emerald-50"
         }`}
       >
-        <span aria-hidden>{clave ? "⭐" : "📄"}</span>
+        <span
+          aria-hidden
+          className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
+            clave ? "bg-emerald-500" : "bg-slate-300"
+          }`}
+        />
         <span>
           <span className="block font-medium leading-snug">{d.nombre_documento}</span>
           <span className="block text-xs text-slate-500">
