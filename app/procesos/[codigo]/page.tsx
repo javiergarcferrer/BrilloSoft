@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProceso, normalize, type Documento } from "@/lib/dgcp";
 import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
+import PreciosHistoricos from "./precios";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -25,10 +26,21 @@ export default async function ProcesoPage({
   params: Promise<{ codigo: string }>;
 }) {
   const { codigo } = await params;
-  const { proceso: p, articulos, documentos } = await getProceso(
+  const { proceso: p, articulos, documentos, contratos } = await getProceso(
     decodeURIComponent(codigo)
   );
   if (!p) notFound();
+
+  const subclasesUnicas = Array.from(
+    new Map(
+      articulos
+        .filter((a) => a.subclase_unspsc)
+        .map((a) => [
+          a.subclase_unspsc,
+          { codigo: a.subclase_unspsc, descripcion: a.descripcion_articulo },
+        ])
+    ).values()
+  ).slice(0, 4);
 
   const dias = diasHasta(p.fecha_fin_recepcion_ofertas);
   const abiertoParaOfertar = p.estado_proceso === "Proceso publicado" && dias !== null && dias >= 0;
@@ -300,6 +312,48 @@ export default async function ProcesoPage({
           </div>
         )}
       </section>
+
+      {contratos.length > 0 && (
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <h2 className="font-semibold">
+            Adjudicación — quién ganó{" "}
+            <span className="font-normal text-slate-400">({contratos.length})</span>
+          </h2>
+          <ul className="mt-3 space-y-2">
+            {contratos.map((c, i) => (
+              <li
+                key={i}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 text-sm"
+              >
+                <div className="min-w-0">
+                  <div className="font-semibold">{c.razon_social}</div>
+                  <div className="text-xs text-slate-500">
+                    RPE {c.rpe} · adjudicado {formatFecha(c.fecha_adjudicacion)} ·{" "}
+                    {c.estado_contrato}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-bold">
+                    {formatMonto(c.valor_contratado, c.divisa || p.divisa)}
+                  </span>
+                  {c.url_contrato && (
+                    <a
+                      href={c.url_contrato}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
+                    >
+                      Ver contrato ↗
+                    </a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <PreciosHistoricos subclases={subclasesUnicas} divisa={p.divisa} />
 
       <section
         id="documentos"

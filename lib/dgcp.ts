@@ -62,6 +62,44 @@ export interface Documento {
   url_documento: string;
 }
 
+export interface Contrato {
+  codigo_contrato: string;
+  codigo_proceso: string;
+  estado_contrato: string;
+  estado_adjudicacion: string;
+  fecha_adjudicacion: string;
+  divisa: string;
+  valor_contratado: number;
+  metodo_pago: string;
+  plazo_pago_factura: string;
+  descripcion: string;
+  fecha_creacion_contrato: string;
+  url_contrato: string;
+  unidad_compra: string;
+  codigo_unidad_compra: string;
+  rpe: string;
+  razon_social: string;
+}
+
+export interface ContratoArticulo {
+  codigo_contrato: string;
+  codigo_proceso: string;
+  familia: string;
+  clase: string;
+  subclase: string;
+  cuenta_presupuestaria: string;
+  descripcion_articulo: string;
+  descripcion_usuario: string;
+  unidad_medida: string;
+  cantidad: number;
+  precio_unitario: number;
+  itbis: number;
+  otros_impuestos: number;
+  descuentos: number;
+  costo_total: number;
+  fecha_creacion_contrato: string;
+}
+
 export interface DgcpResponse<T> {
   code: number;
   hasError: boolean;
@@ -189,17 +227,68 @@ export async function getProceso(codigo: string): Promise<{
   proceso: Proceso | null;
   articulos: Articulo[];
   documentos: Documento[];
+  contratos: Contrato[];
 }> {
-  const [proc, arts, docs] = await Promise.all([
+  const [proc, arts, docs, ctos] = await Promise.all([
     dgcpFetch<Proceso>("/procesos", { proceso: codigo, limit: 5 }).catch(() => null),
     dgcpFetch<Articulo>("/procesos/articulos", { proceso: codigo, limit: 200 }).catch(
       () => null
     ),
     dgcpFetch<Documento>("/procesos/documentos", { proceso: codigo }).catch(() => null),
+    dgcpFetch<Contrato>("/contratos", { proceso: codigo, limit: 50 }).catch(() => null),
   ]);
   return {
     proceso: proc?.payload.content[0] ?? null,
     articulos: arts?.payload.content ?? [],
     documentos: docs?.payload.content ?? [],
+    contratos: ctos?.payload.content ?? [],
+  };
+}
+
+export interface PreciosStats {
+  subclase: string;
+  muestras: number;
+  min: number;
+  mediana: number;
+  max: number;
+  ejemplos: ContratoArticulo[];
+}
+
+/**
+ * Estadísticas de precios unitarios realmente contratados para una subclase
+ * UNSPSC, sobre los últimos ~1000 artículos de contrato registrados.
+ */
+export async function getPreciosSubclase(subclase: string): Promise<PreciosStats> {
+  const data = await dgcpFetch<ContratoArticulo>(
+    "/contratos/articulos",
+    { subclase, limit: 1000 },
+    3600
+  );
+  const items = data.payload.content;
+  const precios = items
+    .map((a) => a.precio_unitario)
+    .filter((v) => typeof v === "number" && v > 0)
+    .sort((a, b) => a - b);
+  const mediana =
+    precios.length === 0
+      ? 0
+      : precios.length % 2
+        ? precios[(precios.length - 1) / 2]
+        : (precios[precios.length / 2 - 1] + precios[precios.length / 2]) / 2;
+  const ejemplos = [...items]
+    .filter((a) => a.precio_unitario > 0)
+    .sort(
+      (a, b) =>
+        new Date(b.fecha_creacion_contrato).getTime() -
+        new Date(a.fecha_creacion_contrato).getTime()
+    )
+    .slice(0, 8);
+  return {
+    subclase,
+    muestras: precios.length,
+    min: precios[0] ?? 0,
+    mediana,
+    max: precios[precios.length - 1] ?? 0,
+    ejemplos,
   };
 }
