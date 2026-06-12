@@ -126,6 +126,48 @@ export default function Buscador() {
           dominicano, en vivo desde la API de datos abiertos de la DGCP.
         </p>
 
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+          <button
+            onClick={() => {
+              setEstado("Proceso publicado");
+              setModalidad("");
+              setMipyme(false);
+              setStartdate(hoyMenosDias(30));
+              setEnddate("");
+              setOrden("recientes");
+            }}
+            className="rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700"
+          >
+            Abiertas ahora
+          </button>
+          <button
+            onClick={() => {
+              setEstado("Proceso publicado");
+              setOrden("cierre");
+            }}
+            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:border-emerald-500 hover:text-emerald-700"
+          >
+            ⏰ Cierran pronto
+          </button>
+          <button
+            onClick={() => {
+              setOrden("monto_desc");
+            }}
+            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:border-emerald-500 hover:text-emerald-700"
+          >
+            💰 Mayor monto
+          </button>
+          <button
+            onClick={() => {
+              setMipyme(true);
+              setEstado("Proceso publicado");
+            }}
+            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:border-emerald-500 hover:text-emerald-700"
+          >
+            Para MIPYMES
+          </button>
+        </div>
+
         <div className="mt-4 grid gap-3 md:grid-cols-12">
           <div className="md:col-span-12">
             <input

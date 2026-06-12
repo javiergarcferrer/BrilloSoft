@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProceso } from "@/lib/dgcp";
+import { getProceso, normalize, type Documento } from "@/lib/dgcp";
 import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
+
+const DOC_CLAVE =
+  /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
+
+function esDocClave(d: Documento): boolean {
+  return DOC_CLAVE.test(normalize(`${d.tipo_documento} ${d.nombre_documento}`));
+}
 
 export async function generateMetadata({
   params,
@@ -24,6 +31,13 @@ export default async function ProcesoPage({
   if (!p) notFound();
 
   const dias = diasHasta(p.fecha_fin_recepcion_ofertas);
+  const abiertoParaOfertar = p.estado_proceso === "Proceso publicado" && dias !== null && dias >= 0;
+  const docsClave = documentos.filter(esDocClave);
+  const docsOtros = documentos.filter((d) => !esDocClave(d));
+  const totalArticulos = articulos.reduce(
+    (s, a) => s + (a.precio_total_estimado || 0),
+    0
+  );
   const fechas: [string, string, boolean?][] = [
     ["Publicación", p.fecha_publicacion],
     ["Última enmienda", p.fecha_enmienda],
@@ -113,6 +127,84 @@ export default async function ProcesoPage({
         )}
       </section>
 
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 className="font-semibold">Cómo participar</h2>
+        {abiertoParaOfertar ? (
+          <ol className="mt-4 space-y-3">
+            <Paso n={1} titulo="Lee los documentos clave del proceso">
+              {docsClave.length > 0 ? (
+                <span>
+                  Empieza por el pliego de condiciones y la ficha técnica: ahí están los
+                  requisitos exactos, las garantías exigidas y los criterios de
+                  evaluación.{" "}
+                  <a href="#documentos" className="font-medium text-emerald-700 hover:underline">
+                    Ver los {docsClave.length} documentos clave ↓
+                  </a>
+                </span>
+              ) : (
+                <span>
+                  Este proceso aún no tiene documentos cargados en la API; revísalos
+                  directamente en el Portal Transaccional con el botón de arriba.
+                </span>
+              )}
+            </Paso>
+            <Paso n={2} titulo="Verifica tu Registro de Proveedores del Estado (RPE)">
+              Para ofertar necesitas RPE activo, con el rubro de este proceso y tus
+              obligaciones fiscales (DGII/TSS) al día. Si no lo tienes,{" "}
+              <a
+                href="https://www.dgcp.gob.do/servicios/registro-de-proveedores/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-emerald-700 hover:underline"
+              >
+                inscríbete aquí en la DGCP ↗
+              </a>{" "}
+              cuanto antes — el trámite toma días, no horas.
+            </Paso>
+            <Paso n={3} titulo="Prepara tu oferta">
+              Documentos legales y credenciales según el pliego, oferta técnica conforme
+              a la ficha, y oferta económica
+              {totalArticulos > 0 ? (
+                <> (referencia: el presupuesto estimado de los artículos suma{" "}
+                  <strong>{formatMonto(totalArticulos, p.divisa)}</strong>)</>
+              ) : (
+                <> (referencia: monto estimado {formatMonto(p.monto_estimado, p.divisa)})</>
+              )}
+              . Revisa si el pliego exige garantía de seriedad de la oferta.
+            </Paso>
+            <Paso n={4} titulo={`Presenta tu oferta antes del cierre`}>
+              Fecha límite:{" "}
+              <strong>{formatFecha(p.fecha_fin_recepcion_ofertas, true)}</strong>
+              {dias !== null && (
+                <> ({dias === 0 ? "cierra hoy" : `faltan ${dias} días`})</>
+              )}
+              . Se presenta en línea en el{" "}
+              {p.url ? (
+                <a
+                  href={p.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-emerald-700 hover:underline"
+                >
+                  Portal Transaccional ↗
+                </a>
+              ) : (
+                "Portal Transaccional"
+              )}
+              .
+            </Paso>
+          </ol>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">
+            Este proceso ya no acepta ofertas nuevas (estado:{" "}
+            <strong>{p.estado_proceso}</strong>
+            {dias !== null && dias < 0 ? ", la recepción cerró" : ""}). Puedes revisar
+            los documentos y resultados para preparar tu próxima participación, o usar
+            el buscador para encontrar procesos similares abiertos.
+          </p>
+        )}
+      </section>
+
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <h2 className="font-semibold">Cronograma</h2>
@@ -192,12 +284,27 @@ export default async function ProcesoPage({
                   </tr>
                 ))}
               </tbody>
+              {totalArticulos > 0 && (
+                <tfoot>
+                  <tr className="border-t-2 border-slate-200">
+                    <td colSpan={4} className="py-2 pr-3 text-right font-semibold">
+                      Total estimado de artículos
+                    </td>
+                    <td className="py-2 text-right font-bold">
+                      {formatMonto(totalArticulos, p.divisa)}
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         )}
       </section>
 
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section
+        id="documentos"
+        className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+      >
         <h2 className="font-semibold">
           Documentos del proceso{" "}
           <span className="font-normal text-slate-400">({documentos.length})</span>
@@ -207,30 +314,83 @@ export default async function ProcesoPage({
             La API no reporta documentos para este proceso.
           </p>
         ) : (
-          <ul className="mt-3 grid gap-2 md:grid-cols-2">
-            {documentos.map((d, i) => (
-              <li key={i}>
-                <a
-                  href={d.url_documento}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-start gap-3 rounded-lg border border-slate-200 px-3 py-2.5 text-sm hover:border-emerald-400 hover:bg-emerald-50"
-                >
-                  <span aria-hidden>📄</span>
-                  <span>
-                    <span className="block font-medium leading-snug">
-                      {d.nombre_documento}
-                    </span>
-                    <span className="block text-xs text-slate-500">
-                      {d.tipo_documento} · {formatFecha(d.fecha_carga_archivo)}
-                    </span>
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <>
+            {docsClave.length > 0 && (
+              <>
+                <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  Empieza por aquí — pliego, fichas y condiciones
+                </h3>
+                <ul className="mt-2 grid gap-2 md:grid-cols-2">
+                  {docsClave.map((d, i) => (
+                    <DocumentoItem key={`k${i}`} d={d} clave />
+                  ))}
+                </ul>
+              </>
+            )}
+            {docsOtros.length > 0 && (
+              <>
+                {docsClave.length > 0 && (
+                  <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Otros documentos
+                  </h3>
+                )}
+                <ul className="mt-2 grid gap-2 md:grid-cols-2">
+                  {docsOtros.map((d, i) => (
+                    <DocumentoItem key={`o${i}`} d={d} />
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
         )}
       </section>
     </div>
+  );
+}
+
+function Paso({
+  n,
+  titulo,
+  children,
+}: {
+  n: number;
+  titulo: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex gap-3">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white">
+        {n}
+      </span>
+      <div className="text-sm">
+        <div className="font-semibold">{titulo}</div>
+        <div className="mt-0.5 text-slate-600">{children}</div>
+      </div>
+    </li>
+  );
+}
+
+function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) {
+  return (
+    <li>
+      <a
+        href={d.url_documento}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 text-sm ${
+          clave
+            ? "border-emerald-300 bg-emerald-50/50 hover:bg-emerald-50"
+            : "border-slate-200 hover:border-emerald-400 hover:bg-emerald-50"
+        }`}
+      >
+        <span aria-hidden>{clave ? "⭐" : "📄"}</span>
+        <span>
+          <span className="block font-medium leading-snug">{d.nombre_documento}</span>
+          <span className="block text-xs text-slate-500">
+            {d.tipo_documento} · {formatFecha(d.fecha_carga_archivo)}
+          </span>
+        </span>
+      </a>
+    </li>
   );
 }
