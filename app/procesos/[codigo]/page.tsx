@@ -18,7 +18,19 @@ export async function generateMetadata({
   params: Promise<{ codigo: string }>;
 }) {
   const { codigo } = await params;
-  return { title: `${decodeURIComponent(codigo)} — Licitaciones RD` };
+  const limpio = decodeURIComponent(codigo);
+  try {
+    const { proceso: p } = await getProceso(limpio);
+    if (p) {
+      return {
+        title: p.titulo || limpio,
+        description: `${p.unidad_compra} · ${p.modalidad} · ${p.estado_proceso} · cierre de ofertas ${p.fecha_fin_recepcion_ofertas?.slice(0, 10) ?? "n/d"}`,
+      };
+    }
+  } catch {
+    /* metadata best-effort */
+  }
+  return { title: limpio };
 }
 
 export default async function ProcesoPage({
@@ -112,16 +124,38 @@ export default async function ProcesoPage({
         </div>
 
         <h1 className="mt-3 text-2xl font-semibold leading-tight">{p.titulo}</h1>
-        <p className="mt-1 text-slate-600">{p.unidad_compra}</p>
+        <p className="mt-1 text-slate-600">
+          {p.unidad_compra}{" "}
+          <Link
+            href={`/?uc=${p.codigo_unidad_compra}`}
+            className="text-sm font-medium text-emerald-700 hover:underline"
+          >
+            · ver todos sus procesos →
+          </Link>
+        </p>
         <p className="mt-1 font-mono text-sm text-slate-400">{p.codigo_proceso}</p>
 
-        <div className="mt-4 flex flex-wrap items-center gap-4">
+        <div className="mt-4 flex flex-wrap items-center gap-6">
           <div>
             <div className="text-xs uppercase tracking-wide text-slate-400">
               Monto estimado
             </div>
             <div className="text-2xl font-bold text-slate-900">
               {formatMonto(p.monto_estimado, p.divisa)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wide text-slate-400">
+              Recibe ofertas hasta
+            </div>
+            <div
+              className={`text-2xl font-bold ${
+                abiertoParaOfertar && dias !== null && dias <= 2
+                  ? "text-red-600"
+                  : "text-slate-900"
+              }`}
+            >
+              {formatFecha(p.fecha_fin_recepcion_ofertas, true)}
             </div>
           </div>
           {p.url && (
