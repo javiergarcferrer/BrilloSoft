@@ -140,7 +140,12 @@ export default async function ProcesoPage({
       </section>
 
       <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <h2 className="font-semibold">Cómo participar</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-semibold">Cómo participar</h2>
+          <Link href="/guia" className="text-xs font-medium text-emerald-700 hover:underline">
+            ¿Primera vez ofertando? Lee la guía completa →
+          </Link>
+        </div>
         {abiertoParaOfertar ? (
           <ol className="mt-4 space-y-3">
             <Paso n={1} titulo="Lee los documentos clave del proceso">

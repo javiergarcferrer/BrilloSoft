@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
 import ProcesoCard from "@/components/proceso-card";
@@ -43,14 +44,36 @@ function hoyMenosDias(dias: number): string {
 }
 
 export default function Buscador() {
-  const [q, setQ] = useState("");
-  const [estado, setEstado] = useState("Proceso publicado");
-  const [modalidad, setModalidad] = useState("");
-  const [startdate, setStartdate] = useState(hoyMenosDias(30));
-  const [enddate, setEnddate] = useState("");
-  const [mipyme, setMipyme] = useState(false);
-  const [orden, setOrden] = useState<Orden>("recientes");
+  const sp = useSearchParams();
+  const [q, setQ] = useState(() => sp.get("q") ?? "");
+  const [estado, setEstado] = useState(() => sp.get("estado") ?? "Proceso publicado");
+  const [modalidad, setModalidad] = useState(() => sp.get("modalidad") ?? "");
+  const [startdate, setStartdate] = useState(
+    () => sp.get("desde") ?? hoyMenosDias(30)
+  );
+  const [enddate, setEnddate] = useState(() => sp.get("hasta") ?? "");
+  const [mipyme, setMipyme] = useState(() => sp.get("mipyme") === "1");
+  const [orden, setOrden] = useState<Orden>(
+    () => (sp.get("orden") as Orden) || "recientes"
+  );
   const [page, setPage] = useState(1);
+
+  // Mantiene los filtros en la URL para compartir/guardar la búsqueda.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q.trim());
+    if (estado !== "Proceso publicado") params.set("estado", estado);
+    if (modalidad) params.set("modalidad", modalidad);
+    if (startdate && startdate !== hoyMenosDias(30)) params.set("desde", startdate);
+    if (enddate) params.set("hasta", enddate);
+    if (mipyme) params.set("mipyme", "1");
+    if (orden !== "recientes") params.set("orden", orden);
+    const qs = params.toString();
+    const url = qs ? `/?${qs}` : "/";
+    if (window.location.pathname + window.location.search !== url) {
+      window.history.replaceState(null, "", url);
+    }
+  }, [q, estado, modalidad, startdate, enddate, mipyme, orden]);
 
   const [data, setData] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(true);

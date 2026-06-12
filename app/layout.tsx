@@ -28,6 +28,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
             </Link>
             <nav className="flex items-center gap-4 text-sm">
+              <Link href="/guia" className="text-slate-300 hover:text-white">
+                Guía
+              </Link>
               <Link href="/seguimiento" className="text-slate-300 hover:text-white">
                 ★ Seguimiento
               </Link>
