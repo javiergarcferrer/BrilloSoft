@@ -390,12 +390,31 @@ export default function Buscador() {
             </span>
           ) : null}
           {!loading && ordenados.length > 0 && (
-            <button
-              onClick={exportarCsv}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1 hover:border-emerald-500 hover:text-emerald-700"
-            >
-              ⬇ Exportar CSV
-            </button>
+            <span className="flex items-center gap-2">
+              <button
+                onClick={exportarCsv}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1 hover:border-emerald-500 hover:text-emerald-700"
+              >
+                ⬇ Exportar CSV
+              </button>
+              <a
+                href={(() => {
+                  const f = new URLSearchParams();
+                  if (q.trim()) f.set("q", q.trim());
+                  if (estado) f.set("estado", estado);
+                  if (modalidad) f.set("modalidad", modalidad);
+                  if (mipyme) f.set("mipyme", "1");
+                  if (unidadSel) f.set("uc", String(unidadSel.codigo));
+                  return `/api/feed?${f.toString()}`;
+                })()}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Suscríbete a esta búsqueda con cualquier lector RSS y entérate de los procesos nuevos"
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1 hover:border-emerald-500 hover:text-emerald-700"
+              >
+                📡 RSS
+              </a>
+            </span>
           )}
           {!enBusqueda && data && data.pages > 1 && (
             <span className="flex items-center gap-2">
