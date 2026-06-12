@@ -58,4 +58,4 @@ npm run dev
 
 ## Despliegue
 
-Pensada para Vercel: push a `main` y se despliega sola.
+Pensada para Vercel: push a `main` y se despliega sola. Producción: https://brillo-soft.vercel.app
