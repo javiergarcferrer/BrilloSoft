@@ -1,0 +1,133 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { dgcpFetch, type Contrato } from "@/lib/dgcp";
+import { formatFecha, formatMonto } from "@/lib/format";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ rpe: string }>;
+}) {
+  const { rpe } = await params;
+  return { title: `Proveedor RPE ${rpe}` };
+}
+
+export default async function ProveedorPage({
+  params,
+}: {
+  params: Promise<{ rpe: string }>;
+}) {
+  const { rpe } = await params;
+  if (!/^\d{1,10}$/.test(rpe)) notFound();
+
+  const data = await dgcpFetch<Contrato>("/contratos", { rpe, limit: 1000 }, 3600);
+  const contratos = data.payload.content;
+  if (contratos.length === 0) notFound();
+
+  const nombre = contratos[0].razon_social;
+  const total = data.totalResults ?? contratos.length;
+  const suma = contratos.reduce((s, c) => s + (c.valor_contratado || 0), 0);
+
+  const porInstitucion = new Map<string, { n: number; monto: number }>();
+  for (const c of contratos) {
+    const a = porInstitucion.get(c.unidad_compra) ?? { n: 0, monto: 0 };
+    a.n += 1;
+    a.monto += c.valor_contratado || 0;
+    porInstitucion.set(c.unidad_compra, a);
+  }
+  const topInstituciones = [...porInstitucion.entries()]
+    .sort((a, b) => b[1].monto - a[1].monto)
+    .slice(0, 8);
+
+  const recientes = [...contratos]
+    .sort(
+      (a, b) =>
+        new Date(b.fecha_adjudicacion).getTime() -
+        new Date(a.fecha_adjudicacion).getTime()
+    )
+    .slice(0, 25);
+
+  return (
+    <div className="space-y-5">
+      <Link href="/" className="text-sm text-emerald-700 hover:underline">
+        ← Volver al buscador
+      </Link>
+
+      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <div className="text-xs uppercase tracking-wide text-slate-400">
+          Proveedor del Estado · RPE {rpe}
+        </div>
+        <h1 className="mt-1 text-2xl font-semibold leading-tight">{nombre}</h1>
+        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="rounded-lg bg-slate-50 px-4 py-3">
+            <div className="text-xs text-slate-500">Contratos registrados</div>
+            <div className="mt-0.5 text-lg font-bold">
+              {total.toLocaleString("es-DO")}
+            </div>
+          </div>
+          <div className="rounded-lg bg-emerald-600 px-4 py-3 text-white">
+            <div className="text-xs text-emerald-100">
+              Monto total (últimos {contratos.length.toLocaleString("es-DO")})
+            </div>
+            <div className="mt-0.5 text-lg font-bold">{formatMonto(suma, "DOP")}</div>
+          </div>
+          <div className="rounded-lg bg-slate-50 px-4 py-3">
+            <div className="text-xs text-slate-500">Instituciones cliente</div>
+            <div className="mt-0.5 text-lg font-bold">
+              {porInstitucion.size.toLocaleString("es-DO")}
+            </div>
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-slate-400">
+          Fuente: registro público de contratos de la DGCP. Útil para dimensionar a tu
+          competencia antes de ofertar.
+        </p>
+      </section>
+
+      <div className="grid gap-5 lg:grid-cols-5">
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
+          <h2 className="font-semibold">Sus principales clientes</h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {topInstituciones.map(([inst, a]) => (
+              <li
+                key={inst}
+                className="flex items-baseline justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2"
+              >
+                <span className="line-clamp-1">{inst}</span>
+                <span className="shrink-0 text-xs text-slate-500">
+                  {a.n} · {formatMonto(a.monto, "DOP")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 lg:col-span-3">
+          <h2 className="font-semibold">Contratos recientes</h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {recientes.map((c, i) => (
+              <li key={i} className="rounded-lg border border-slate-200 px-3 py-2.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="line-clamp-1 font-medium">{c.descripcion}</span>
+                  <span className="shrink-0 font-semibold">
+                    {formatMonto(c.valor_contratado, c.divisa)}
+                  </span>
+                </div>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                  <span>{c.unidad_compra}</span>
+                  <span>· {formatFecha(c.fecha_adjudicacion)}</span>
+                  <Link
+                    href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
+                    className="text-emerald-700 hover:underline"
+                  >
+                    ver proceso →
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </div>
+  );
+}

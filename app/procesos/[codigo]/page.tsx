@@ -369,10 +369,21 @@ export default async function ProcesoPage({
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 text-sm"
               >
                 <div className="min-w-0">
-                  <div className="font-semibold">{c.razon_social}</div>
+                  <Link
+                    href={`/proveedores/${encodeURIComponent(c.rpe)}`}
+                    className="font-semibold hover:text-emerald-700 hover:underline"
+                  >
+                    {c.razon_social}
+                  </Link>
                   <div className="text-xs text-slate-500">
                     RPE {c.rpe} · adjudicado {formatFecha(c.fecha_adjudicacion)} ·{" "}
-                    {c.estado_contrato}
+                    {c.estado_contrato} ·{" "}
+                    <Link
+                      href={`/proveedores/${encodeURIComponent(c.rpe)}`}
+                      className="text-emerald-700 hover:underline"
+                    >
+                      historial del proveedor →
+                    </Link>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
