@@ -121,14 +121,27 @@ export async function dgcpFetch<T>(
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v));
   }
-  const res = await fetch(url.toString(), { next: { revalidate } });
-  if (!res.ok) throw new Error(`DGCP respondió ${res.status} para ${path}`);
-  const data = (await res.json()) as DgcpResponse<T>;
-  if (data.hasError) throw new Error(`DGCP devolvió un error para ${path}`);
-  // Cuando no hay resultados la API devuelve payload.content = null.
-  if (!data.payload) data.payload = { content: [] };
-  if (!Array.isArray(data.payload.content)) data.payload.content = [];
-  return data;
+  // La API pública a veces tarda o falla de forma transitoria: un timeout
+  // de 25s por intento y un único reintento.
+  let ultimo: unknown;
+  for (let intento = 0; intento < 2; intento++) {
+    try {
+      const res = await fetch(url.toString(), {
+        next: { revalidate },
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!res.ok) throw new Error(`DGCP respondió ${res.status} para ${path}`);
+      const data = (await res.json()) as DgcpResponse<T>;
+      if (data.hasError) throw new Error(`DGCP devolvió un error para ${path}`);
+      // Cuando no hay resultados la API devuelve payload.content = null.
+      if (!data.payload) data.payload = { content: [] };
+      if (!Array.isArray(data.payload.content)) data.payload.content = [];
+      return data;
+    } catch (e) {
+      ultimo = e;
+    }
+  }
+  throw ultimo instanceof Error ? ultimo : new Error(`DGCP no disponible para ${path}`);
 }
 
 export function normalize(s: string): string {
