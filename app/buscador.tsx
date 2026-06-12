@@ -28,6 +28,16 @@ const MODALIDADES = [
 
 type Orden = "recientes" | "cierre" | "monto_desc" | "monto_asc";
 
+interface Unidad {
+  codigo: number;
+  nombre: string;
+  acronimo: string;
+}
+
+function etiquetaUnidad(u: Unidad): string {
+  return u.acronimo && u.acronimo !== "N/A" ? `${u.nombre} (${u.acronimo})` : u.nombre;
+}
+
 interface ApiResult {
   content: Proceso[];
   totalResults: number;
@@ -58,6 +68,33 @@ export default function Buscador() {
   );
   const [page, setPage] = useState(1);
 
+  const [unidades, setUnidades] = useState<Unidad[]>([]);
+  const [unidadTexto, setUnidadTexto] = useState("");
+  const ucInicial = useRef(sp.get("uc"));
+
+  useEffect(() => {
+    let cancel = false;
+    fetch("/api/unidades")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: Unidad[]) => {
+        if (cancel || !Array.isArray(list)) return;
+        setUnidades(list);
+        if (ucInicial.current) {
+          const u = list.find((x) => String(x.codigo) === ucInicial.current);
+          if (u) setUnidadTexto(etiquetaUnidad(u));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
+  const unidadSel = useMemo(
+    () => unidades.find((u) => etiquetaUnidad(u) === unidadTexto) ?? null,
+    [unidades, unidadTexto]
+  );
+
   // Mantiene los filtros en la URL para compartir/guardar la búsqueda.
   useEffect(() => {
     const params = new URLSearchParams();
@@ -68,12 +105,13 @@ export default function Buscador() {
     if (enddate) params.set("hasta", enddate);
     if (mipyme) params.set("mipyme", "1");
     if (orden !== "recientes") params.set("orden", orden);
+    if (unidadSel) params.set("uc", String(unidadSel.codigo));
     const qs = params.toString();
     const url = qs ? `/?${qs}` : "/";
     if (window.location.pathname + window.location.search !== url) {
       window.history.replaceState(null, "", url);
     }
-  }, [q, estado, modalidad, startdate, enddate, mipyme, orden]);
+  }, [q, estado, modalidad, startdate, enddate, mipyme, orden, unidadSel]);
 
   const [data, setData] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +132,7 @@ export default function Buscador() {
       if (startdate) params.set("startdate", startdate);
       if (enddate) params.set("enddate", enddate);
       if (mipyme) params.set("mipyme", "true");
+      if (unidadSel) params.set("unidad_compra", String(unidadSel.codigo));
       params.set("page", String(page));
       params.set("limit", "24");
       const res = await fetch(`/api/procesos?${params}`, { signal: ctrl.signal });
@@ -106,7 +145,7 @@ export default function Buscador() {
     } finally {
       if (abortRef.current === ctrl) setLoading(false);
     }
-  }, [q, estado, modalidad, startdate, enddate, mipyme, page]);
+  }, [q, estado, modalidad, startdate, enddate, mipyme, page, unidadSel]);
 
   // Debounce para el texto; inmediato para el resto de filtros.
   useEffect(() => {
@@ -117,7 +156,7 @@ export default function Buscador() {
   // Cualquier cambio de filtro reinicia la paginación.
   useEffect(() => {
     setPage(1);
-  }, [q, estado, modalidad, startdate, enddate, mipyme]);
+  }, [q, estado, modalidad, startdate, enddate, mipyme, unidadSel]);
 
   const ordenados = useMemo(() => {
     const list = [...(data?.content ?? [])];
@@ -228,6 +267,31 @@ export default function Buscador() {
               className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none ring-emerald-500/30 focus:border-emerald-500 focus:ring-4"
             />
           </div>
+
+          <label className="md:col-span-12 block text-xs font-medium text-slate-600">
+            Institución (unidad de compra)
+            <input
+              list="lista-unidades"
+              value={unidadTexto}
+              onChange={(e) => setUnidadTexto(e.target.value)}
+              placeholder={
+                unidades.length
+                  ? "Todas — escribe para filtrar por institución…"
+                  : "Cargando instituciones…"
+              }
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            <datalist id="lista-unidades">
+              {unidades.map((u) => (
+                <option key={u.codigo} value={etiquetaUnidad(u)} />
+              ))}
+            </datalist>
+            {unidadTexto && !unidadSel && (
+              <span className="mt-1 block text-[11px] text-amber-600">
+                Selecciona una institución de la lista para aplicar el filtro.
+              </span>
+            )}
+          </label>
 
           <label className="md:col-span-3 block text-xs font-medium text-slate-600">
             Estado

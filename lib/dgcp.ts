@@ -163,6 +163,7 @@ export async function listProcesos(opts: {
   proceso?: string;
   estado?: string;
   modalidad?: string;
+  unidad_compra?: number;
   startdate?: string;
   enddate?: string;
   mipyme?: string;
@@ -174,6 +175,7 @@ export async function listProcesos(opts: {
     proceso: opts.proceso,
     estado: opts.estado,
     modalidad: opts.modalidad,
+    unidad_compra: opts.unidad_compra,
     startdate: opts.startdate,
     enddate: opts.enddate,
     mipyme: opts.mipyme,
@@ -245,6 +247,35 @@ export async function getProceso(codigo: string): Promise<{
     documentos: docs?.payload.content ?? [],
     contratos: ctos?.payload.content ?? [],
   };
+}
+
+export interface UnidadCompra {
+  codigo: number;
+  nombre: string;
+  acronimo: string;
+}
+
+interface UnidadCompraRaw {
+  codigo_unidad_compra: number;
+  unidad_compra: string;
+  acronimo: string;
+  estado: string;
+}
+
+export async function getUnidadesCompra(): Promise<UnidadCompra[]> {
+  const data = await dgcpFetch<UnidadCompraRaw>(
+    "/unidades_compra",
+    { limit: 1000 },
+    86400
+  );
+  return data.payload.content
+    .filter((u) => u.estado === "ACTIVA")
+    .map((u) => ({
+      codigo: u.codigo_unidad_compra,
+      nombre: u.unidad_compra,
+      acronimo: u.acronimo,
+    }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 }
 
 export interface PreciosStats {

@@ -11,6 +11,9 @@ export async function GET(req: NextRequest) {
       proceso: sp.get("proceso") ?? undefined,
       estado: sp.get("estado") ?? undefined,
       modalidad: sp.get("modalidad") ?? undefined,
+      unidad_compra: sp.get("unidad_compra")
+        ? Number(sp.get("unidad_compra"))
+        : undefined,
       startdate: sp.get("startdate") ?? undefined,
       enddate: sp.get("enddate") ?? undefined,
       mipyme: sp.get("mipyme") ?? undefined,
