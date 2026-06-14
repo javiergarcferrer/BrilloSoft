@@ -6,6 +6,7 @@ import SiteNav from "@/components/site-nav";
 import MobileTabBar from "@/components/mobile-tab-bar";
 import InstallPrompt from "@/components/install-prompt";
 import ScrollTop from "@/components/scroll-top";
+import SavedSearchesMenu from "@/components/saved-searches-menu";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -70,11 +71,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" className={`${inter.variable} ${sora.variable}`}>
       <body className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))] antialiased lg:pb-0">
         <header
-          className="sticky top-0 z-50 border-b border-white/5 bg-slate-900/90 text-white backdrop-blur-md"
+          className="sticky top-0 z-50 bg-slate-900/90 text-white backdrop-blur-md"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-            <Link href="/" className="flex shrink-0 items-center gap-3">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+            <Link
+              href="/"
+              className="flex shrink-0 items-center gap-3 transition-opacity hover:opacity-90"
+            >
               <BrandMark />
               <span className="leading-tight">
                 <span className="block text-[15px] font-semibold tracking-tight">
@@ -85,10 +89,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </span>
               </span>
             </Link>
-            <div className="hidden lg:block">
-              <SiteNav />
+            <div className="flex items-center gap-1">
+              <div className="hidden lg:block">
+                <SiteNav />
+              </div>
+              <SavedSearchesMenu />
             </div>
           </div>
+          <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/45 to-transparent" />
         </header>
 
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>

@@ -185,6 +185,24 @@ export const IconX = (p: P) => (
   </Svg>
 );
 
+export const IconBookmark = ({ filled, ...p }: P & { filled?: boolean }) => (
+  <Svg fill={filled ? "currentColor" : "none"} {...p}>
+    <path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1z" />
+  </Svg>
+);
+
+export const IconPlus = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </Svg>
+);
+
+export const IconTrash = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" />
+  </Svg>
+);
+
 export const IconShare = (p: P) => (
   <Svg {...p}>
     <circle cx="18" cy="5" r="3" />

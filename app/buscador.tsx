@@ -1,12 +1,21 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
 import ProcesoCard from "@/components/proceso-card";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { getRecientes, pushReciente } from "@/lib/recientes";
 import {
+  addBusqueda,
+  getBusquedas,
+  onBusquedasCambio,
+  removeBusqueda,
+  type Busqueda,
+} from "@/lib/busquedas";
+import {
+  IconBookmark,
+  IconCheck,
   IconChevronLeft,
   IconChevronRight,
   IconClock,
@@ -110,6 +119,17 @@ export default function Buscador() {
     setRecientes(getRecientes());
   }, []);
 
+  const router = useRouter();
+  const [busquedas, setBusquedas] = useState<Busqueda[]>([]);
+  const [guardarOpen, setGuardarOpen] = useState(false);
+  const [nombreGuardar, setNombreGuardar] = useState("");
+
+  useEffect(() => {
+    const sync = () => setBusquedas(getBusquedas());
+    sync();
+    return onBusquedasCambio(sync);
+  }, []);
+
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [unidadTexto, setUnidadTexto] = useState("");
   const ucInicial = useRef(sp.get("uc"));
@@ -137,8 +157,8 @@ export default function Buscador() {
     [unidades, unidadTexto]
   );
 
-  // Mantiene los filtros en la URL para compartir/guardar la búsqueda.
-  useEffect(() => {
+  // Querystring que representa los filtros actuales (URL + guardar búsqueda).
+  const currentParams = useMemo(() => {
     const params = new URLSearchParams();
     if (q.trim()) params.set("q", q.trim());
     if (estado !== "Proceso publicado") params.set("estado", estado);
@@ -148,12 +168,61 @@ export default function Buscador() {
     if (mipyme) params.set("mipyme", "1");
     if (orden !== "recientes") params.set("orden", orden);
     if (unidadSel) params.set("uc", String(unidadSel.codigo));
-    const qs = params.toString();
+    return params;
+  }, [q, estado, modalidad, startdate, enddate, mipyme, orden, unidadSel]);
+
+  // Mantiene los filtros en la URL (compartible / guardable).
+  useEffect(() => {
+    const qs = currentParams.toString();
     const url = qs ? `/?${qs}` : "/";
     if (window.location.pathname + window.location.search !== url) {
       window.history.replaceState(null, "", url);
     }
-  }, [q, estado, modalidad, startdate, enddate, mipyme, orden, unidadSel]);
+  }, [currentParams]);
+
+  // Aplica filtros desde un querystring (búsqueda guardada / enlace compartido).
+  const applyFromParams = useCallback(
+    (p: URLSearchParams) => {
+      setQ(p.get("q") ?? "");
+      setEstado(p.get("estado") ?? "Proceso publicado");
+      setModalidad(p.get("modalidad") ?? "");
+      setStartdate(p.get("desde") ?? hoyMenosDias(30));
+      setEnddate(p.get("hasta") ?? "");
+      setMipyme(p.get("mipyme") === "1");
+      setOrden((p.get("orden") as Orden) || "recientes");
+      const uc = p.get("uc");
+      const u = uc ? unidades.find((x) => String(x.codigo) === uc) : null;
+      setUnidadTexto(u ? etiquetaUnidad(u) : "");
+    },
+    [unidades]
+  );
+
+  // Re-aplica cuando la URL cambia por una navegación real (menú de guardadas,
+  // enlace compartido) — `replaceState` propio no dispara esto.
+  const spString = sp.toString();
+  const applyRef = useRef(applyFromParams);
+  applyRef.current = applyFromParams;
+  const primerSync = useRef(true);
+  useEffect(() => {
+    if (primerSync.current) {
+      primerSync.current = false;
+      return;
+    }
+    applyRef.current(new URLSearchParams(spString));
+  }, [spString]);
+
+  const guardarBusqueda = () => {
+    const nombre = nombreGuardar.trim() || q.trim() || "Búsqueda";
+    setBusquedas(addBusqueda(nombre, currentParams.toString()));
+    setNombreGuardar("");
+    setGuardarOpen(false);
+  };
+
+  const aplicarBusqueda = (b: Busqueda) => {
+    if (window.location.search.replace(/^\?/, "") === b.qs) return;
+    router.push(`/${b.qs ? `?${b.qs}` : ""}`);
+    applyFromParams(new URLSearchParams(b.qs));
+  };
 
   const [data, setData] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -395,6 +464,58 @@ export default function Buscador() {
                   {t}
                 </button>
               ))}
+            </div>
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {busquedas.length > 0 && (
+              <span className="text-xs font-medium text-white/45">Guardadas</span>
+            )}
+            {busquedas.map((b) => (
+              <span
+                key={b.id}
+                className="inline-flex items-center gap-1 rounded-full bg-white/5 py-1 pl-2.5 pr-1 text-xs text-white/85 ring-1 ring-inset ring-white/10"
+              >
+                <button
+                  onClick={() => aplicarBusqueda(b)}
+                  className="font-medium hover:text-white"
+                >
+                  {b.nombre}
+                </button>
+                <button
+                  onClick={() => setBusquedas(removeBusqueda(b.id))}
+                  aria-label="Eliminar búsqueda"
+                  className="grid h-4 w-4 place-items-center rounded-full text-white/40 transition hover:text-rose-300"
+                >
+                  <IconX className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+            <button
+              onClick={() => setGuardarOpen((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-white ring-1 ring-inset ring-white/15 transition hover:bg-white/20 active:scale-95"
+            >
+              <IconBookmark className="h-3.5 w-3.5" filled={guardarOpen} />
+              Guardar
+            </button>
+          </div>
+          {guardarOpen && (
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                value={nombreGuardar}
+                onChange={(e) => setNombreGuardar(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && guardarBusqueda()}
+                placeholder="Nombre de la búsqueda…"
+                autoFocus
+                className="h-9 w-full max-w-xs rounded-lg bg-white px-3 text-sm text-ink outline-none placeholder:text-ink-soft/50"
+              />
+              <button
+                onClick={guardarBusqueda}
+                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-emerald-500 px-3 text-sm font-semibold text-white transition hover:bg-emerald-400 active:scale-95"
+              >
+                <IconCheck className="h-4 w-4" />
+                Guardar
+              </button>
             </div>
           )}
         </div>
