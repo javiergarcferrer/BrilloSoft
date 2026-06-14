@@ -53,7 +53,7 @@ export default async function ProveedorPage({
         ← Volver al buscador
       </Link>
 
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <div className="text-xs uppercase tracking-wide text-slate-400">
           Proveedor del Estado · RPE {rpe}
         </div>
@@ -85,7 +85,7 @@ export default async function ProveedorPage({
       </section>
 
       <div className="grid gap-5 lg:grid-cols-5">
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
+        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline lg:col-span-2">
           <h2 className="font-semibold">Sus principales clientes</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {topInstituciones.map(([inst, a]) => (
@@ -102,7 +102,7 @@ export default async function ProveedorPage({
           </ul>
         </section>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 lg:col-span-3">
+        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline lg:col-span-3">
           <h2 className="font-semibold">Contratos recientes</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {recientes.map((c, i) => (

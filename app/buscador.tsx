@@ -4,6 +4,17 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
 import ProcesoCard from "@/components/proceso-card";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconClock,
+  IconCoins,
+  IconDownload,
+  IconFilter,
+  IconRss,
+  IconSearch,
+  IconSparkles,
+} from "@/components/icons";
 
 const ESTADOS = [
   "Proceso publicado",
@@ -213,69 +224,107 @@ export default function Buscador() {
     URL.revokeObjectURL(a.href);
   };
 
+  const inputCls =
+    "mt-1 w-full rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15";
+
+  const feedHref = (() => {
+    const f = new URLSearchParams();
+    if (q.trim()) f.set("q", q.trim());
+    if (estado) f.set("estado", estado);
+    if (modalidad) f.set("modalidad", modalidad);
+    if (mipyme) f.set("mipyme", "1");
+    if (unidadSel) f.set("uc", String(unidadSel.codigo));
+    return `/api/feed?${f.toString()}`;
+  })();
+
   return (
     <div className="space-y-5">
-      <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h1 className="text-xl font-semibold">Oportunidades de compras públicas</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Busca y filtra los procesos publicados por las instituciones del Estado
-          dominicano, en vivo desde la API de datos abiertos de la DGCP.
-        </p>
+      {/* Hero + búsqueda */}
+      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white">
+        <div className="absolute inset-0 app-grid-dark" aria-hidden />
+        <div
+          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl"
+          aria-hidden
+        />
+        <div className="relative px-6 py-8 sm:px-9 sm:py-10">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/85 ring-1 ring-inset ring-white/15 backdrop-blur">
+            <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 text-emerald-400">
+              <span className="live-dot" />
+            </span>
+            En vivo desde la API de datos abiertos de la DGCP
+          </div>
+          <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-[1.1] tracking-tight sm:text-[40px]">
+            Encuentra{" "}
+            <span className="text-gradient">oportunidades de compras públicas</span>
+          </h1>
+          <p className="mt-2.5 max-w-xl text-sm text-slate-300 sm:text-base">
+            Busca y filtra los procesos que publican las instituciones del Estado
+            dominicano, y entiende qué piden y cómo ofertar.
+          </p>
 
-        <div className="mt-3 flex flex-wrap gap-2 text-xs">
-          <button
-            onClick={() => {
-              setEstado("Proceso publicado");
-              setModalidad("");
-              setMipyme(false);
-              setStartdate(hoyMenosDias(30));
-              setEnddate("");
-              setOrden("recientes");
-            }}
-            className="rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700"
-          >
-            Abiertas ahora
-          </button>
-          <button
-            onClick={() => {
-              setEstado("Proceso publicado");
-              setOrden("cierre");
-            }}
-            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:border-emerald-500 hover:text-emerald-700"
-          >
-            ⏰ Cierran pronto
-          </button>
-          <button
-            onClick={() => {
-              setOrden("monto_desc");
-            }}
-            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:border-emerald-500 hover:text-emerald-700"
-          >
-            💰 Mayor monto
-          </button>
-          <button
-            onClick={() => {
-              setMipyme(true);
-              setEstado("Proceso publicado");
-            }}
-            className="rounded-full border border-slate-300 bg-white px-3 py-1.5 font-medium text-slate-700 hover:border-emerald-500 hover:text-emerald-700"
-          >
-            Para MIPYMES
-          </button>
-        </div>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-12">
-          <div className="md:col-span-12">
+          <div className="mt-5 flex items-center gap-2 rounded-2xl bg-white p-2 shadow-pop">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
+              <IconSearch className="h-5 w-5" />
+            </span>
             <input
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por palabra clave: pintura, cerámica, vehículos, hospital, ayuntamiento…"
-              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none ring-emerald-500/30 focus:border-emerald-500 focus:ring-4"
+              placeholder="pintura, cerámica, vehículos, hospital, ayuntamiento…"
+              className="h-10 w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-soft/60"
             />
           </div>
 
-          <label className="md:col-span-12 block text-xs font-medium text-slate-600">
+          <div className="mt-3.5 flex flex-wrap gap-2">
+            <Preset
+              activo
+              onClick={() => {
+                setEstado("Proceso publicado");
+                setModalidad("");
+                setMipyme(false);
+                setStartdate(hoyMenosDias(30));
+                setEnddate("");
+                setOrden("recientes");
+              }}
+            >
+              <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-white" />
+              Abiertas ahora
+            </Preset>
+            <Preset
+              onClick={() => {
+                setEstado("Proceso publicado");
+                setOrden("cierre");
+              }}
+            >
+              <IconClock className="h-3.5 w-3.5" /> Cierran pronto
+            </Preset>
+            <Preset
+              onClick={() => {
+                setOrden("monto_desc");
+              }}
+            >
+              <IconCoins className="h-3.5 w-3.5" /> Mayor monto
+            </Preset>
+            <Preset
+              onClick={() => {
+                setMipyme(true);
+                setEstado("Proceso publicado");
+              }}
+            >
+              <IconSparkles className="h-3.5 w-3.5" /> Para MIPYMES
+            </Preset>
+          </div>
+        </div>
+      </section>
+
+      {/* Filtros */}
+      <section className="rounded-2xl bg-surface p-5 shadow-soft ring-1 ring-hairline">
+        <div className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <IconFilter className="h-4 w-4 text-brand-600" />
+          Filtros
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-12">
+          <label className="md:col-span-12 block text-xs font-medium text-ink-soft">
             Institución (unidad de compra)
             <input
               list="lista-unidades"
@@ -286,7 +335,7 @@ export default function Buscador() {
                   ? "Todas — escribe para filtrar por institución…"
                   : "Cargando instituciones…"
               }
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className={inputCls}
             />
             <datalist id="lista-unidades">
               {unidades.map((u) => (
@@ -300,13 +349,9 @@ export default function Buscador() {
             )}
           </label>
 
-          <label className="md:col-span-3 block text-xs font-medium text-slate-600">
+          <label className="md:col-span-3 block text-xs font-medium text-ink-soft">
             Estado
-            <select
-              value={estado}
-              onChange={(e) => setEstado(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
-            >
+            <select value={estado} onChange={(e) => setEstado(e.target.value)} className={inputCls}>
               <option value="">Todos</option>
               {ESTADOS.map((s) => (
                 <option key={s} value={s}>
@@ -316,12 +361,12 @@ export default function Buscador() {
             </select>
           </label>
 
-          <label className="md:col-span-3 block text-xs font-medium text-slate-600">
+          <label className="md:col-span-3 block text-xs font-medium text-ink-soft">
             Modalidad
             <select
               value={modalidad}
               onChange={(e) => setModalidad(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+              className={inputCls}
             >
               <option value="">Todas</option>
               {MODALIDADES.map((m) => (
@@ -332,32 +377,32 @@ export default function Buscador() {
             </select>
           </label>
 
-          <label className="md:col-span-2 block text-xs font-medium text-slate-600">
+          <label className="md:col-span-2 block text-xs font-medium text-ink-soft">
             Publicado desde
             <input
               type="date"
               value={startdate}
               onChange={(e) => setStartdate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+              className={inputCls}
             />
           </label>
 
-          <label className="md:col-span-2 block text-xs font-medium text-slate-600">
+          <label className="md:col-span-2 block text-xs font-medium text-ink-soft">
             Hasta
             <input
               type="date"
               value={enddate}
               onChange={(e) => setEnddate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+              className={inputCls}
             />
           </label>
 
-          <label className="md:col-span-2 block text-xs font-medium text-slate-600">
+          <label className="md:col-span-2 block text-xs font-medium text-ink-soft">
             Ordenar por
             <select
               value={orden}
               onChange={(e) => setOrden(e.target.value as Orden)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+              className={inputCls}
             >
               <option value="recientes">Más recientes</option>
               <option value="cierre">Cierre más próximo</option>
@@ -366,30 +411,36 @@ export default function Buscador() {
             </select>
           </label>
 
-          <label className="md:col-span-3 flex items-center gap-2 text-sm text-slate-700">
+          <label className="md:col-span-12 flex items-center gap-2 text-sm text-ink">
             <input
               type="checkbox"
               checked={mipyme}
               onChange={(e) => setMipyme(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 accent-emerald-600"
+              className="h-4 w-4 rounded border-hairline accent-brand-600"
             />
             Solo dirigidos a MIPYMES
           </label>
         </div>
       </section>
 
+      {/* Resultados */}
       <section>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-ink-soft">
           {loading ? (
-            <span>Consultando la DGCP…</span>
+            <span className="inline-flex items-center gap-2">
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand-500/30 border-t-brand-600" />
+              Consultando la DGCP…
+            </span>
           ) : error ? (
-            <span className="text-red-600">⚠ {error}</span>
+            <span className="text-rose-600">⚠ {error}</span>
           ) : data ? (
             <span>
-              <strong>{data.totalResults.toLocaleString("es-DO")}</strong>{" "}
+              <strong className="text-ink">
+                {data.totalResults.toLocaleString("es-DO")}
+              </strong>{" "}
               {enBusqueda ? "coincidencias" : "procesos"}
               {enBusqueda && data.scanned
-                ? ` (en ${data.scanned.toLocaleString("es-DO")} registros del rango)`
+                ? ` · en ${data.scanned.toLocaleString("es-DO")} registros del rango`
                 : ""}
               {enBusqueda && data.truncated
                 ? " — rango amplio: acota las fechas para una búsqueda completa"
@@ -400,26 +451,18 @@ export default function Buscador() {
             <span className="flex items-center gap-2">
               <button
                 onClick={exportarCsv}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-1 hover:border-emerald-500 hover:text-emerald-700"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 font-medium transition hover:border-brand-500 hover:text-brand-700"
               >
-                ⬇ Exportar CSV
+                <IconDownload className="h-4 w-4" /> CSV
               </button>
               <a
-                href={(() => {
-                  const f = new URLSearchParams();
-                  if (q.trim()) f.set("q", q.trim());
-                  if (estado) f.set("estado", estado);
-                  if (modalidad) f.set("modalidad", modalidad);
-                  if (mipyme) f.set("mipyme", "1");
-                  if (unidadSel) f.set("uc", String(unidadSel.codigo));
-                  return `/api/feed?${f.toString()}`;
-                })()}
+                href={feedHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Suscríbete a esta búsqueda con cualquier lector RSS y entérate de los procesos nuevos"
-                className="rounded-lg border border-slate-300 bg-white px-3 py-1 hover:border-emerald-500 hover:text-emerald-700"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 font-medium transition hover:border-brand-500 hover:text-brand-700"
               >
-                📡 RSS
+                <IconRss className="h-4 w-4" /> RSS
               </a>
             </span>
           )}
@@ -428,17 +471,19 @@ export default function Buscador() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1 || loading}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-1 disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-surface px-2.5 py-1.5 disabled:opacity-40"
               >
-                ← Anterior
+                <IconChevronLeft className="h-4 w-4" /> Anterior
               </button>
-              Página {data.page} de {data.pages}
+              <span className="tabular-nums">
+                Página {data.page} de {data.pages}
+              </span>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page >= data.pages || loading}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-1 disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-surface px-2.5 py-1.5 disabled:opacity-40"
               >
-                Siguiente →
+                Siguiente <IconChevronRight className="h-4 w-4" />
               </button>
             </span>
           )}
@@ -449,14 +494,19 @@ export default function Buscador() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="h-40 animate-pulse rounded-xl bg-white shadow-sm ring-1 ring-slate-200"
+                className="shimmer h-44 rounded-2xl ring-1 ring-hairline"
               />
             ))}
           </div>
         ) : ordenados.length === 0 && !error ? (
-          <div className="rounded-xl bg-white p-10 text-center text-slate-500 shadow-sm ring-1 ring-slate-200">
-            Sin resultados con estos filtros. Prueba ampliar el rango de fechas o quitar
-            el filtro de estado.
+          <div className="rounded-2xl bg-surface p-12 text-center shadow-soft ring-1 ring-hairline">
+            <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400">
+              <IconSearch className="h-6 w-6" />
+            </span>
+            <p className="mt-3 font-semibold text-ink">Sin resultados con estos filtros</p>
+            <p className="mt-1 text-sm text-ink-soft">
+              Prueba ampliar el rango de fechas o quitar el filtro de estado.
+            </p>
           </div>
         ) : (
           <>
@@ -466,10 +516,10 @@ export default function Buscador() {
               ))}
             </div>
             {enBusqueda && ordenados.length > visibles && (
-              <div className="mt-4 text-center">
+              <div className="mt-5 text-center">
                 <button
                   onClick={() => setVisibles((v) => v + 24)}
-                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:border-emerald-500 hover:text-emerald-700"
+                  className="rounded-full border border-hairline bg-surface px-5 py-2.5 text-sm font-medium transition hover:border-brand-500 hover:text-brand-700"
                 >
                   Mostrar más ({ordenados.length - visibles} restantes)
                 </button>
@@ -479,5 +529,28 @@ export default function Buscador() {
         )}
       </section>
     </div>
+  );
+}
+
+function Preset({
+  children,
+  onClick,
+  activo = false,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  activo?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+        activo
+          ? "bg-emerald-500 text-white hover:bg-emerald-400"
+          : "bg-white/10 text-white ring-1 ring-inset ring-white/15 backdrop-blur hover:bg-white/20"
+      }`}
+    >
+      {children}
+    </button>
   );
 }

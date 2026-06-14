@@ -26,13 +26,13 @@ export default function Compartir({ titulo }: { titulo: string }) {
     <span className="flex items-center gap-2">
       <button
         onClick={whatsapp}
-        className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
+        className="rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
       >
         Compartir por WhatsApp
       </button>
       <button
         onClick={copiar}
-        className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
+        className="rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
       >
         {copiado ? "✓ Copiado" : "Copiar enlace"}
       </button>

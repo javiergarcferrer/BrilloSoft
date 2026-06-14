@@ -14,7 +14,7 @@ export default function PreciosHistoricos({
 }) {
   if (subclases.length === 0) return null;
   return (
-    <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
       <h2 className="font-semibold">Precios históricos de adjudicación</h2>
       <p className="mt-1 text-sm text-slate-500">
         Lo que el Estado realmente pagó en contratos recientes por artículos de la misma

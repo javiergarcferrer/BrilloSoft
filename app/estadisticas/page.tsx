@@ -50,7 +50,7 @@ export default async function EstadisticasPage() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h1 className="text-xl font-semibold">El mercado en los últimos 30 días</h1>
         <p className="mt-1 text-sm text-slate-500">
           Basado en los {lista.length.toLocaleString("es-DO")} procesos más recientes
@@ -78,7 +78,7 @@ export default async function EstadisticasPage() {
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
           <h2 className="font-semibold">Por modalidad</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {porModalidad.map(([nombre, a]) => (
@@ -100,7 +100,7 @@ export default async function EstadisticasPage() {
           </ul>
         </section>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
           <h2 className="font-semibold">Top 10 instituciones por monto</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {porInstitucion.map(([nombre, a]) => (

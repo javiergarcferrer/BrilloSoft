@@ -45,7 +45,7 @@ const ESTADOS: [string, string][] = [
 export default function GuiaPage() {
   return (
     <div className="space-y-5">
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h1 className="text-2xl font-semibold">Guía rápida para ofertar al Estado</h1>
         <p className="mt-2 text-sm text-slate-600">
           Lo esencial para pasar de &quot;vi una licitación interesante&quot; a
@@ -53,7 +53,7 @@ export default function GuiaPage() {
         </p>
       </section>
 
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h2 className="font-semibold">1 · Regístrate una sola vez: el RPE</h2>
         <p className="mt-2 text-sm text-slate-600">
           El <strong>Registro de Proveedores del Estado (RPE)</strong> es el requisito
@@ -75,7 +75,7 @@ export default function GuiaPage() {
             href="https://comunidad.comprasdominicana.gob.do/"
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium hover:border-emerald-500 hover:text-emerald-700"
+            className="rounded-lg border border-hairline px-3 py-1.5 font-medium hover:border-emerald-500 hover:text-emerald-700"
           >
             Portal Transaccional ↗
           </a>
@@ -86,7 +86,7 @@ export default function GuiaPage() {
         </p>
       </section>
 
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h2 className="font-semibold">2 · Conoce las modalidades (y dónde empezar)</h2>
         <dl className="mt-3 space-y-2 text-sm">
           {MODALIDADES.map(([m, d]) => (
@@ -98,7 +98,7 @@ export default function GuiaPage() {
         </dl>
       </section>
 
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h2 className="font-semibold">3 · Los documentos que casi siempre piden</h2>
         <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-slate-600">
           <li>Constancia de inscripción en el RPE (vigente y en el rubro del proceso).</li>
@@ -123,7 +123,7 @@ export default function GuiaPage() {
         </p>
       </section>
 
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h2 className="font-semibold">4 · Qué significa cada estado</h2>
         <dl className="mt-3 space-y-2 text-sm">
           {ESTADOS.map(([e, d]) => (

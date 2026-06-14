@@ -94,7 +94,7 @@ export default async function ProcesoPage({
         <Compartir titulo={p.titulo} />
       </div>
 
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
           <span
             className={`rounded-full px-2.5 py-1 ${
@@ -177,7 +177,7 @@ export default async function ProcesoPage({
         )}
       </section>
 
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-semibold">Cómo participar</h2>
           <Link href="/guia" className="text-xs font-medium text-emerald-700 hover:underline">
@@ -261,7 +261,7 @@ export default async function ProcesoPage({
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
           <h2 className="font-semibold">Cronograma</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {fechas.map(([label, iso, destacar]) => (
@@ -278,7 +278,7 @@ export default async function ProcesoPage({
           </ul>
         </section>
 
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
           <h2 className="font-semibold">Información general</h2>
           <dl className="mt-3 space-y-2 text-sm">
             {flags.map(([label, value]) => (
@@ -294,7 +294,7 @@ export default async function ProcesoPage({
         </section>
       </div>
 
-      <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h2 className="font-semibold">
           Artículos solicitados{" "}
           <span className="font-normal text-slate-400">({articulos.length})</span>
@@ -357,7 +357,7 @@ export default async function ProcesoPage({
       </section>
 
       {contratos.length > 0 && (
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
           <h2 className="font-semibold">
             Adjudicación — quién ganó{" "}
             <span className="font-normal text-slate-400">({contratos.length})</span>
@@ -395,7 +395,7 @@ export default async function ProcesoPage({
                       href={c.url_contrato}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
+                      className="rounded-lg border border-hairline px-2.5 py-1 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
                     >
                       Ver contrato ↗
                     </a>
@@ -411,7 +411,7 @@ export default async function ProcesoPage({
 
       <section
         id="documentos"
-        className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+        className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline"
       >
         <h2 className="font-semibold">
           Documentos del proceso{" "}

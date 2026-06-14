@@ -52,7 +52,7 @@ export default function SeguimientoPage() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-5 shadow-soft ring-1 ring-hairline">
         <h1 className="text-xl font-semibold">★ Mi seguimiento</h1>
         <p className="mt-1 text-sm text-slate-500">
           Los procesos que marcaste con la estrella, ordenados por cierre más próximo.
@@ -65,12 +65,12 @@ export default function SeguimientoPage() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-40 animate-pulse rounded-xl bg-white shadow-sm ring-1 ring-slate-200"
+              className="h-40 animate-pulse rounded-2xl bg-surface shadow-soft ring-1 ring-hairline"
             />
           ))}
         </div>
       ) : procesos.length === 0 ? (
-        <div className="rounded-xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200">
+        <div className="rounded-2xl bg-surface p-10 text-center shadow-soft ring-1 ring-hairline">
           <p className="text-slate-500">
             Aún no sigues ningún proceso. Marca la estrella ☆ en cualquier tarjeta para
             guardarlo aquí.
