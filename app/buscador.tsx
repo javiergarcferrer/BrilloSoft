@@ -1,31 +1,18 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
 import ProcesoCard from "@/components/proceso-card";
 import { BottomSheet } from "@/components/bottom-sheet";
-import { getRecientes, pushReciente } from "@/lib/recientes";
 import {
-  addBusqueda,
-  getBusquedas,
-  onBusquedasCambio,
-  removeBusqueda,
-  type Busqueda,
-} from "@/lib/busquedas";
-import {
-  IconBookmark,
-  IconCheck,
   IconChevronLeft,
   IconChevronRight,
-  IconClock,
-  IconCoins,
   IconDownload,
   IconFilter,
   IconRss,
   IconSearch,
   IconSliders,
-  IconSparkles,
   IconX,
 } from "@/components/icons";
 
@@ -113,22 +100,6 @@ export default function Buscador() {
     () => (sp.get("orden") as Orden) || "recientes"
   );
   const [page, setPage] = useState(1);
-  const [recientes, setRecientes] = useState<string[]>([]);
-
-  useEffect(() => {
-    setRecientes(getRecientes());
-  }, []);
-
-  const router = useRouter();
-  const [busquedas, setBusquedas] = useState<Busqueda[]>([]);
-  const [guardarOpen, setGuardarOpen] = useState(false);
-  const [nombreGuardar, setNombreGuardar] = useState("");
-
-  useEffect(() => {
-    const sync = () => setBusquedas(getBusquedas());
-    sync();
-    return onBusquedasCambio(sync);
-  }, []);
 
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [unidadTexto, setUnidadTexto] = useState("");
@@ -211,19 +182,6 @@ export default function Buscador() {
     applyRef.current(new URLSearchParams(spString));
   }, [spString]);
 
-  const guardarBusqueda = () => {
-    const nombre = nombreGuardar.trim() || q.trim() || "Búsqueda";
-    setBusquedas(addBusqueda(nombre, currentParams.toString()));
-    setNombreGuardar("");
-    setGuardarOpen(false);
-  };
-
-  const aplicarBusqueda = (b: Busqueda) => {
-    if (window.location.search.replace(/^\?/, "") === b.qs) return;
-    router.push(`/${b.qs ? `?${b.qs}` : ""}`);
-    applyFromParams(new URLSearchParams(b.qs));
-  };
-
   const [data, setData] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -260,11 +218,7 @@ export default function Buscador() {
 
   // Debounce para el texto; inmediato para el resto de filtros.
   useEffect(() => {
-    const t = setTimeout(() => {
-      fetchData();
-      const term = q.trim();
-      if (term.length >= 3) setRecientes(pushReciente(term));
-    }, q ? 450 : 0);
+    const t = setTimeout(fetchData, q ? 450 : 0);
     return () => clearTimeout(t);
   }, [fetchData, q]);
 
@@ -367,159 +321,20 @@ export default function Buscador() {
 
   return (
     <div className="space-y-5">
-      {/* Hero + búsqueda */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white">
-        <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div
-          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative px-6 py-8 sm:px-9 sm:py-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/85 ring-1 ring-inset ring-white/15 backdrop-blur">
-            <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 text-emerald-400">
+      {/* Encabezado compacto — la búsqueda vive en la barra superior */}
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
+            Oportunidades de compras públicas
+          </h1>
+          <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-ink-soft">
+            <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 text-emerald-500">
               <span className="live-dot" />
             </span>
             En vivo desde la API de datos abiertos de la DGCP
-          </div>
-          <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-[1.1] tracking-tight sm:text-[40px]">
-            Encuentra{" "}
-            <span className="text-gradient">oportunidades de compras públicas</span>
-          </h1>
-          <p className="mt-2.5 max-w-xl text-sm text-slate-300 sm:text-base">
-            Busca y filtra los procesos que publican las instituciones del Estado
-            dominicano, y entiende qué piden y cómo ofertar.
           </p>
-
-          <div className="mt-5 flex items-center gap-2 rounded-2xl bg-white p-2 shadow-pop">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
-              <IconSearch className="h-5 w-5" />
-            </span>
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="pintura, cerámica, vehículos, hospital, ayuntamiento…"
-              className="h-10 w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-soft/60 [&::-webkit-search-cancel-button]:hidden"
-            />
-            {q && (
-              <button
-                onClick={() => setQ("")}
-                aria-label="Limpiar búsqueda"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-soft transition hover:bg-slate-100 active:scale-90"
-              >
-                <IconX className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          <div className="mt-3.5 flex flex-wrap gap-2">
-            <Preset
-              activo
-              onClick={() => {
-                setEstado("Proceso publicado");
-                setModalidad("");
-                setMipyme(false);
-                setStartdate(hoyMenosDias(30));
-                setEnddate("");
-                setOrden("recientes");
-              }}
-            >
-              <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-white" />
-              Abiertas ahora
-            </Preset>
-            <Preset
-              onClick={() => {
-                setEstado("Proceso publicado");
-                setOrden("cierre");
-              }}
-            >
-              <IconClock className="h-3.5 w-3.5" /> Cierran pronto
-            </Preset>
-            <Preset
-              onClick={() => {
-                setOrden("monto_desc");
-              }}
-            >
-              <IconCoins className="h-3.5 w-3.5" /> Mayor monto
-            </Preset>
-            <Preset
-              onClick={() => {
-                setMipyme(true);
-                setEstado("Proceso publicado");
-              }}
-            >
-              <IconSparkles className="h-3.5 w-3.5" /> Para MIPYMES
-            </Preset>
-          </div>
-
-          {recientes.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-white/45">Recientes</span>
-              {recientes.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setQ(t)}
-                  className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-white/80 ring-1 ring-inset ring-white/10 transition hover:bg-white/15 active:scale-95"
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {busquedas.length > 0 && (
-              <span className="text-xs font-medium text-white/45">Guardadas</span>
-            )}
-            {busquedas.map((b) => (
-              <span
-                key={b.id}
-                className="inline-flex items-center gap-1 rounded-full bg-white/5 py-1 pl-2.5 pr-1 text-xs text-white/85 ring-1 ring-inset ring-white/10"
-              >
-                <button
-                  onClick={() => aplicarBusqueda(b)}
-                  className="font-medium hover:text-white"
-                >
-                  {b.nombre}
-                </button>
-                <button
-                  onClick={() => setBusquedas(removeBusqueda(b.id))}
-                  aria-label="Eliminar búsqueda"
-                  className="grid h-4 w-4 place-items-center rounded-full text-white/40 transition hover:text-rose-300"
-                >
-                  <IconX className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-            <button
-              onClick={() => setGuardarOpen((v) => !v)}
-              className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-semibold text-white ring-1 ring-inset ring-white/15 transition hover:bg-white/20 active:scale-95"
-            >
-              <IconBookmark className="h-3.5 w-3.5" filled={guardarOpen} />
-              Guardar
-            </button>
-          </div>
-          {guardarOpen && (
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                value={nombreGuardar}
-                onChange={(e) => setNombreGuardar(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && guardarBusqueda()}
-                placeholder="Nombre de la búsqueda…"
-                autoFocus
-                className="h-9 w-full max-w-xs rounded-lg bg-white px-3 text-sm text-ink outline-none placeholder:text-ink-soft/50"
-              />
-              <button
-                onClick={guardarBusqueda}
-                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-emerald-500 px-3 text-sm font-semibold text-white transition hover:bg-emerald-400 active:scale-95"
-              >
-                <IconCheck className="h-4 w-4" />
-                Guardar
-              </button>
-            </div>
-          )}
         </div>
-      </section>
+      </div>
 
       {/* Filtros — panel en escritorio */}
       <section className="hidden rounded-2xl bg-surface p-5 shadow-soft ring-1 ring-hairline lg:block">
@@ -723,29 +538,6 @@ export default function Buscador() {
         )}
       </section>
     </div>
-  );
-}
-
-function Preset({
-  children,
-  onClick,
-  activo = false,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  activo?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${
-        activo
-          ? "bg-emerald-500 text-white hover:bg-emerald-400"
-          : "bg-white/10 text-white ring-1 ring-inset ring-white/15 backdrop-blur hover:bg-white/20"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 

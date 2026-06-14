@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Inter, Sora } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
-import SiteNav from "@/components/site-nav";
 import MobileTabBar from "@/components/mobile-tab-bar";
 import InstallPrompt from "@/components/install-prompt";
 import ScrollTop from "@/components/scroll-top";
-import SavedSearchesMenu from "@/components/saved-searches-menu";
+import TopSearch from "@/components/top-search";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -69,32 +69,31 @@ function BrandMark() {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${inter.variable} ${sora.variable}`}>
-      <body className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))] antialiased lg:pb-0">
+      <body className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))] antialiased">
         <header
           className="sticky top-0 z-50 bg-slate-900/90 text-white backdrop-blur-md"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5">
             <Link
               href="/"
-              className="flex shrink-0 items-center gap-3 transition-opacity hover:opacity-90"
+              className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-90"
             >
               <BrandMark />
-              <span className="leading-tight">
-                <span className="block text-[15px] font-semibold tracking-tight">
-                  Licitaciones RD
-                </span>
-                <span className="hidden text-[11px] text-slate-400 sm:block">
-                  Datos abiertos DGCP · República Dominicana
-                </span>
+              <span className="hidden text-[15px] font-semibold tracking-tight sm:block">
+                Licitaciones <span className="text-emerald-400">RD</span>
               </span>
             </Link>
-            <div className="flex items-center gap-1">
-              <div className="hidden lg:block">
-                <SiteNav />
-              </div>
-              <SavedSearchesMenu />
+            <div className="flex flex-1 justify-center">
+              <Suspense
+                fallback={
+                  <div className="h-12 w-full max-w-xl rounded-full bg-white/10 ring-1 ring-inset ring-white/15" />
+                }
+              >
+                <TopSearch />
+              </Suspense>
             </div>
+            <span className="hidden w-[92px] shrink-0 lg:block" aria-hidden />
           </div>
           <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/45 to-transparent" />
         </header>
