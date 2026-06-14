@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
 import ProcesoCard from "@/components/proceso-card";
 import { getSeguimiento, onSeguimientoCambio } from "@/lib/seguimiento";
+import { IconSearch, IconStar } from "@/components/icons";
 
 export default function SeguimientoPage() {
   const [codigos, setCodigos] = useState<string[] | null>(null);
@@ -53,8 +54,16 @@ export default function SeguimientoPage() {
   return (
     <div className="space-y-5">
       <section className="rounded-2xl bg-surface p-5 shadow-soft ring-1 ring-hairline">
-        <h1 className="text-xl font-semibold">★ Mi seguimiento</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+          <IconStar className="h-5 w-5 text-amber-400" filled />
+          Mi seguimiento
+          {procesos.length > 0 && (
+            <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+              {procesos.length}
+            </span>
+          )}
+        </h1>
+        <p className="mt-1 text-sm text-ink-soft">
           Los procesos que marcaste con la estrella, ordenados por cierre más próximo.
           Se guardan en este navegador.
         </p>
@@ -63,22 +72,24 @@ export default function SeguimientoPage() {
       {cargando ? (
         <div className="grid gap-3 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-40 animate-pulse rounded-2xl bg-surface shadow-soft ring-1 ring-hairline"
-            />
+            <div key={i} className="shimmer h-44 rounded-2xl ring-1 ring-hairline" />
           ))}
         </div>
       ) : procesos.length === 0 ? (
-        <div className="rounded-2xl bg-surface p-10 text-center shadow-soft ring-1 ring-hairline">
-          <p className="text-slate-500">
-            Aún no sigues ningún proceso. Marca la estrella ☆ en cualquier tarjeta para
-            guardarlo aquí.
+        <div className="rounded-2xl bg-surface p-12 text-center shadow-soft ring-1 ring-hairline">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-400">
+            <IconStar className="h-7 w-7" />
+          </span>
+          <p className="mt-4 font-semibold text-ink">Aún no sigues ningún proceso</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
+            Marca la estrella ☆ en cualquier tarjeta o ficha para guardarlo aquí y
+            seguir su cierre.
           </p>
           <Link
             href="/"
-            className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 active:scale-95"
           >
+            <IconSearch className="h-4 w-4" />
             Ir al buscador
           </Link>
         </div>

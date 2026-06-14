@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
 import ProcesoCard from "@/components/proceso-card";
 import { BottomSheet } from "@/components/bottom-sheet";
+import { getRecientes, pushReciente } from "@/lib/recientes";
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -103,6 +104,11 @@ export default function Buscador() {
     () => (sp.get("orden") as Orden) || "recientes"
   );
   const [page, setPage] = useState(1);
+  const [recientes, setRecientes] = useState<string[]>([]);
+
+  useEffect(() => {
+    setRecientes(getRecientes());
+  }, []);
 
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [unidadTexto, setUnidadTexto] = useState("");
@@ -185,7 +191,11 @@ export default function Buscador() {
 
   // Debounce para el texto; inmediato para el resto de filtros.
   useEffect(() => {
-    const t = setTimeout(fetchData, q ? 450 : 0);
+    const t = setTimeout(() => {
+      fetchData();
+      const term = q.trim();
+      if (term.length >= 3) setRecientes(pushReciente(term));
+    }, q ? 450 : 0);
     return () => clearTimeout(t);
   }, [fetchData, q]);
 
@@ -372,6 +382,21 @@ export default function Buscador() {
               <IconSparkles className="h-3.5 w-3.5" /> Para MIPYMES
             </Preset>
           </div>
+
+          {recientes.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-white/45">Recientes</span>
+              {recientes.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setQ(t)}
+                  className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-white/80 ring-1 ring-inset ring-white/10 transition hover:bg-white/15 active:scale-95"
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

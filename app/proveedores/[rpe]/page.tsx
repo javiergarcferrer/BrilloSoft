@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { dgcpFetch, type Contrato } from "@/lib/dgcp";
 import { formatFecha, formatMonto } from "@/lib/format";
+import { IconArrowLeft } from "@/components/icons";
 
 export async function generateMetadata({
   params,
@@ -49,18 +50,22 @@ export default async function ProveedorPage({
 
   return (
     <div className="space-y-5">
-      <Link href="/" className="text-sm text-emerald-700 hover:underline">
-        ← Volver al buscador
+      <Link
+        href="/"
+        className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline"
+      >
+        <IconArrowLeft className="h-4 w-4" />
+        Volver al buscador
       </Link>
 
       <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
-        <div className="text-xs uppercase tracking-wide text-slate-400">
+        <div className="text-xs uppercase tracking-wide text-ink-soft">
           Proveedor del Estado · RPE {rpe}
         </div>
         <h1 className="mt-1 text-2xl font-semibold leading-tight">{nombre}</h1>
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
           <div className="rounded-lg bg-slate-50 px-4 py-3">
-            <div className="text-xs text-slate-500">Contratos registrados</div>
+            <div className="text-xs text-ink-soft">Contratos registrados</div>
             <div className="mt-0.5 text-lg font-bold">
               {total.toLocaleString("es-DO")}
             </div>
@@ -72,13 +77,13 @@ export default async function ProveedorPage({
             <div className="mt-0.5 text-lg font-bold">{formatMonto(suma, "DOP")}</div>
           </div>
           <div className="rounded-lg bg-slate-50 px-4 py-3">
-            <div className="text-xs text-slate-500">Instituciones cliente</div>
+            <div className="text-xs text-ink-soft">Instituciones cliente</div>
             <div className="mt-0.5 text-lg font-bold">
               {porInstitucion.size.toLocaleString("es-DO")}
             </div>
           </div>
         </div>
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-xs text-ink-soft">
           Fuente: registro público de contratos de la DGCP. Útil para dimensionar a tu
           competencia antes de ofertar.
         </p>
@@ -94,7 +99,7 @@ export default async function ProveedorPage({
                 className="flex items-baseline justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2"
               >
                 <span className="line-clamp-1">{inst}</span>
-                <span className="shrink-0 text-xs text-slate-500">
+                <span className="shrink-0 text-xs text-ink-soft">
                   {a.n} · {formatMonto(a.monto, "DOP")}
                 </span>
               </li>
@@ -106,14 +111,14 @@ export default async function ProveedorPage({
           <h2 className="font-semibold">Contratos recientes</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {recientes.map((c, i) => (
-              <li key={i} className="rounded-lg border border-slate-200 px-3 py-2.5">
+              <li key={i} className="rounded-lg border border-hairline px-3 py-2.5">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="line-clamp-1 font-medium">{c.descripcion}</span>
                   <span className="shrink-0 font-semibold">
                     {formatMonto(c.valor_contratado, c.divisa)}
                   </span>
                 </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-soft">
                   <span>{c.unidad_compra}</span>
                   <span>· {formatFecha(c.fecha_adjudicacion)}</span>
                   <Link

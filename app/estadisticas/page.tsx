@@ -52,7 +52,7 @@ export default async function EstadisticasPage() {
     <div className="space-y-5">
       <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h1 className="text-xl font-semibold">El mercado en los últimos 30 días</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-ink-soft">
           Basado en los {lista.length.toLocaleString("es-DO")} procesos más recientes
           {total > lista.length
             ? ` de ${total.toLocaleString("es-DO")} publicados en el período`
@@ -85,7 +85,7 @@ export default async function EstadisticasPage() {
               <li key={nombre}>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="font-medium">{nombre}</span>
-                  <span className="shrink-0 text-xs text-slate-500">
+                  <span className="shrink-0 text-xs text-ink-soft">
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
                 </div>
@@ -107,7 +107,7 @@ export default async function EstadisticasPage() {
               <li key={nombre}>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="line-clamp-1 font-medium">{nombre}</span>
-                  <span className="shrink-0 text-xs text-slate-500">
+                  <span className="shrink-0 text-xs text-ink-soft">
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
                 </div>
@@ -151,7 +151,7 @@ function Cifra({
         destacar ? "bg-emerald-600 text-white" : "bg-slate-50"
       }`}
     >
-      <div className={`text-xs ${destacar ? "text-emerald-100" : "text-slate-500"}`}>
+      <div className={`text-xs ${destacar ? "text-emerald-100" : "text-ink-soft"}`}>
         {etiqueta}
       </div>
       <div className="mt-0.5 text-lg font-bold leading-tight">{valor}</div>
