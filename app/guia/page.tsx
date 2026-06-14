@@ -47,7 +47,7 @@ export default function GuiaPage() {
     <div className="space-y-5">
       <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h1 className="text-2xl font-semibold">Guía rápida para ofertar al Estado</h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-ink-soft">
           Lo esencial para pasar de &quot;vi una licitación interesante&quot; a
           &quot;presenté mi oferta a tiempo&quot;, en cuatro pasos.
         </p>
@@ -55,7 +55,7 @@ export default function GuiaPage() {
 
       <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h2 className="font-semibold">1 · Regístrate una sola vez: el RPE</h2>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-ink-soft">
           El <strong>Registro de Proveedores del Estado (RPE)</strong> es el requisito
           de entrada para ofertar en cualquier institución. Necesitas tu RNC activo y
           estar al día con DGII y TSS. Se solicita en línea y debes registrar los{" "}
@@ -80,7 +80,7 @@ export default function GuiaPage() {
             Portal Transaccional ↗
           </a>
         </div>
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-xs text-ink-soft">
           Consejo: si eres MIPYME (y más aún MIPYME liderada por mujeres), certifícalo —
           hay procesos reservados con menos competencia.
         </p>
@@ -92,7 +92,7 @@ export default function GuiaPage() {
           {MODALIDADES.map(([m, d]) => (
             <div key={m} className="rounded-lg bg-slate-50 px-4 py-2.5">
               <dt className="font-semibold">{m}</dt>
-              <dd className="mt-0.5 text-slate-600">{d}</dd>
+              <dd className="mt-0.5 text-ink-soft">{d}</dd>
             </div>
           ))}
         </dl>
@@ -100,7 +100,7 @@ export default function GuiaPage() {
 
       <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h2 className="font-semibold">3 · Los documentos que casi siempre piden</h2>
-        <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-slate-600">
+        <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-ink-soft">
           <li>Constancia de inscripción en el RPE (vigente y en el rubro del proceso).</li>
           <li>Certificaciones de estar al día: DGII (impuestos) y TSS (seguridad social).</li>
           <li>
@@ -117,7 +117,7 @@ export default function GuiaPage() {
           </li>
           <li>Documentos societarios (registro mercantil, poderes) para personas jurídicas.</li>
         </ul>
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-xs text-ink-soft">
           La lista exacta siempre está en el pliego de condiciones de cada proceso — por
           eso es el primer documento que debes leer.
         </p>
@@ -129,13 +129,13 @@ export default function GuiaPage() {
           {ESTADOS.map(([e, d]) => (
             <div key={e} className="flex items-start gap-3 rounded-lg bg-slate-50 px-4 py-2.5">
               <dt className="shrink-0 font-semibold">{e}</dt>
-              <dd className="text-slate-600">{d}</dd>
+              <dd className="text-ink-soft">{d}</dd>
             </div>
           ))}
         </dl>
       </section>
 
-      <section className="rounded-xl bg-emerald-50 p-6 ring-1 ring-emerald-200">
+      <section className="rounded-2xl bg-emerald-50 p-6 ring-1 ring-emerald-200">
         <h2 className="font-semibold text-emerald-900">Consejos que ganan procesos</h2>
         <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-emerald-900/80">
           <li>
