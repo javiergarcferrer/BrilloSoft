@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Vista Verde — Cuidamos tus espacios";
+export const alt = "LicitaRD — Inteligencia de licitaciones públicas";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -16,7 +16,7 @@ export default function OpengraphImage() {
           justifyContent: "center",
           padding: 90,
           background:
-            "linear-gradient(135deg, #274e38 0%, #2f6144 50%, #0e1d15 100%)",
+            "linear-gradient(135deg, #101f43 0%, #1b40ae 55%, #06b6d4 140%)",
           color: "#ffffff",
           fontFamily: "sans-serif",
         }}
@@ -24,36 +24,52 @@ export default function OpengraphImage() {
         <div
           style={{
             display: "flex",
+            alignItems: "center",
+            gap: 16,
             fontSize: 30,
-            letterSpacing: 3,
-            textTransform: "uppercase",
-            color: "#8eba9c",
+            letterSpacing: 2,
+            color: "#a5f0fc",
           }}
         >
-          Vista Verde
+          <div
+            style={{
+              display: "flex",
+              height: 56,
+              width: 56,
+              borderRadius: 16,
+              background: "linear-gradient(135deg, #3366f0, #06b6d4)",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 800,
+              color: "#ffffff",
+            }}
+          >
+            L
+          </div>
+          LicitaRD
         </div>
         <div
           style={{
             display: "flex",
-            fontSize: 96,
+            fontSize: 82,
             fontWeight: 700,
             lineHeight: 1.05,
-            marginTop: 18,
+            marginTop: 28,
+            maxWidth: 980,
           }}
         >
-          Cuidamos tus espacios
+          Toda licitación pública, en un solo lugar inteligente.
         </div>
         <div
           style={{
             display: "flex",
-            fontSize: 34,
-            color: "#b9d4c1",
+            fontSize: 32,
+            color: "#bdd2fd",
             marginTop: 26,
             maxWidth: 940,
           }}
         >
-          Limpieza y mantenimiento profesional · Productos Ecolab · +15 años de
-          experiencia
+          Busca · organiza · da seguimiento — República Dominicana
         </div>
       </div>
     ),

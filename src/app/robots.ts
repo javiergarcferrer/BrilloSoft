@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
-import { SITE } from "@/lib/site";
+
+const SITE_URL = "https://licitard.vercel.app";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [{ userAgent: "*", allow: "/" }],
-    sitemap: `${SITE.url}/sitemap.xml`,
-    host: SITE.url,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

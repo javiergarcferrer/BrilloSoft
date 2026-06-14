@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
-import { SITE } from "@/lib/site";
+import { TrackerProvider } from "@/lib/licitaciones/store";
+import { AppHeader } from "@/components/licita/app-header";
+import { AppFooter } from "@/components/licita/app-footer";
+import { CommandPalette } from "@/components/licita/command-palette";
+import { PLATFORM } from "@/lib/licitaciones/data";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,46 +19,48 @@ const fraunces = Fraunces({
   display: "swap",
 });
 
+const SITE_URL = "https://licitard.vercel.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE.url),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE.name} — ${SITE.tagline}`,
-    template: `%s · ${SITE.name}`,
+    default: `${PLATFORM.name} — ${PLATFORM.tagline}`,
+    template: `%s · ${PLATFORM.name}`,
   },
-  description: SITE.metaDescription,
-  applicationName: SITE.name,
+  description: PLATFORM.descripcion,
+  applicationName: PLATFORM.name,
   keywords: [
-    "limpieza",
-    "mantenimiento",
-    "limpieza de tapizados",
-    "limpieza de muebles",
-    "limpieza de alfombras",
-    "limpieza de cortinas",
-    "tratamiento de madera",
-    "Ecolab",
+    "licitaciones",
+    "contrataciones públicas",
+    "DGCP",
+    "Portal Transaccional",
+    "compras dominicanas",
     "República Dominicana",
-    "Vista Verde",
+    "licitaciones públicas",
+    "concursos públicos",
+    "proveedores del Estado",
+    "LicitaRD",
   ],
-  authors: [{ name: SITE.name }],
+  authors: [{ name: PLATFORM.name }],
   openGraph: {
     type: "website",
     locale: "es_DO",
-    url: SITE.url,
-    siteName: SITE.name,
-    title: `${SITE.name} — ${SITE.tagline}`,
-    description: SITE.metaDescription,
+    url: SITE_URL,
+    siteName: PLATFORM.name,
+    title: `${PLATFORM.name} — ${PLATFORM.tagline}`,
+    description: PLATFORM.descripcion,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} — ${SITE.tagline}`,
-    description: SITE.metaDescription,
+    title: `${PLATFORM.name} — ${PLATFORM.tagline}`,
+    description: PLATFORM.descripcion,
   },
-  alternates: { canonical: SITE.url },
-  category: "business",
+  alternates: { canonical: SITE_URL },
+  category: "government",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2f6144",
+  themeColor: "#1f4fd8",
   width: "device-width",
   initialScale: 1,
 };
@@ -67,9 +71,12 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${inter.variable} ${fraunces.variable}`}>
       <body className="min-h-dvh antialiased">
-        <SiteHeader />
-        <main id="inicio">{children}</main>
-        <SiteFooter />
+        <TrackerProvider>
+          <AppHeader />
+          <main className="min-h-[calc(100dvh-4rem)]">{children}</main>
+          <AppFooter />
+          <CommandPalette />
+        </TrackerProvider>
       </body>
     </html>
   );
