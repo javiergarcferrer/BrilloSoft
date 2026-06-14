@@ -4,6 +4,8 @@ import Link from "next/link";
 import "./globals.css";
 import SiteNav from "@/components/site-nav";
 import MobileTabBar from "@/components/mobile-tab-bar";
+import InstallPrompt from "@/components/install-prompt";
+import ScrollTop from "@/components/scroll-top";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -92,6 +94,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
 
         <MobileTabBar />
+        <ScrollTop />
+        <InstallPrompt />
 
         <footer className="mt-10 border-t border-hairline bg-surface">
           <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-ink-soft">

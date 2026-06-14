@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconCheck, IconShare } from "./icons";
 
 export default function Compartir({ titulo }: { titulo: string }) {
   const [copiado, setCopiado] = useState(false);
@@ -17,7 +18,15 @@ export default function Compartir({ titulo }: { titulo: string }) {
     }
   };
 
-  const whatsapp = () => {
+  const compartir = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: titulo, url: url() });
+        return;
+      } catch {
+        /* usuario canceló */
+      }
+    }
     const texto = `Mira esta licitación: ${titulo}\n${url()}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
   };
@@ -25,16 +34,18 @@ export default function Compartir({ titulo }: { titulo: string }) {
   return (
     <span className="flex items-center gap-2">
       <button
-        onClick={whatsapp}
-        className="rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
+        onClick={compartir}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium transition hover:border-emerald-500 hover:text-emerald-700 active:scale-95"
       >
-        Compartir por WhatsApp
+        <IconShare className="h-3.5 w-3.5" />
+        Compartir
       </button>
       <button
         onClick={copiar}
-        className="rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium transition hover:border-emerald-500 hover:text-emerald-700 active:scale-95"
       >
-        {copiado ? "✓ Copiado" : "Copiar enlace"}
+        {copiado ? <IconCheck className="h-3.5 w-3.5 text-emerald-600" /> : null}
+        {copiado ? "Copiado" : "Copiar enlace"}
       </button>
     </span>
   );

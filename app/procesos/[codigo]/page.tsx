@@ -2,8 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProceso, normalize, type Documento } from "@/lib/dgcp";
 import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
+import { cierreMeta, estadoMeta } from "@/lib/estados";
 import PreciosHistoricos from "./precios";
 import Compartir from "@/components/compartir";
+import SeguirButton from "@/components/seguir-button";
+import AccionesProceso from "@/components/acciones-proceso";
+import { IconArrowLeft, IconDoc, IconExternal, IconStar } from "@/components/icons";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -56,6 +60,8 @@ export default async function ProcesoPage({
   ).slice(0, 4);
 
   const dias = diasHasta(p.fecha_fin_recepcion_ofertas);
+  const est = estadoMeta(p.estado_proceso);
+  const cierreBadge = est.abierto ? cierreMeta(dias) : null;
   const abiertoParaOfertar = p.estado_proceso === "Proceso publicado" && dias !== null && dias >= 0;
   const docsClave = documentos.filter(esDocClave);
   const docsOtros = documentos.filter((d) => !esDocClave(d));
@@ -86,39 +92,37 @@ export default async function ProcesoPage({
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-24 lg:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link href="/" className="text-sm text-emerald-700 hover:underline">
-          ← Volver al buscador
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline"
+        >
+          <IconArrowLeft className="h-4 w-4" />
+          Volver al buscador
         </Link>
-        <Compartir titulo={p.titulo} />
+        <div className="flex items-center gap-2">
+          <SeguirButton codigo={p.codigo_proceso} />
+          <Compartir titulo={p.titulo} />
+        </div>
       </div>
 
       <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
           <span
-            className={`rounded-full px-2.5 py-1 ${
-              p.estado_proceso === "Proceso publicado"
-                ? "bg-emerald-600 text-white"
-                : "bg-slate-200 text-slate-600"
-            }`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset ${est.badge}`}
           >
-            {p.estado_proceso}
+            <span className={`h-1.5 w-1.5 rounded-full ${est.dot}`} />
+            {est.label}
           </span>
-          <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sky-700">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
             {p.modalidad}
           </span>
-          {dias !== null && dias >= 0 && p.estado_proceso === "Proceso publicado" && (
+          {cierreBadge && (
             <span
-              className={`rounded-full px-2.5 py-1 ${
-                dias <= 2
-                  ? "bg-red-100 text-red-700"
-                  : dias <= 7
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-emerald-100 text-emerald-700"
-              }`}
+              className={`rounded-full px-2.5 py-1 ring-1 ring-inset ${cierreBadge.badge}`}
             >
-              Cierra en {dias === 0 ? "horas" : `${dias} días`}
+              {cierreBadge.texto}
             </span>
           )}
         </div>
@@ -163,9 +167,10 @@ export default async function ProcesoPage({
               href={p.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
-              Ver en el Portal Transaccional ↗
+              Ver en el Portal Transaccional
+              <IconExternal className="h-4 w-4" />
             </a>
           )}
         </div>
@@ -263,19 +268,35 @@ export default async function ProcesoPage({
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
           <h2 className="font-semibold">Cronograma</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            {fechas.map(([label, iso, destacar]) => (
-              <li
-                key={label}
-                className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${
-                  destacar ? "bg-amber-50 font-medium" : "bg-slate-50"
-                }`}
-              >
-                <span className="text-slate-600">{label}</span>
-                <span>{formatFecha(iso, true)}</span>
-              </li>
-            ))}
-          </ul>
+          <ol className="mt-4">
+            {fechas.map(([label, iso, destacar], i) => {
+              const last = i === fechas.length - 1;
+              return (
+                <li key={label} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <span
+                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ring-4 ring-surface ${
+                        destacar ? "bg-amber-500 text-white" : "bg-slate-200 text-slate-500"
+                      }`}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    </span>
+                    {!last && <span className="w-0.5 flex-1 bg-hairline" />}
+                  </div>
+                  <div className={last ? "pb-0" : "pb-5"}>
+                    <div
+                      className={`text-sm ${destacar ? "font-semibold text-ink" : "text-ink"}`}
+                    >
+                      {label}
+                    </div>
+                    <div className="mt-0.5 text-xs text-ink-soft">
+                      {formatFecha(iso, true)}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </section>
 
         <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
@@ -452,6 +473,8 @@ export default async function ProcesoPage({
           </>
         )}
       </section>
+
+      <AccionesProceso codigo={p.codigo_proceso} titulo={p.titulo} url={p.url} />
     </div>
   );
 }
@@ -491,7 +514,13 @@ function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) 
             : "border-slate-200 hover:border-emerald-400 hover:bg-emerald-50"
         }`}
       >
-        <span aria-hidden>{clave ? "⭐" : "📄"}</span>
+        <span className="mt-0.5 shrink-0" aria-hidden>
+          {clave ? (
+            <IconStar className="h-4 w-4 text-amber-500" filled />
+          ) : (
+            <IconDoc className="h-4 w-4 text-slate-400" />
+          )}
+        </span>
         <span>
           <span className="block font-medium leading-snug">{d.nombre_documento}</span>
           <span className="block text-xs text-slate-500">

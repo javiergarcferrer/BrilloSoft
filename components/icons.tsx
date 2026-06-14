@@ -185,6 +185,21 @@ export const IconX = (p: P) => (
   </Svg>
 );
 
+export const IconShare = (p: P) => (
+  <Svg {...p}>
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+  </Svg>
+);
+
+export const IconArrowUp = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 19V5M6 11l6-6 6 6" />
+  </Svg>
+);
+
 export const IconSliders = (p: P) => (
   <Svg {...p}>
     <path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h7M15 18h5" />

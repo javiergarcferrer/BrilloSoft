@@ -91,7 +91,7 @@ export default async function EstadisticasPage() {
                 </div>
                 <div className="mt-1 h-2 rounded-full bg-slate-100">
                   <div
-                    className="h-2 rounded-full bg-emerald-500"
+                    className="bar-grow h-2 rounded-full bg-emerald-500"
                     style={{ width: `${Math.max(2, (a.monto / maxMod) * 100)}%` }}
                   />
                 </div>
@@ -113,7 +113,7 @@ export default async function EstadisticasPage() {
                 </div>
                 <div className="mt-1 h-2 rounded-full bg-slate-100">
                   <div
-                    className="h-2 rounded-full bg-sky-500"
+                    className="bar-grow h-2 rounded-full bg-sky-500"
                     style={{ width: `${Math.max(2, (a.monto / maxInst) * 100)}%` }}
                   />
                 </div>
