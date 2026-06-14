@@ -471,6 +471,33 @@ export default function Buscador() {
 
       {/* Resultados */}
       <section>
+        {chips.length > 0 && (
+          <div className="mb-3 hidden flex-wrap items-center gap-1.5 lg:flex">
+            {chips.map((c) => (
+              <button
+                key={c.key}
+                onClick={c.clear}
+                className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/15 transition hover:bg-brand-100 active:scale-95"
+              >
+                {c.label}
+                <IconX className="h-3 w-3" />
+              </button>
+            ))}
+            <button
+              onClick={() => {
+                setEstado("Proceso publicado");
+                setModalidad("");
+                setUnidadTexto("");
+                setMipyme(false);
+                setStartdate(hoyMenosDias(30));
+                setEnddate("");
+              }}
+              className="ml-1 text-xs font-medium text-ink-soft transition hover:text-rose-600"
+            >
+              Limpiar todo
+            </button>
+          </div>
+        )}
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-ink-soft">
           {loading ? (
             <span className="inline-flex items-center gap-2">
