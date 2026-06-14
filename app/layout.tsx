@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import SiteNav from "@/components/site-nav";
+import MobileTabBar from "@/components/mobile-tab-bar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,6 +31,18 @@ export const metadata: Metadata = {
     locale: "es_DO",
     type: "website",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Licitaciones RD",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 function BrandMark() {
@@ -53,8 +66,11 @@ function BrandMark() {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${inter.variable} ${sora.variable}`}>
-      <body className="min-h-dvh antialiased">
-        <header className="sticky top-0 z-50 border-b border-white/5 bg-slate-900/90 text-white backdrop-blur-md">
+      <body className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))] antialiased lg:pb-0">
+        <header
+          className="sticky top-0 z-50 border-b border-white/5 bg-slate-900/90 text-white backdrop-blur-md"
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+        >
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
             <Link href="/" className="flex shrink-0 items-center gap-3">
               <BrandMark />
@@ -67,11 +83,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </span>
               </span>
             </Link>
-            <SiteNav />
+            <div className="hidden lg:block">
+              <SiteNav />
+            </div>
           </div>
         </header>
 
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+
+        <MobileTabBar />
 
         <footer className="mt-10 border-t border-hairline bg-surface">
           <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-ink-soft">

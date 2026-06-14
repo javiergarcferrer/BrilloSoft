@@ -178,3 +178,18 @@ export const IconMenu = (p: P) => (
     <path d="M4 7h16M4 12h16M4 17h16" />
   </Svg>
 );
+
+export const IconX = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </Svg>
+);
+
+export const IconSliders = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h7M15 18h5" />
+    <circle cx="16" cy="6" r="2" />
+    <circle cx="8" cy="12" r="2" />
+    <circle cx="13" cy="18" r="2" />
+  </Svg>
+);

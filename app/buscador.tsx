@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
 import ProcesoCard from "@/components/proceso-card";
+import { BottomSheet } from "@/components/bottom-sheet";
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -13,8 +14,32 @@ import {
   IconFilter,
   IconRss,
   IconSearch,
+  IconSliders,
   IconSparkles,
+  IconX,
 } from "@/components/icons";
+
+interface FiltrosProps {
+  estado: string;
+  setEstado: (v: string) => void;
+  modalidad: string;
+  setModalidad: (v: string) => void;
+  unidades: Unidad[];
+  unidadTexto: string;
+  setUnidadTexto: (v: string) => void;
+  unidadSel: Unidad | null;
+  startdate: string;
+  setStartdate: (v: string) => void;
+  enddate: string;
+  setEnddate: (v: string) => void;
+  orden: Orden;
+  setOrden: (v: Orden) => void;
+  mipyme: boolean;
+  setMipyme: (v: boolean) => void;
+}
+
+const INPUT_CLS =
+  "mt-1 w-full rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15";
 
 const ESTADOS = [
   "Proceso publicado",
@@ -224,8 +249,32 @@ export default function Buscador() {
     URL.revokeObjectURL(a.href);
   };
 
-  const inputCls =
-    "mt-1 w-full rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15";
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  // Active (non-default) filters as removable chips — fast one-tap clearing.
+  const chips: { key: string; label: string; clear: () => void }[] = [];
+  if (estado && estado !== "Proceso publicado")
+    chips.push({ key: "est", label: estado, clear: () => setEstado("Proceso publicado") });
+  if (modalidad) chips.push({ key: "mod", label: modalidad, clear: () => setModalidad("") });
+  if (unidadSel)
+    chips.push({
+      key: "uc",
+      label:
+        unidadSel.acronimo && unidadSel.acronimo !== "N/A"
+          ? unidadSel.acronimo
+          : unidadSel.nombre,
+      clear: () => setUnidadTexto(""),
+    });
+  if (mipyme) chips.push({ key: "mip", label: "MIPYMES", clear: () => setMipyme(false) });
+  if (startdate !== hoyMenosDias(30))
+    chips.push({ key: "desde", label: `desde ${startdate}`, clear: () => setStartdate(hoyMenosDias(30)) });
+  if (enddate) chips.push({ key: "hasta", label: `hasta ${enddate}`, clear: () => setEnddate("") });
+
+  const filtros: FiltrosProps = {
+    estado, setEstado, modalidad, setModalidad, unidades, unidadTexto,
+    setUnidadTexto, unidadSel, startdate, setStartdate, enddate, setEnddate,
+    orden, setOrden, mipyme, setMipyme,
+  };
 
   const feedHref = (() => {
     const f = new URLSearchParams();
@@ -271,8 +320,17 @@ export default function Buscador() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="pintura, cerámica, vehículos, hospital, ayuntamiento…"
-              className="h-10 w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-soft/60"
+              className="h-10 w-full bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-soft/60 [&::-webkit-search-cancel-button]:hidden"
             />
+            {q && (
+              <button
+                onClick={() => setQ("")}
+                aria-label="Limpiar búsqueda"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-soft transition hover:bg-slate-100 active:scale-90"
+              >
+                <IconX className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <div className="mt-3.5 flex flex-wrap gap-2">
@@ -317,111 +375,74 @@ export default function Buscador() {
         </div>
       </section>
 
-      {/* Filtros */}
-      <section className="rounded-2xl bg-surface p-5 shadow-soft ring-1 ring-hairline">
+      {/* Filtros — panel en escritorio */}
+      <section className="hidden rounded-2xl bg-surface p-5 shadow-soft ring-1 ring-hairline lg:block">
         <div className="flex items-center gap-2 text-sm font-semibold text-ink">
           <IconFilter className="h-4 w-4 text-brand-600" />
           Filtros
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-12">
-          <label className="md:col-span-12 block text-xs font-medium text-ink-soft">
-            Institución (unidad de compra)
-            <input
-              list="lista-unidades"
-              value={unidadTexto}
-              onChange={(e) => setUnidadTexto(e.target.value)}
-              placeholder={
-                unidades.length
-                  ? "Todas — escribe para filtrar por institución…"
-                  : "Cargando instituciones…"
-              }
-              className={inputCls}
-            />
-            <datalist id="lista-unidades">
-              {unidades.map((u) => (
-                <option key={u.codigo} value={etiquetaUnidad(u)} />
-              ))}
-            </datalist>
-            {unidadTexto && !unidadSel && (
-              <span className="mt-1 block text-[11px] text-amber-600">
-                Selecciona una institución de la lista para aplicar el filtro.
-              </span>
-            )}
-          </label>
-
-          <label className="md:col-span-3 block text-xs font-medium text-ink-soft">
-            Estado
-            <select value={estado} onChange={(e) => setEstado(e.target.value)} className={inputCls}>
-              <option value="">Todos</option>
-              {ESTADOS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="md:col-span-3 block text-xs font-medium text-ink-soft">
-            Modalidad
-            <select
-              value={modalidad}
-              onChange={(e) => setModalidad(e.target.value)}
-              className={inputCls}
-            >
-              <option value="">Todas</option>
-              {MODALIDADES.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="md:col-span-2 block text-xs font-medium text-ink-soft">
-            Publicado desde
-            <input
-              type="date"
-              value={startdate}
-              onChange={(e) => setStartdate(e.target.value)}
-              className={inputCls}
-            />
-          </label>
-
-          <label className="md:col-span-2 block text-xs font-medium text-ink-soft">
-            Hasta
-            <input
-              type="date"
-              value={enddate}
-              onChange={(e) => setEnddate(e.target.value)}
-              className={inputCls}
-            />
-          </label>
-
-          <label className="md:col-span-2 block text-xs font-medium text-ink-soft">
-            Ordenar por
-            <select
-              value={orden}
-              onChange={(e) => setOrden(e.target.value as Orden)}
-              className={inputCls}
-            >
-              <option value="recientes">Más recientes</option>
-              <option value="cierre">Cierre más próximo</option>
-              <option value="monto_desc">Mayor monto</option>
-              <option value="monto_asc">Menor monto</option>
-            </select>
-          </label>
-
-          <label className="md:col-span-12 flex items-center gap-2 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={mipyme}
-              onChange={(e) => setMipyme(e.target.checked)}
-              className="h-4 w-4 rounded border-hairline accent-brand-600"
-            />
-            Solo dirigidos a MIPYMES
-          </label>
+        <div className="mt-4">
+          <FiltrosControles {...filtros} />
         </div>
       </section>
+
+      {/* Barra de control en móvil: filtros + conteo + chips activos */}
+      <div className="sticky top-[60px] z-30 -mx-4 border-b border-hairline bg-canvas/85 px-4 py-2.5 backdrop-blur lg:hidden">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSheetOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-sm font-semibold shadow-soft transition active:scale-95"
+          >
+            <IconSliders className="h-4 w-4 text-brand-600" />
+            Filtros
+            {chips.length > 0 && (
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[11px] font-bold text-white">
+                {chips.length}
+              </span>
+            )}
+          </button>
+          <span className="ml-auto text-xs text-ink-soft">
+            {data
+              ? `${data.totalResults.toLocaleString("es-DO")} ${enBusqueda ? "coincid." : "procesos"}`
+              : ""}
+          </span>
+        </div>
+        {chips.length > 0 && (
+          <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto">
+            {chips.map((c) => (
+              <button
+                key={c.key}
+                onClick={c.clear}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/15 transition active:scale-95"
+              >
+                <span className="max-w-[8.5rem] truncate">{c.label}</span>
+                <IconX className="h-3 w-3 shrink-0" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Filtros — hoja inferior en móvil */}
+      <BottomSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        title="Filtros"
+        footer={
+          <button
+            onClick={() => setSheetOpen(false)}
+            className="h-12 w-full rounded-xl bg-brand-600 text-sm font-semibold text-white transition active:scale-[0.99]"
+          >
+            {data
+              ? `Ver ${data.totalResults.toLocaleString("es-DO")} resultados`
+              : "Ver resultados"}
+          </button>
+        }
+      >
+        <div className="pb-2">
+          <FiltrosControles {...filtros} />
+        </div>
+      </BottomSheet>
 
       {/* Resultados */}
       <section>
@@ -544,7 +565,7 @@ function Preset({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${
         activo
           ? "bg-emerald-500 text-white hover:bg-emerald-400"
           : "bg-white/10 text-white ring-1 ring-inset ring-white/15 backdrop-blur hover:bg-white/20"
@@ -552,5 +573,104 @@ function Preset({
     >
       {children}
     </button>
+  );
+}
+
+function FiltrosControles({
+  estado, setEstado, modalidad, setModalidad, unidades, unidadTexto,
+  setUnidadTexto, unidadSel, startdate, setStartdate, enddate, setEnddate,
+  orden, setOrden, mipyme, setMipyme,
+}: FiltrosProps) {
+  return (
+    <div className="grid gap-3 lg:grid-cols-12">
+      <label className="block text-xs font-medium text-ink-soft lg:col-span-12">
+        Institución (unidad de compra)
+        <input
+          list="lista-unidades"
+          value={unidadTexto}
+          onChange={(e) => setUnidadTexto(e.target.value)}
+          placeholder={
+            unidades.length
+              ? "Todas — escribe para filtrar por institución…"
+              : "Cargando instituciones…"
+          }
+          className={INPUT_CLS}
+        />
+        <datalist id="lista-unidades">
+          {unidades.map((u) => (
+            <option key={u.codigo} value={etiquetaUnidad(u)} />
+          ))}
+        </datalist>
+        {unidadTexto && !unidadSel && (
+          <span className="mt-1 block text-[11px] text-amber-600">
+            Selecciona una institución de la lista para aplicar el filtro.
+          </span>
+        )}
+      </label>
+
+      <label className="block text-xs font-medium text-ink-soft lg:col-span-3">
+        Estado
+        <select value={estado} onChange={(e) => setEstado(e.target.value)} className={INPUT_CLS}>
+          <option value="">Todos</option>
+          {ESTADOS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="block text-xs font-medium text-ink-soft lg:col-span-3">
+        Modalidad
+        <select value={modalidad} onChange={(e) => setModalidad(e.target.value)} className={INPUT_CLS}>
+          <option value="">Todas</option>
+          {MODALIDADES.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="block text-xs font-medium text-ink-soft lg:col-span-2">
+        Publicado desde
+        <input
+          type="date"
+          value={startdate}
+          onChange={(e) => setStartdate(e.target.value)}
+          className={INPUT_CLS}
+        />
+      </label>
+
+      <label className="block text-xs font-medium text-ink-soft lg:col-span-2">
+        Hasta
+        <input
+          type="date"
+          value={enddate}
+          onChange={(e) => setEnddate(e.target.value)}
+          className={INPUT_CLS}
+        />
+      </label>
+
+      <label className="block text-xs font-medium text-ink-soft lg:col-span-2">
+        Ordenar por
+        <select value={orden} onChange={(e) => setOrden(e.target.value as Orden)} className={INPUT_CLS}>
+          <option value="recientes">Más recientes</option>
+          <option value="cierre">Cierre más próximo</option>
+          <option value="monto_desc">Mayor monto</option>
+          <option value="monto_asc">Menor monto</option>
+        </select>
+      </label>
+
+      <label className="flex items-center gap-2 text-sm text-ink lg:col-span-12">
+        <input
+          type="checkbox"
+          checked={mipyme}
+          onChange={(e) => setMipyme(e.target.checked)}
+          className="h-4 w-4 rounded border-hairline accent-brand-600"
+        />
+        Solo dirigidos a MIPYMES
+      </label>
+    </div>
   );
 }
