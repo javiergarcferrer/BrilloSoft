@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { SITE } from "@/lib/site";
 
 const inter = Inter({
@@ -66,11 +64,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={`${inter.variable} ${fraunces.variable}`}>
-      <body className="min-h-dvh antialiased">
-        <SiteHeader />
-        <main id="inicio">{children}</main>
-        <SiteFooter />
-      </body>
+      <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );
 }
