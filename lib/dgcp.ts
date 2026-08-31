@@ -338,3 +338,220 @@ export async function getPreciosSubclase(subclase: string): Promise<PreciosStats
     ejemplos,
   };
 }
+
+/* --------------------------------------------------- histórico de contratos */
+
+/**
+ * El endpoint `/contratos` **ignora los filtros de fecha**: sirve siempre los
+ * contratos de más reciente a más antiguo (1000 por página, ~8 días por
+ * página). Solo `proceso` y `rpe` filtran de verdad. Así que el análisis del
+ * histórico se hace, como la búsqueda de procesos, escaneando un número
+ * acotado de páginas recientes y agregando del lado del servidor, declarando
+ * siempre que es una muestra y no el corpus completo (714k+ contratos).
+ */
+const MAX_CONTRATOS_PAGES = 6;
+
+/** Estados de contrato que cuentan como adjudicación en firme. */
+const ESTADOS_VIGENTES = new Set(["Activo", "Modificado", "Cerrado"]);
+
+export interface AgregadoContrato {
+  clave: string;
+  n: number;
+  monto: number;
+  /** Datos extra según el agregado (rpe del proveedor, etc.). */
+  rpe?: string;
+}
+
+export interface PuntoMensual {
+  /** `YYYY-MM`. */
+  mes: string;
+  n: number;
+  monto: number;
+}
+
+export interface ResumenContratos {
+  /** Contratos realmente recorridos upstream. */
+  escaneados: number;
+  /** Censo declarado por la API (todo el registro, no la muestra). */
+  totalRegistro: number;
+  /** true si el registro es mayor que lo escaneado (siempre, en la práctica). */
+  truncado: boolean;
+  /** Ventana temporal cubierta por la muestra. */
+  desde: string | null;
+  hasta: string | null;
+  montoTotal: number;
+  conMonto: number;
+  topAdjudicatarios: AgregadoContrato[];
+  topInstituciones: AgregadoContrato[];
+  porMes: PuntoMensual[];
+  porEstado: AgregadoContrato[];
+  /** Los más recientes, ya ordenados, para una tabla de detalle. */
+  recientes: Contrato[];
+}
+
+/**
+ * `YYYY-MM-DD` con mes 01-12 y día 01-31, o `null`. El registro de la DGCP
+ * trae fechas corruptas (mes `00`, días fuera de rango) que envenenarían la
+ * ventana temporal y la tendencia mensual si se colaran.
+ */
+function fechaValida(iso: string | null | undefined): string | null {
+  const f = (iso ?? "").slice(0, 10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(f);
+  if (!m) return null;
+  const mes = Number(m[2]);
+  const dia = Number(m[3]);
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
+  return f;
+}
+
+function acumular(mapa: Map<string, AgregadoContrato>, clave: string, monto: number, rpe?: string) {
+  const k = clave || "—";
+  const a = mapa.get(k) ?? { clave: k, n: 0, monto: 0, rpe };
+  a.n += 1;
+  a.monto += monto;
+  mapa.set(k, a);
+}
+
+/**
+ * Muestra agregada de los contratos adjudicados más recientes. `paginas`
+ * controla la profundidad (cada una son 1000 contratos, ~8 días).
+ */
+export async function muestrearContratos(
+  paginas = MAX_CONTRATOS_PAGES,
+): Promise<ResumenContratos> {
+  const first = await dgcpFetch<Contrato>("/contratos", { page: 1, limit: 1000 }, 1800);
+  const totalRegistro = first.totalResults ?? first.payload.content.length;
+  const upstreamPages = first.pages ?? 1;
+  const aEscanear = Math.min(upstreamPages, Math.max(1, paginas));
+
+  let todos = first.payload.content;
+  if (aEscanear > 1) {
+    const rest = await Promise.all(
+      Array.from({ length: aEscanear - 1 }, (_, i) =>
+        dgcpFetch<Contrato>("/contratos", { page: i + 2, limit: 1000 }, 1800).catch(
+          () => null,
+        ),
+      ),
+    );
+    for (const r of rest) if (r) todos = todos.concat(r.payload.content);
+  }
+
+  const adjudicatarios = new Map<string, AgregadoContrato>();
+  const instituciones = new Map<string, AgregadoContrato>();
+  const meses = new Map<string, PuntoMensual>();
+  const estados = new Map<string, AgregadoContrato>();
+
+  let montoTotal = 0;
+  let conMonto = 0;
+  let desde: string | null = null;
+  let hasta: string | null = null;
+
+  for (const c of todos) {
+    const monto = c.valor_contratado || 0;
+    // Solo montos de adjudicaciones vigentes entran en los totales; los
+    // cancelados/rescindidos se cuentan aparte y no inflan el gasto.
+    const cuenta = ESTADOS_VIGENTES.has(c.estado_contrato);
+    if (cuenta && monto > 0) {
+      montoTotal += monto;
+      conMonto += 1;
+      acumular(adjudicatarios, c.razon_social, monto, c.rpe);
+      acumular(instituciones, c.unidad_compra, monto);
+    }
+    acumular(estados, c.estado_contrato || "—", monto);
+
+    const fecha = fechaValida(c.fecha_adjudicacion);
+    if (fecha) {
+      if (!desde || fecha < desde) desde = fecha;
+      if (!hasta || fecha > hasta) hasta = fecha;
+      const mes = fecha.slice(0, 7);
+      const p = meses.get(mes) ?? { mes, n: 0, monto: 0 };
+      p.n += 1;
+      if (cuenta && monto > 0) p.monto += monto;
+      meses.set(mes, p);
+    }
+  }
+
+  // Solo meses con presencia real: un puñado de contratos mal fechados no debe
+  // pintar una barra fantasma en la tendencia.
+  const minMes = Math.max(3, Math.round(todos.length * 0.002));
+  const porMes = [...meses.values()]
+    .filter((m) => m.n >= minMes)
+    .sort((a, b) => a.mes.localeCompare(b.mes));
+
+  const top = (m: Map<string, AgregadoContrato>, n: number) =>
+    [...m.values()].sort((a, b) => b.monto - a.monto).slice(0, n);
+
+  const recientes = [...todos]
+    .sort(
+      (a, b) =>
+        new Date(b.fecha_adjudicacion).getTime() -
+        new Date(a.fecha_adjudicacion).getTime(),
+    )
+    .slice(0, 40);
+
+  return {
+    escaneados: todos.length,
+    totalRegistro,
+    truncado: upstreamPages > aEscanear,
+    desde,
+    hasta,
+    montoTotal,
+    conMonto,
+    topAdjudicatarios: top(adjudicatarios, 12),
+    topInstituciones: top(instituciones, 12),
+    porMes,
+    porEstado: [...estados.values()].sort((a, b) => b.n - a.n),
+    recientes,
+  };
+}
+
+export interface HistorialProveedor {
+  rpe: string;
+  razonSocial: string | null;
+  totalRegistro: number;
+  contratos: Contrato[];
+  montoTotal: number;
+  /** Adjudicaciones vigentes (sin canceladas/rescindidas). */
+  montoVigente: number;
+  instituciones: number;
+  porAnio: { anio: string; n: number; monto: number }[];
+}
+
+/**
+ * Historial de contratos de un proveedor. A diferencia del histórico general,
+ * `rpe` **sí filtra** en la API, así que esto es el registro completo del
+ * proveedor (hasta 1000 contratos), no una muestra.
+ */
+export async function getHistorialProveedor(rpe: string): Promise<HistorialProveedor | null> {
+  const data = await dgcpFetch<Contrato>("/contratos", { rpe, limit: 1000 }, 3600);
+  const contratos = data.payload.content;
+  if (contratos.length === 0) return null;
+
+  let montoTotal = 0;
+  let montoVigente = 0;
+  const insts = new Set<string>();
+  const anios = new Map<string, { anio: string; n: number; monto: number }>();
+
+  for (const c of contratos) {
+    const monto = c.valor_contratado || 0;
+    montoTotal += monto;
+    if (ESTADOS_VIGENTES.has(c.estado_contrato)) montoVigente += monto;
+    if (c.unidad_compra) insts.add(c.unidad_compra);
+    const anio = fechaValida(c.fecha_adjudicacion)?.slice(0, 4) ?? "Sin fecha";
+    const a = anios.get(anio) ?? { anio, n: 0, monto: 0 };
+    a.n += 1;
+    a.monto += monto;
+    anios.set(anio, a);
+  }
+
+  return {
+    rpe,
+    razonSocial: contratos[0].razon_social ?? null,
+    totalRegistro: data.totalResults ?? contratos.length,
+    contratos,
+    montoTotal,
+    montoVigente,
+    instituciones: insts.size,
+    porAnio: [...anios.values()].sort((a, b) => b.anio.localeCompare(a.anio)),
+  };
+}

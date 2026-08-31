@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { dgcpFetch, type Contrato } from "@/lib/dgcp";
+import { getHistorialProveedor } from "@/lib/dgcp";
 import { formatFecha, formatMonto } from "@/lib/format";
 import { IconArrowLeft } from "@/components/icons";
 
@@ -21,13 +21,13 @@ export default async function ProveedorPage({
   const { rpe } = await params;
   if (!/^\d{1,10}$/.test(rpe)) notFound();
 
-  const data = await dgcpFetch<Contrato>("/contratos", { rpe, limit: 1000 }, 3600);
-  const contratos = data.payload.content;
-  if (contratos.length === 0) notFound();
+  const historial = await getHistorialProveedor(rpe);
+  if (!historial) notFound();
 
-  const nombre = contratos[0].razon_social;
-  const total = data.totalResults ?? contratos.length;
-  const suma = contratos.reduce((s, c) => s + (c.valor_contratado || 0), 0);
+  const contratos = historial.contratos;
+  const nombre = historial.razonSocial;
+  const total = historial.totalRegistro;
+  const suma = historial.montoTotal;
 
   const porInstitucion = new Map<string, { n: number; monto: number }>();
   for (const c of contratos) {
@@ -39,6 +39,8 @@ export default async function ProveedorPage({
   const topInstituciones = [...porInstitucion.entries()]
     .sort((a, b) => b[1].monto - a[1].monto)
     .slice(0, 8);
+
+  const maxAnio = Math.max(1, ...historial.porAnio.map((a) => a.monto));
 
   const recientes = [...contratos]
     .sort(
@@ -85,9 +87,35 @@ export default async function ProveedorPage({
         </div>
         <p className="mt-2 text-xs text-ink-soft">
           Fuente: registro público de contratos de la DGCP. Útil para dimensionar a tu
-          competencia antes de ofertar.
+          competencia antes de ofertar. Los montos incluyen todas las
+          adjudicaciones; {formatMonto(historial.montoVigente, "DOP")} corresponden
+          a contratos vigentes (sin cancelados ni rescindidos).
         </p>
       </section>
+
+      {historial.porAnio.length > 1 && (
+        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+          <h2 className="font-semibold">Contratos por año</h2>
+          <ul className="mt-3 space-y-2.5 text-sm">
+            {historial.porAnio.map((a) => (
+              <li key={a.anio}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-medium tabular-nums">{a.anio}</span>
+                  <span className="shrink-0 text-xs text-ink-soft">
+                    {a.n} · {formatMonto(a.monto, "DOP")}
+                  </span>
+                </div>
+                <div className="mt-1 h-2 rounded-full bg-slate-100">
+                  <div
+                    className="bar-grow h-2 rounded-full bg-emerald-500"
+                    style={{ width: `${Math.max(2, (a.monto / maxAnio) * 100)}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-5">
         <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline lg:col-span-2">
