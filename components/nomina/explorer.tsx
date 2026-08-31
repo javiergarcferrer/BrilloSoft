@@ -22,19 +22,17 @@ import {
   formatInt,
   loadNomina,
   median,
-  MONTH_ABBR,
-  periodKey,
   periodLabel,
   SALARY_BUCKETS,
   type GroupStat,
   type NominaData,
   type Row,
 } from "@/lib/nomina";
-import { BarList, Histogram, TimeSeries, type SeriesPoint } from "./charts";
+import { BarList, Histogram } from "./charts";
 import { DataTable, type SortDir, type SortKey } from "./data-table";
 
 const norm = (s: string) =>
-  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 function useDebounced<T>(value: T, ms = 250): T {
   const [v, setV] = useState(value);
@@ -46,7 +44,7 @@ function useDebounced<T>(value: T, ms = 250): T {
 }
 
 type View = "resumen" | "tabla";
-type LocMetric = "total" | "count" | "avg";
+type Metric = "total" | "count" | "avg";
 type IconType = React.ComponentType<{ className?: string }>;
 
 export function Explorer() {
@@ -68,7 +66,7 @@ export function Explorer() {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-6 text-sm text-ink-soft">
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-brand-600" />
-        Cargando 91,806 registros…
+        Cargando la nómina consolidada…
       </div>
     );
   }
@@ -81,47 +79,36 @@ function ExplorerReady({ data }: { data: NominaData }) {
   // ---- filters
   const [queryInput, setQueryInput] = useState("");
   const query = useDebounced(queryInput.trim(), 250);
-  const [locId, setLocId] = useState<number | null>(null);
-  const [years, setYears] = useState<Set<number>>(new Set());
-  const [months, setMonths] = useState<Set<number>>(new Set());
+  const [instId, setInstId] = useState<number | null>(null);
   const [salMin, setSalMin] = useState<string>("");
   const [salMax, setSalMax] = useState<string>("");
 
   // ---- raw-table sort
-  const [sortKey, setSortKey] = useState<SortKey>("periodo");
+  const [sortKey, setSortKey] = useState<SortKey>("sueldo");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  // ---- ranking metric for "top localidades"
-  const [locMetric, setLocMetric] = useState<LocMetric>("total");
+  // ---- ranking metric for instituciones/áreas
+  const [metric, setMetric] = useState<Metric>("total");
 
-  // dictionaries / option lists (computed once)
-  const { allYears, allPeriods, locNorm, cargoNorm, locOptions } = useMemo(() => {
-    const ys = new Set<number>();
-    const ps = new Set<number>();
-    for (const r of data.rows) {
-      ys.add(r[COL.ANIO]);
-      ps.add(periodKey(r[COL.ANIO], r[COL.MES]));
-    }
-    return {
-      allYears: [...ys].sort((a, b) => a - b),
-      allPeriods: [...ps].sort((a, b) => a - b),
-      locNorm: data.localidades.map(norm),
+  const { areaNorm, cargoNorm, instNorm } = useMemo(
+    () => ({
+      areaNorm: data.areas.map(norm),
       cargoNorm: data.cargos.map(norm),
-      locOptions: data.localidades
-        .map((name, i) => ({ i, name }))
-        .sort((a, b) => a.name.localeCompare(b.name, "es")),
-    };
-  }, [data]);
+      instNorm: data.instituciones.map((i) => norm(`${i.codigo} ${i.nombre}`)),
+    }),
+    [data],
+  );
 
   // search → matching dictionary indices
-  const { locMatch, cargoMatch } = useMemo(() => {
-    if (!query) return { locMatch: null, cargoMatch: null };
+  const { areaMatch, cargoMatch, instMatch } = useMemo(() => {
+    if (!query) return { areaMatch: null, cargoMatch: null, instMatch: null };
     const q = norm(query);
     return {
-      locMatch: locNorm.map((s) => s.includes(q)),
+      areaMatch: areaNorm.map((s) => s.includes(q)),
       cargoMatch: cargoNorm.map((s) => s.includes(q)),
+      instMatch: instNorm.map((s) => s.includes(q)),
     };
-  }, [query, locNorm, cargoNorm]);
+  }, [query, areaNorm, cargoNorm, instNorm]);
 
   const min = salMin ? Number(salMin) : null;
   const max = salMax ? Number(salMax) : null;
@@ -130,77 +117,57 @@ function ExplorerReady({ data }: { data: NominaData }) {
   const filtered = useMemo(() => {
     const out: Row[] = [];
     for (const r of data.rows) {
-      if (locId != null && r[COL.LOC] !== locId) continue;
-      if (years.size && !years.has(r[COL.ANIO])) continue;
-      if (months.size && !months.has(r[COL.MES])) continue;
+      if (instId != null && r[COL.INST] !== instId) continue;
       const s = r[COL.SUELDO];
       if (min != null && s < min) continue;
       if (max != null && s > max) continue;
-      if (locMatch && !(locMatch[r[COL.LOC]] || cargoMatch![r[COL.CARGO]])) continue;
+      if (
+        areaMatch &&
+        !(areaMatch[r[COL.AREA]] || cargoMatch![r[COL.CARGO]] || instMatch![r[COL.INST]])
+      ) {
+        continue;
+      }
       out.push(r);
     }
     return out;
-  }, [data.rows, locId, years, months, min, max, locMatch, cargoMatch]);
+  }, [data.rows, instId, min, max, areaMatch, cargoMatch, instMatch]);
 
   // ---- KPIs
   const kpis = useMemo(() => {
     let total = 0;
-    const locSet = new Set<number>();
+    const instSet = new Set<number>();
     const cargoSet = new Set<number>();
-    const periodSet = new Set<number>();
     const salaries: number[] = [];
     for (const r of filtered) {
       total += r[COL.SUELDO];
       salaries.push(r[COL.SUELDO]);
-      locSet.add(r[COL.LOC]);
+      instSet.add(r[COL.INST]);
       cargoSet.add(r[COL.CARGO]);
-      periodSet.add(periodKey(r[COL.ANIO], r[COL.MES]));
     }
     const count = filtered.length;
-    const periods = periodSet.size || 1;
     return {
       count,
       total,
-      monthlyAvg: total / periods,
       avg: count ? total / count : 0,
       median: median(salaries),
-      locs: locSet.size,
+      insts: instSet.size,
       cargos: cargoSet.size,
     };
   }, [filtered]);
 
-  // ---- time series (axis respects year/month filters; values from filtered set)
-  const series: SeriesPoint[] = useMemo(() => {
-    const axis = allPeriods.filter((k) => {
-      const y = Math.floor(k / 100);
-      const m = k % 100;
-      return (!years.size || years.has(y)) && (!months.size || months.has(m));
-    });
-    const acc = new Map<number, { count: number; total: number }>();
-    for (const r of filtered) {
-      const k = periodKey(r[COL.ANIO], r[COL.MES]);
-      const a = acc.get(k) ?? { count: 0, total: 0 };
-      a.count++;
-      a.total += r[COL.SUELDO];
-      acc.set(k, a);
-    }
-    return axis.map((k) => {
-      const a = acc.get(k) ?? { count: 0, total: 0 };
-      return {
-        key: k,
-        label: periodLabel(Math.floor(k / 100), k % 100),
-        count: a.count,
-        total: a.total,
-      };
-    });
-  }, [filtered, allPeriods, years, months]);
-
   // ---- rankings + distribution
-  const topLocs = useMemo(
-    () => rankBy(aggregateBy(filtered, COL.LOC), locMetric, 12),
-    [filtered, locMetric],
+  const topInsts = useMemo(
+    () => rankBy(aggregateBy(filtered, COL.INST), metric, 11),
+    [filtered, metric],
   );
-  const topCargos = useMemo(() => rankBy(aggregateBy(filtered, COL.CARGO), "total", 12), [filtered]);
+  const topAreas = useMemo(
+    () => rankBy(aggregateBy(filtered, COL.AREA), "total", 12),
+    [filtered],
+  );
+  const topCargos = useMemo(
+    () => rankBy(aggregateBy(filtered, COL.CARGO), "total", 12),
+    [filtered],
+  );
 
   const histogram = useMemo(() => {
     const counts = new Array(SALARY_BUCKETS.length).fill(0);
@@ -214,11 +181,15 @@ function ExplorerReady({ data }: { data: NominaData }) {
     const dir = sortDir === "asc" ? 1 : -1;
     const cmp: Record<SortKey, (a: Row, b: Row) => number> = {
       sueldo: (a, b) => (a[COL.SUELDO] - b[COL.SUELDO]) * dir,
-      periodo: (a, b) =>
-        (periodKey(a[COL.ANIO], a[COL.MES]) - periodKey(b[COL.ANIO], b[COL.MES])) * dir,
-      localidad: (a, b) =>
-        data.localidades[a[COL.LOC]].localeCompare(data.localidades[b[COL.LOC]], "es") * dir,
-      cargo: (a, b) => data.cargos[a[COL.CARGO]].localeCompare(data.cargos[b[COL.CARGO]], "es") * dir,
+      institucion: (a, b) =>
+        data.instituciones[a[COL.INST]].codigo.localeCompare(
+          data.instituciones[b[COL.INST]].codigo,
+          "es",
+        ) * dir,
+      area: (a, b) =>
+        data.areas[a[COL.AREA]].localeCompare(data.areas[b[COL.AREA]], "es") * dir,
+      cargo: (a, b) =>
+        data.cargos[a[COL.CARGO]].localeCompare(data.cargos[b[COL.CARGO]], "es") * dir,
     };
     arr.sort(cmp[sortKey]);
     return arr;
@@ -228,23 +199,24 @@ function ExplorerReady({ data }: { data: NominaData }) {
     if (key === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
       setSortKey(key);
-      setSortDir(key === "sueldo" || key === "periodo" ? "desc" : "asc");
+      setSortDir(key === "sueldo" ? "desc" : "asc");
     }
   };
 
   const exportCsv = () => {
-    const head = "Localidad,Cargo,Sueldo,Mes,Año\n";
+    const head = "Institución,Área,Cargo,Sueldo,Período\n";
     const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
     const body = sorted
-      .map((r) =>
-        [
-          esc(data.localidades[r[COL.LOC]]),
+      .map((r) => {
+        const inst = data.instituciones[r[COL.INST]];
+        return [
+          esc(inst.nombre),
+          esc(data.areas[r[COL.AREA]]),
           esc(data.cargos[r[COL.CARGO]]),
           r[COL.SUELDO],
-          data.monthNames[r[COL.MES] - 1],
-          r[COL.ANIO],
-        ].join(","),
-      )
+          `${data.monthNames[inst.mes - 1]} ${inst.anio}`,
+        ].join(",");
+      })
       .join("\n");
     const blob = new Blob([head + body], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -255,18 +227,16 @@ function ExplorerReady({ data }: { data: NominaData }) {
     URL.revokeObjectURL(url);
   };
 
-  const hasFilters =
-    !!query || locId != null || years.size > 0 || months.size > 0 || !!salMin || !!salMax;
+  const hasFilters = !!query || instId != null || !!salMin || !!salMax;
   const reset = () => {
     setQueryInput("");
-    setLocId(null);
-    setYears(new Set());
-    setMonths(new Set());
+    setInstId(null);
     setSalMin("");
     setSalMax("");
   };
 
-  const metricFormat = locMetric === "total" ? formatCompactDOP : formatInt;
+  const metricFormat = metric === "total" ? formatCompactDOP : formatInt;
+  const instSel = instId != null ? data.instituciones[instId] : null;
 
   return (
     <div className="space-y-5">
@@ -278,7 +248,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
             <input
               value={queryInput}
               onChange={(e) => setQueryInput(e.target.value)}
-              placeholder="Buscar por localidad o cargo…"
+              placeholder="Buscar por institución, área o cargo…"
               className="h-11 w-full rounded-full border border-hairline bg-slate-50 pl-10 pr-9 text-sm outline-none focus:border-emerald-400"
             />
             {queryInput && (
@@ -294,14 +264,14 @@ function ExplorerReady({ data }: { data: NominaData }) {
           </label>
 
           <select
-            value={locId ?? ""}
-            onChange={(e) => setLocId(e.target.value === "" ? null : Number(e.target.value))}
+            value={instId ?? ""}
+            onChange={(e) => setInstId(e.target.value === "" ? null : Number(e.target.value))}
             className="h-11 rounded-full border border-hairline bg-slate-50 px-4 text-sm outline-none focus:border-emerald-400 lg:max-w-xs"
           >
-            <option value="">Todas las localidades ({data.localidades.length})</option>
-            {locOptions.map((o) => (
-              <option key={o.i} value={o.i}>
-                {o.name}
+            <option value="">Todas las instituciones ({data.instituciones.length})</option>
+            {data.instituciones.map((o, i) => (
+              <option key={o.codigo} value={i}>
+                {o.nombre}
               </option>
             ))}
           </select>
@@ -325,42 +295,35 @@ function ExplorerReady({ data }: { data: NominaData }) {
               className="h-11 w-24 rounded-full border border-hairline bg-slate-50 px-4 text-sm outline-none focus:border-emerald-400"
             />
           </div>
-        </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <ChipGroup
-            label="Año"
-            options={allYears.map((y) => ({ value: y, label: String(y) }))}
-            selected={years}
-            onToggle={(v) => setYears(toggle(years, v))}
-          />
-          <span className="hidden h-5 w-px bg-hairline sm:block" />
-          <ChipGroup
-            label="Mes"
-            options={MONTH_ABBR.map((m, i) => ({ value: i + 1, label: m }))}
-            selected={months}
-            onToggle={(v) => setMonths(toggle(months, v))}
-          />
           {hasFilters && (
             <button
               type="button"
               onClick={reset}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
+              className="inline-flex items-center gap-1.5 self-start rounded-full px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 lg:self-auto"
             >
-              <IconX className="h-3.5 w-3.5" /> Limpiar filtros
+              <IconX className="h-3.5 w-3.5" /> Limpiar
             </button>
           )}
         </div>
+
+        {instSel && (
+          <p className="mt-3 text-xs text-ink-soft">
+            <span className="font-semibold text-ink">{instSel.nombre}</span> · foto de{" "}
+            {data.monthNames[instSel.mes - 1]} {instSel.anio} ·{" "}
+            {formatInt(instSel.plazas)} plazas
+          </p>
+        )}
       </div>
 
       {/* ---------- KPI cards ---------- */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Kpi icon={IconLayers} label="Registros (plaza-mes)" value={formatInt(kpis.count)} />
-        <Kpi icon={IconCoins} label="Gasto mensual prom." value={formatCompactDOP(kpis.monthlyAvg)} />
+        <Kpi icon={IconLayers} label="Plazas" value={formatInt(kpis.count)} />
+        <Kpi icon={IconCoins} label="Masa salarial mensual" value={formatCompactDOP(kpis.total)} />
         <Kpi icon={IconChartBar} label="Sueldo promedio" value={formatDOP(kpis.avg)} />
         <Kpi icon={IconTrendingUp} label="Sueldo mediano" value={formatDOP(kpis.median)} />
-        <Kpi icon={IconMapPin} label="Localidades" value={formatInt(kpis.locs)} />
-        <Kpi icon={IconBuilding} label="Cargos distintos" value={formatInt(kpis.cargos)} />
+        <Kpi icon={IconBuilding} label="Instituciones" value={formatInt(kpis.insts)} />
+        <Kpi icon={IconMapPin} label="Cargos distintos" value={formatInt(kpis.cargos)} />
       </div>
 
       {/* ---------- view tabs ---------- */}
@@ -375,63 +338,66 @@ function ExplorerReady({ data }: { data: NominaData }) {
         </div>
         <p className="text-sm text-ink-soft">
           <span className="font-semibold text-ink">{formatInt(kpis.count)}</span> de{" "}
-          {formatInt(data.rows.length)} registros
+          {formatInt(data.rows.length)} plazas
         </p>
       </div>
 
       {view === "resumen" ? (
         <div className="space-y-5">
           <Card
-            title="Evolución mensual"
-            subtitle="Plazas activas y gasto total por mes (pasa el cursor por la serie)"
+            title="Instituciones"
+            subtitle="Cada institución aporta su último mes publicado (clic para filtrar)"
+            action={
+              <div className="inline-flex rounded-full border border-hairline p-0.5 text-xs">
+                {(
+                  [
+                    ["total", "Masa"],
+                    ["count", "Plazas"],
+                    ["avg", "Promedio"],
+                  ] as [Metric, string][]
+                ).map(([m, lbl]) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMetric(m)}
+                    className={cn(
+                      "rounded-full px-2.5 py-1 transition-colors",
+                      metric === m ? "bg-brand-600 text-white" : "text-ink-soft hover:text-ink",
+                    )}
+                  >
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            }
           >
-            <TimeSeries points={series} />
+            <BarList
+              items={topInsts.map((g) => {
+                const inst = data.instituciones[g.key];
+                return {
+                  id: g.key,
+                  label: inst.nombre,
+                  value: metric === "total" ? g.total : metric === "count" ? g.count : g.avg,
+                  sub: `${formatInt(g.count)} plazas · ${periodLabel(inst.anio, inst.mes)}`,
+                };
+              })}
+              format={metricFormat}
+              onSelect={(id) => setInstId(id === instId ? null : id)}
+              selectedId={instId}
+            />
           </Card>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <Card
-              title="Top localidades"
-              action={
-                <div className="inline-flex rounded-full border border-hairline p-0.5 text-xs">
-                  {(
-                    [
-                      ["total", "Gasto"],
-                      ["count", "Plazas"],
-                      ["avg", "Promedio"],
-                    ] as [LocMetric, string][]
-                  ).map(([m, lbl]) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setLocMetric(m)}
-                      className={cn(
-                        "rounded-full px-2.5 py-1 transition-colors",
-                        locMetric === m ? "bg-brand-600 text-white" : "text-ink-soft hover:text-ink",
-                      )}
-                    >
-                      {lbl}
-                    </button>
-                  ))}
-                </div>
-              }
-            >
+            <Card title="Top áreas por gasto">
               <BarList
-                items={topLocs.map((g) => ({
+                items={topAreas.map((g) => ({
                   id: g.key,
-                  label: data.localidades[g.key],
-                  value: locMetric === "total" ? g.total : locMetric === "count" ? g.count : g.avg,
+                  label: data.areas[g.key],
+                  value: g.total,
                   sub: `${formatInt(g.count)} plazas`,
                 }))}
-                format={metricFormat}
-                onSelect={(id) => {
-                  setLocId(id);
-                  setView("tabla");
-                }}
-                selectedId={locId}
+                format={formatCompactDOP}
               />
-              <p className="mt-3 text-xs text-ink-soft">
-                Clic en una localidad para filtrar la tabla.
-              </p>
             </Card>
 
             <Card title="Top cargos por gasto">
@@ -471,7 +437,8 @@ function ExplorerReady({ data }: { data: NominaData }) {
           </div>
           <DataTable
             rows={sorted}
-            localidades={data.localidades}
+            instituciones={data.instituciones}
+            areas={data.areas}
             cargos={data.cargos}
             sortKey={sortKey}
             sortDir={sortDir}
@@ -481,11 +448,22 @@ function ExplorerReady({ data }: { data: NominaData }) {
       )}
 
       <p className="pt-1 text-xs leading-relaxed text-ink-soft">
-        Fuente: {data.source}. {formatInt(data.rows.length)} registros (plaza-mes) ·{" "}
-        {data.localidades.length} localidades · {data.cargos.length} cargos · 35 meses (Jul 2023–May
-        2026). Cada registro es una plaza en un mes; no hay nombres. Notas de calidad: meses
-        normalizados (mayúsculas/espacios), 198 registros con sueldo en RD$0, estatus único “EMPLEADO
-        FIJO”. Generado el {data.generatedAt}.
+        Foto transversal: el último mes publicado por cada una de las{" "}
+        {data.instituciones.length} instituciones cubiertas ({formatInt(data.rows.length)}{" "}
+        plazas). Cada fila es una plaza con su sueldo bruto; no hay nombres ni datos
+        personales. La cobertura es la que cada institución publica en formato
+        procesable — <span className="font-medium text-ink">no es todo el Estado</span>;
+        el detalle completo con nombres vive en el{" "}
+        <a
+          href="https://transparencia.gob.do/2025/12/17/nomina/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-brand-700 hover:underline"
+        >
+          tablero oficial del Portal Único de Transparencia
+        </a>
+        . Generado el {data.generatedAt}; fuentes y método en{" "}
+        <code className="rounded bg-canvas px-1 py-0.5 font-mono">scripts/build-nomina.py</code>.
       </p>
     </div>
   );
@@ -495,21 +473,14 @@ function ExplorerReady({ data }: { data: NominaData }) {
 /* small presentational helpers                                        */
 /* ------------------------------------------------------------------ */
 
-function rankBy(stats: GroupStat[], metric: LocMetric, n: number): GroupStat[] {
+function rankBy(stats: GroupStat[], metric: Metric, n: number): GroupStat[] {
   const key = (g: GroupStat) =>
     metric === "total" ? g.total : metric === "count" ? g.count : g.avg;
   return stats.sort((a, b) => key(b) - key(a)).slice(0, n);
 }
 
-function toggle(set: Set<number>, v: number): Set<number> {
-  const next = new Set(set);
-  if (next.has(v)) next.delete(v);
-  else next.add(v);
-  return next;
-}
-
 function sortLabel(k: SortKey): string {
-  return { localidad: "localidad", cargo: "cargo", sueldo: "sueldo", periodo: "período" }[k];
+  return { institucion: "institución", area: "área", cargo: "cargo", sueldo: "sueldo" }[k];
 }
 
 function Kpi({ icon: Icon, label, value }: { icon: IconType; label: string; value: string }) {
@@ -572,43 +543,5 @@ function TabBtn({
       <Icon className="h-4 w-4" />
       {children}
     </button>
-  );
-}
-
-function ChipGroup({
-  label,
-  options,
-  selected,
-  onToggle,
-}: {
-  label: string;
-  options: { value: number; label: string }[];
-  selected: Set<number>;
-  onToggle: (v: number) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="mr-0.5 text-xs font-semibold uppercase tracking-wide text-ink-soft">
-        {label}
-      </span>
-      {options.map((o) => {
-        const on = selected.has(o.value);
-        return (
-          <button
-            key={o.value}
-            type="button"
-            onClick={() => onToggle(o.value)}
-            className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-              on
-                ? "bg-brand-600 text-white"
-                : "bg-slate-50 text-ink-soft ring-1 ring-inset ring-hairline hover:text-ink",
-            )}
-          >
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
   );
 }

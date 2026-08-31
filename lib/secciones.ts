@@ -106,7 +106,7 @@ export const SECCIONES: Seccion[] = [
     id: "nomina",
     nombre: "Nómina",
     href: "/nomina",
-    descriptor: "Empleados fijos · 2023–2026",
+    descriptor: "Plazas y sueldos · por institución",
     rutas: ["/nomina"],
     vistas: [{ href: "/nomina", label: "Explorador" }],
     conBuscadorGlobal: false,

@@ -189,17 +189,17 @@ export default async function Panorama() {
             nomina
               ? [
                   {
-                    etiqueta: `Plazas · ${nomina.ultimoPeriodo}`,
+                    etiqueta: "Plazas en la foto",
                     valor: formatInt(nomina.plazas),
                     destacar: true,
                   },
                   {
-                    etiqueta: "Gasto mensual",
+                    etiqueta: "Masa salarial mensual",
                     valor: formatCompactDOP(nomina.gastoMensual),
                   },
                   {
-                    etiqueta: "Registros históricos",
-                    valor: formatInt(nomina.registros),
+                    etiqueta: "Instituciones cubiertas",
+                    valor: formatInt(nomina.instituciones),
                   },
                 ]
               : []

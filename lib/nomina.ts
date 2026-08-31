@@ -1,29 +1,37 @@
 /**
- * Nómina explorer — data model, formatters and aggregation helpers.
+ * Nómina pública — modelo de datos, formateadores y agregaciones.
  *
- * The dataset is a public Dominican payroll ("Nómina de Empleados Fijos") of
- * monthly snapshots (Jul-2023 → May-2026). Each row is one budgeted position in
- * a given month, so headcount = row count and gasto = Σ sueldo. There are no
- * names/PII. See scripts/build-nomina.py for how the JSON is produced.
+ * El conjunto es una **foto transversal del Estado**: el último mes publicado
+ * por cada institución en su nómina de transparencia, consolidado por
+ * `scripts/build-nomina.py` (que documenta fuentes, formatos y límites).
+ * Cada fila es una plaza (institución, área, cargo, sueldo bruto) — sin
+ * nombres ni datos personales. La cobertura es la que cada institución
+ * publica en formato procesable: se declara, no se disimula.
  */
 
-/** A row is a compact tuple of dictionary indices + values (see build script). */
-export type Row = readonly [
-  loc: number,
-  cargo: number,
-  sueldo: number,
-  mes: number, // 1–12
-  anio: number,
-];
+/** Una fila es una tupla compacta de índices de diccionario + sueldo. */
+export type Row = readonly [inst: number, area: number, cargo: number, sueldo: number];
 
-export const COL = { LOC: 0, CARGO: 1, SUELDO: 2, MES: 3, ANIO: 4 } as const;
+export const COL = { INST: 0, AREA: 1, CARGO: 2, SUELDO: 3 } as const;
+
+export interface InstitucionNomina {
+  codigo: string;
+  nombre: string;
+  /** Período de la foto de esta institución. */
+  anio: number;
+  mes: number;
+  plazas: number;
+  /** Σ sueldos del mes, en DOP. */
+  masa: number;
+}
 
 export type NominaData = {
   generatedAt: string;
-  source: string;
+  esquema: string;
   currency: string;
   monthNames: string[];
-  localidades: string[];
+  instituciones: InstitucionNomina[];
+  areas: string[];
   cargos: string[];
   rows: Row[];
 };
@@ -61,8 +69,7 @@ export function formatCompactDOP(n: number): string {
   return `RD$${Math.round(n)}`;
 }
 
-/** Period key for time series ordering: 2024-03 → 202403. */
-export const periodKey = (anio: number, mes: number) => anio * 100 + mes;
+/** "May '26" para el período de una institución. */
 export const periodLabel = (anio: number, mes: number) =>
   `${MONTH_ABBR[mes - 1]} '${String(anio).slice(2)}`;
 
@@ -96,7 +103,7 @@ export type GroupStat = {
 };
 
 /**
- * Aggregate filtered rows by a dimension column (LOC or CARGO).
+ * Aggregate filtered rows by a dimension column (INST, AREA or CARGO).
  * Returns one stat row per distinct key, unsorted.
  */
 export function aggregateBy(rows: Row[], col: number): GroupStat[] {

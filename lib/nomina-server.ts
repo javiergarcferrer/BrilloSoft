@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { COL, periodKey, periodLabel, type NominaData } from "./nomina";
+import { periodLabel, type NominaData } from "./nomina";
 
 /**
  * Resumen de la nómina calculado en el servidor.
@@ -12,21 +12,20 @@ import { COL, periodKey, periodLabel, type NominaData } from "./nomina";
  */
 
 export interface ResumenNomina {
-  /** Puestos presupuestados en el mes más reciente. */
+  /** Plazas en la foto transversal (último mes publicado por institución). */
   plazas: number;
-  /** Gasto del mes más reciente, en DOP. */
+  /** Σ masa salarial mensual de la foto, en DOP. */
   gastoMensual: number;
-  /** Etiqueta del mes más reciente, p. ej. "Mayo 2026". */
-  ultimoPeriodo: string;
-  /** Filas totales del conjunto (todas las instantáneas mensuales). */
-  registros: number;
-  localidades: number;
+  /** Cuántas instituciones cubre la foto. */
+  instituciones: number;
+  /** Período más reciente entre las fotos, p. ej. "Jul '26". */
+  periodoReciente: string;
 }
 
 /**
  * `loadNomina` usa una URL relativa y solo sirve en el cliente; el panorama es
- * un Server Component, así que lee el mismo archivo desde disco. La lectura es
- * cara (~2 MB), pero corre una vez por ventana de `revalidate`.
+ * un Server Component, así que lee el mismo archivo desde disco. Corre una vez
+ * por ventana de `revalidate`.
  */
 export async function getResumenNomina(): Promise<ResumenNomina | null> {
   try {
@@ -36,26 +35,20 @@ export async function getResumenNomina(): Promise<ResumenNomina | null> {
     );
     const data = JSON.parse(crudo) as NominaData;
 
-    let maxPeriodo = -1;
-    for (const r of data.rows) {
-      const k = periodKey(r[COL.ANIO], r[COL.MES]);
-      if (k > maxPeriodo) maxPeriodo = k;
-    }
-
     let plazas = 0;
     let gastoMensual = 0;
-    for (const r of data.rows) {
-      if (periodKey(r[COL.ANIO], r[COL.MES]) !== maxPeriodo) continue;
-      plazas += 1;
-      gastoMensual += r[COL.SUELDO];
+    let max = { anio: 0, mes: 1 };
+    for (const i of data.instituciones) {
+      plazas += i.plazas;
+      gastoMensual += i.masa;
+      if (i.anio * 100 + i.mes > max.anio * 100 + max.mes) max = i;
     }
 
     return {
       plazas,
       gastoMensual,
-      ultimoPeriodo: periodLabel(Math.floor(maxPeriodo / 100), maxPeriodo % 100),
-      registros: data.rows.length,
-      localidades: data.localidades.length,
+      instituciones: data.instituciones.length,
+      periodoReciente: periodLabel(max.anio, max.mes),
     };
   } catch (err) {
     console.error("[nomina] resumen:", err);

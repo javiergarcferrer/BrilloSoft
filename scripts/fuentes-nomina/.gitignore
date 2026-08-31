@@ -1,0 +1,3 @@
+# Fuentes descargadas al regenerar; solo CESAC.csv va versionado
+*.csv
+!CESAC.csv

@@ -2,9 +2,15 @@
 
 import { useRef, useState } from "react";
 import { cn } from "@/lib/cn";
-import { COL, formatDOP, formatInt, MONTH_ABBR, type Row } from "@/lib/nomina";
+import {
+  COL,
+  formatDOP,
+  formatInt,
+  type InstitucionNomina,
+  type Row,
+} from "@/lib/nomina";
 
-export type SortKey = "localidad" | "cargo" | "sueldo" | "periodo";
+export type SortKey = "institucion" | "area" | "cargo" | "sueldo";
 export type SortDir = "asc" | "desc";
 
 const ROW_H = 40;
@@ -12,18 +18,20 @@ const VIEWPORT_H = 600;
 const OVERSCAN = 12;
 
 const GRID =
-  "grid grid-cols-[3.5rem_minmax(0,2.2fr)_minmax(0,3fr)_7.5rem_5.5rem] gap-x-3";
+  "grid grid-cols-[3.5rem_6rem_minmax(0,2.2fr)_minmax(0,2.6fr)_7.5rem] gap-x-3";
 
 export function DataTable({
   rows,
-  localidades,
+  instituciones,
+  areas,
   cargos,
   sortKey,
   sortDir,
   onSort,
 }: {
   rows: Row[];
-  localidades: string[];
+  instituciones: InstitucionNomina[];
+  areas: string[];
   cargos: string[];
   sortKey: SortKey;
   sortDir: SortDir;
@@ -46,15 +54,15 @@ export function DataTable({
         )}
       >
         <span className="text-right tabular-nums">#</span>
-        <HeaderCell label="Localidad" col="localidad" {...{ sortKey, sortDir, onSort }} />
+        <HeaderCell label="Inst." col="institucion" {...{ sortKey, sortDir, onSort }} />
+        <HeaderCell label="Área" col="area" {...{ sortKey, sortDir, onSort }} />
         <HeaderCell label="Cargo" col="cargo" {...{ sortKey, sortDir, onSort }} />
         <HeaderCell label="Sueldo" col="sueldo" align="right" {...{ sortKey, sortDir, onSort }} />
-        <HeaderCell label="Período" col="periodo" align="right" {...{ sortKey, sortDir, onSort }} />
       </div>
 
       {total === 0 ? (
         <div className="px-4 py-16 text-center text-sm text-ink-soft">
-          No hay registros que coincidan con los filtros.
+          No hay plazas que coincidan con los filtros.
         </div>
       ) : (
         <div
@@ -67,6 +75,7 @@ export function DataTable({
             <div style={{ transform: `translateY(${start * ROW_H}px)` }}>
               {visible.map((r, i) => {
                 const idx = start + i;
+                const inst = instituciones[r[COL.INST]];
                 return (
                   <div
                     key={idx}
@@ -81,17 +90,20 @@ export function DataTable({
                     <span className="text-right tabular-nums text-xs text-ink-soft">
                       {formatInt(idx + 1)}
                     </span>
-                    <span className="truncate text-ink" title={localidades[r[COL.LOC]]}>
-                      {localidades[r[COL.LOC]]}
+                    <span
+                      className="truncate font-medium text-ink"
+                      title={inst.nombre}
+                    >
+                      {inst.codigo}
+                    </span>
+                    <span className="truncate text-ink" title={areas[r[COL.AREA]]}>
+                      {areas[r[COL.AREA]]}
                     </span>
                     <span className="truncate text-ink-soft" title={cargos[r[COL.CARGO]]}>
                       {cargos[r[COL.CARGO]]}
                     </span>
                     <span className="text-right font-mono tabular-nums text-ink">
                       {formatDOP(r[COL.SUELDO])}
-                    </span>
-                    <span className="text-right tabular-nums text-ink-soft">
-                      {MONTH_ABBR[r[COL.MES] - 1]} {r[COL.ANIO]}
                     </span>
                   </div>
                 );

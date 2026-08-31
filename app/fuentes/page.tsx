@@ -88,26 +88,42 @@ export default async function FuentesPage() {
         </Fuente>
 
         <Fuente
-          nombre="Nómina de empleados fijos"
+          nombre="Nóminas de transparencia (consolidadas)"
           estado={nomina !== null ? "activa" : "caida"}
           etiqueta={nomina !== null ? "Instantánea local" : "No disponible"}
         >
           <p>
-            Instantáneas mensuales de plazas presupuestadas (2023–2026),
-            transformadas a un JSON compacto que se sirve como archivo estático.
-            No contiene nombres ni datos personales: cada fila es un puesto en un
-            mes.
+            Cada institución publica su nómina bajo la Ley 200-04 en formatos que
+            solo coinciden en el concepto. Esta plataforma consolida las que están
+            en formato procesable en una <strong>foto transversal</strong>: el
+            último mes publicado por cada institución, sin nombres ni datos
+            personales (cada fila es una plaza con su sueldo bruto).
           </p>
           {nomina && (
             <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
-              <Metrica etiqueta="Registros" valor={formatInt(nomina.registros)} />
-              <Metrica etiqueta="Localidades" valor={formatInt(nomina.localidades)} />
-              <Metrica etiqueta="Último período" valor={nomina.ultimoPeriodo} />
+              <Metrica etiqueta="Instituciones" valor={formatInt(nomina.instituciones)} />
+              <Metrica etiqueta="Plazas" valor={formatInt(nomina.plazas)} />
+              <Metrica etiqueta="Foto más reciente" valor={nomina.periodoReciente} />
             </dl>
           )}
           <p className="mt-3 text-xs text-ink-soft">
-            A diferencia de las otras dos, esta fuente es una foto fija: se
-            actualiza cuando se regenera el archivo, no en vivo.
+            Cobertura parcial declarada: es lo publicado en CSV procesable, no
+            todo el Estado. La nómina estatal completa (con nombres) vive en el
+            tablero oficial del{" "}
+            <a
+              href="https://transparencia.gob.do/2025/12/17/nomina/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-brand-700 hover:underline"
+            >
+              Portal Único de Transparencia
+            </a>
+            , un Power BI sin API pública utilizable. Fuente fija: se actualiza al
+            regenerar el archivo (fuentes y método en{" "}
+            <code className="rounded bg-canvas px-1 py-0.5 font-mono">
+              scripts/build-nomina.py
+            </code>
+            ).
           </p>
         </Fuente>
 
