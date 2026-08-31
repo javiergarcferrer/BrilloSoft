@@ -64,6 +64,7 @@ de Cuentas) — ahí la vía es institucional, no técnica.
 | Judicial | Tribunal Constitucional | Sentencias TC | Sin robots | ⚠️ sin mapear |
 | Social | TSS | Cotizantes, empleadores (mensual) | WP abierto | ✅ mapear |
 | Social | SIPEN | Fondos de pensiones | Cloudflare signals, `*` permitido | ⚠️ sin mapear |
+| Social | **PUT (DIGEIG)** | **Nómina estatal individual** + consulta de decretos | Power BI sin API utilizable | ⚠️ vía CSV por institución (§5.9) |
 | Admin. | SISMAP | Índices de gestión pública | SPA con API interna | ⚠️ mapear API |
 | Finanzas | Superintendencia de Bancos | Series del sistema financiero | `apis.sb.gob.do` vivo | ⚠️ clave |
 | Comercio | DGA (Aduanas) | Comercio exterior | Sin robots | ⚠️ sin mapear |
@@ -223,13 +224,19 @@ tasas) está a un registro de distancia. El costo no es técnico: es la regla
   declaraciones juradas de patrimonio — pieza central de integridad — quedan
   inalcanzables por ahora. Vía: Ley 200-04.
 
-### 4.4 datos.gob.do — ❌ marginal (segunda verificación)
+### 4.4 datos.gob.do — ⚠️ CORRECCIÓN: útil como índice, no como API
 
 - ✅ robots **sin cambios** desde la recon: `Disallow: /api/` (y `/revision/`,
   `/dataset/*/history`), `Crawl-Delay: 10`.
-- ⚠️ `/dataset/` (vía HTML permitida) sirve un cascarón con render en cliente:
-  ni el conteo de datasets es visible server-side. Se confirma el veredicto de
-  `RECON.md` §4: no es vía útil hoy.
+- ⚠️ `/dataset/` sirve un cascarón con render en cliente: ni el conteo de
+  datasets es visible server-side.
+- ✅ **Pero la búsqueda HTML (`/dataset?q=`) sí expone los slugs**, y las
+  fichas de dataset exponen **las URL directas de los archivos** en los
+  portales institucionales (`{institución}.gob.do/...nomina.csv`). Por esa vía
+  —sin tocar `/api/`— se localizaron las nóminas CSV de 10 instituciones que
+  hoy alimentan la foto transversal de `/nomina` (§5.9). El veredicto sube de
+  «marginal» a **índice útil de enlaces directos**; su API sigue vetada por su
+  propio robots.
 
 ---
 
@@ -285,6 +292,38 @@ tasas) está a un registro de distancia. El costo no es técnico: es la regla
 ### 5.8 DGA (Aduanas) — ⚠️ por mapear
 
 - ✅ Sin robots (404). Estadísticas de comercio exterior por recon dedicada.
+
+### 5.9 Nómina estatal — Portal Único de Transparencia (añadido en esta pasada)
+
+Investigación disparada por la pregunta «¿dónde vive la nómina estatal
+completa?»:
+
+- ✅ **`transparencia.gob.do`** (Portal Único de Transparencia, DIGEIG) existe:
+  WordPress con `wp-json` abierto. Su sección **Consultas** publica dos
+  tableros ciudadanos: **Nóminas** y «Consulta Oficial de Decretos del Poder
+  Ejecutivo».
+- ✅ El tablero de Nóminas es un **Power BI «publish to web»** con la nómina
+  estatal a nivel **individual** (nombre, función, institución, sueldo bruto),
+  filtros de año/mes y actualización declarada a 2025 — la vista completa del
+  Estado que ninguna otra fuente ofrece.
+- ❌ Su API subyacente no es utilizable desde un servidor: el flujo público de
+  Power BI respondió **403** a `modelsAndExploration` en todos los clústeres
+  probados (exige el intercambio anti-CSRF del propio JS del embed), el
+  `global-redirect` está vetado por la política de egreso de este entorno, y
+  `app.powerbi.com` resetea la conexión del navegador headless a través del
+  proxy. Extraerlo en vivo queda descartado; el detalle individual completo
+  además excedería el patrón sin-BD de la plataforma.
+- ✅ **La vía que sí funciona**: las nóminas CSV que cada institución publica
+  bajo Ley 200-04, localizadas vía datos.gob.do (§4.4) y consolidadas por
+  `scripts/build-nomina.py` en la foto transversal de `/nomina` (último mes
+  publicado por institución, sin nombres). Cobertura inicial: 11 instituciones,
+  13,668 plazas, RD$569.6M de masa mensual; ampliar = añadir una línea al
+  manifiesto. La cobertura parcial se declara en la UI y el tablero oficial
+  queda enlazado como fuente del detalle completo.
+- Los formatos reales exigieron tolerancia verificada: delimitadores `,`/`;`,
+  codificaciones UTF-8/cp1252/**cp850** (heredada de DOS), columnas sinónimas
+  (CARGO/FUNCIÓN/RANGO…), y filas con fechas futuras erróneas que el
+  consolidador descarta.
 
 ---
 
