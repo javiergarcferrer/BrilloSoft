@@ -25,8 +25,12 @@ import {
  * entry point for search + quick filtering across the app. It drives the
  * buscador purely through the URL (the app's source of truth): typing updates
  * `?q=`, quick filters set/clear params, and saved/recent searches navigate to
- * a full querystring. Works from any page (navigates home when needed).
+ * a full querystring. Works from any page (navigates to the buscador when
+ * needed) — that buscador now lives at `/licitaciones`, since `/` is the
+ * panorama of the whole platform.
  */
+const BUSCADOR = "/licitaciones";
+
 export default function TopSearch() {
   const router = useRouter();
   const pathname = usePathname();
@@ -84,15 +88,15 @@ export default function TopSearch() {
     );
     mutate(p);
     const qs = p.toString();
-    const url = `/${qs ? `?${qs}` : ""}`;
-    if (pathname === "/") router.replace(url);
+    const url = `${BUSCADOR}${qs ? `?${qs}` : ""}`;
+    if (pathname === BUSCADOR) router.replace(url);
     else router.push(url);
   }
 
   function reset() {
     setText("");
-    if (pathname === "/") router.replace("/");
-    else router.push("/");
+    if (pathname === BUSCADOR) router.replace(BUSCADOR);
+    else router.push(BUSCADOR);
   }
 
   function aplicarTermino(term: string) {
@@ -108,7 +112,7 @@ export default function TopSearch() {
   }
 
   function aplicarGuardada(b: Busqueda) {
-    router.push(`/${b.qs ? `?${b.qs}` : ""}`);
+    router.push(`${BUSCADOR}${b.qs ? `?${b.qs}` : ""}`);
     setOpen(false);
   }
 

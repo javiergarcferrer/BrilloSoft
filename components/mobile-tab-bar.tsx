@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getSeguimiento, onSeguimientoCambio } from "@/lib/seguimiento";
-import { IconChartBar, IconSearch, IconShield, IconStar } from "./icons";
+import { IconCoins, IconLayers, IconSparkles, IconStar } from "./icons";
 
 const TABS = [
-  { href: "/", label: "Buscar", Icon: IconSearch, exact: true },
-  { href: "/estadisticas", label: "Mercado", Icon: IconChartBar },
+  { href: "/", label: "Panorama", Icon: IconSparkles, exact: true },
+  { href: "/licitaciones", label: "Licitaciones", Icon: IconCoins },
+  { href: "/congreso", label: "Congreso", Icon: IconLayers },
   { href: "/seguimiento", label: "Seguidos", Icon: IconStar, seguimiento: true },
-  { href: "/guia", label: "Guía", Icon: IconShield },
 ];
 
 /** Native-style fixed bottom navigation for mobile (hidden on lg+). */

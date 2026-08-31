@@ -1,0 +1,515 @@
+# RECON — Fuentes del Congreso Nacional (RD)
+
+Entregable de la fase 0 del brief de Inteligencia Legislativa. Documenta lo que se
+**verificó contra las fuentes reales**, no lo que se asume.
+
+- **Fecha de reconocimiento:** 2026-08-31
+- **Método:** peticiones HTTP directas con User-Agent identificable
+  (`LegisRD-Recon/0.1`), sin autenticación, sin volumen.
+- **Convención:** ✅ = comprobado contra una respuesta real. ⚠️ = parcial.
+  ❌ = no verificado. Todo lo demás es hipótesis y está marcado como tal.
+
+> **Segunda pasada (esta revisión).** Corrige dos conclusiones de la primera
+> versión que resultaron equivocadas al probarlas — están marcadas como
+> **CORRECCIÓN** en §6 y §8. Ambas iban en la dirección de subestimar la fuente.
+
+---
+
+## 0. Resumen ejecutivo
+
+**Diputados es una fuente viable hoy.** Su SIL tiene una API JSON interna, abierta
+y sin autenticación, con metadatos ricos: estado, condición, legislatura,
+promulgación, proponentes con partido y provincia, traza de trámites y **documentos
+PDF versionados por lectura**. Se puede construir sobre ella.
+
+**Tres obstáculos reales, en orden de gravedad:**
+
+1. **El servidor de documentos no es alcanzable desde este entorno.** Los metadatos
+   viven en Azure y responden bien; los PDF viven en un servidor on-premise en RD
+   (`200.88.113.222`) que **resetea la conexión en el handshake TLS**. La feature #1
+   —la de mayor valor del brief— depende enteramente de esos PDF. Hay que verificar
+   la alcanzabilidad desde el egress real de producción antes de comprometerla.
+2. **El Senado bloquea explícitamente a los rastreadores de IA por nombre** en su
+   `robots.txt`, e impone `Crawl-delay: 120` al resto. No se scrapeó. Esto asciende
+   la Ley 200-04 (§7 del brief) de complemento a **camino principal** para el corpus
+   senatorial, y deja bloqueadas la feature #6 y el caso de prueba.
+3. **El caso de prueba obligatorio no existe en el SIL de Diputados.** Confirmado
+   con búsquedas de control: la búsqueda funciona, la pieza no está.
+
+| | Cámara de Diputados | Senado |
+|---|---|---|
+| Tecnología | SPA Angular sobre ASP.NET / IIS 10 (Azure) | WordPress (Apache + caché nginx) |
+| API JSON | ✅ Existe, abierta, sin auth | ❌ No verificado |
+| `robots.txt` | ✅ 404 — no existe | ✅ Existe y **restringe** |
+| Restricción a agentes IA | Ninguna declarada | ✅ `Disallow: /` para `ClaudeBot`, `Claude-SearchBot`, `GPTBot`, `OAI-*`, `bingbot` y otros |
+| Ritmo permitido | No declarado | ✅ `Crawl-delay: 120` |
+| Documentos | ✅ PDF versionados… ⚠️ …pero el host no responde desde aquí | ❌ No verificado |
+
+---
+
+## 1. Estado de las preguntas del brief
+
+| Pregunta | Estado |
+|---|---|
+| 1. ¿Endpoint JSON en cada SIL? | ✅ Diputados: sí. ❌ Senado: bloqueado |
+| 2. ¿Cómo se pagina? | ✅ Diputados. ❌ Senado |
+| 3. ¿Qué identificador usa cada cámara? | ✅ Diputados (y **`numero` NO sirve como clave estable** — §8). ❌ Senado |
+| 4. ¿El texto es PDF? ¿Versionado por lectura? | ✅ **Respondida: PDF, versionado append-only** — §2.8 |
+| 5. ¿`robots.txt` / términos de uso? | ✅ Las tres fuentes |
+| Completitud histórica | ✅ **Resuelta** — §6 |
+| Caso de prueba | ✅ **Resuelto (negativo)**: no está en Diputados — §7 |
+| datos.gob.do | ⚠️ Parcial — §4 |
+
+---
+
+## 2. SIL Cámara de Diputados
+
+`https://www.diputadosrd.gob.do/sil` sirve un shell HTML de 1.8 KB: SPA Angular
+("SIL Ciudadano"). No hay nada que parsear en el HTML; todo entra por XHR. Los
+endpoints se extrajeron leyendo los servicios Angular del bundle
+(`/sil/Script/Bundles?v=…`, 5.3 MB) y se probaron contra el servidor.
+
+**No es una API pública documentada**: es la API interna del portal ciudadano. Está
+abierta (sin token ni cookie de sesión), pero es un contrato no publicado que puede
+cambiar sin aviso. Tratarla como frágil y aislarla tras una capa de adaptación.
+
+### 2.1 Trampa de ingesta: un 200 no significa que la ruta exista
+
+⚠️ **Crítico para el crawler.** IIS enruta lo desconocido bajo `/sil/` al catch-all
+de la SPA, que responde **`HTTP 200` con el HTML del shell**. Una ruta de API
+inexistente devuelve 200, no 404.
+
+La primera pasada de esta recon cayó en eso: `api/periodolegislativo` "respondió
+200" y era HTML.
+
+**Regla:** validar `content-type: application/json` en cada respuesta, nunca el
+código de estado. Un `text/html` es un fallo de ruta disfrazado de éxito.
+
+### 2.2 Servicios y rutas (leídos del código fuente)
+
+Base: `https://www.diputadosrd.gob.do/sil/api/`
+
+| Servicio | Rutas |
+|---|---|
+| `iniciativa/` | `CountIniciativas` ✅, `getIniciativas?page=&keyword=` ✅, `iniciativa/{id}` ✅, `historicos?page=&id=` ✅, `proponentes?page=&id=` ✅, `documentos?page=&id=` ✅, `comisiones?page=&id=`, `votaciones?page=&id=`, `Actividades?page=&id=`, `Grupos` ✅, `Grupo?id=`, `Materias?grupo=` |
+| `comision/` | `comisiones?tipoId=`, `comisiones?page=&keyword=` ✅, `comision/{id}`, `miembros`, `temas` (404) |
+| `legislador/` | `legisladores?page=&nivel=`, `legisladores?page=&keyword=`, `legislador/{id}`, `Iniciativas?page=&legisladorId=&keyword=` |
+| `sesion/` | `sesiones?page=&keyword=`, `sesion/{id}`, `documentos?page=&id=`, `ordendia?page=&id=`, `historicos` |
+| `votacion/` | `votacion/{id}`, `legisladores/?page=&id=`, `iniciativas/?page=&id=` |
+| `asistencia/` | `sesion/?sesionId=`, `legisladores/?page=&id=`, `actividad/?page=&id=` |
+| `actividad/` | `actividad/{id}`, `actividadMiembros/?page=&id=`, `documentos/?page=&id=` |
+| `GruposParlamentarios/` | `Index` ✅, `Detalle/{id}`, `Actividades?grupo=` |
+| `periodolegislativo` | `periodolegislativo/all` ✅ — **ojo: lleva `/all`**, la ruta desnuda cae en el catch-all |
+| `comun/` | `GetRutaDocumento/` ✅, `GetRutaHost/` ✅, `GetRutaRendicion/` ✅ |
+| `suscriptor/` | `suscribirse` (**POST — no tocar**) |
+
+⚠️ `iniciativa/iniciativas?page=&grupo=&tipo=&perimidas=&keyword=` devuelve **400
+"The request is invalid."** en todas las combinaciones probadas, incluidas ids
+reales de grupo y tipo (`grupo=11&tipo=9`) y variantes de booleano
+(`false`/`False`/`0`). Los tipos que espera el binder de ASP.NET siguen sin
+determinar. **Ya no es bloqueante** — ver §2.4.
+
+### 2.3 Paginación
+
+Envoltorio uniforme: `{ "page": 1, "pageSize": 10, "total": 6222, "results": [...] }`
+
+- `pageSize` **fijo en 10**, sin parámetro para alterarlo en ninguna firma.
+- Un barrido completo cuesta ~**622 peticiones**; a 1 req/s son ~10 minutos.
+  Viable a diario.
+- Conteos observados: `CountIniciativas` → **6225**; `getIniciativas?keyword=`
+  → `total` **6222**; `keyword=ley` → **1482**. La diferencia de 3 entre los dos
+  primeros no se explicó. **No usar ninguno como cifra de control** sin entenderla.
+
+### 2.4 Perención: la feature #2 no depende del endpoint roto
+
+✅ El listado normal ya trae `condicion` con valores **`VIGENTE`, `PERIMIDO`,
+`APROBADO`** (una sola página de muestra: 3 vigentes, 3 perimidas, 4 aprobadas).
+
+La feature #2 se puede construir cruzando `condicion` + `legislatura` +
+`fechaDeposito` sin necesidad del filtro `perimidas` del endpoint que hoy da 400.
+
+### 2.5 Forma de una iniciativa (respuesta real, id `159679`)
+
+```json
+{
+  "id": 159679, "tipoId": 9, "tipo": "Proyecto de Ley",
+  "camaraInicioId": 686, "camaraInicio": "Cámara de Diputados",
+  "numero": "06225-2024-2028-CD",
+  "descripcion": "Proyecto de ley que cambia el nombre de la sección El Batey …",
+  "periodoCreacionId": 2761, "periodoId": 2761, "periodoRegistro": "2024-2028",
+  "iniciado": "NO", "fechaIniciado": null,
+  "temaId": null, "materiaId": 807, "materia": "DIVISIÓN POLÍTICA",
+  "legislaturaId": 3945,
+  "numPromulgacion": null, "fechaPromulgacion": null,
+  "condicionId": 34, "condicion": "DEPOSITADO",
+  "estadoId": 3, "estado": "Depositado",
+  "fechaDeposito": "2026-08-28T00:00:00",
+  "fechaUltimoCambioPrincipal": "2026-08-28T13:35:52.843997",
+  "creadorPor": "897e0cb4-196b-4592-bb32-dae31a2144c9",
+  "anoLegislativoId": 3832,
+  "grupoId": 11, "grupo": "Justicia", "icono": "justicia",
+  "origenId": 686, "origen": "Cámara de Diputados",
+  "legislatura": "2026-SLO"
+}
+```
+
+Lo que importa para el modelo:
+
+- **`numPromulgacion` / `fechaPromulgacion` son campos de primera clase.** Responden
+  directo la pregunta de negocio central ("¿se promulgó?").
+- **`legislatura` codificada** (`2026-SLO` = Segunda Legislatura Ordinaria; `PLO`
+  para la primera). Alimenta el cálculo de perención sin inferir fechas.
+- **`condicion` y `estado` son taxonomías distintas y coexistentes**
+  (`condicionId: 34 / DEPOSITADO` vs `estadoId: 3 / Depositado`). El borrador del
+  brief tiene un solo `estado_actual`: colapsarlas pierde información.
+- **`fechaUltimoCambioPrincipal` existe.** La regla del brief se mantiene —el diff
+  entre snapshots es la verdad—, pero este campo sirve para **priorizar** qué
+  re-pedir en cada barrido. Ordenar con él, nunca concluir con él.
+- `creadorPor` es un GUID de usuario interno del Congreso. No ingerirlo.
+
+### 2.6 Trámites — `historicos`
+
+```json
+{"page":1,"pageSize":10,"total":1,
+ "results":[{"id":616976,"estadoId":3,"inicio":"2026-08-28T00:00:00",
+             "estado":"Depositado","fin":"2026-08-28T00:00:00"}]}
+```
+
+⚠️ Más pobre que la tabla `tramites` del brief: solo `{estado, inicio, fin}`, sin
+cámara ni comisión. La atribución a comisión debe venir de `comisiones?id=` (no
+probado) y habrá que **unir ambas fuentes**. Además entrega **intervalos, no
+eventos**: convertirlos a eventos append-only es trabajo de la capa de ingesta.
+
+### 2.7 Proponentes
+
+```json
+{"principal": true, "legisladorId": 3502,
+ "nombres": "Mélido ", "apellidos": "Mercedes Castillo",
+ "nombreCompleto": "Mélido  Mercedes Castillo",
+ "representacion": {"funcion":"Diputado","nivelRepresentacion":"Provincial",
+   "provincia":"San Juan",
+   "partido":{"id":2875,"nombre":"Fuerza del Pueblo","siglas":"FP"},
+   "ejercicio":"En Curso","inicio":"2024-08-16T00:00:00",
+   "fin":"2028-08-15T00:00:00","periodo":"2024-2028"}}
+```
+
+Cubre casi toda la tabla `legisladores` del brief sin llamada adicional. ⚠️ Ojo con
+los **espacios dobles y sobrantes** (`"Mélido "`, `"Mélido  Mercedes Castillo"`):
+normalizar en ingesta y no usar `nombreCompleto` como clave sin limpiar.
+
+### 2.8 ✅ Documentos: PDF, versionados y etiquetados por etapa
+
+**Esta es la respuesta a la pregunta 4 del brief, y habilita la feature #1.**
+
+Traza documental real de la iniciativa `155693` (`03231-2024-2028-CD`, APROBADO):
+
+| Fecha | id | Etiqueta |
+|---|---|---|
+| 2024-09-12 | 216936 | PROYECTO DEPOSITADO |
+| 2025-06-06 | 231577 | ACUSE COMISIÓN INDUSTRIA Y COMERCIO |
+| 2025-10-09 | 238652 | INFORME COMISIÓN INDUSTRIA Y COMERCIO |
+| 2025-10-28 | 240029 | MODIFICACIÓN |
+| 2025-10-28 | 240030 | MODIFICACIÓN 2 |
+| 2026-07-10 | 257281 | PROYECTO APROBADO |
+| 2026-07-10 | 257282 | AVISO PRESIDENTE COMISIÓN |
+| 2026-07-13 | 257354 | AVISO PROPONENTE |
+
+Conclusiones firmes:
+
+- Todos son **`extension: "pdf"`**.
+- **No se sobrescriben.** Cada versión es una fila propia con su `id` y su
+  `cargado`. La cadena `DEPOSITADO → MODIFICACIÓN → MODIFICACIÓN 2 → APROBADO` es
+  exactamente el insumo que la feature #1 necesita para diffear entre lecturas.
+- La etapa viene en `descripcion` como **texto libre en mayúsculas**, no como un
+  enum. Habrá que normalizarla con un mapeo tolerante (`MODIFICACIÓN N`,
+  `INFORME COMISIÓN …` con el nombre de la comisión pegado). Los datos traen
+  espacios iniciales (`" INFORME COMISIÓN…"`).
+- El campo `ruta` viene **`null`**: la URL de descarga se compone aparte.
+- Cobertura: de 12 piezas muestreadas, **todas tenían documentos** (entre 1 y 8).
+
+### 2.9 ⚠️ El servidor de documentos no responde desde este entorno
+
+Las rutas base se resuelven en runtime vía `api/comun/` (✅ no hardcodear):
+
+```
+GetRutaDocumento -> https://s-sil.camaradediputados.gob.do:8095/ReportesGenerales/VerDocumento?documentoId=
+GetRutaHost      -> https://s-sil.camaradediputados.gob.do:8095
+GetRutaRendicion -> https://diputadosrd.gob.do/unsuscribe/rendicion/?id=
+```
+
+Nótese que **difiere de la URL hardcodeada en el bundle**
+(`ssilappl.camaradediputados.gob.do/…/VerDocumento2`), lo que confirma que hay que
+pedirla al endpoint y no fijarla.
+
+**Ninguna descarga funcionó.** Diagnóstico:
+
+- El túnel del proxy se establece (`CONNECT` → 200) pero el **handshake TLS con el
+  origen recibe un reset** (`Recv failure: Connection reset by peer`).
+- Falla igual en `:8095` y en `:443`, en HTTPS y HTTP, y forzando TLS 1.0 y 1.2 con
+  `SECLEVEL=0`. **El reset ocurre antes de enviar UA o ruta**, así que no es un
+  bloqueo por User-Agent ni por path: es de red/TLS.
+- `s-sil.camaradediputados.gob.do` resuelve a **`200.88.113.222`** (rango
+  dominicano). El host de la API (`diputadosrd.gob.do`, en Azure) responde 200
+  normal en la misma sesión, como control.
+
+**Lectura:** metadatos en la nube y globalmente alcanzables; documentos en un
+servidor on-premise en RD que rechaza a este entorno. Lo más probable es filtrado
+por IP/geografía o un firewall que no acepta rangos de nube.
+
+**No es concluyente sobre producción.** Antes de comprometer la feature #1 hay que
+probar la descarga desde el egress real (Vercel/Supabase) y desde una IP
+dominicana. Si el filtrado es geográfico, la ingesta de PDF necesitará salida por
+RD, o pasar por la vía OAI. **Es el riesgo técnico #1 del proyecto.**
+
+### 2.10 Higiene operativa
+
+- Sin `robots.txt` en `www.diputadosrd.gob.do` (404 confirmado).
+- `Microsoft-IIS/10.0`, `X-Powered-By: ASP.NET`, cookies `ARRAffinity` (Azure App
+  Service multi-instancia).
+- El shell HTML **expone en texto plano una clave de instrumentación de Azure
+  Application Insights**. Es una clave de escritura de telemetría del Congreso,
+  visible para cualquiera que abra el portal. No copiarla ni enviarle eventos.
+- `api/suscriptor/suscribirse` acepta **POST**: único endpoint de escritura hallado.
+  **No tocarlo.** Toda la ingesta debe ser estrictamente GET.
+- Bug de datos en origen: `periodolegislativo/all` devuelve fechas con **mes `00`**
+  (`"16/00/2020"`, `"15/00/2024"`). No parsear esas fechas: usar `description`.
+
+---
+
+## 3. SIL Senado — restringido por declaración explícita
+
+`https://www.senadord.gob.do/robots.txt` → 200 (Apache + caché WordPress):
+
+```
+User-agent: Amazonbot / Amzn-SearchBot / Applebot / Baiduspider / ChatGPT-User
+User-agent: Claude-SearchBot / ClaudeBot / GPTBot / MJ12bot / OAI-AdsBot
+User-agent: OAI-SearchBot / SemrushBot / YandexBot / bingbot
+User-agent: meta-externalagent / trendictionbot0.5.0
+   -> Disallow: /   (cada uno)
+
+User-agent: *
+Crawl-delay: 120.00
+```
+
+Lectura honesta:
+
+1. **El Senado bloqueó por nombre a los rastreadores de IA**, incluidos los de
+   Anthropic. La recon del Senado se detuvo aquí por esa razón, no por dificultad
+   técnica. No se emitió ninguna petición a su contenido.
+2. El grupo `*` **no lleva `Disallow`**, pero impone `Crawl-delay: 120`: ~720
+   peticiones/día como techo. Un barrido del corpus senatorial tomaría **días** por
+   pasada — inviable como base de un producto de alertas, cuyo valor es la
+   oportunidad.
+3. El bloqueo por nombre **señala la postura de la institución**. Esquivarla no
+   identificándose contradice el "no arrancar peleado con TI del Congreso" del
+   brief y destruye la cobertura que da la Ley 200-04.
+
+**Recomendación:** no scrapear el Senado. Activar ya la solicitud formal a su OAI
+bajo **Ley 200-04** pidiendo el volcado estructurado de iniciativas. Es de plazo
+largo: por eso hay que arrancarla en paralelo con el desarrollo, no después.
+Mientras tanto el MVP se sostiene sobre Diputados.
+
+**Hipótesis para cuando haya acceso legítimo** (sin verificar, no se probó): el
+sitio corre WordPress (`x-nginx-cache: WordPress`, `x-endurance-cache-level`); si
+las iniciativas viven como contenido de WP, podría existir `/wp-json/`.
+
+---
+
+## 4. Portal de datos abiertos (datos.gob.do)
+
+⚠️ **El robots.txt del portal prohíbe su propia API:**
+
+```
+User-agent: *
+Disallow: /dataset/rate/ , /revision/ , /dataset/*/history , /api/
+Crawl-Delay: 10
+```
+
+`Disallow: /api/` cubre justamente `/api/3/action/package_search` que el brief da
+por utilizable. Se hizo **una** consulta a esa API (emitida en el mismo lote que la
+descarga del robots.txt, antes de conocer la restricción) y no se hicieron más.
+
+Resultado de esa consulta: `package_search` con `q=congreso OR diputados OR senado`
+devolvió **`count: 0`**. La búsqueda por la vía web (`/dataset?q=congreso`, no
+restringida) muestra 1206 datasets en el portal, pero no se pudo aislar el conteo
+filtrado desde el HTML.
+
+**Conclusión provisional:** no hay evidencia de que datos.gob.do publique datasets
+del Congreso. El supuesto del brief de que sirve "para validar totales" **no está
+confirmado y podría ser falso**. Verificación pendiente, por UI y a mano, dada la
+restricción de `/api/`.
+
+---
+
+## 5. Respuestas directas a las 5 preguntas
+
+1. **¿Endpoint JSON interno?** Diputados: **sí**, abierto y sin auth (§2). Senado:
+   **no determinado**, acceso restringido por `robots.txt`.
+2. **¿Paginación?** Diputados: `?page={n}`, envoltorio
+   `{page,pageSize,total,results}`, `pageSize` **fijo en 10**, ~622 peticiones por
+   barrido. Senado: no determinado.
+3. **¿Identificadores? ¿Algo en común?** Diputados usa un `id` numérico interno
+   (`159679`), que es el que aceptan todos los endpoints, y un `numero` legible
+   `{secuencia}-{período}-{cámara}` (`06225-2024-2028-CD`). ⚠️ **El `numero` NO es
+   estable en el tiempo** (§8): incorpora el período de *registro*, no el de
+   depósito. No hay identificador común entre cámaras confirmado.
+4. **¿PDF? ¿Versionado?** ✅ **PDF, y versionado append-only** con etiqueta de etapa
+   en texto libre (§2.8). ⚠️ Pero el host de descarga no responde desde este
+   entorno (§2.9).
+5. **¿`robots.txt` / términos de uso?** Diputados: **no existe** (404). Senado:
+   **sí y restringe** (§3). datos.gob.do: **sí, prohíbe `/api/`** (§4). No se
+   revisaron los términos de uso publicados en los portales: pendiente.
+
+---
+
+## 6. CORRECCIÓN — Completitud histórica: mejor de lo que parecía
+
+**La primera versión de este documento planteó** que, como `CountIniciativas`
+(6225) coincidía con el número de la pieza más reciente (`06225-…`), el corpus
+estaría limitado al período 2024-2028. **Al probarlo, resultó falso.**
+
+Lo verificado:
+
+- `periodolegislativo/all` expone **solo dos períodos**: `2020-2024` (id 2760) y
+  `2024-2028` (id 2761, `isCurrent: true`).
+- En las páginas muestreadas (1, 300 y 623 de 623) **todos** los registros llevan
+  `periodoRegistro: "2024-2028"`. El listado sí está acotado al período vigente.
+- **Pero las piezas más antiguas del listado se depositaron en 2003 y 2004**:
+
+  | numero | fechaDeposito | legislatura | condicion |
+  |---|---|---|---|
+  | `00001-2024-2028-CD` | 2003-10-24 | 2003-SLO | VIGENTE |
+  | `00002-2024-2028-CD` | 2004-03-12 | 2004-PLO | VIGENTE |
+
+**La conclusión correcta:** `periodoRegistro` es el período del *registro vigente*,
+no el del depósito. Las piezas que siguen vivas se arrastran al período actual y
+**reciben un `numero` nuevo**, mientras `fechaDeposito` y `legislatura` conservan el
+origen real. El SIL cubre depósitos **desde 2003**, con más de 20 años de
+trayectoria acumulada.
+
+**El límite real no es la antigüedad, es la supervivencia:** el listado expone las
+piezas vivas arrastradas más todo lo del período vigente (incluidas sus perimidas).
+Las piezas que murieron en períodos anteriores **no aparecen**. Para historia
+legislativa completa —incluyendo lo que se perimió en 2015, por ejemplo— esta
+fuente no basta.
+
+---
+
+## 7. Caso de prueba obligatorio — resuelto en negativo
+
+Búsqueda de la **"Ley que Regula la Iniciativa Legislativa Popular"** en Diputados:
+
+| keyword | total |
+|---|---|
+| `iniciativa legislativa popular` | **0** |
+| `legislativa popular` | **0** |
+| `iniciativa popular` | **0** |
+| `Iniciativa Legislativa` | **0** |
+
+**Controles que descartan un fallo de búsqueda** (la búsqueda multi-palabra sí
+funciona):
+
+| keyword de control | total |
+|---|---|
+| `medio ambiente` | 66 |
+| `cambia el nombre` | 6 |
+| `popular` | 21 |
+| `iniciativa` | 2 |
+
+La búsqueda hace match de subcadena y opera correctamente sobre frases. **La pieza
+sencillamente no está en el SIL de Diputados.**
+
+Explicación, dado lo aprendido en §6: la pieza nació en el **Senado** (aprobada allí
+en 2011 y de nuevo en 2023) y o nunca llegó viva a Diputados, o murió y no fue
+arrastrada al registro 2024-2028.
+
+**Implicación de producto:** el caso de prueba del brief **no es alcanzable sin
+acceso al Senado**. Sigue siendo el criterio de éxito correcto — y hoy el sistema no
+lo pasaría. Esto refuerza que la vía OAI del §3 es urgente, no opcional.
+
+---
+
+## 8. CORRECCIÓN — `numero` no sirve como clave de reconciliación
+
+**La primera versión propuso** `numero` como "candidato natural para reconciliar
+entre cámaras". **Retirado.**
+
+`00001-2024-2028-CD` corresponde a una pieza depositada en **2003**. El `numero`
+incorpora el período de *registro* vigente, no el de origen: la misma pieza cambia
+de `numero` al arrastrarse de un período al siguiente. Como clave de identidad
+estable en el tiempo, no sirve.
+
+Sirve, eso sí, para **citar** una pieza dentro del período actual, que es como un
+abogado la referencia. Guardarlo descompuesto (`secuencia`, `periodo_registro`,
+`sufijo_camara`) y como campo mostrable, no como identidad.
+
+La identidad estable candidata es el `id` numérico interno. ⚠️ Sin confirmar que
+sobreviva al arrastre entre períodos: verificable solo cuando haya datos de dos
+períodos, o comparando contra el período 2020-2024 si se encuentra cómo listarlo
+(ningún endpoint hallado acepta parámetro de período).
+
+---
+
+## 9. Implicaciones para el modelo de datos
+
+Ajustes sobre el borrador del §2 del brief:
+
+- **Desdoblar `estado_actual`** en `condicion` + `estado` (dos taxonomías con id
+  propio en origen).
+- **`numero` como campo mostrable descompuesto**, nunca como clave (§8).
+- **Añadir `num_promulgacion` / `fecha_promulgacion`**: existen en origen y
+  responden la pregunta de negocio central.
+- **Guardar `legislatura` cruda** (`2026-SLO`) y derivar de ahí la perención, en vez
+  de inferir fechas. Ignorar las fechas de `periodolegislativo` (bug de mes `00`).
+- **Distinguir `fecha_deposito` de `periodo_registro`.** Son cosas distintas y
+  confundirlas fue el error de la primera pasada (§6).
+- **`versiones_texto` encaja bien con la realidad**: la fuente ya entrega versiones
+  append-only con etiqueta de etapa. Añadir `etiqueta_origen` (texto crudo, p. ej.
+  `"MODIFICACIÓN 2"`) junto a la `lectura` normalizada, porque el mapeo va a ser
+  imperfecto.
+- **`tramites` necesita dos fuentes**: `historicos` (intervalos de estado) cruzado
+  con `comisiones?id=` para cámara y comisión.
+- **Append-only en `snapshots_crudos` se sostiene**, usando
+  `fechaUltimoCambioPrincipal` solo para priorizar el re-fetch.
+- **Normalizar nombres de legisladores** en ingesta (espacios dobles).
+- **La taxonomía temática ya viene dada**: `iniciativa/Grupos` devuelve 15 grupos
+  con id estable (Administración/Municipalidad, Agricultura, Desarrollo Humano,
+  Economía, Educación/Cultura/Deporte, Electoral, Fiscalización/Control,
+  Género/Familia, Industria y Comercio, Internacionales, Justicia, Medio Ambiente,
+  Modernización/Tecnología/Medios, Seguridad Nacional, Seguridad Social). Para la
+  feature #4, **arrancar con esta clasificación oficial** y dejar `pgvector` para
+  refinar dentro de cada grupo, en vez de clasificar desde cero.
+
+---
+
+## 10. Pendientes, en orden
+
+1. **Probar la descarga de PDF desde el egress real** (Vercel/Supabase) y desde una
+   IP dominicana. Es el riesgo #1: la feature de mayor valor depende de esto (§2.9).
+2. **Redactar y enviar la solicitud OAI bajo Ley 200-04**, empezando por el Senado.
+   Plazo largo: arrancar ya (§3, §7).
+3. Confirmar si el `id` interno sobrevive al arrastre entre períodos (§8), y buscar
+   cómo listar el período 2020-2024.
+4. Probar `comisiones?id=`, `votaciones?id=`, `Materias?grupo=` y `comision/{id}`
+   para cerrar el schema de comisiones (feature #5).
+5. Extraer texto de dos PDF de la misma pieza y validar que el diff produce algo
+   legible — prueba de fuego de la feature #1, ejecutable en cuanto se resuelva (1).
+6. Revisar los **términos de uso publicados** de ambos portales (no solo
+   `robots.txt`).
+7. Verificar a mano, por UI, si datos.gob.do tiene algún dataset del Congreso (§4).
+
+---
+
+## 11. Estado de los supuestos no verificados del brief (§6)
+
+- *"Que exista endpoint JSON en cualquiera de los dos SIL"* → ✅ **Confirmado en
+  Diputados.** ❌ Sin confirmar en el Senado.
+- *"Que exista mercado que pague por esto en RD"* → ❌ **Sigue sin evidencia.** Nada
+  de esta recon toca esa pregunta. Que la API de Diputados abarate la construcción
+  no dice nada sobre si alguien compra el producto; no confundir hallazgo técnico
+  con validación comercial.
+- *"El estatus actual de la Ley de Iniciativa Legislativa Popular"* → ❌ **No
+  determinable desde Diputados**: la pieza no está en su SIL (§7).
+- *"La completitud histórica de cada SIL"* → ✅ **Resuelta para Diputados**:
+  depósitos desde 2003, pero solo piezas vivas arrastradas + período vigente
+  completo (§6). ❌ Senado sin determinar.

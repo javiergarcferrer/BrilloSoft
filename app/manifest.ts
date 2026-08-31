@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Licitaciones RD — Compras públicas",
-    short_name: "Licitaciones RD",
+    name: "Gobiername.data — Inteligencia sobre el Estado dominicano",
+    short_name: "Gobiername.data",
     description:
-      "Busca, sigue y entiende las licitaciones y compras públicas del Estado dominicano, en vivo desde los datos abiertos de la DGCP.",
+      "Qué compra, qué legisla y a quién paga el Estado dominicano: compras públicas, Congreso Nacional y nómina estatal, leídos en vivo desde sus fuentes oficiales.",
     lang: "es",
     start_url: "/",
     scope: "/",

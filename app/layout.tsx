@@ -22,22 +22,22 @@ const sora = Sora({
 
 export const metadata: Metadata = {
   title: {
-    default: "Licitaciones RD — Oportunidades de compras públicas",
-    template: "%s · Licitaciones RD",
+    default: "Gobiername.data — Inteligencia sobre el Estado dominicano",
+    template: "%s · Gobiername.data",
   },
   description:
-    "Explora y busca procesos de compras y licitaciones del Estado dominicano usando los datos abiertos de la DGCP: filtros por institución, precios históricos de adjudicación y guía para ofertar.",
+    "Qué compra, qué legisla y a quién paga el Estado dominicano: compras públicas de la DGCP, iniciativas del Congreso Nacional y la nómina pública, leídas en vivo desde sus fuentes oficiales.",
   openGraph: {
-    title: "Licitaciones RD",
+    title: "Gobiername.data",
     description:
-      "Encuentra oportunidades de compras públicas en República Dominicana y aprende cómo ofertar.",
+      "Compras públicas, Congreso Nacional y nómina estatal de República Dominicana, en un solo lugar.",
     locale: "es_DO",
     type: "website",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Licitaciones RD",
+    title: "Gobiername.data",
   },
 };
 
@@ -50,7 +50,7 @@ export const viewport: Viewport = {
 
 function BrandMark() {
   return (
-    <svg viewBox="0 0 40 40" className="h-9 w-9" role="img" aria-label="Licitaciones RD">
+    <svg viewBox="0 0 40 40" className="h-9 w-9" role="img" aria-label="Gobiername.data">
       <defs>
         <linearGradient id="lrd-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
           <stop stopColor="#10b981" />
@@ -81,7 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             >
               <BrandMark />
               <span className="hidden text-[15px] font-semibold tracking-tight sm:block">
-                Licitaciones <span className="text-emerald-400">RD</span>
+                Gobiername<span className="text-emerald-400">.data</span>
               </span>
             </Link>
             <div className="flex flex-1 justify-center">
@@ -109,19 +109,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2.5">
                 <BrandMark />
-                <span className="font-semibold text-ink">Licitaciones RD</span>
+                <span className="font-semibold text-ink">Gobiername.data</span>
               </div>
               <nav className="flex flex-wrap gap-x-5 gap-y-1">
-                <Link href="/" className="hover:text-brand-700">Buscar</Link>
-                <Link href="/estadisticas" className="hover:text-brand-700">Estadísticas</Link>
+                <Link href="/licitaciones" className="hover:text-brand-700">Licitaciones</Link>
+                <Link href="/congreso" className="hover:text-brand-700">Congreso</Link>
+                <Link href="/nomina" className="hover:text-brand-700">Nómina</Link>
+                <Link href="/estadisticas" className="hover:text-brand-700">Mercado</Link>
                 <Link href="/guia" className="hover:text-brand-700">Guía para ofertar</Link>
                 <Link href="/seguimiento" className="hover:text-brand-700">Seguimiento</Link>
+                <Link href="/fuentes" className="hover:text-brand-700">Fuentes</Link>
               </nav>
             </div>
             <p className="mt-6 max-w-2xl text-xs leading-relaxed text-ink-soft">
-              Fuente: Portal de Datos Abiertos de la Dirección General de
-              Contrataciones Públicas (DGCP). Esta herramienta es independiente y
-              no oficial; los datos se muestran tal como los publica la DGCP.
+              Fuentes: Portal de Datos Abiertos de la DGCP, SIL de la Cámara de
+              Diputados y la nómina pública de empleados fijos. Herramienta
+              independiente y no oficial; los datos se muestran tal como los
+              publica cada institución.{" "}
+              <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
+                Estado y límites de cada fuente
+              </Link>
+              .
             </p>
           </div>
         </footer>

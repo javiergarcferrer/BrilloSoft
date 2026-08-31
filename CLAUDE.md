@@ -4,12 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**Licitaciones RD** — a Spanish-language (es-DO) web app to search Dominican
-public-procurement processes (licitaciones) and understand *what is being bought
-and how to bid*. It is a thin, cached front end over the **DGCP open-data API**
-(`https://datosabiertos.dgcp.gob.do/api-dgcp/v1`). **There is no database and no
-environment variables** — all data is fetched live and cached via Next's fetch
-`revalidate`. Never introduce a DB, API keys, or secrets.
+**Gobiername.data** — a Spanish-language (es-DO) intelligence platform over
+Dominican state data. It covers three domains, each a thin cached front end over
+a public source:
+
+| Domain | Route | Source | Data layer |
+|---|---|---|---|
+| Compras públicas | `/licitaciones` | DGCP open-data API | `lib/dgcp.ts` |
+| Congreso Nacional | `/congreso` | SIL de la Cámara de Diputados | `lib/congreso.ts` |
+| Nómina estatal | `/nomina` | Static payroll snapshot | `lib/nomina.ts` |
+
+`/` is the **panorama**: live cross-domain indicators plus the signals that need
+attention now (tenders closing this week, initiatives about to lapse).
+`/fuentes` declares what feeds the platform, what is blocked and with which
+coverage limits — keep it truthful when sources change.
+
+**There is no database and no environment variables** — all data is fetched live
+and cached via Next's fetch `revalidate`. Never introduce a DB, API keys, or
+secrets.
 
 ## Commands
 
@@ -23,6 +35,9 @@ npx tsc --noEmit # typecheck only
 
 There is no test suite and no ESLint config; `next build` is the gate. Deploys to
 Vercel automatically on push to `main` (production: https://brillo-soft.vercel.app).
+The lockfile pins **Next 15**; build against it (`npm ci`) — Turbopack on 16
+tolerates things webpack on 15 rejects, such as `node:` imports reaching a
+client bundle.
 
 ## Architecture
 
@@ -57,8 +72,29 @@ Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return
 **The pattern for any new data capability: add a function in `lib/dgcp.ts`, then
 a force-dynamic route here that wraps it.**
 
+### Congreso data layer — `lib/congreso.ts`
+Same contract as `lib/dgcp.ts`. The SIL is the portal's **internal** API, not a
+documented public one, so three rules are enforced in `silFetch`:
+1. **A `200` does not mean the route exists** — IIS serves the SPA shell (HTML,
+   status 200) for unknown paths under `/sil/`, so `content-type` is validated
+   on every response, never the status code.
+2. **GET only.** The SIL's single write endpoint is never touched.
+3. Identifiable User-Agent, 25s timeout, one retry, conservative concurrency.
+
+It also owns legislature arithmetic (`evaluarPerencion`: 150-day terms opening
+27 Feb and 16 Aug, 30-day warning window) and `muestrearIniciativas`, a bounded
+sample — the SIL pages 10 at a time with no aggregates, so sweeping its ~622
+pages per render is not viable. Views that use a sample must say so.
+
+Field quirks worth keeping: `condicion` and `estado` are two coexisting
+taxonomies; `numero` (`06225-2024-2028-CD`) is a **citation**, not a stable id,
+because it carries the registration period; the reformulated title is buried
+inside `descripcion` behind a `TÍTULO MODIFICADO:` marker. See `RECON.md` for
+the full reconnaissance.
+
 ### Pages — `app/`
-- `/` → `app/buscador.tsx` (client) inside `<Suspense>`. Filters live entirely in
+- `/` → panorama (server). `/licitaciones` → `app/buscador.tsx` (client) inside
+  `<Suspense>`. Filters live entirely in
   the **URL** (`useSearchParams`) so any search is shareable/bookmarkable; it
   fetches `/api/procesos`. The `ESTADOS` and `MODALIDADES` enumerations are
   defined here and must match the DGCP vocabulary (default estado is

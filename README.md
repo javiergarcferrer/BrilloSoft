@@ -1,10 +1,35 @@
-# Licitaciones RD
+# Gobiername.data
 
-Aplicación web para encontrar oportunidades de compras públicas de República
-Dominicana y saber **qué piden y cómo proceder** en cada una, construida sobre la
-[API de datos abiertos de la DGCP](https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html).
+Plataforma de inteligencia sobre el Estado dominicano: **qué compra, qué legisla
+y a quién paga**. Reúne tres fuentes oficiales en un solo lugar, leídas en vivo
+y cacheadas — sin base de datos intermedia, sin credenciales.
 
-## Funcionalidades
+| Dominio | Ruta | Fuente |
+|---|---|---|
+| Compras públicas | `/licitaciones` | [API de datos abiertos de la DGCP](https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html) |
+| Congreso Nacional | `/congreso` | SIL de la Cámara de Diputados |
+| Nómina estatal | `/nomina` | Nómina de empleados fijos 2023–2026 |
+
+`/` es el **panorama**: indicadores de los tres dominios y las señales que
+exigen atención ahora — procesos que cierran esta semana e iniciativas por
+perimir. `/fuentes` documenta con qué cobertura cuenta cada fuente y cuáles
+están bloqueadas; el reconocimiento técnico completo está en `RECON.md`.
+
+Herramienta independiente y no oficial.
+
+## Congreso
+
+- Búsqueda por texto sobre las iniciativas, con la consulta en la URL.
+- Ficha por iniciativa: trámites, proponentes con partido y provincia, y la
+  cadena documental marcando qué versiones traen articulado.
+- Separa el título reformulado durante el trámite, que el SIL guarda dentro de
+  la misma descripción.
+- **Alerta de perención**: cada legislatura ordinaria dura 150 días (abren el 27
+  de febrero y el 16 de agosto) y las piezas pendientes al cierre se perimen; la
+  vista avisa con 30 días de anticipación.
+
+## Compras públicas
+
 
 **Encontrar**
 
