@@ -95,7 +95,7 @@ export default async function ProcesoPage({
     <div className="space-y-5 pb-24 lg:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
-          href="/"
+          href="/licitaciones"
           className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline"
         >
           <IconArrowLeft className="h-4 w-4" />

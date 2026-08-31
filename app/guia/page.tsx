@@ -160,7 +160,7 @@ export default function GuiaPage() {
           </li>
         </ul>
         <Link
-          href="/"
+          href="/licitaciones"
           className="mt-4 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
         >
           Buscar oportunidades abiertas →

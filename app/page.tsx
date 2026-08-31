@@ -11,6 +11,7 @@ import {
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { formatMonto, diasHasta } from "@/lib/format";
+import { SECCIONES } from "@/lib/secciones";
 import {
   IconArrowRight,
   IconChartBar,
@@ -105,8 +106,9 @@ export default async function Panorama() {
       {/* Dominios */}
       <section className="grid gap-4 lg:grid-cols-3">
         <Dominio
-          titulo="Compras públicas"
-          fuente="DGCP · datos abiertos"
+          titulo={hue.licitaciones.nombre}
+          fuente={hue.licitaciones.descriptor}
+          chip={hue.licitaciones.hue.chip}
           href="/licitaciones"
           cta="Buscar procesos"
           Icon={IconCoins}
@@ -133,8 +135,9 @@ export default async function Panorama() {
         />
 
         <Dominio
-          titulo="Congreso Nacional"
-          fuente="SIL · Cámara de Diputados"
+          titulo={hue.congreso.nombre}
+          fuente={hue.congreso.descriptor}
+          chip={hue.congreso.hue.chip}
           href="/congreso"
           cta="Ver iniciativas"
           Icon={IconLayers}
@@ -165,8 +168,9 @@ export default async function Panorama() {
         />
 
         <Dominio
-          titulo="Nómina estatal"
-          fuente="Empleados fijos · 2023–2026"
+          titulo={hue.nomina.nombre}
+          fuente={hue.nomina.descriptor}
+          chip={hue.nomina.hue.chip}
           href="/nomina"
           cta="Explorar la nómina"
           Icon={IconChartBar}
@@ -283,9 +287,16 @@ export default async function Panorama() {
 
 type Cifra = { etiqueta: string; valor: string; destacar?: boolean };
 
+/** Matices por vertical, indexados desde la fuente única de la IA. */
+const hue = Object.fromEntries(SECCIONES.map((s) => [s.id, s])) as Record<
+  (typeof SECCIONES)[number]["id"],
+  (typeof SECCIONES)[number]
+>;
+
 function Dominio({
   titulo,
   fuente,
+  chip,
   href,
   cta,
   Icon,
@@ -294,6 +305,7 @@ function Dominio({
 }: {
   titulo: string;
   fuente: string;
+  chip: string;
   href: string;
   cta: string;
   Icon: (p: { className?: string }) => React.ReactElement;
@@ -303,7 +315,7 @@ function Dominio({
   return (
     <article className="flex flex-col rounded-2xl border border-hairline bg-surface p-5 shadow-card">
       <div className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${chip}`}>
           <Icon className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0">

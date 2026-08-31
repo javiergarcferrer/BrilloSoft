@@ -2,67 +2,77 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getSeguimiento, onSeguimientoCambio } from "@/lib/seguimiento";
-import { IconCoins, IconLayers, IconSparkles, IconStar } from "./icons";
+import { SECCIONES, seccionDe } from "@/lib/secciones";
+import { IconChartBar, IconCoins, IconLayers, IconSparkles } from "./icons";
+import { cn } from "@/lib/cn";
+import type { SeccionId } from "@/lib/secciones";
 
-const TABS = [
-  { href: "/", label: "Panorama", Icon: IconSparkles, exact: true },
-  { href: "/licitaciones", label: "Licitaciones", Icon: IconCoins },
-  { href: "/congreso", label: "Congreso", Icon: IconLayers },
-  { href: "/seguimiento", label: "Seguidos", Icon: IconStar, seguimiento: true },
-];
+/**
+ * Navegación inferior móvil (oculta en lg+, donde navega el nav del header).
+ *
+ * Mismo modelo mental que el nav global: panorama + una pestaña por vertical,
+ * derivadas de `lib/secciones`. Las vistas internas de cada vertical viven en
+ * la barra de sección, no aquí: la tab bar cambia de vertical, no de vista.
+ */
 
-/** Native-style fixed bottom navigation for mobile (hidden on lg+). */
+const ICONOS: Record<SeccionId, (p: { className?: string }) => React.ReactElement> = {
+  licitaciones: IconCoins,
+  congreso: IconLayers,
+  nomina: IconChartBar,
+};
+
 export default function MobileTabBar() {
   const pathname = usePathname();
-  const [count, setCount] = useState(0);
+  const actual = seccionDe(pathname);
 
-  useEffect(() => {
-    const sync = () => setCount(getSeguimiento().length);
-    sync();
-    return onSeguimientoCambio(sync);
-  }, []);
+  const tabs = [
+    {
+      href: "/",
+      label: "Panorama",
+      Icon: IconSparkles,
+      activa: pathname === "/",
+      barra: "bg-ink",
+      texto: "text-ink",
+    },
+    ...SECCIONES.map((s) => ({
+      href: s.href,
+      label: s.nombre,
+      Icon: ICONOS[s.id],
+      activa: actual?.id === s.id,
+      barra: s.hue.barra,
+      texto: s.hue.activo,
+    })),
+  ];
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-surface/92 backdrop-blur-lg"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-surface/92 backdrop-blur-lg lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Navegación principal"
     >
       <div className="mx-auto grid max-w-md grid-cols-4">
-        {TABS.map(({ href, label, Icon, exact, seguimiento }) => {
-          const active = exact ? pathname === href : pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={`group relative flex flex-col items-center gap-1 px-1 pb-1.5 pt-2 text-[11px] font-medium transition-colors active:scale-95 ${
-                active ? "text-brand-700" : "text-ink-soft"
-              }`}
-            >
-              <span
-                className={`absolute top-0 h-0.5 w-8 rounded-full bg-brand-600 transition-opacity ${
-                  active ? "opacity-100" : "opacity-0"
-                }`}
-              />
-              <span className="relative">
-                {seguimiento ? (
-                  <IconStar className="h-[22px] w-[22px]" filled={active} />
-                ) : (
-                  <Icon className="h-[22px] w-[22px]" />
-                )}
-                {seguimiento && count > 0 && (
-                  <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white ring-2 ring-surface">
-                    {count}
-                  </span>
-                )}
-              </span>
-              {label}
-            </Link>
-          );
-        })}
+        {tabs.map(({ href, label, Icon, activa, barra, texto }) => (
+          <Link
+            key={href}
+            href={href}
+            aria-current={activa ? "page" : undefined}
+            className={cn(
+              "group relative flex flex-col items-center gap-1 px-1 pb-1.5 pt-2 text-[11px] font-medium transition-colors active:scale-95",
+              activa ? texto : "text-ink-soft",
+            )}
+          >
+            <span
+              aria-hidden
+              className={cn(
+                "absolute top-0 h-0.5 w-8 rounded-full transition-opacity",
+                barra,
+                activa ? "opacity-100" : "opacity-0",
+              )}
+            />
+            <Icon className="h-[22px] w-[22px]" />
+            {label}
+          </Link>
+        ))}
       </div>
     </nav>
   );

@@ -44,10 +44,10 @@ export default async function CongresoPage({
     <div className="mx-auto max-w-4xl">
       <header className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-          Congreso Nacional
+          Iniciativas
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-          Iniciativas de la Cámara de Diputados, en vivo desde el SIL.{" "}
+          En vivo desde el SIL de la Cámara de Diputados.{" "}
           <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
             El Senado aún no está integrado
           </Link>

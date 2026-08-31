@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import { Inter, Sora } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import MobileTabBar from "@/components/mobile-tab-bar";
 import InstallPrompt from "@/components/install-prompt";
 import ScrollTop from "@/components/scroll-top";
-import TopSearch from "@/components/top-search";
+import HeaderSearch from "@/components/header-search";
+import GlobalNav from "@/components/global-nav";
+import SectionBar from "@/components/section-bar";
+import { SECCIONES } from "@/lib/secciones";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -69,34 +71,41 @@ function BrandMark() {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${inter.variable} ${sora.variable}`}>
-      <body className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))] antialiased">
+      <body className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))] antialiased lg:pb-0">
+        {/*
+          Chrome de dos niveles:
+          1) Header global — marca, búsqueda con alcance (solo donde aplica) y
+             el nav de verticales en escritorio. Responde «¿qué es esto y a
+             dónde puedo ir?».
+          2) SectionBar — solo dentro de una vertical: nombre, matiz y sus
+             vistas. Responde «¿dónde estoy y qué hay aquí?».
+          El contenido nunca carga con tareas de orientación.
+        */}
         <header
           className="sticky top-0 z-50 bg-slate-900/90 text-white backdrop-blur-md"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5">
+          <div className="mx-auto flex min-h-[64px] max-w-6xl items-center gap-4 px-4 py-2">
             <Link
               href="/"
               className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-90"
             >
               <BrandMark />
-              <span className="hidden text-[15px] font-semibold tracking-tight sm:block">
+              <span className="text-[15px] font-semibold tracking-tight max-[380px]:hidden">
                 Gobiername<span className="text-emerald-400">.data</span>
               </span>
             </Link>
-            <div className="flex flex-1 justify-center">
-              <Suspense
-                fallback={
-                  <div className="h-12 w-full max-w-xl rounded-full bg-white/10 ring-1 ring-inset ring-white/15" />
-                }
-              >
-                <TopSearch />
-              </Suspense>
+
+            <div className="flex min-w-0 flex-1 justify-center">
+              <HeaderSearch />
             </div>
-            <span className="hidden w-[92px] shrink-0 lg:block" aria-hidden />
+
+            <GlobalNav />
           </div>
-          <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/45 to-transparent" />
+          <div className="h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
         </header>
+
+        <SectionBar />
 
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
 
@@ -105,32 +114,51 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <InstallPrompt />
 
         <footer className="mt-10 border-t border-hairline bg-surface">
-          <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-ink-soft">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2.5">
-                <BrandMark />
-                <span className="font-semibold text-ink">Gobiername.data</span>
+          <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-ink-soft">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="lg:col-span-2">
+                <div className="flex items-center gap-2.5">
+                  <BrandMark />
+                  <span className="font-semibold text-ink">Gobiername.data</span>
+                </div>
+                <p className="mt-4 max-w-xs text-xs leading-relaxed">
+                  Qué compra, qué legisla y a quién paga el Estado dominicano,
+                  leído en vivo desde sus fuentes oficiales. Herramienta
+                  independiente y no oficial.
+                </p>
               </div>
-              <nav className="flex flex-wrap gap-x-5 gap-y-1">
-                <Link href="/licitaciones" className="hover:text-brand-700">Licitaciones</Link>
-                <Link href="/congreso" className="hover:text-brand-700">Congreso</Link>
-                <Link href="/nomina" className="hover:text-brand-700">Nómina</Link>
-                <Link href="/estadisticas" className="hover:text-brand-700">Mercado</Link>
-                <Link href="/guia" className="hover:text-brand-700">Guía para ofertar</Link>
-                <Link href="/seguimiento" className="hover:text-brand-700">Seguimiento</Link>
-                <Link href="/fuentes" className="hover:text-brand-700">Fuentes</Link>
+
+              {SECCIONES.map((seccion) => (
+                <nav key={seccion.id} aria-label={seccion.nombre}>
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink">
+                    <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${seccion.hue.punto}`} />
+                    {seccion.nombre}
+                  </p>
+                  <ul className="mt-3 space-y-1.5">
+                    {seccion.vistas.map((vista) => (
+                      <li key={vista.href}>
+                        <Link href={vista.href} className="hover:text-brand-700">
+                          {vista.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              ))}
+            </div>
+
+            <div className="mt-8 flex flex-col gap-2 border-t border-hairline pt-5 text-xs sm:flex-row sm:items-center sm:justify-between">
+              <p>
+                Fuentes: DGCP, SIL de la Cámara de Diputados y la nómina pública
+                de empleados fijos.
+              </p>
+              <nav className="flex gap-x-4">
+                <Link href="/" className="hover:text-brand-700">Panorama</Link>
+                <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
+                  Estado de las fuentes
+                </Link>
               </nav>
             </div>
-            <p className="mt-6 max-w-2xl text-xs leading-relaxed text-ink-soft">
-              Fuentes: Portal de Datos Abiertos de la DGCP, SIL de la Cámara de
-              Diputados y la nómina pública de empleados fijos. Herramienta
-              independiente y no oficial; los datos se muestran tal como los
-              publica cada institución.{" "}
-              <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
-                Estado y límites de cada fuente
-              </Link>
-              .
-            </p>
           </div>
         </footer>
       </body>

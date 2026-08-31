@@ -142,10 +142,14 @@ export default function Buscador() {
     return params;
   }, [q, estado, modalidad, startdate, enddate, mipyme, orden, unidadSel]);
 
-  // Mantiene los filtros en la URL (compartible / guardable).
+  // Mantiene los filtros en la URL (compartible / guardable). La ruta se toma
+  // de la ubicación real: este componente vivió en `/` y hoy vive en
+  // `/licitaciones`; un literal aquí desorientaría todo el chrome (nav global,
+  // barra de sección) al reescribir el pathname.
   useEffect(() => {
     const qs = currentParams.toString();
-    const url = qs ? `/?${qs}` : "/";
+    const base = window.location.pathname;
+    const url = qs ? `${base}?${qs}` : base;
     if (window.location.pathname + window.location.search !== url) {
       window.history.replaceState(null, "", url);
     }

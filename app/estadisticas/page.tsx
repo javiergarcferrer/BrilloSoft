@@ -185,7 +185,7 @@ export default async function EstadisticasPage() {
           esa búsqueda para no perderte procesos nuevos.
         </span>
         <Link
-          href="/"
+          href="/licitaciones"
           className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 active:scale-95"
         >
           Ir al buscador

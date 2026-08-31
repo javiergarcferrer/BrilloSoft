@@ -9,7 +9,7 @@ export default function NotFound() {
         La API de la DGCP no devolvió datos para este código de proceso.
       </p>
       <Link
-        href="/"
+        href="/licitaciones"
         className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 active:scale-95"
       >
         <IconArrowLeft className="h-4 w-4" />

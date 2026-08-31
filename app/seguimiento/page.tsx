@@ -86,7 +86,7 @@ export default function SeguimientoPage() {
             seguir su cierre.
           </p>
           <Link
-            href="/"
+            href="/licitaciones"
             className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 active:scale-95"
           >
             <IconSearch className="h-4 w-4" />
