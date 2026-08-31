@@ -112,7 +112,7 @@ export default async function IniciativaPage({ params }: Props) {
           </p>
           <p className="mt-0.5 text-xs text-ink-soft">
             {perencion.legislatura.nombre} {perencion.legislatura.anio} · cierra el{" "}
-            {formatFecha(perencion.legislatura.cierre.toISOString())}
+            {formatFecha(perencion.legislatura.cierre.toISOString().slice(0, 10))}
           </p>
         </section>
       )}

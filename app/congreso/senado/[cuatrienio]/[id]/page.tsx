@@ -1,0 +1,250 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { CondicionBadge } from "@/components/iniciativa-card";
+import { cuatrienioPorEtiqueta, getFichaSenado } from "@/lib/senado";
+import { formatFecha } from "@/lib/format";
+import { IconArrowLeft } from "@/components/icons";
+
+export const revalidate = 3600;
+
+type Props = { params: Promise<{ cuatrienio: string; id: string }> };
+
+async function cargarFicha(params: Props["params"]) {
+  const { cuatrienio: etiqueta, id: idParam } = await params;
+  const cuatrienio = cuatrienioPorEtiqueta(etiqueta);
+  const id = Number(idParam);
+  if (!cuatrienio || !Number.isFinite(id) || id <= 0) return null;
+  return getFichaSenado(cuatrienio.etiqueta, id);
+}
+
+export async function generateMetadata({ params }: Props) {
+  const ficha = await cargarFicha(params);
+  if (!ficha) return { title: "Expediente no encontrado" };
+  return {
+    title: ficha.numero?.completo ?? `Expediente ${ficha.id}`,
+    description: ficha.titulo.slice(0, 160),
+  };
+}
+
+export default async function ExpedienteSenadoPage({ params }: Props) {
+  const ficha = await cargarFicha(params);
+  if (!ficha) notFound();
+
+  return (
+    <div className="mx-auto max-w-4xl">
+      <Link
+        href="/congreso/senado"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+      >
+        <IconArrowLeft className="h-3.5 w-3.5" />
+        Senado
+      </Link>
+
+      <header className="mt-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-sm font-semibold tabular-nums text-brand-700">
+            {ficha.numero?.completo ?? `#${ficha.id}`}
+          </span>
+          <CondicionBadge tono={ficha.tono}>
+            {ficha.estadoActual ?? ficha.condicion ?? "—"}
+          </CondicionBadge>
+          {ficha.promulgada && <CondicionBadge tono="aprobado">Promulgada</CondicionBadge>}
+          {ficha.perimida && <CondicionBadge tono="perimido">Perimida</CondicionBadge>}
+        </div>
+
+        <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
+          {ficha.titulo}
+        </h1>
+
+        {ficha.tituloModificado && (
+          <div className="mt-3 rounded-xl border-l-[3px] border-brand-500 bg-surface py-3 pl-4 pr-3 shadow-soft">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-700">
+              Título modificado durante el trámite
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+              {ficha.tituloModificado}
+            </p>
+          </div>
+        )}
+      </header>
+
+      {ficha.promulgada && (
+        <section className="mt-5 rounded-xl border border-emerald-600/20 bg-emerald-50 px-4 py-3">
+          <p className="text-sm font-semibold text-emerald-800">
+            {ficha.numPromulgacion
+              ? `Promulgada como Ley ${ficha.numPromulgacion}`
+              : "Promulgada"}
+          </p>
+          {ficha.fechaPromulgacion && (
+            <p className="mt-0.5 text-xs text-emerald-700/80">
+              {formatFecha(ficha.fechaPromulgacion)}
+            </p>
+          )}
+        </section>
+      )}
+
+      <section className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card sm:grid-cols-3">
+        <Dato etiqueta="Tipo" valor={ficha.tipo} />
+        <Dato etiqueta="Cámara inicial" valor={ficha.camaraInicial} />
+        <Dato etiqueta="Poder de origen" valor={ficha.poderOrigen} />
+        <Dato etiqueta="Condición" valor={ficha.condicion} />
+        <Dato etiqueta="Materia" valor={ficha.materia} />
+        <Dato etiqueta="Legislatura de inicio" valor={ficha.legislaturaInicio} mono />
+        <Dato etiqueta="Cuatrienio" valor={ficha.cuatrienio} mono />
+        <Dato
+          etiqueta="Recibido por el Senado"
+          valor={ficha.fechaRecibido ? formatFecha(ficha.fechaRecibido) : null}
+        />
+        <Dato
+          etiqueta="Despachada"
+          valor={
+            ficha.despachada
+              ? [formatFecha(ficha.despachada), ficha.despachadaHacia]
+                  .filter(Boolean)
+                  .join(" · hacia ")
+              : null
+          }
+        />
+      </section>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+        <Panel
+          titulo="Historial de trámites"
+          nota={ficha.historial.length > 0 ? String(ficha.historial.length) : undefined}
+        >
+          {ficha.historial.length > 0 ? (
+            <ol className="px-5 py-4">
+              {ficha.historial.map((h, i) => (
+                <li key={`${h.evento}-${i}`} className="flex gap-3 pb-4 last:pb-0">
+                  <div className="flex flex-col items-center">
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+                    {i < ficha.historial.length - 1 && (
+                      <span className="mt-1 w-px flex-1 bg-hairline" />
+                    )}
+                  </div>
+                  <div className="-mt-0.5 min-w-0 flex-1">
+                    <p className="text-sm font-medium text-ink">{h.evento}</p>
+                    <p className="mt-0.5 text-xs tabular-nums text-ink-soft">
+                      {h.fecha ? formatFecha(h.fecha) : "—"}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : ficha.historialCrudo ? (
+            <p className="px-5 py-4 text-sm leading-relaxed text-ink-soft">
+              {ficha.historialCrudo}
+            </p>
+          ) : (
+            <p className="px-5 py-6 text-sm text-ink-soft">Sin trámites registrados.</p>
+          )}
+          <div className="border-t border-hairline bg-canvas/50 px-5 py-2.5">
+            <p className="text-xs text-ink-soft">
+              El consultante del Senado publica metadatos y trámites, no los
+              textos de los proyectos.{" "}
+              <Link href="/fuentes" className="text-brand-700 underline">
+                Detalle
+              </Link>
+              .
+            </p>
+          </div>
+        </Panel>
+
+        <div className="flex flex-col gap-5">
+          <Panel
+            titulo="Proponentes"
+            nota={ficha.proponentes.length > 0 ? String(ficha.proponentes.length) : undefined}
+          >
+            {ficha.proponentes.length > 0 ? (
+              <ul className="divide-y divide-hairline">
+                {ficha.proponentes.map((p) => (
+                  <li key={p} className="px-5 py-3">
+                    <p className="text-sm font-medium text-ink">{p}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="px-5 py-6 text-sm text-ink-soft">Sin proponentes registrados.</p>
+            )}
+          </Panel>
+
+          {ficha.comisiones && (
+            <Panel titulo="Comisiones">
+              <p className="px-5 py-4 text-sm leading-relaxed text-ink">
+                {ficha.comisiones}
+              </p>
+            </Panel>
+          )}
+
+          {ficha.numeroDiputados && (
+            <Panel titulo="En la Cámara de Diputados">
+              <div className="px-5 py-4">
+                <p className="font-mono text-sm tabular-nums text-ink">
+                  {ficha.numeroDiputados}
+                </p>
+                <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">
+                  Cita del expediente gemelo en Diputados. Los números de ambas
+                  cámaras cambian al arrastrarse entre períodos, así que no hay
+                  enlace directo confiable; se muestra como referencia.
+                </p>
+              </div>
+            </Panel>
+          )}
+
+          {ficha.anotaciones && (
+            <Panel titulo="Anotaciones del Senado">
+              <p className="px-5 py-4 text-sm leading-relaxed text-ink-soft">
+                {ficha.anotaciones}
+              </p>
+            </Panel>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Panel({
+  titulo,
+  nota,
+  children,
+}: {
+  titulo: string;
+  nota?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+      <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
+        <h2 className="text-sm font-semibold text-ink">{titulo}</h2>
+        {nota && <span className="text-xs tabular-nums text-ink-soft">{nota}</span>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Dato({
+  etiqueta,
+  valor,
+  mono,
+}: {
+  etiqueta: string;
+  valor: string | null;
+  mono?: boolean;
+}) {
+  return (
+    <div>
+      <dt className="text-xs font-medium text-ink-soft">{etiqueta}</dt>
+      <dd
+        className={
+          mono
+            ? "mt-0.5 font-mono text-sm tabular-nums text-ink"
+            : "mt-0.5 text-sm text-ink"
+        }
+      >
+        {valor ?? "—"}
+      </dd>
+    </div>
+  );
+}

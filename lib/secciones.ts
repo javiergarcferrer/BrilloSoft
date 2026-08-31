@@ -85,10 +85,11 @@ export const SECCIONES: Seccion[] = [
     id: "congreso",
     nombre: "Congreso",
     href: "/congreso",
-    descriptor: "Iniciativas · Cámara de Diputados",
+    descriptor: "Iniciativas · Diputados y Senado",
     rutas: ["/congreso"],
     vistas: [
-      { href: "/congreso", label: "Iniciativas" },
+      { href: "/congreso", label: "Diputados" },
+      { href: "/congreso/senado", label: "Senado" },
       { href: "/congreso/perencion", label: "Perención", exact: true },
     ],
     conBuscadorGlobal: false,

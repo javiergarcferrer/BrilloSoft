@@ -9,9 +9,15 @@ Entregable de la fase 0 del brief de Inteligencia Legislativa. Documenta lo que 
 - **Convención:** ✅ = comprobado contra una respuesta real. ⚠️ = parcial.
   ❌ = no verificado. Todo lo demás es hipótesis y está marcado como tal.
 
-> **Segunda pasada (esta revisión).** Corrige dos conclusiones de la primera
+> **Segunda pasada.** Corrige dos conclusiones de la primera
 > versión que resultaron equivocadas al probarlas — están marcadas como
 > **CORRECCIÓN** en §6 y §8. Ambas iban en la dirección de subestimar la fuente.
+
+> **Tercera pasada (esta revisión, 2026-08-31).** El Senado **sí tiene una vía
+> pública de consulta** fuera de su web WordPress: el «consultante» de su SIL,
+> enlazado desde su propia página oficial. La conclusión de §3 («no scrapear,
+> esperar la Ley 200-04») queda **superada** — ver §12. El caso de prueba de §7
+> **se resolvió en positivo** por esa vía.
 
 ---
 
@@ -278,6 +284,11 @@ RD, o pasar por la vía OAI. **Es el riesgo técnico #1 del proyecto.**
 
 ## 3. SIL Senado — restringido por declaración explícita
 
+> **CORRECCIÓN (tercera pasada).** Lo de abajo describe la **web WordPress** del
+> Senado y sigue siendo cierto para ella. Pero el corpus senatorial no vive ahí:
+> vive en `sil.senadord.gob.do`, un host aparte con interfaz pública de consulta
+> y sin `robots.txt` propio. Ver §12.
+
 `https://www.senadord.gob.do/robots.txt` → 200 (Apache + caché WordPress):
 
 ```
@@ -427,6 +438,13 @@ arrastrada al registro 2024-2028.
 acceso al Senado**. Sigue siendo el criterio de éxito correcto — y hoy el sistema no
 lo pasaría. Esto refuerza que la vía OAI del §3 es urgente, no opcional.
 
+> **CORRECCIÓN (tercera pasada).** Con el consultante del Senado (§12) el caso
+> de prueba **se pasa**: la búsqueda `popular` en la colección 2010-2016
+> devuelve cuatro expedientes «PROYECTO DE LEY QUE REGULA LA INICIATIVA
+> LEGISLATIVA POPULAR» (ids 21343, 21656, 22197, 22542; reintroducciones de
+> 2013 a 2014), y la ficha del 01971-2014-SLO-SE registra promulgación como
+> **Ley 136-15** el 28/07/2015.
+
 ---
 
 ## 8. CORRECCIÓN — `numero` no sirve como clave de reconciliación
@@ -512,4 +530,94 @@ Ajustes sobre el borrador del §2 del brief:
   determinable desde Diputados**: la pieza no está en su SIL (§7).
 - *"La completitud histórica de cada SIL"* → ✅ **Resuelta para Diputados**:
   depósitos desde 2003, pero solo piezas vivas arrastradas + período vigente
-  completo (§6). ❌ Senado sin determinar.
+  completo (§6). ✅ **Resuelta para el Senado** (tercera pasada): seis
+  colecciones cerradas por cuatrienio desde 2002 — §12.
+
+---
+
+## 12. TERCERA PASADA — el consultante público del SIL del Senado
+
+**Hallazgo central:** la página oficial del Senado
+(`/secretaria-general-legislativa/iniciativas-legislativas/`) enlaza a una
+interfaz pública de consulta de expedientes que no pasa por su WordPress:
+
+```
+http://www.senado.gov.do/wfilemaster/consultante.aspx?bd=C2024-2028&url=lista_expedientes.aspx?coleccion=53
+```
+
+La misma aplicación responde por HTTPS en **`sil.senadord.gob.do`** (que es el
+host que esta plataforma usa). Es un gestor documental ASP.NET WebForms
+(«FileMaster», `MicrosoftOfficeWebServer: 5.0_Pub`) cuyo modo *consultante* no
+exige autenticación. La raíz del host redirige a un `login.aspx` interno que no
+se toca.
+
+### 12.1 Higiene y postura
+
+- `sil.senadord.gob.do/robots.txt` → **404**: este host no declara
+  restricciones. El `robots.txt` restrictivo de §3 pertenece a
+  `www.senadord.gob.do` (WordPress) y no gobierna este subdominio.
+- La API REST del WordPress (`/wp-json/wp/v2/*`) existe pero responde **401**
+  para todo lo útil (plugin de seguridad). No es vía.
+- Postura adoptada: leer **solo** el consultante, con UA identificable, caché
+  larga y sin barridos — el ritmo efectivo queda muy por debajo del
+  `Crawl-delay: 120` que el WP exige para agentes genéricos, aunque aquí no
+  aplique. La solicitud OAI (Ley 200-04) deja de ser prerequisito del MVP y
+  queda como vía para el volcado completo.
+
+### 12.2 Mecánica verificada
+
+- **Sesión por colección.** `consultante.aspx?bd={base}&url=lista_expedientes.aspx?coleccion={id}`
+  responde `302` con cookie `ASP.NET_SessionId` y redirige al listado (con un
+  nonce `_nc`). Sin esa cookie, `lista_expedientes.aspx` y `Ficha.aspx`
+  responden `302`. Seis bases: `C2002-2006` (coleccion=42), `C2006-2010`,
+  `C2010-2016`, `C2016-2020`, `C2020-2024`, `C2024-2028` (coleccion=53).
+- **Listado**: 50 filas por página, más reciente primero. Columnas: número,
+  tipo, descripción (truncada con `...`), fecha de creación, estado. Cada fila
+  enlaza por GET a `Ficha.aspx?IdExpediente={id}`. El total real viene en el
+  span `txttotalexp`. Censos observados: 2024-2028 → **2 660**; 2020-2024 →
+  **2 755**.
+- **La paginación NO funciona por GET** (`numeropagina=2` devuelve la página
+  1): es un postback con ViewState que muta estado de sesión. No se usa.
+- **Búsqueda**: postback del propio formulario (`txtBuscar` + `imgBtnIr.x/y` +
+  `__VIEWSTATE`/`__EVENTVALIDATION` + `cmbEstado=-1`, `cmbOrden=fc`,
+  `Orden=RBOrdenDes`, `CBExpCerrados=on`). ⚠️ `cmbOrden` **debe** llevar un
+  valor de su lista (`fc`…): un valor inventado dispara EventValidation y un
+  302 a `ErrorGeneral.htm`. Es la única petición no-GET emitida.
+- **La búsqueda es subcadena literal y sensible a tildes**: `codigo penal` →
+  0; `código penal` → 14. Devuelve hasta 50 filas y el total real.
+- **Ficha** (`Ficha.aspx?IdExpediente={id}&Coleccion={id}`): el formulario del
+  FileMaster en solo-lectura, ~56 campos etiquetados. Los ricos: número, tipo,
+  subtipo, descripción completa, **historial de trámites como prosa fechada**
+  («Depositada el 11/8/2014. Enviada a Comisión el 28/8/2014. …»), materia,
+  comisiones, proponentes, **perimida**, **reintroducida**, anotaciones (traza
+  de reintroducciones), cámara inicial, poder de origen, legislatura de inicio
+  (mismo código `2014-SLO` que Diputados), cuatrienio, **número del expediente
+  gemelo en Diputados** (`07162-2010-2016-CD` — ¡campo de cruce entre
+  cámaras!), despacho, **promulgación con número y fecha**. Los selects vienen
+  con su vocabulario completo: ~100 estados y ~50 tipos, gratis.
+- **Sin documentos**: la ficha no enlaza PDF alguno. Metadatos sí, textos no.
+- El marcador `TÍTULO MODIFICADO:` también existe en el Senado — el parser de
+  Diputados se reutiliza.
+- Números con forma propia: `01886-2026-SLO-SE` (secuencia-año-legislatura-SE),
+  con legislaturas **extraordinarias** (`SLE`) además de PLO/SLO. Igual que en
+  Diputados, es cita, no identidad: la identidad es `IdExpediente` **por
+  colección**.
+
+### 12.3 Caso de prueba del brief — RESUELTO EN POSITIVO
+
+`popular` en C2010-2016 → 4 expedientes «PROYECTO DE LEY QUE REGULA LA
+INICIATIVA LEGISLATIVA POPULAR» (2013-2014, reintroducciones encadenadas según
+sus anotaciones). La ficha de `01971-2014-SLO-SE` (id 22542) registra:
+aprobada en primera con modificaciones el 29/10/2014, despachada al Poder
+Ejecutivo el 21/07/2015 y **promulgada como Ley 136-15 el 28/07/2015**. La
+frase exacta `iniciativa legislativa popular` da 0 por el punto ortográfico del
+origen; `popular` la encuentra. En C2020-2024 no hay reintroducción con ese
+título.
+
+### 12.4 Implicación para la plataforma
+
+`lib/senado.ts` implementa esta vía con el contrato de las demás capas
+(timeout, un reintento, validación de respuesta, caché con ventanas largas) y
+la vertical Congreso pasa a cubrir **ambas cámaras**. Límites que la UI
+declara: listado = 50 más recientes por colección, búsqueda literal con
+tildes, sin textos de proyectos.

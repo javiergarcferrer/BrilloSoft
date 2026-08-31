@@ -12,9 +12,9 @@ import {
 import { IconArrowLeft, IconArrowRight, IconClock } from "@/components/icons";
 
 export const metadata: Metadata = {
-  title: "Congreso",
+  title: "Cámara de Diputados",
   description:
-    "Busca iniciativas legislativas del Congreso Nacional dominicano: estado procesal, trámites, proponentes y alertas de perención.",
+    "Busca iniciativas legislativas de la Cámara de Diputados dominicana: estado procesal, trámites, proponentes y alertas de perención.",
 };
 
 export const revalidate = 300;
@@ -44,12 +44,15 @@ export default async function CongresoPage({
     <div className="mx-auto max-w-4xl">
       <header className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-          Iniciativas
+          Cámara de Diputados
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-          En vivo desde el SIL de la Cámara de Diputados.{" "}
-          <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
-            El Senado aún no está integrado
+          Iniciativas en vivo desde el SIL de la Cámara.{" "}
+          <Link
+            href="/congreso/senado"
+            className="font-medium text-brand-700 hover:underline"
+          >
+            El Senado tiene su propia vista
           </Link>
           .
         </p>

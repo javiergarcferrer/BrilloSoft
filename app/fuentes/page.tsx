@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getCountIniciativas, getPeriodos } from "@/lib/congreso";
+import { CUATRIENIOS, getCensoSenado } from "@/lib/senado";
 import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { IconArrowLeft } from "@/components/icons";
@@ -14,9 +15,10 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function FuentesPage() {
-  const [censo, periodos, nomina] = await Promise.all([
+  const [censo, periodos, censoSenado, nomina] = await Promise.all([
     getCountIniciativas(),
     getPeriodos(),
+    getCensoSenado(),
     getResumenNomina(),
   ]);
 
@@ -127,18 +129,38 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
-        <Fuente nombre="SIL — Senado" estado="bloqueada" etiqueta="No integrada">
+        <Fuente
+          nombre="SIL — Senado"
+          estado={censoSenado !== null ? "activa" : "caida"}
+          etiqueta={censoSenado !== null ? "Conectada" : "Sin respuesta"}
+        >
           <p>
-            El Senado bloquea explícitamente por nombre a los rastreadores
-            automatizados en su{" "}
-            <code className="rounded bg-canvas px-1 py-0.5 font-mono">robots.txt</code>{" "}
-            e impone un <code className="rounded bg-canvas px-1 py-0.5 font-mono">Crawl-delay</code>{" "}
-            de 120 segundos al resto: unas 720 peticiones diarias como techo,
-            inviable para un producto de alertas.
+            El sistema de consulta pública de expedientes que la propia web del
+            Senado enlaza («consultante»), con seis colecciones por cuatrienio
+            desde 2002. Alimenta el listado, la búsqueda y las fichas del
+            Senado: estado procesal, historial de trámites, proponentes,
+            promulgación y el número del expediente gemelo en Diputados.
           </p>
-          <p className="mt-2">
-            No se scrapea. La vía correcta es una solicitud formal a su Oficina de
-            Acceso a la Información bajo la <strong>Ley 200-04</strong>.
+          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+            <Metrica
+              etiqueta="Expedientes (2024-2028)"
+              valor={censoSenado !== null ? formatInt(censoSenado) : "—"}
+            />
+            <Metrica etiqueta="Colecciones" valor={String(CUATRIENIOS.length)} />
+            <Metrica
+              etiqueta="Cobertura"
+              valor={`${CUATRIENIOS[CUATRIENIOS.length - 1].etiqueta.slice(0, 4)}–hoy`}
+            />
+          </dl>
+          <p className="mt-3 text-xs text-ink-soft">
+            Publica metadatos, no los textos de los proyectos. Su búsqueda es
+            literal y distingue tildes, muestra 50 filas por consulta y cada
+            colección exige su propia sesión. Se lee con caché larga y volumen
+            mínimo: el <code className="rounded bg-canvas px-1 py-0.5 font-mono">robots.txt</code>{" "}
+            de la web del Senado sigue vetando rastreadores de IA y limitando el
+            ritmo del resto, así que esta plataforma no rastrea esa web: lee el
+            consultante, que no declara restricciones, muy por debajo de ese
+            techo.
           </p>
         </Fuente>
 
@@ -159,10 +181,16 @@ export default async function FuentesPage() {
         <h2 className="text-sm font-semibold text-ink">Límites de cobertura</h2>
         <ul className="mt-2.5 space-y-2 text-sm leading-relaxed text-ink-soft">
           <li>
-            El listado del Congreso cubre el <strong>registro vigente</strong>. Las
+            El listado de <strong>Diputados</strong> cubre el registro vigente. Las
             piezas que siguen vivas se arrastran conservando su fecha de depósito
             original, con depósitos desde 2003; lo que murió en períodos anteriores
             no aparece. El límite es la supervivencia, no la antigüedad.
+          </li>
+          <li>
+            El consultante del <strong>Senado</strong> no pagina hacia atrás por
+            URL: el listado enseña los 50 expedientes más recientes de cada
+            colección y el resto se alcanza buscando por texto. La búsqueda es
+            subcadena literal, sensible a tildes.
           </li>
           <li>
             Los conteos por condición del panorama salen de una muestra de las

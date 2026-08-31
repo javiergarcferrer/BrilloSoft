@@ -74,8 +74,8 @@ export default async function PerencionPage() {
                 {legislatura.nombre} {legislatura.anio}
               </p>
               <p className="mt-0.5 text-xs text-ink-soft">
-                {formatFecha(legislatura.inicio.toISOString())} —{" "}
-                {formatFecha(legislatura.cierre.toISOString())}
+                {formatFecha(legislatura.inicio.toISOString().slice(0, 10))} —{" "}
+                {formatFecha(legislatura.cierre.toISOString().slice(0, 10))}
               </p>
             </div>
             <p className="text-2xl font-bold tabular-nums text-ink">

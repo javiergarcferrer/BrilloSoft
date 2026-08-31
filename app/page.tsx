@@ -8,6 +8,7 @@ import {
   muestrearIniciativas,
   resumirIniciativas,
 } from "@/lib/congreso";
+import { getCensoSenado } from "@/lib/senado";
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { formatMonto, diasHasta } from "@/lib/format";
@@ -33,14 +34,16 @@ function hace(dias: number): string {
 }
 
 export default async function Panorama() {
-  const [compras, censoCongreso, muestraCongreso, nomina] = await Promise.all([
-    dgcpFetch<Proceso>("/procesos", { startdate: hace(30), limit: 1000 }, 1800).catch(
-      () => null,
-    ),
-    getCountIniciativas(),
-    muestrearIniciativas(PAGINAS_CONGRESO),
-    getResumenNomina(),
-  ]);
+  const [compras, censoCongreso, muestraCongreso, censoSenado, nomina] =
+    await Promise.all([
+      dgcpFetch<Proceso>("/procesos", { startdate: hace(30), limit: 1000 }, 1800).catch(
+        () => null,
+      ),
+      getCountIniciativas(),
+      muestrearIniciativas(PAGINAS_CONGRESO),
+      getCensoSenado(),
+      getResumenNomina(),
+    ]);
 
   /* --- compras públicas --- */
   const procesos = compras?.payload.content ?? [];
@@ -141,30 +144,37 @@ export default async function Panorama() {
           href="/congreso"
           cta="Ver iniciativas"
           Icon={IconLayers}
-          disponible={censoCongreso !== null}
-          cifras={
-            censoCongreso !== null
+          disponible={censoCongreso !== null || censoSenado !== null}
+          cifras={[
+            ...(censoCongreso !== null
               ? [
                   {
-                    etiqueta: "Iniciativas en el registro",
+                    etiqueta: "Iniciativas en Diputados",
                     valor: formatInt(censoCongreso),
                     destacar: true,
                   },
-                  ...(diasCierre !== null
-                    ? [
-                        {
-                          etiqueta: "Días de legislatura",
-                          valor: `${diasCierre}`,
-                        },
-                      ]
-                    : []),
+                ]
+              : []),
+            ...(censoSenado !== null
+              ? [
+                  {
+                    etiqueta: "Expedientes en el Senado",
+                    valor: formatInt(censoSenado),
+                  },
+                ]
+              : []),
+            ...(diasCierre !== null
+              ? [{ etiqueta: "Días de legislatura", valor: `${diasCierre}` }]
+              : []),
+            ...(censoCongreso !== null
+              ? [
                   {
                     etiqueta: `Vigentes (de ${muestraCongreso.muestra})`,
                     valor: formatInt(resumen.vivas),
                   },
                 ]
-              : []
-          }
+              : []),
+          ]}
         />
 
         <Dominio

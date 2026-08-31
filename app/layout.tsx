@@ -149,8 +149,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
             <div className="mt-8 flex flex-col gap-2 border-t border-hairline pt-5 text-xs sm:flex-row sm:items-center sm:justify-between">
               <p>
-                Fuentes: DGCP, SIL de la Cámara de Diputados y la nómina pública
-                de empleados fijos.
+                Fuentes: DGCP, los SIL de la Cámara de Diputados y del Senado, y
+                la nómina pública de empleados fijos.
               </p>
               <nav className="flex gap-x-4">
                 <Link href="/" className="hover:text-brand-700">Panorama</Link>

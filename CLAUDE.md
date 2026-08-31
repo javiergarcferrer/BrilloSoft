@@ -11,7 +11,7 @@ a public source:
 | Domain | Route | Source | Data layer |
 |---|---|---|---|
 | Compras públicas | `/licitaciones` | DGCP open-data API | `lib/dgcp.ts` |
-| Congreso Nacional | `/congreso` | SIL de la Cámara de Diputados | `lib/congreso.ts` |
+| Congreso Nacional | `/congreso` | SIL Diputados + consultante del Senado | `lib/congreso.ts`, `lib/senado.ts` |
 | Nómina estatal | `/nomina` | Static payroll snapshot | `lib/nomina.ts` |
 
 `/` is the **panorama**: live cross-domain indicators plus the signals that need
@@ -91,6 +91,33 @@ taxonomies; `numero` (`06225-2024-2028-CD`) is a **citation**, not a stable id,
 because it carries the registration period; the reformulated title is buried
 inside `descripcion` behind a `TÍTULO MODIFICADO:` marker. See `RECON.md` for
 the full reconnaissance.
+
+### Senado data layer — `lib/senado.ts`
+The Senate has no JSON API: its WordPress REST API is locked (401) and the
+corpus lives in the **public "consultante" mode** of its FileMaster at
+`sil.senadord.gob.do` (ASP.NET WebForms, HTML scraping). Rules enforced there,
+documented in `RECON.md` §12:
+1. **Session per collection** — each cuatrienio (`C2002-2006`…`C2024-2028`) is
+   a separate DB selected by `consultante.aspx`, which sets the ASP.NET session
+   cookie; every cold read is a 2-request chain. Any redirect = failure
+   (`redirect: "manual"` + one retry with a fresh session).
+2. **Consultante only** — never `login.aspx` or admin paths. The single non-GET
+   request is the search postback the public form itself uses (ViewState
+   replay; `cmbOrden` must carry a value from its list or EventValidation
+   500s).
+3. Results are cached with `unstable_cache` (fetch-cache keys break on the
+   session cookie and `_nc` nonce), windows 15 min/1 h — request volume stays
+   far below the Senate WP's `Crawl-delay: 120` even though this host declares
+   no robots.txt.
+
+Source limits the UI must keep declaring: list = 50 most recent per collection
+(no GET pagination), search is a **literal accent-sensitive substring**, and
+fichas carry metadata + dated historial prose but no project texts. Senate
+routes: `/congreso/senado` (list/search + `?c=` cuatrienio) and
+`/congreso/senado/[cuatrienio]/[id]` (ficha). `parseNumeroSenado` treats
+`01886-2026-SLO-SE` as a citation; identity is `IdExpediente` **per
+collection**. The `TÍTULO MODIFICADO:` marker and PLO/SLO legislatura codes are
+shared with Diputados (plus `SLE` extraordinarias, which have no fixed dates).
 
 ### Pages — `app/`
 - `/` → panorama (server). `/licitaciones` → `app/buscador.tsx` (client) inside
