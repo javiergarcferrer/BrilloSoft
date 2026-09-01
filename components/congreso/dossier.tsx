@@ -143,7 +143,10 @@ export default async function Dossier({
               En qué punto está
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-ink">{sigue}</p>
-            {citas.length > 0 && (
+          </div>
+        )}
+
+        {citas.length > 0 && (
           <div className="px-5 py-4">
             <p className="rotulo text-ink-soft">
               Qué toca del ordenamiento vigente
@@ -209,9 +212,6 @@ export default async function Dossier({
               .
             </p>
           </div>
-        )}
-
-      </div>
         )}
       </div>
     </section>

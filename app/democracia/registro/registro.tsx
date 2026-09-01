@@ -45,23 +45,52 @@ export default function Registro() {
   const cedulaOk = cedulaValida(cedula);
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 
+  /**
+   * Traduce el fallo real de Supabase. Cada uno pide una acción distinta y
+   * decirle «revisa el correo» a los tres es mandar al usuario a mirar una
+   * bandeja vacía y a reintentar lo que ya falló.
+   */
+  function mensajeDeEnvio(err: { message?: string; code?: string; status?: number }): string {
+    const codigo = err.code ?? "";
+    const texto = (err.message ?? "").toLowerCase();
+
+    if (codigo === "over_email_send_rate_limit" || texto.includes("rate limit") || err.status === 429) {
+      return "Se agotó el límite de correos por ahora. Espera unos minutos antes de pedir otro código; no hace falta que cambies nada.";
+    }
+    if (codigo === "email_address_invalid" || texto.includes("invalid")) {
+      return "Ese correo no lo acepta el servicio de verificación. Prueba con otra dirección.";
+    }
+    if (texto.includes("redirect")) {
+      return "El servidor rechazó la dirección de retorno. Es un ajuste del proyecto, no de tu correo.";
+    }
+    if (texto.includes("signup") && texto.includes("disabled")) {
+      return "El registro está desactivado en el proyecto ahora mismo.";
+    }
+    return `No se pudo enviar el código${err.message ? `: ${err.message}` : ""}.`;
+  }
+
   async function enviarCodigo(e: React.FormEvent) {
     e.preventDefault();
     if (!cedulaOk || !emailOk) return;
     setError(null);
     setCargando(true);
+    /*
+      Sin `emailRedirectTo`: el dominio de producción no está en la lista de
+      redirecciones permitidas del proyecto, así que pedirlo no aporta nada
+      —el enlace acaba en el Site URL igual— y algunos despliegues de GoTrue
+      rechazan la petición entera por una redirección no permitida. La vía del
+      enlace ya funciona pegándolo en el campo de verificación.
+    */
     const { error: err } = await supabase().auth.signInWithOtp({
       email,
-      options: {
-        shouldCreateUser: true,
-        // Si la plantilla del correo manda un enlace en vez del código, que
-        // al menos aterrice aquí y no en la portada.
-        emailRedirectTo: `${window.location.origin}/democracia/registro`,
-      },
+      options: { shouldCreateUser: true },
     });
     setCargando(false);
     if (err) {
-      setError("No se pudo enviar el código. Revisa el correo e intenta de nuevo.");
+      // Decir qué pasó de verdad. «Revisa el correo» ante un límite de envío
+      // manda al usuario a mirar una bandeja donde no hay nada, y a reintentar
+      // justo lo que agotó la cuota.
+      setError(mensajeDeEnvio(err));
       return;
     }
     setPaso("codigo");
