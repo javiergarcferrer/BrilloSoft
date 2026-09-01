@@ -32,7 +32,18 @@ export interface VistaSeccion {
 
 export interface Seccion {
   id: SeccionId;
+  /** Sustantivo corto: barra de sección, tab bar, pie. Se reconoce de un vistazo. */
   nombre: string;
+  /**
+   * La vertical dicha como pregunta, para el nav global de escritorio.
+   *
+   * Ergonomía cognitiva: donde el usuario está *eligiendo a dónde ir* y hay
+   * espacio, la pregunta informa más que el sustantivo («¿Qué compra?» dice
+   * qué vas a encontrar; «Licitaciones» te obliga a saberlo). Donde ya sabe
+   * dónde está y solo necesita reconocer —pestañas de 72px, barra de
+   * sección—, el sustantivo gana. Por eso conviven las dos.
+   */
+  pregunta: string;
   /** Ruta raíz de la vertical (a donde lleva el nav global). */
   href: string;
   /** Qué describe la vertical, para subtítulos y tarjetas. */
@@ -59,6 +70,7 @@ export const SECCIONES: Seccion[] = [
   {
     id: "licitaciones",
     nombre: "Licitaciones",
+    pregunta: "¿Qué compra?",
     href: "/licitaciones",
     descriptor: "Compras públicas · DGCP",
     rutas: [
@@ -88,6 +100,7 @@ export const SECCIONES: Seccion[] = [
   {
     id: "congreso",
     nombre: "Congreso",
+    pregunta: "¿Qué legisla?",
     href: "/congreso",
     descriptor: "Iniciativas · Diputados y Senado",
     rutas: ["/congreso"],
@@ -107,6 +120,7 @@ export const SECCIONES: Seccion[] = [
   {
     id: "normativa",
     nombre: "Normativa",
+    pregunta: "¿Qué decreta?",
     href: "/normativa",
     descriptor: "Decretos y leyes · Poder Ejecutivo",
     rutas: ["/normativa"],
@@ -122,6 +136,7 @@ export const SECCIONES: Seccion[] = [
   {
     id: "nomina",
     nombre: "Nómina",
+    pregunta: "¿A quién paga?",
     href: "/nomina",
     descriptor: "Plazas y sueldos · por institución",
     rutas: ["/nomina"],
@@ -137,6 +152,7 @@ export const SECCIONES: Seccion[] = [
   {
     id: "democracia",
     nombre: "Democracia",
+    pregunta: "¿Qué opinas?",
     href: "/democracia",
     descriptor: "Voto ciudadano · piloto",
     rutas: ["/democracia"],
