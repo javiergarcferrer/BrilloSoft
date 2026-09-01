@@ -487,6 +487,13 @@ sin evadir ningún bloqueo.
 > presupuestaria tiene API abierta (§A.1), el padrón de RNC de la DGII se
 > descarga sin clave (§A.2), y la API de compras que ya integramos tiene cuatro
 > endpoints que no estábamos usando (§A.3).
+>
+> **Estado (2026-09-01): §A.1 y §A.3 ya están implementados y desplegados.**
+> La vertical de finanzas públicas (`/finanzas`, `lib/fiscal.ts`,
+> `scripts/build-fiscal.py`) y los cuatro endpoints de la DGCP —ofertas en la
+> ficha de proceso, registro en la de proveedor, planes en `/planes`— son las
+> fases 5 y 6 de §D. Queda pendiente §A.2 (padrón RNC), que exige decidir la
+> instantánea derivada en build.
 
 ## 0. Lo que cambia el veredicto
 
@@ -533,9 +540,12 @@ https://api-sigef.hacienda.gob.do/servicios/datosabiertos/portaltransparencia/
 
 - ✅ **Secciones**: `11111` administración central, `11112` descentralizadas y
   autónomas no financieras, `11113` seguridad social.
-- ✅ **Capítulos**: los **99 códigos institucionales** del presupuesto, del
+- ✅ **Capítulos**: los **104 códigos institucionales** del presupuesto, del
   `0101` (Senado) al `5211` (TSS), incluyendo `0998`/`0999` (deuda pública y
-  obligaciones del Tesoro). Quedaron capturados en esta pasada.
+  obligaciones del Tesoro) — 34 de administración central, 61 descentralizadas,
+  9 de seguridad social. Quedaron capturados en `lib/capitulos.ts`.
+  *(Corrección: esta auditoría dijo primero «99». Eran los que cabían en los
+  40 KB que leyó el primer barrido; el bloque completo mide 86 KB.)*
 - ✅ **Respuestas reales comprobadas**:
   - `gastos/institucion/2026/08/json?seccion=11111&capitulo=0206` → 41 KB,
     ejecución del Ministerio de Educación por unidad ejecutora y mes, con
@@ -799,8 +809,8 @@ Las fases 1 y 2 (deuda, normativa) siguen implementadas. Estas se ordenan por
 
 | Fase | Qué | Esfuerzo | Notas de arquitectura |
 |---|---|---|---|
-| **5** | **DGCP: `/ofertas`, `/proveedores`, `/catalogo`, `/pacc`** | **bajo** | Mismo host, mismo `dgcpFetch`, mismas ventanas de caché. Es la mejor relación valor/esfuerzo de toda la auditoría |
-| **6** | **SIGEF: `lib/fiscal.ts` + vertical de finanzas públicas** | medio | `unstable_cache` diario, consulta **por institución**, timeout ≥120 s, precalentar el mes vigente, degradar al mes cerrado anterior |
+| **5** ✅ | **DGCP: `/ofertas`, `/proveedores`, `/catalogo`, `/pacc`** | **bajo** | Mismo host, mismo `dgcpFetch`, mismas ventanas de caché. Es la mejor relación valor/esfuerzo de toda la auditoría |
+| **6** ✅ | **SIGEF: `lib/fiscal.ts` + vertical de finanzas públicas** | medio | `unstable_cache` diario, consulta **por institución**, timeout ≥120 s, precalentar el mes vigente, degradar al mes cerrado anterior |
 | **7** | **MICM: indicador de combustibles** | bajo | Portada + título del último aviso; declarar que son 4 precios, no el aviso completo |
 | **8** | **MapaInversiones: obra pública** | medio | CSV grandes → instantánea en build (patrón nómina), unión por `codigo_snip` con procesos |
 | **9** | **RNC (DGII) en fichas de proveedor** | medio | Instantánea en build restringida a los RNC presentes en compras; nunca descarga en request |
@@ -808,9 +818,20 @@ Las fases 1 y 2 (deuda, normativa) siguen implementadas. Estas se ordenan por
 | **11** | BCRD (tipo de cambio) | bajo | Solo si el XLS del CDN se parsea sin dependencia pesada; el resto de series, tras pedir el índice |
 
 **Regla que impone la fase 6**: la plataforma necesita una segunda clase de
-adaptador — *fuente lenta, cacheada por día* — junto a la actual *fuente viva,
-cacheada por minutos*. `lib/senado.ts` ya abrió ese camino con `unstable_cache`;
-`lib/fiscal.ts` lo formaliza.
+adaptador — *fuente lenta, consolidada en instantánea* — junto a la actual
+*fuente viva, cacheada por minutos*. Al implementarla se midió que ni el caché
+por día alcanza: una sección entera del SIGEF tarda **97 s** y una institución
+suelta entre 20 y 90 s, por encima de lo que aguanta cualquier función de
+servidor. `scripts/build-fiscal.py` resuelve las tres secciones en tres
+llamadas y `lib/fiscal.ts` sirve el resultado; el precedente era la nómina.
+
+**Semántica del SIGEF que es fácil leer mal** (verificada fila a fila al
+implementar, y documentada en el script): `PRESUPUESTO INICIAL` solo aparece en
+el mes 1; `PRESUPUESTO VIGENTE` **no es un saldo sino un delta mensual** —el
+mes 1 trae la apertura y los demás las modificaciones, con signo—, así que el
+vigente real es la suma del año. Sumar mal ahí no da un error visible: da una
+cifra creíble y falsa. Y el mes en curso llega con filas a cero, de modo que el
+corte honesto es el último mes con devengado real, no el último mes con filas.
 
 ---
 

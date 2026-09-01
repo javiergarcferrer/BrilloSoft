@@ -72,6 +72,22 @@ export function hace(valor: string | null | undefined): string | null {
  * magnitud —y la cifra más grande de la plataforma es la más fácil de
  * malinterpretar—. Aquí la unidad viaja con el número, no en una nota al pie.
  */
+/**
+ * Pesos escritos con su unidad, para las cifras grandes del Estado.
+ *
+ * Misma regla que `formatMagnitud` y por el mismo motivo: abreviar mil
+ * millones como «MM» —que en uso dominicano se lee *millones*— se equivoca por
+ * tres órdenes de magnitud justo en las cifras que más pesan. El presupuesto
+ * del Estado se cuenta en billones de pesos: la unidad viaja con el número.
+ */
+export function formatPesos(pesos: number): string {
+  const abs = Math.abs(pesos);
+  if (abs >= 1e12) return `RD$ ${(pesos / 1e12).toFixed(2)} billones`;
+  if (abs >= 1e9) return `RD$ ${(pesos / 1e9).toFixed(1)} mil millones`;
+  if (abs >= 1e6) return `RD$ ${(pesos / 1e6).toFixed(1)} millones`;
+  return formatMonto(pesos, "DOP");
+}
+
 export function formatMagnitud(millonesUSD: number): string {
   if (millonesUSD >= 1000) {
     const miles = millonesUSD / 1000;

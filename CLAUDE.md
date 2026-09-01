@@ -11,6 +11,7 @@ a public source:
 | Domain | Route | Source | Data layer |
 |---|---|---|---|
 | Compras públicas | `/licitaciones` | DGCP open-data API | `lib/dgcp.ts` |
+| Finanzas públicas | `/finanzas` | SIGEF open-data API (snapshot) | `lib/fiscal.ts`, `lib/capitulos.ts` |
 | Congreso Nacional | `/congreso` | SIL Diputados + consultante del Senado | `lib/congreso.ts`, `lib/senado.ts` |
 | Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (token + POST) | `lib/normativa.ts` |
 | Nómina estatal | `/nomina` | Static payroll snapshot (11 institutions) | `lib/nomina.ts`, `lib/nomina-server.ts` |
@@ -119,6 +120,10 @@ npm run dev      # dev server (http://localhost:3000)
 npm run build    # production build — also runs the TypeScript typecheck
 npm run start    # serve the production build
 npx tsc --noEmit # typecheck only
+
+python3 scripts/build-fiscal.py   # regenera public/data/fiscal.json (SIGEF, ~5 min)
+python3 scripts/build-nomina.py   # regenera public/data/nomina.json
+python3 scripts/build-deuda.py    # regenera public/data/deuda.json
 ```
 
 There is no test suite and no ESLint config; `next build` is the gate, wrapped
@@ -153,6 +158,41 @@ Owns all DGCP types (`Proceso`, `Articulo`, `Documento`, `Contrato`,
   (min/median/max + examples) by UNSPSC subclass (cached 1h).
 
 Cache windows by data type: listings 5 min, precios 1 h, unidades 24 h.
+
+Four more endpoints of the same API, added after the second source audit
+(`AUDITORIA.md` §A.3) — same wrapper, same cache discipline:
+- `getCompetencia(codigo)` — **`/ofertas`**: who bid on a process, not just who
+  won. `proceso` filters upstream, so a process's bidders are the record, not a
+  sample. Caveat the UI must keep stating: `estado_evaluacion` arrives empty
+  even on awarded processes, so **the contracts say who won, never the offers**.
+- `getProveedorRegistro(rpe)` — **`/proveedores`**: the supplier's registry
+  card, including the RNC (the join key to DGII). The type deliberately drops
+  the registry's phone/e-mail/contact fields: public by registry, but this is a
+  watchdog, not a business directory.
+- `getSubclase(subclase)` — **`/catalogo`**: plain-language UNSPSC names.
+- `listPacc({periodo})` — **`/pacc`**: each unit's annual purchasing plan, the
+  earliest signal the State publishes. Its `periodo` filter is ignored
+  upstream, so the year is filtered server-side.
+
+### Fiscal data layer — `lib/fiscal.ts` + `lib/capitulos.ts`
+Budget execution per institution (vigente → comprometido → devengado → pagado),
+month by month, from the **SIGEF open-data API** (`AUDITORIA.md` §A.1). Three
+things make it unlike the other layers:
+1. **It reads a snapshot, not the network.** The API computes the running year
+   live: ~97 s for a whole institutional section, 20–90 s for one institution —
+   beyond any request budget. `scripts/build-fiscal.py` resolves the three
+   sections in three calls into `public/data/fiscal.json`; the module serves it
+   instantly and the UI always shows the cut date. Same contract as nómina.
+2. **`PRESUPUESTO VIGENTE` is a monthly delta, not a balance** (month 1 = the
+   year's opening, the rest = modifications with sign), so the real vigente is
+   the year's **sum**. Getting this wrong yields a believable, false figure.
+3. **The cut month is the last month with real accrual**, not the last month
+   with rows: the source already returns zero-filled rows for the month in
+   progress.
+`lib/capitulos.ts` holds the 104 budget chapter codes (extracted from the
+Transparency Portal's own form — Hacienda publishes the taxonomy nowhere else)
+plus `titulizar`, which puts official ALL-CAPS names into reading case while
+preserving the acronyms in parentheses.
 
 ### API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return
@@ -262,7 +302,11 @@ sources impose:
   `"Proceso publicado"`).
 - `/procesos/[codigo]` → server detail page, with `precios.tsx` (client),
   `loading.tsx`, `not-found.tsx`.
-- `/proveedores/[rpe]` → supplier profile.
+- `/proveedores/[rpe]` → supplier profile: contract history plus the RPE
+  registry card (RNC, legal form, incorporation date, MIPYME status).
+- `/planes` → annual purchasing plans (PACC) for the current year.
+- `/finanzas` → budget execution across the State, `/finanzas/[capitulo]` per
+  institution (SSG from the snapshot, one page per chapter).
 - `/estadisticas` → 30-day market dashboard. `/guia` → static bidder guide.
 - `/seguimiento` → starred processes.
 

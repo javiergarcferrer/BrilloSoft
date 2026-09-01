@@ -19,7 +19,13 @@
  * Las clases de Tailwind viven aquí como literales para que el escáner las vea.
  */
 
-export type SeccionId = "licitaciones" | "congreso" | "normativa" | "nomina" | "democracia";
+export type SeccionId =
+  | "licitaciones"
+  | "finanzas"
+  | "congreso"
+  | "normativa"
+  | "nomina"
+  | "democracia";
 
 export interface VistaSeccion {
   href: string;
@@ -79,6 +85,7 @@ export const SECCIONES: Seccion[] = [
       "/proveedores",
       "/estadisticas",
       "/contratos",
+      "/planes",
       "/seguimiento",
       "/guia",
     ],
@@ -86,6 +93,7 @@ export const SECCIONES: Seccion[] = [
       { href: "/licitaciones", label: "Buscar" },
       { href: "/estadisticas", label: "Mercado" },
       { href: "/contratos", label: "Contratado" },
+      { href: "/planes", label: "Planes" },
       { href: "/seguimiento", label: "Seguimiento", seguimiento: true },
       { href: "/guia", label: "Guía" },
     ],
@@ -95,6 +103,22 @@ export const SECCIONES: Seccion[] = [
       barra: "bg-v-compras",
       punto: "bg-v-compras",
       chip: "bg-v-compras-tenue text-v-compras",
+    },
+  },
+  {
+    id: "finanzas",
+    nombre: "Finanzas",
+    pregunta: "¿En qué gasta?",
+    href: "/finanzas",
+    descriptor: "Ejecución del presupuesto · SIGEF",
+    rutas: ["/finanzas"],
+    vistas: [{ href: "/finanzas", label: "Ejecución" }],
+    conBuscadorGlobal: false,
+    hue: {
+      activo: "text-v-finanzas",
+      barra: "bg-v-finanzas",
+      punto: "bg-v-finanzas",
+      chip: "bg-v-finanzas-tenue text-v-finanzas",
     },
   },
   {

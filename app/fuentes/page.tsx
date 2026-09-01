@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getCountIniciativas, getPeriodos } from "@/lib/congreso";
 import { CUATRIENIOS, getCensoSenado } from "@/lib/senado";
 import { getDeuda } from "@/lib/deuda";
+import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
 import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { IconArrowLeft } from "@/components/icons";
@@ -16,12 +17,13 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function FuentesPage() {
-  const [censo, periodos, censoSenado, nomina, deuda] = await Promise.all([
+  const [censo, periodos, censoSenado, nomina, deuda, fiscal] = await Promise.all([
     getCountIniciativas(),
     getPeriodos(),
     getCensoSenado(),
     getResumenNomina(),
     getDeuda(),
+    getResumenFiscal(),
   ]);
 
   return (
@@ -60,10 +62,66 @@ export default async function FuentesPage() {
             —los mismos bytes, sin editar— y los enlaces de abrir y descargar
             siguen apuntando al original.
           </p>
+          <p className="mt-2">
+            De la misma API se leen otras cuatro cosas que antes no
+            aprovechábamos: las <strong>ofertas</strong> de cada proceso (quién
+            compitió, no solo quién ganó), el <strong>registro de
+            proveedores</strong> —que trae el RNC, la forma jurídica y la fecha
+            de constitución de cada empresa—, el <strong>catálogo UNSPSC</strong>{" "}
+            y los <strong>planes anuales de compra</strong> de cada institución.
+          </p>
           <p className="mt-2 text-xs text-ink-soft">
             Las búsquedas por texto escanean hasta 6 páginas de 1000 registros
             dentro del rango de fechas; cuando el barrido no cubre todo, la
-            interfaz lo advierte en vez de fingir un resultado completo.
+            interfaz lo advierte en vez de fingir un resultado completo. Dos
+            límites del origen que la interfaz declara donde tocan: el estado de
+            evaluación de las ofertas llega casi siempre vacío —quién ganó lo
+            dicen los contratos— y el filtro de período de los planes no
+            funciona, así que el año se filtra aquí. Del registro de proveedores
+            omitimos a propósito teléfonos y correos: esto vigila al Estado, no
+            es un directorio comercial.
+          </p>
+        </Fuente>
+
+        <Fuente
+          nombre="SIGEF — Ejecución del presupuesto"
+          estado={fiscal !== null ? "activa" : "caida"}
+          etiqueta={fiscal !== null ? "Instantánea local" : "No disponible"}
+        >
+          <p>
+            API de datos abiertos del Ministerio de Hacienda: el presupuesto
+            vigente, comprometido, devengado y pagado de cada institución del
+            Presupuesto General del Estado, mes a mes. Es la fuente de la
+            vertical de <Link href="/finanzas" className="font-medium text-brand-700 hover:underline">finanzas públicas</Link>.
+          </p>
+          {fiscal && (
+            <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+              <Metrica etiqueta="Instituciones" valor={formatInt(fiscal.instituciones)} />
+              <Metrica
+                etiqueta="Corte"
+                valor={etiquetaCorte(fiscal.mesCorte, fiscal.anio)}
+              />
+              <Metrica
+                etiqueta="Ejecutado"
+                valor={
+                  fiscal.ejecucion === null
+                    ? "—"
+                    : `${(fiscal.ejecucion * 100).toFixed(1)} %`
+                }
+              />
+            </dl>
+          )}
+          <p className="mt-3 text-xs text-ink-soft">
+            Por qué es una instantánea y no lectura en vivo: el origen calcula el
+            año en curso al vuelo y tarda entre 20 y 97 segundos por consulta, más
+            de lo que puede esperar una página. Se consolidan las tres secciones
+            institucionales con{" "}
+            <code className="rounded bg-canvas px-1 py-0.5 font-mono">
+              scripts/build-fiscal.py
+            </code>{" "}
+            y se sirven al instante; la fecha de corte va siempre a la vista.
+            Cubre el Presupuesto General del Estado: no incluye ayuntamientos ni
+            empresas públicas financieras.
           </p>
         </Fuente>
 

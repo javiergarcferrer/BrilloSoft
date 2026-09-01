@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SECCIONES, seccionDe } from "@/lib/secciones";
-import { IconChartBar, IconCheck, IconCoins, IconDoc, IconGrid, IconLayers } from "./icons";
+import {
+  IconChartBar,
+  IconCheck,
+  IconCoins,
+  IconDoc,
+  IconGrid,
+  IconLayers,
+  IconTrendingUp,
+} from "./icons";
 import { cn } from "@/lib/cn";
 import type { SeccionId } from "@/lib/secciones";
 
@@ -17,6 +25,7 @@ import type { SeccionId } from "@/lib/secciones";
 
 const ICONOS: Record<SeccionId, (p: { className?: string }) => React.ReactElement> = {
   licitaciones: IconCoins,
+  finanzas: IconTrendingUp,
   congreso: IconLayers,
   normativa: IconDoc,
   nomina: IconChartBar,

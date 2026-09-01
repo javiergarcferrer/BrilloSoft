@@ -10,9 +10,10 @@ import {
 } from "@/lib/congreso";
 import { getCensoSenado } from "@/lib/senado";
 import { getDeuda } from "@/lib/deuda";
+import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
-import { diasHasta, formatMagnitud, formatMonto } from "@/lib/format";
+import { diasHasta, formatMagnitud, formatMonto, formatPesos } from "@/lib/format";
 import { SECCIONES } from "@/lib/secciones";
 import {
   IconArrowRight,
@@ -35,17 +36,25 @@ function hace(dias: number): string {
 }
 
 export default async function Panorama() {
-  const [compras, censoCongreso, muestraCongreso, censoSenado, nomina, deuda] =
-    await Promise.all([
-      dgcpFetch<Proceso>("/procesos", { startdate: hace(30), limit: 1000 }, 1800).catch(
-        () => null,
-      ),
-      getCountIniciativas(),
-      muestrearIniciativas(PAGINAS_CONGRESO),
-      getCensoSenado(),
-      getResumenNomina(),
-      getDeuda(),
-    ]);
+  const [
+    compras,
+    censoCongreso,
+    muestraCongreso,
+    censoSenado,
+    nomina,
+    deuda,
+    fiscal,
+  ] = await Promise.all([
+    dgcpFetch<Proceso>("/procesos", { startdate: hace(30), limit: 1000 }, 1800).catch(
+      () => null,
+    ),
+    getCountIniciativas(),
+    muestrearIniciativas(PAGINAS_CONGRESO),
+    getCensoSenado(),
+    getResumenNomina(),
+    getDeuda(),
+    getResumenFiscal(),
+  ]);
 
   /* --- compras públicas --- */
   const procesos = compras?.payload.content ?? [];
@@ -105,7 +114,7 @@ export default async function Panorama() {
       </section>
 
       {/* Dominios */}
-      <section className="grid gap-4 lg:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Dominio
           titulo={hue.licitaciones.nombre}
           fuente={hue.licitaciones.descriptor}
@@ -129,6 +138,38 @@ export default async function Panorama() {
                   {
                     etiqueta: "Publicados (30 días)",
                     valor: formatInt(procesos.length),
+                  },
+                ]
+              : []
+          }
+        />
+
+        <Dominio
+          titulo={hue.finanzas.nombre}
+          fuente={hue.finanzas.descriptor}
+          chip={hue.finanzas.hue.chip}
+          href="/finanzas"
+          cta="Ver la ejecución"
+          Icon={IconTrendingUp}
+          disponible={fiscal !== null}
+          cifras={
+            fiscal
+              ? [
+                  {
+                    etiqueta: `Devengado en ${fiscal.anio}`,
+                    valor: formatPesos(fiscal.devengado),
+                    destacar: true,
+                  },
+                  {
+                    etiqueta: "De su presupuesto vigente",
+                    valor:
+                      fiscal.ejecucion === null
+                        ? "—"
+                        : `${(fiscal.ejecucion * 100).toFixed(1)} %`,
+                  },
+                  {
+                    etiqueta: "Corte",
+                    valor: etiquetaCorte(fiscal.mesCorte, fiscal.anio),
                   },
                 ]
               : []

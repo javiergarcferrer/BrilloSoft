@@ -555,3 +555,313 @@ export async function getHistorialProveedor(rpe: string): Promise<HistorialProve
     porAnio: [...anios.values()].sort((a, b) => b.anio.localeCompare(a.anio)),
   };
 }
+
+/* --------------------------------------------------- ofertas: la competencia */
+
+/**
+ * Una oferta presentada a un proceso. El endpoint `/ofertas` (1.46 M de
+ * registros) responde a `proceso`, igual que `/contratos`, así que la
+ * competencia de un proceso concreto **no es una muestra**: es el registro.
+ *
+ * Advertencia de campo (AUDITORIA.md §A.3): `estado_evaluacion` viene
+ * mayoritariamente en «Pendiente» o vacío incluso en procesos ya adjudicados.
+ * Esta capa expone quién ofertó y por cuánto; **quién ganó lo dicen los
+ * contratos**, no la evaluación.
+ */
+export interface Oferta {
+  id_oferta: string;
+  codigo_proceso: string;
+  codigo_unidad_compra: string;
+  unidad_compra: string;
+  rpe: string;
+  razon_social: string;
+  nombre_oferta: string;
+  valor_oferta: string;
+  estado_oferta: string;
+  estado_evaluacion: string | null;
+  tipo_oferta: string;
+  fecha_creacion: string;
+  fecha_entrega_oferta: string;
+  fecha_evaluacion: string | null;
+}
+
+export interface Oferente {
+  rpe: string;
+  razonSocial: string;
+  /** Suma de las ofertas de ese oferente en el proceso (puede ofertar por lote). */
+  monto: number;
+  ofertas: number;
+  digital: boolean;
+}
+
+export interface Competencia {
+  /** Oferentes distintos, de menor a mayor monto ofertado. */
+  oferentes: Oferente[];
+  /** Ofertas individuales registradas (un oferente puede presentar varias). */
+  totalOfertas: number;
+  /** Nadie más se presentó: la señal que hay que mirar. */
+  oferenteUnico: boolean;
+  /** Menor y mayor oferta con monto declarado, para dar rango. */
+  menor: number | null;
+  mayor: number | null;
+  /** Cuántas ofertas llegaron sin monto legible en el registro. */
+  sinMonto: number;
+}
+
+/**
+ * Quién compitió por un proceso. Devuelve `null` cuando el registro no tiene
+ * ofertas cargadas — que no es lo mismo que «no hubo competencia»: hay
+ * modalidades que no publican ofertas, y la UI debe decirlo así.
+ */
+export async function getCompetencia(codigoProceso: string): Promise<Competencia | null> {
+  const data = await dgcpFetch<Oferta>(
+    "/ofertas",
+    { proceso: codigoProceso, limit: 1000 },
+    1800
+  ).catch(() => null);
+  const ofertas = data?.payload.content ?? [];
+  if (ofertas.length === 0) return null;
+
+  const porOferente = new Map<string, Oferente>();
+  let sinMonto = 0;
+  const montos: number[] = [];
+
+  for (const o of ofertas) {
+    const monto = Number(o.valor_oferta);
+    const valido = Number.isFinite(monto) && monto > 0;
+    if (valido) montos.push(monto);
+    else sinMonto += 1;
+
+    const rpe = String(o.rpe ?? "").trim();
+    const clave = rpe || o.razon_social || o.id_oferta;
+    const acc = porOferente.get(clave) ?? {
+      rpe,
+      razonSocial: o.razon_social || "Oferente sin nombre en el registro",
+      monto: 0,
+      ofertas: 0,
+      digital: false,
+    };
+    acc.ofertas += 1;
+    if (valido) acc.monto += monto;
+    if (/digital/i.test(o.tipo_oferta || "")) acc.digital = true;
+    porOferente.set(clave, acc);
+  }
+
+  montos.sort((a, b) => a - b);
+  const oferentes = [...porOferente.values()].sort((a, b) => {
+    if (a.monto && b.monto) return a.monto - b.monto;
+    return b.monto - a.monto;
+  });
+
+  return {
+    oferentes,
+    totalOfertas: ofertas.length,
+    oferenteUnico: oferentes.length === 1,
+    menor: montos[0] ?? null,
+    mayor: montos[montos.length - 1] ?? null,
+    sinMonto,
+  };
+}
+
+/* ------------------------------------------ registro de proveedores del Estado */
+
+/**
+ * Ficha del Registro de Proveedores del Estado (RPE).
+ *
+ * El endpoint `/proveedores` trae 35 campos, entre ellos teléfonos, correos y
+ * nombre del contacto comercial. **Este tipo los omite a propósito**: son
+ * públicos por registro, pero replicarlos convertiría la plataforma en un
+ * directorio de contactos, que no es lo que hace falta para vigilar al Estado
+ * (AUDITORIA.md §A.3). Lo que sí importa es la identidad institucional: quién
+ * es, desde cuándo existe y en qué condición está inscrito.
+ */
+export interface ProveedorRegistro {
+  rpe: string;
+  razonSocial: string;
+  /** «RNC» o «Cédula». */
+  tipoDocumento: string;
+  /** El RNC: la llave con el registro tributario de la DGII. */
+  numeroDocumento: string;
+  /** «Activo» · «Inactivo» · «Desactualizado». */
+  estado: string;
+  tipoPersona: string;
+  formaJuridica: string;
+  /** Constitución de la empresa (no su inscripción como proveedor). */
+  fechaCreacion: string | null;
+  /** Alta en el registro de proveedores del Estado. */
+  fechaRegistroRpe: string | null;
+  registroMercantil: string | null;
+  esMipyme: boolean;
+  certificacionMicm: boolean;
+  productorNacional: boolean;
+  /** «Gran empresa», «Mediana empresa», «No clasificada»… */
+  clasificacion: string | null;
+  /** «Bienes», «Servicios», «Obras». */
+  provee: string | null;
+  provincia: string | null;
+  municipio: string | null;
+}
+
+interface ProveedorRaw {
+  rpe: number | string;
+  razon_social: string;
+  tipo_documento: string;
+  numero_documento: string;
+  estado: string;
+  tipo_persona: string;
+  forma_juridica: string;
+  fecha_creacion_empresa: string | null;
+  fecha_registro_rpe: string | null;
+  numero_registro_mercantil: string | null;
+  es_mipyme: string | null;
+  certificacion_micm: string | null;
+  productor_nacional: string | null;
+  clasificacion: string | null;
+  provee: string | null;
+  provincia: string | null;
+  municipio: string | null;
+}
+
+const esSi = (v: string | null | undefined) => /^s[ií]$/i.test((v ?? "").trim());
+
+/** Fecha ISO del registro, o `null` si viene vacía o corrupta. */
+function fechaRegistro(iso: string | null | undefined): string | null {
+  return fechaValida(iso) ? iso!.slice(0, 10) : null;
+}
+
+/**
+ * Ficha de registro de un proveedor. `rpe` filtra de verdad en la API, así que
+ * es una consulta directa. Degrada a `null` si el proveedor no está en el
+ * registro (o si la API falla): la página del proveedor sigue funcionando con
+ * su historial de contratos.
+ */
+export async function getProveedorRegistro(rpe: string): Promise<ProveedorRegistro | null> {
+  const data = await dgcpFetch<ProveedorRaw>("/proveedores", { rpe, limit: 5 }, 86400).catch(
+    () => null
+  );
+  const p = data?.payload.content.find((x) => String(x.rpe) === String(rpe));
+  if (!p) return null;
+  return {
+    rpe: String(p.rpe),
+    razonSocial: p.razon_social,
+    tipoDocumento: p.tipo_documento,
+    numeroDocumento: p.numero_documento,
+    estado: p.estado,
+    tipoPersona: p.tipo_persona,
+    formaJuridica: p.forma_juridica,
+    fechaCreacion: fechaRegistro(p.fecha_creacion_empresa),
+    fechaRegistroRpe: fechaRegistro(p.fecha_registro_rpe),
+    registroMercantil: p.numero_registro_mercantil || null,
+    esMipyme: esSi(p.es_mipyme),
+    certificacionMicm: esSi(p.certificacion_micm),
+    productorNacional: esSi(p.productor_nacional),
+    clasificacion: p.clasificacion || null,
+    provee: p.provee || null,
+    provincia: p.provincia || null,
+    municipio: p.municipio || null,
+  };
+}
+
+/* ------------------------------------------------------------ catálogo UNSPSC */
+
+export interface Subclase {
+  subclase: string;
+  descripcion: string;
+  clase: string;
+  descripcionClase: string;
+  familia: string;
+  descripcionFamilia: string;
+  definicion: string | null;
+}
+
+interface SubclaseRaw {
+  segmento: string;
+  descripcion_segmento: string;
+  familia: string;
+  descripcion_familia: string;
+  clase: string;
+  descripcion_clase: string;
+  subclase: string;
+  descripcion_subclase: string;
+  definicion_subclase: string | null;
+}
+
+/** Nombre y árbol de una subclase UNSPSC: da lenguaje llano a un código. */
+export async function getSubclase(subclase: string): Promise<Subclase | null> {
+  const data = await dgcpFetch<SubclaseRaw>("/catalogo", { subclase, limit: 5 }, 86400).catch(
+    () => null
+  );
+  const s = data?.payload.content.find((x) => x.subclase === subclase);
+  if (!s) return null;
+  const limpiar = (t: string) => t.replace(/\s+/g, " ").trim();
+  return {
+    subclase: s.subclase,
+    descripcion: limpiar(s.descripcion_subclase),
+    clase: s.clase,
+    descripcionClase: limpiar(s.descripcion_clase),
+    familia: s.familia,
+    descripcionFamilia: limpiar(s.descripcion_familia),
+    definicion: s.definicion_subclase ? limpiar(s.definicion_subclase) : null,
+  };
+}
+
+/* -------------------------------------- PACC: lo que el Estado planea comprar */
+
+/**
+ * Plan Anual de Compras y Contrataciones de una unidad de compra. Es la
+ * intención declarada **antes** de que exista un proceso: la señal más
+ * temprana que publica el Estado.
+ *
+ * Límite verificado: `/pacc` **ignora el filtro `periodo`** (devuelve 2026
+ * aunque se pida 2025); `unidad_compra` sí filtra. Por eso el filtrado por
+ * período se hace aquí, del lado del servidor.
+ */
+export interface Pacc {
+  uid: string;
+  codigoUnidadCompra: string;
+  unidadCompra: string;
+  periodo: number;
+  fechaPublicacion: string | null;
+  /** Cada revisión del plan sube la versión: 55 versiones es un plan movido. */
+  version: string;
+  url: string;
+}
+
+interface PaccRaw {
+  uid_pacc: string;
+  codigo_unidad_compra: string;
+  unidad_compra: string;
+  periodo: number | string;
+  fecha_publicacion: string | null;
+  version: string;
+  responsable: string;
+  correo_responsable: string;
+  url: string;
+}
+
+export async function listPacc(opts: {
+  periodo?: number;
+  unidad_compra?: number | string;
+  limit?: number;
+} = {}): Promise<Pacc[]> {
+  const data = await dgcpFetch<PaccRaw>(
+    "/pacc",
+    { unidad_compra: opts.unidad_compra, limit: opts.limit ?? 1000 },
+    3600
+  ).catch(() => null);
+  const planes = (data?.payload.content ?? []).map((p) => ({
+    uid: p.uid_pacc,
+    codigoUnidadCompra: String(p.codigo_unidad_compra),
+    unidadCompra: p.unidad_compra,
+    periodo: Number(p.periodo),
+    fechaPublicacion: fechaRegistro(p.fecha_publicacion),
+    version: String(p.version ?? ""),
+    url: p.url,
+  }));
+  const filtrados = opts.periodo
+    ? planes.filter((p) => p.periodo === opts.periodo)
+    : planes;
+  return filtrados.sort((a, b) =>
+    (b.fechaPublicacion ?? "").localeCompare(a.fechaPublicacion ?? "")
+  );
+}

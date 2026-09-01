@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getHistorialProveedor } from "@/lib/dgcp";
+import { getHistorialProveedor, getProveedorRegistro } from "@/lib/dgcp";
+import { titulizar } from "@/lib/capitulos";
 import { formatFecha, formatMonto } from "@/lib/format";
 import { IconArrowLeft } from "@/components/icons";
 
@@ -21,11 +22,14 @@ export default async function ProveedorPage({
   const { rpe } = await params;
   if (!/^\d{1,10}$/.test(rpe)) notFound();
 
-  const historial = await getHistorialProveedor(rpe);
+  const [historial, registro] = await Promise.all([
+    getHistorialProveedor(rpe),
+    getProveedorRegistro(rpe),
+  ]);
   if (!historial) notFound();
 
   const contratos = historial.contratos;
-  const nombre = historial.razonSocial;
+  const nombre = registro?.razonSocial ?? historial.razonSocial;
   const total = historial.totalRegistro;
   const suma = historial.montoTotal;
 
@@ -41,6 +45,22 @@ export default async function ProveedorPage({
     .slice(0, 8);
 
   const maxAnio = Math.max(1, ...historial.porAnio.map((a) => a.monto));
+
+  // Distancia entre la constitución de la empresa y su primer contrato con el
+  // Estado. No acusa a nadie: es el dato que el registro permite comprobar y
+  // que hasta ahora había que creerse.
+  const primeraAdjudicacion = contratos
+    .map((c) => (c.fecha_adjudicacion ?? "").slice(0, 10))
+    .filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f))
+    .sort()[0];
+  const mesesHastaPrimerContrato =
+    registro?.fechaCreacion && primeraAdjudicacion
+      ? Math.round(
+          (new Date(primeraAdjudicacion).getTime() -
+            new Date(registro.fechaCreacion).getTime()) /
+            (1000 * 60 * 60 * 24 * 30.44),
+        )
+      : null;
 
   const recientes = [...contratos]
     .sort(
@@ -92,6 +112,126 @@ export default async function ProveedorPage({
           a contratos vigentes (sin cancelados ni rescindidos).
         </p>
       </section>
+
+      {registro && (
+        <section className="rounded-lg bg-surface p-6 border border-hairline">
+          <h2 className="font-semibold">Ficha de registro</h2>
+          <p className="mt-1 text-xs text-ink-soft">
+            Lo que el Registro de Proveedores del Estado dice de esta empresa.
+          </p>
+          <dl className="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <dt className="rotulo text-ink-soft">{registro.tipoDocumento}</dt>
+              <dd className="font-mono font-medium tabular-nums">
+                {registro.numeroDocumento || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="rotulo text-ink-soft">Estado en el RPE</dt>
+              <dd className="font-medium">{registro.estado}</dd>
+            </div>
+            <div>
+              <dt className="rotulo text-ink-soft">Forma jurídica</dt>
+              <dd>{registro.formaJuridica || registro.tipoPersona}</dd>
+            </div>
+            {registro.fechaCreacion && (
+              <div>
+                <dt className="rotulo text-ink-soft">Constituida</dt>
+                <dd className="font-mono tabular-nums">
+                  {formatFecha(registro.fechaCreacion)}
+                </dd>
+              </div>
+            )}
+            {registro.fechaRegistroRpe && (
+              <div>
+                <dt className="rotulo text-ink-soft">Inscrita como proveedora</dt>
+                <dd className="font-mono tabular-nums">
+                  {formatFecha(registro.fechaRegistroRpe)}
+                </dd>
+              </div>
+            )}
+            {registro.registroMercantil && (
+              <div>
+                <dt className="rotulo text-ink-soft">Registro mercantil</dt>
+                <dd className="font-mono">{registro.registroMercantil}</dd>
+              </div>
+            )}
+            {registro.clasificacion && (
+              <div>
+                <dt className="rotulo text-ink-soft">Tamaño declarado</dt>
+                <dd>{registro.clasificacion}</dd>
+              </div>
+            )}
+            {registro.provee && (
+              <div>
+                <dt className="rotulo text-ink-soft">Provee</dt>
+                <dd>{registro.provee}</dd>
+              </div>
+            )}
+            {(registro.provincia || registro.municipio) && (
+              <div>
+                <dt className="rotulo text-ink-soft">Domicilio</dt>
+                <dd>
+                  {titulizar(
+                    [
+                      ...new Set(
+                        [registro.municipio, registro.provincia].filter(
+                          (x): x is string => Boolean(x),
+                        ),
+                      ),
+                    ].join(", "),
+                  )}
+                </dd>
+              </div>
+            )}
+          </dl>
+
+          {(registro.esMipyme || registro.productorNacional ||
+            registro.certificacionMicm) && (
+            <ul className="mt-4 flex flex-wrap gap-2 text-xs">
+              {registro.esMipyme && (
+                <li className="rounded-full bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
+                  MIPYME
+                </li>
+              )}
+              {registro.certificacionMicm && (
+                <li className="rounded-full bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
+                  Certificación MICM
+                </li>
+              )}
+              {registro.productorNacional && (
+                <li className="rounded-full bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
+                  Productor nacional
+                </li>
+              )}
+            </ul>
+          )}
+
+          {mesesHastaPrimerContrato !== null && (
+            <p className="mt-4 text-sm text-ink-soft">
+              Entre su constitución y el primer contrato con el Estado que consta
+              en este registro pasaron{" "}
+              <span className="font-semibold text-ink">
+                {mesesHastaPrimerContrato <= 0
+                  ? "menos de un mes"
+                  : mesesHastaPrimerContrato < 24
+                    ? `${mesesHastaPrimerContrato} ${mesesHastaPrimerContrato === 1 ? "mes" : "meses"}`
+                    : `${Math.floor(mesesHastaPrimerContrato / 12)} años`}
+              </span>
+              . El dato compara la fecha de constitución del registro con la
+              adjudicación más antigua que devuelve la API; no significa por sí
+              solo nada más que eso.
+            </p>
+          )}
+
+          <p className="mt-3 text-xs text-ink-soft">
+            Fuente: Registro de Proveedores del Estado (DGCP). Omitimos a
+            propósito los teléfonos y correos de contacto que el registro
+            publica: esto es una herramienta de vigilancia, no un directorio
+            comercial.
+          </p>
+        </section>
+      )}
 
       {historial.porAnio.length > 1 && (
         <section className="rounded-lg bg-surface p-6 border border-hairline">

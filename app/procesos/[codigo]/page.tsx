@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProceso, normalize, type Documento } from "@/lib/dgcp";
+import { getCompetencia, getProceso, normalize, type Documento } from "@/lib/dgcp";
 import { pesoDocumento, urlDeLectura } from "@/lib/documentos";
 import VisorDocumento from "@/components/visor-documento";
 import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
@@ -45,9 +45,9 @@ export default async function ProcesoPage({
   params: Promise<{ codigo: string }>;
 }) {
   const { codigo } = await params;
-  const { proceso: p, articulos, documentos, contratos } = await getProceso(
-    decodeURIComponent(codigo)
-  );
+  const decodificado = decodeURIComponent(codigo);
+  const [{ proceso: p, articulos, documentos, contratos }, competencia] =
+    await Promise.all([getProceso(decodificado), getCompetencia(decodificado)]);
   if (!p) notFound();
 
   const subclasesUnicas = Array.from(
@@ -383,6 +383,82 @@ export default async function ProcesoPage({
           </div>
         )}
       </section>
+
+      {competencia && (
+        <section className="rounded-lg bg-surface p-6 border border-hairline">
+          <h2 className="font-sans font-semibold">
+            Ofertas — quién compitió{" "}
+            <span className="font-normal text-ink-soft">
+              ({competencia.oferentes.length}
+              {competencia.oferentes.length === 1 ? " oferente" : " oferentes"})
+            </span>
+          </h2>
+
+          {competencia.oferenteUnico && (
+            <p className="mt-3 rounded-lg border border-alerta-600/20 bg-alerta-50 px-4 py-3 text-sm text-alerta-700">
+              <span className="font-semibold">Se presentó un solo oferente.</span>{" "}
+              No es una irregularidad por sí misma —hay compras que solo un
+              proveedor puede servir—, pero es lo primero que conviene mirar.
+            </p>
+          )}
+
+          {competencia.menor !== null && competencia.mayor !== null &&
+            competencia.menor !== competencia.mayor && (
+              <p className="mt-3 text-sm text-ink-soft">
+                Las ofertas fueron de{" "}
+                <span className="font-mono font-semibold text-ink">
+                  {formatMonto(competencia.menor, p.divisa)}
+                </span>{" "}
+                a{" "}
+                <span className="font-mono font-semibold text-ink">
+                  {formatMonto(competencia.mayor, p.divisa)}
+                </span>
+                .
+              </p>
+            )}
+
+          <ul className="mt-3 space-y-2">
+            {competencia.oferentes.map((o) => (
+              <li
+                key={o.rpe || o.razonSocial}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-hairline px-4 py-3 text-sm"
+              >
+                <div className="min-w-0">
+                  {o.rpe ? (
+                    <Link
+                      href={`/proveedores/${encodeURIComponent(o.rpe)}`}
+                      className="font-semibold hover:text-brand-600 hover:underline"
+                    >
+                      {o.razonSocial}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold">{o.razonSocial}</span>
+                  )}
+                  <div className="text-xs text-ink-soft">
+                    {o.rpe ? `RPE ${o.rpe} · ` : ""}
+                    {o.ofertas === 1 ? "1 oferta" : `${o.ofertas} ofertas`} ·{" "}
+                    {o.digital ? "digital" : "física"}
+                  </div>
+                </div>
+                <span className="font-mono font-semibold tabular-nums">
+                  {o.monto > 0 ? formatMonto(o.monto, p.divisa) : "Sin monto publicado"}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-3 text-xs text-ink-soft">
+            Fuente: registro de ofertas de la DGCP ({competencia.totalOfertas}{" "}
+            {competencia.totalOfertas === 1 ? "oferta registrada" : "ofertas registradas"}
+            {competencia.sinMonto > 0 &&
+              `, ${competencia.sinMonto} sin monto publicado`}
+            ). El registro publica quién ofertó y por cuánto; el resultado de la
+            evaluación llega casi siempre vacío, así que{" "}
+            <span className="font-medium">quién ganó lo dicen los contratos</span>,
+            no las ofertas.
+          </p>
+        </section>
+      )}
 
       {contratos.length > 0 && (
         <section className="rounded-lg bg-surface p-6 border border-hairline">
