@@ -310,10 +310,10 @@ export default async function FuentesPage() {
 }
 
 const ESTADOS = {
-  activa: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  bloqueada: "bg-rose-50 text-rose-700 ring-rose-600/20",
-  descartada: "bg-slate-100 text-slate-600 ring-slate-300",
-  caida: "bg-amber-50 text-amber-700 ring-amber-600/20",
+  activa: "bg-brand-50 text-brand-600 ring-brand-500/20",
+  bloqueada: "bg-sello-50 text-sello-700 ring-sello-600/20",
+  descartada: "bg-hairline text-ink-soft ring-hairline",
+  caida: "bg-alerta-50 text-alerta-600 ring-alerta-600/20",
 } as const;
 
 function Fuente({

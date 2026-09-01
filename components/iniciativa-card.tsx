@@ -9,13 +9,13 @@ import { cn } from "@/lib/cn";
  * un solo sistema. Clases literales: Tailwind escanea el fuente.
  */
 const TONOS: Record<CondicionTono, { badge: string; dot: string }> = {
-  vigente: { badge: "bg-sky-50 text-sky-700 ring-sky-600/20", dot: "bg-sky-500" },
+  vigente: { badge: "bg-brand-50 text-brand-600 ring-brand-500/20", dot: "bg-brand-400" },
   aprobado: {
-    badge: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-    dot: "bg-emerald-500",
+    badge: "bg-brand-50 text-brand-600 ring-brand-500/20",
+    dot: "bg-brand-500",
   },
-  perimido: { badge: "bg-rose-50 text-rose-700 ring-rose-600/20", dot: "bg-rose-500" },
-  neutro: { badge: "bg-slate-100 text-slate-600 ring-slate-300", dot: "bg-slate-400" },
+  perimido: { badge: "bg-sello-50 text-sello-700 ring-sello-600/20", dot: "bg-sello-500" },
+  neutro: { badge: "bg-hairline text-ink-soft ring-hairline", dot: "bg-ink-soft" },
 };
 
 export function CondicionBadge({
@@ -65,7 +65,7 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
           )}
 
           {enRiesgo && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 ring-1 ring-inset ring-amber-600/20">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-alerta-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-alerta-600 ring-1 ring-inset ring-alerta-600/20">
               Perime en {perencion.diasRestantes} d
             </span>
           )}

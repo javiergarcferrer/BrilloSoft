@@ -145,7 +145,7 @@ export default function TopSearch() {
   return (
     <div ref={wrap} className="relative w-full max-w-xl">
       <div className="group flex items-center gap-2 rounded-full bg-white/10 px-3 ring-1 ring-inset ring-white/15 transition focus-within:bg-white focus-within:ring-white/30">
-        <IconSearch className="h-[18px] w-[18px] shrink-0 text-slate-300 transition-colors group-focus-within:text-ink" />
+        <IconSearch className="h-[18px] w-[18px] shrink-0 text-hairline transition-colors group-focus-within:text-ink" />
         <input
           ref={inputRef}
           value={text}
@@ -166,7 +166,7 @@ export default function TopSearch() {
           }}
           placeholder="Buscar licitaciones…"
           aria-label="Buscar licitaciones"
-          className="h-10 w-full bg-transparent text-[15px] text-white outline-none placeholder:text-slate-400 focus:text-ink focus:placeholder:text-ink-soft/50"
+          className="h-10 w-full bg-transparent text-[15px] text-white outline-none placeholder:text-ink-soft focus:text-ink focus:placeholder:text-ink-soft/50"
         />
         {text && (
           <button
@@ -176,7 +176,7 @@ export default function TopSearch() {
               inputRef.current?.focus();
             }}
             aria-label="Limpiar"
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-300 transition hover:text-white group-focus-within:text-ink-soft active:scale-90"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-hairline transition hover:text-white group-focus-within:text-ink-soft active:scale-90"
           >
             <IconX className="h-4 w-4" />
           </button>
@@ -198,7 +198,7 @@ export default function TopSearch() {
                     p.run();
                     setOpen(false);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-brand-50 hover:text-brand-700 active:scale-95"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-hairline px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-brand-50 hover:text-brand-700 active:scale-95"
                 >
                   <p.Icon className="h-3.5 w-3.5" />
                   {p.label}
@@ -219,7 +219,7 @@ export default function TopSearch() {
                     e.preventDefault();
                     aplicarTermino(t);
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition hover:bg-slate-50"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition hover:bg-canvas"
                 >
                   <IconClock className="h-4 w-4 shrink-0 text-ink-soft" />
                   <span className="truncate">{t}</span>
@@ -257,7 +257,7 @@ export default function TopSearch() {
                         e.preventDefault();
                         aplicarGuardada(b);
                       }}
-                      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition hover:bg-slate-50"
+                      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition hover:bg-canvas"
                     >
                       <IconBookmark className="h-4 w-4 shrink-0 text-brand-600" filled />
                       <span className="truncate font-medium">{b.nombre}</span>
@@ -268,7 +268,7 @@ export default function TopSearch() {
                         setBusquedas(removeBusqueda(b.id));
                       }}
                       aria-label="Eliminar"
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-ink-soft transition hover:bg-rose-50 hover:text-rose-600 active:scale-90"
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-ink-soft transition hover:bg-sello-50 hover:text-sello-600 active:scale-90"
                     >
                       <IconTrash className="h-4 w-4" />
                     </button>

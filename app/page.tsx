@@ -21,7 +21,6 @@ import {
   IconCoins,
   IconLayers,
   IconSearch,
-  IconSparkles,
   IconTrendingUp,
 } from "@/components/icons";
 
@@ -65,24 +64,27 @@ export default async function Panorama() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white">
+      <section className="relative overflow-hidden rounded-3xl bg-ink text-white">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
         <div
-          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl"
+          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl"
           aria-hidden
         />
         <div
-          className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-sky-500/15 blur-3xl"
+          className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-brand-400/15 blur-3xl"
           aria-hidden
         />
         <div className="relative p-6 sm:p-9">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/85 ring-1 ring-inset ring-white/15">
-            <IconSparkles className="h-3.5 w-3.5" />
-            Inteligencia sobre el Estado dominicano
+          <div className="rotulo inline-flex items-center gap-2 text-white/70">
+            <span
+              aria-hidden
+              className="mt-[0.45em] h-1.5 w-1.5 shrink-0 self-start rounded-full bg-sello-400"
+            />
+            República Dominicana · fuentes oficiales leídas en vivo
           </div>
 
-          <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-            Qué compra, qué legisla y a quién paga el Estado
+          <h1 className="mt-4 max-w-3xl font-display text-4xl leading-[1.08] sm:text-5xl">
+            ¿Qué compra, qué legisla y a quién le paga el Estado?
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
             Fuentes oficiales leídas en vivo y puestas en un mismo lugar: compras
@@ -94,7 +96,7 @@ export default async function Panorama() {
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Link
               href="/licitaciones"
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-emerald-400 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-canvas px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-white active:scale-95"
             >
               <IconSearch className="h-4 w-4" />
               Buscar licitaciones
@@ -278,7 +280,7 @@ export default async function Panorama() {
                     href={`/procesos/${encodeURIComponent(p.codigo_proceso)}`}
                     className="flex items-start gap-3 px-5 py-3 transition-colors hover:bg-canvas/60"
                   >
-                    <span className="mt-0.5 shrink-0 rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                    <span className="mt-0.5 shrink-0 rounded-md bg-alerta-50 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-alerta-600 ring-1 ring-inset ring-alerta-600/20">
                       {dias === 0 ? "hoy" : `${dias} d`}
                     </span>
                     <span className="min-w-0 flex-1">

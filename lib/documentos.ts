@@ -3,13 +3,21 @@
  *
  * `/api/documento` no es un proxy abierto: solo repite bytes de estos hosts
  * del Estado dominicano, y solo porque publican documentos públicos de una
- * forma que el navegador no deja leer en el sitio (descarga forzada o
- * `frame-ancestors` cerrado). Añadir un host aquí es una decisión consciente.
+ * forma que el navegador no deja leer en el sitio.
+ *
+ * Todos están aquí por la misma razón de fondo: **ninguno envía CORS**. El
+ * lector dibuja el PDF en un canvas —única forma de que se vea igual en
+ * escritorio y en móvil, donde el visor nativo del navegador no existe— y
+ * para eso hay que leer los bytes desde el mismo origen. A eso se suma, en
+ * comprasdominicana, la descarga forzada y un `frame-ancestors` cerrado.
+ *
+ * Añadir un host aquí es una decisión consciente.
  */
 export const ORIGENES_DOCUMENTO = [
   "comunidad.comprasdominicana.gob.do",
   "www.consultoria.gov.do",
   "consultoria.gov.do",
+  "sil.senadord.gob.do",
 ] as const;
 
 export function esUrlDeDocumento(valor: string): boolean {

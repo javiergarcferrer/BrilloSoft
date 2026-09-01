@@ -8,9 +8,11 @@
  *
  * Reglas de ergonomía que este módulo hace cumplir:
  *  - Cada ruta pertenece a lo sumo a una vertical (`seccionDe` es determinista).
- *  - Cada vertical tiene un matiz propio, usado SOLO para orientación (estado
- *    activo del nav, acento de la barra de sección, chip del panorama) — nunca
- *    para el contenido, que conserva su color semántico (vigente, perimido…).
+ *  - Cada vertical tiene un matiz propio (`--color-v-*` en globals.css), usado
+ *    SOLO para orientación (estado activo del nav, acento de la barra de
+ *    sección, chip del panorama) — nunca para el contenido, que conserva su
+ *    color semántico (vigente, perimido…). Todos son tintas apagadas que
+ *    conviven sobre el papel de la identidad.
  *  - Las etiquetas del nav son las mismas en global, sección, tab bar y pie:
  *    un solo vocabulario.
  *
@@ -77,10 +79,10 @@ export const SECCIONES: Seccion[] = [
     ],
     conBuscadorGlobal: true,
     hue: {
-      activo: "text-emerald-700",
-      barra: "bg-emerald-500",
-      punto: "bg-emerald-500",
-      chip: "bg-emerald-50 text-emerald-700",
+      activo: "text-v-compras",
+      barra: "bg-v-compras",
+      punto: "bg-v-compras",
+      chip: "bg-v-compras-tenue text-v-compras",
     },
   },
   {
@@ -96,10 +98,10 @@ export const SECCIONES: Seccion[] = [
     ],
     conBuscadorGlobal: false,
     hue: {
-      activo: "text-violet-700",
-      barra: "bg-violet-500",
-      punto: "bg-violet-500",
-      chip: "bg-violet-50 text-violet-700",
+      activo: "text-v-congreso",
+      barra: "bg-v-congreso",
+      punto: "bg-v-congreso",
+      chip: "bg-v-congreso-tenue text-v-congreso",
     },
   },
   {
@@ -111,10 +113,10 @@ export const SECCIONES: Seccion[] = [
     vistas: [{ href: "/normativa", label: "Decretos y leyes" }],
     conBuscadorGlobal: false,
     hue: {
-      activo: "text-indigo-700",
-      barra: "bg-indigo-500",
-      punto: "bg-indigo-500",
-      chip: "bg-indigo-50 text-indigo-700",
+      activo: "text-v-normativa",
+      barra: "bg-v-normativa",
+      punto: "bg-v-normativa",
+      chip: "bg-v-normativa-tenue text-v-normativa",
     },
   },
   {
@@ -126,10 +128,10 @@ export const SECCIONES: Seccion[] = [
     vistas: [{ href: "/nomina", label: "Explorador" }],
     conBuscadorGlobal: false,
     hue: {
-      activo: "text-sky-700",
-      barra: "bg-sky-500",
-      punto: "bg-sky-500",
-      chip: "bg-sky-50 text-sky-700",
+      activo: "text-v-nomina",
+      barra: "bg-v-nomina",
+      punto: "bg-v-nomina",
+      chip: "bg-v-nomina-tenue text-v-nomina",
     },
   },
   {
@@ -144,10 +146,10 @@ export const SECCIONES: Seccion[] = [
     ],
     conBuscadorGlobal: false,
     hue: {
-      activo: "text-amber-700",
-      barra: "bg-amber-500",
-      punto: "bg-amber-500",
-      chip: "bg-amber-50 text-amber-700",
+      activo: "text-v-democracia",
+      barra: "bg-v-democracia",
+      punto: "bg-v-democracia",
+      chip: "bg-v-democracia-tenue text-v-democracia",
     },
   },
 ];

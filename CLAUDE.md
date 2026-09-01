@@ -162,11 +162,16 @@ sources impose:
 - **Consultoría** — `inline`, no CSP, and the PDFs are *digital text*: embedded
   directly, and each norm has its own page at `/normativa/[tipo]/[numero]`
   (`ley|decreto|reglamento|resolucion`), which the Congress dossier links to.
-- **DGCP (comprasdominicana)** — sends `Content-Disposition: attachment` and a
-  `frame-ancestors` excluding third parties, so the pliego is read through
-  `/api/documento?url=`, which re-serves the same bytes `inline`. That route is
-  **not an open proxy**: only hosts in `ORIGENES_DOCUMENTO`, 25 MB cap, no
-  visitor headers forwarded. Adding a host there is a deliberate decision.
+- **Every source goes through `/api/documento?url=`** — none of them sends
+  CORS, and `components/lector-pdf.tsx` rasterizes with **pdf.js on a canvas**
+  rather than an `<iframe>`, because an iframed PDF renders nothing on mobile
+  (a grey box with an "Open" button that throws the reader out of the page).
+  Canvas needs the bytes same-origin. That route is **not an open proxy**:
+  only hosts in `ORIGENES_DOCUMENTO`, 40 MB cap, no visitor headers forwarded;
+  it forwards `Range`, so the Senate's 30 MB scans stream page by page.
+  Adding a host there is a deliberate decision. Use the **legacy** pdf.js
+  build: the modern one calls V8 APIs (`Map.getOrInsertComputed`) that break
+  chunked loading on browsers a couple of versions behind.
 
 ### Pages — `app/`
 - `/` → panorama (server). `/licitaciones` → `app/buscador.tsx` (client) inside
@@ -189,6 +194,27 @@ native `storage` event — subscribe with `onSeguimientoCambio`.
 ### Formatting — `lib/format.ts`
 `formatMonto` (Intl es-DO currency), `formatFecha` (fixed `America/Santo_Domingo`
 timezone — keep dates deterministic), `diasHasta`.
+
+## Identity — «El Contrasello»
+The visual system lives in `app/globals.css` (`@theme` tokens) and is not
+decoration: it is the vernacular of the Dominican official document turned to
+the citizen's side. **Paper** (`canvas`, warm off-white — never screen white),
+**ink** (`ink`), **seal** (`sello-*`, stamp red) and **signature**
+(`brand-*`, ballpoint blue). Note the naming: `brand` is the *signature* —
+links, buttons, active states, the working color — because it is what appears
+most; `sello` is scarce by definition (the mark, «Deroga», the compras
+vertical). If red is everywhere it stops meaning anything. `alerta-*` (ochre)
+is a margin note, `valido-*` (archive green) is what is already fulfilled, and
+`--color-v-*` are the per-vertical hues, used only for orientation.
+Three faces, three jobs: Instrument Serif asks (h1/h2, `font-display`), Public
+Sans explains (body/UI), IBM Plex Mono registers (amounts, codes, dossiers —
+also the `.rotulo` small-caps epigraph). The mark is the contrasello: a «¿»
+inside a seal, whose **dot is always seal red** — that is the one invariant
+rule (`.punto-sello`), and it repeats in the `.do` of the wordmark. Never use
+the national coat of arms or flag: this is independent, not official.
+Voice: ask, don't accuse (headlines are questions); cite the source or say
+nothing; plain es-DO before the technical term; always leave the whole
+document alongside the explanation.
 
 ## Conventions
 - All user-facing copy is Spanish (es-DO).

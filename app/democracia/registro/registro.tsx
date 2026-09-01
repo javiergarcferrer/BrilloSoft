@@ -84,8 +84,8 @@ export default function Registro() {
     return (
       <div className="mx-auto max-w-lg">
         <VolverCongreso />
-        <div className="mt-4 rounded-2xl border border-emerald-300/60 bg-emerald-50/70 p-6 text-center shadow-card">
-          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-emerald-500 text-white">
+        <div className="mt-4 rounded-2xl border border-brand-200/60 bg-brand-50/70 p-6 text-center shadow-card">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-brand-500 text-white">
             <IconCheck className="h-6 w-6" />
           </span>
           <h1 className="mt-3 text-lg font-semibold text-ink">
@@ -98,7 +98,7 @@ export default function Registro() {
           </p>
           <Link
             href="/congreso"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-400"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-alerta-500 px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-alerta-500"
           >
             Ir a las iniciativas
           </Link>
@@ -117,7 +117,7 @@ export default function Registro() {
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
           Un registro por cédula para que cada voto cuente una vez. Tu cédula se
           guarda cifrada, nunca en claro, y tu voto es privado.{" "}
-          <Link href="/democracia/seguridad" className="font-medium text-amber-700 hover:underline">
+          <Link href="/democracia/seguridad" className="font-medium text-alerta-600 hover:underline">
             Cómo protegemos tus datos
           </Link>
           .
@@ -137,7 +137,7 @@ export default function Registro() {
               onChange={(e) => setCedula(limpiarCedula(e.target.value).slice(0, 11))}
               placeholder="001-0000000-0"
               autoComplete="off"
-              className="h-11 w-full rounded-xl border border-hairline bg-canvas px-3 font-mono text-sm tabular-nums text-ink outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+              className="h-11 w-full rounded-xl border border-hairline bg-canvas px-3 font-mono text-sm tabular-nums text-ink outline-none focus:border-alerta-500 focus:ring-2 focus:ring-alerta-500/20"
             />
           </Campo>
           <Campo etiqueta="Correo electrónico" hint="Te enviaremos un código de un solo uso">
@@ -147,14 +147,14 @@ export default function Registro() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@correo.do"
               autoComplete="email"
-              className="h-11 w-full rounded-xl border border-hairline bg-canvas px-3 text-sm text-ink outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+              className="h-11 w-full rounded-xl border border-hairline bg-canvas px-3 text-sm text-ink outline-none focus:border-alerta-500 focus:ring-2 focus:ring-alerta-500/20"
             />
           </Campo>
-          {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
+          {error && <p className="text-xs font-medium text-sello-600">{error}</p>}
           <button
             type="submit"
             disabled={!cedulaOk || !emailOk || cargando}
-            className="h-11 w-full rounded-xl bg-amber-500 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-400 active:scale-95 disabled:opacity-50"
+            className="h-11 w-full rounded-xl bg-alerta-500 text-sm font-semibold text-ink transition-colors hover:bg-alerta-500 active:scale-95 disabled:opacity-50"
           >
             {cargando ? "Enviando…" : "Enviar código"}
           </button>
@@ -173,13 +173,13 @@ export default function Registro() {
             onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))}
             placeholder="000000"
             autoComplete="one-time-code"
-            className="h-14 w-full rounded-xl border border-hairline bg-canvas text-center font-mono text-2xl tracking-[0.4em] tabular-nums text-ink outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20"
+            className="h-14 w-full rounded-xl border border-hairline bg-canvas text-center font-mono text-2xl tracking-[0.4em] tabular-nums text-ink outline-none focus:border-alerta-500 focus:ring-2 focus:ring-alerta-500/20"
           />
-          {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
+          {error && <p className="text-xs font-medium text-sello-600">{error}</p>}
           <button
             type="submit"
             disabled={codigo.length < 6 || paso === "registrando"}
-            className="h-11 w-full rounded-xl bg-amber-500 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-400 active:scale-95 disabled:opacity-50"
+            className="h-11 w-full rounded-xl bg-alerta-500 text-sm font-semibold text-ink transition-colors hover:bg-alerta-500 active:scale-95 disabled:opacity-50"
           >
             {paso === "registrando" ? "Registrando…" : "Verificar y registrar"}
           </button>
@@ -194,7 +194,7 @@ export default function Registro() {
       )}
 
       <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-hairline bg-canvas/60 p-3.5">
-        <IconShield className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <IconShield className="mt-0.5 h-4 w-4 shrink-0 text-alerta-600" />
         <p className="text-xs leading-relaxed text-ink-soft">
           No guardamos tu cédula en claro: se convierte en un código irreversible
           con una clave que vive solo en la base de datos. Tampoco guardamos tu
@@ -233,7 +233,7 @@ function Campo({
       <div className="mb-1.5 flex items-baseline justify-between">
         <span className="text-xs font-semibold text-ink">{etiqueta}</span>
         {hint && (
-          <span className={cn("text-xs", hintError ? "text-rose-600" : "text-ink-soft")}>{hint}</span>
+          <span className={cn("text-xs", hintError ? "text-sello-600" : "text-ink-soft")}>{hint}</span>
         )}
       </div>
       {children}

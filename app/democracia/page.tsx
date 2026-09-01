@@ -19,10 +19,10 @@ export default async function DemocraciaPage() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white">
+      <section className="relative overflow-hidden rounded-3xl bg-ink text-white">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber-500/25 blur-3xl" aria-hidden />
-        <div className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-emerald-500/15 blur-3xl" aria-hidden />
+        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-alerta-500/25 blur-3xl" aria-hidden />
+        <div className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-brand-500/15 blur-3xl" aria-hidden />
         <div className="relative p-6 sm:p-9">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/85 ring-1 ring-inset ring-white/15">
             <IconSparkles className="h-3.5 w-3.5" />
@@ -40,7 +40,7 @@ export default async function DemocraciaPage() {
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Link
               href="/democracia/registro"
-              className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-400 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-alerta-500 px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-alerta-500 active:scale-95"
             >
               Regístrate para votar
             </Link>
@@ -83,7 +83,7 @@ export default async function DemocraciaPage() {
                 : "Aún no hay votos — sé quien empiece"}
             </p>
           </div>
-          <Link href="/congreso" className="shrink-0 text-xs font-medium text-amber-700 hover:underline">
+          <Link href="/congreso" className="shrink-0 text-xs font-medium text-alerta-600 hover:underline">
             Buscar iniciativas →
           </Link>
         </div>
@@ -110,7 +110,7 @@ export default async function DemocraciaPage() {
         href="/democracia/seguridad"
         className="flex items-center gap-4 rounded-2xl border border-hairline bg-surface px-5 py-4 shadow-soft transition-shadow hover:shadow-card"
       >
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-alerta-50 text-alerta-600">
           <IconShield className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
@@ -139,7 +139,7 @@ export default async function DemocraciaPage() {
 function Paso({ n, titulo, children }: { n: number; titulo: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-hairline bg-surface p-5 shadow-soft">
-      <span className="grid h-7 w-7 place-items-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
+      <span className="grid h-7 w-7 place-items-center rounded-full bg-alerta-100 text-xs font-bold text-alerta-600">
         {n}
       </span>
       <h3 className="mt-3 text-sm font-semibold text-ink">{titulo}</h3>
@@ -158,7 +158,7 @@ function FilaRanking({ item }: { item: RankingItem }) {
     <li className="border-b border-hairline last:border-0">
       <Link href={href} className="block px-4 py-3.5 transition-colors hover:bg-canvas/60 sm:px-5">
         <div className="flex items-center gap-2 text-xs">
-          <span className="font-mono font-semibold tabular-nums text-amber-700">
+          <span className="font-mono font-semibold tabular-nums text-alerta-600">
             {item.numero ?? `${item.camara}·${item.ref}`}
           </span>
           <span className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-soft ring-1 ring-inset ring-hairline">
@@ -171,11 +171,11 @@ function FilaRanking({ item }: { item: RankingItem }) {
         </p>
         <div className="mt-2 flex items-center gap-3">
           <div className="flex h-2 flex-1 overflow-hidden rounded-full ring-1 ring-inset ring-hairline">
-            <div className="bg-emerald-500" style={{ width: `${pct}%` }} />
-            <div className="flex-1 bg-rose-400" />
+            <div className="bg-brand-500" style={{ width: `${pct}%` }} />
+            <div className="flex-1 bg-sello-400" />
           </div>
           <span className="shrink-0 text-xs tabular-nums text-ink-soft">
-            <span className="font-semibold text-emerald-700">{pct}%</span> · {item.total.toLocaleString("es-DO")} votos
+            <span className="font-semibold text-brand-600">{pct}%</span> · {item.total.toLocaleString("es-DO")} votos
           </span>
         </div>
       </Link>

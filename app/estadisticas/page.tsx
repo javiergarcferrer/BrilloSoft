@@ -64,10 +64,10 @@ export default async function EstadisticasPage() {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white">
+      <section className="relative overflow-hidden rounded-3xl bg-ink text-white">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
         <div
-          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-sky-500/20 blur-3xl"
+          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-400/20 blur-3xl"
           aria-hidden
         />
         <div className="relative p-6 sm:p-8">
@@ -78,7 +78,7 @@ export default async function EstadisticasPage() {
           <h1 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
             El mercado de compras públicas
           </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-slate-300">
+          <p className="mt-1.5 max-w-xl text-sm text-hairline">
             Basado en los {lista.length.toLocaleString("es-DO")} procesos más recientes
             {total > lista.length
               ? ` de ${total.toLocaleString("es-DO")} publicados en el período`
@@ -92,14 +92,14 @@ export default async function EstadisticasPage() {
                 key={k.etiqueta}
                 className={`rounded-xl p-4 ring-1 ${
                   k.destacar
-                    ? "bg-emerald-500/15 ring-emerald-400/30"
+                    ? "bg-brand-500/15 ring-brand-400/30"
                     : "bg-white/5 ring-white/10"
                 }`}
               >
                 <div className="text-lg font-bold leading-tight sm:text-xl">{k.valor}</div>
                 <div
                   className={`mt-0.5 text-xs ${
-                    k.destacar ? "text-emerald-200" : "text-slate-400"
+                    k.destacar ? "text-brand-100" : "text-ink-soft"
                   }`}
                 >
                   {k.etiqueta}
@@ -122,7 +122,7 @@ export default async function EstadisticasPage() {
             </div>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
               {porEstado.map(([e, a]) => (
-                <span key={e} className="inline-flex items-center gap-1.5 text-xs text-slate-300">
+                <span key={e} className="inline-flex items-center gap-1.5 text-xs text-hairline">
                   <span className={`h-2 w-2 rounded-full ${estadoMeta(e).dot}`} />
                   {e}
                   <span className="font-semibold text-white">{a.n}</span>
@@ -145,9 +145,9 @@ export default async function EstadisticasPage() {
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-slate-100">
+                <div className="mt-1 h-2 rounded-full bg-hairline">
                   <div
-                    className="bar-grow h-2 rounded-full bg-emerald-500"
+                    className="bar-grow h-2 rounded-full bg-brand-500"
                     style={{ width: `${Math.max(2, (a.monto / maxMod) * 100)}%` }}
                   />
                 </div>
@@ -167,9 +167,9 @@ export default async function EstadisticasPage() {
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-slate-100">
+                <div className="mt-1 h-2 rounded-full bg-hairline">
                   <div
-                    className="bar-grow h-2 rounded-full bg-sky-500"
+                    className="bar-grow h-2 rounded-full bg-brand-400"
                     style={{ width: `${Math.max(2, (a.monto / maxInst) * 100)}%` }}
                   />
                 </div>
@@ -179,14 +179,14 @@ export default async function EstadisticasPage() {
         </section>
       </div>
 
-      <section className="flex flex-col items-start gap-3 rounded-2xl bg-emerald-50 p-6 ring-1 ring-emerald-200 sm:flex-row sm:items-center sm:justify-between">
-        <span className="text-sm text-emerald-900">
+      <section className="flex flex-col items-start gap-3 rounded-2xl bg-brand-50 p-6 ring-1 ring-brand-100 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-sm text-brand-900">
           ¿Buscas tu nicho? Usa el buscador con tu palabra clave y suscríbete al RSS de
           esa búsqueda para no perderte procesos nuevos.
         </span>
         <Link
           href="/licitaciones"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 active:scale-95"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600 active:scale-95"
         >
           Ir al buscador
           <IconArrowRight className="h-4 w-4" />

@@ -103,7 +103,7 @@ export default async function ProcesoPage({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/licitaciones"
-          className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline"
+          className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
         >
           <IconArrowLeft className="h-4 w-4" />
           Volver al buscador
@@ -122,7 +122,7 @@ export default async function ProcesoPage({
             <span className={`h-1.5 w-1.5 rounded-full ${est.dot}`} />
             {est.label}
           </span>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+          <span className="rounded-full bg-hairline px-2.5 py-1 text-ink-soft">
             {p.modalidad}
           </span>
           {cierreBadge && (
@@ -135,35 +135,35 @@ export default async function ProcesoPage({
         </div>
 
         <h1 className="mt-3 text-2xl font-semibold leading-tight">{p.titulo}</h1>
-        <p className="mt-1 text-slate-600">
+        <p className="mt-1 text-ink-soft">
           {p.unidad_compra}{" "}
           <Link
             href={`/?uc=${p.codigo_unidad_compra}`}
-            className="text-sm font-medium text-emerald-700 hover:underline"
+            className="text-sm font-medium text-brand-600 hover:underline"
           >
             · ver todos sus procesos →
           </Link>
         </p>
-        <p className="mt-1 font-mono text-sm text-slate-400">{p.codigo_proceso}</p>
+        <p className="mt-1 font-mono text-sm text-ink-soft">{p.codigo_proceso}</p>
 
         <div className="mt-4 flex flex-wrap items-center gap-6">
           <div>
-            <div className="text-xs uppercase tracking-wide text-slate-400">
+            <div className="text-xs uppercase tracking-wide text-ink-soft">
               Monto estimado
             </div>
-            <div className="text-2xl font-bold text-slate-900">
+            <div className="text-2xl font-bold text-ink">
               {formatMonto(p.monto_estimado, p.divisa)}
             </div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wide text-slate-400">
+            <div className="text-xs uppercase tracking-wide text-ink-soft">
               Recibe ofertas hasta
             </div>
             <div
               className={`text-2xl font-bold ${
                 abiertoParaOfertar && dias !== null && dias <= 2
-                  ? "text-red-600"
-                  : "text-slate-900"
+                  ? "text-sello-600"
+                  : "text-ink"
               }`}
             >
               {formatFecha(p.fecha_fin_recepcion_ofertas, true)}
@@ -174,7 +174,7 @@ export default async function ProcesoPage({
               href={p.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
             >
               Ver en el Portal Transaccional
               <IconExternal className="h-4 w-4" />
@@ -183,7 +183,7 @@ export default async function ProcesoPage({
         </div>
 
         {p.descripcion && p.descripcion.trim() !== p.titulo.trim() && (
-          <p className="mt-4 whitespace-pre-line text-sm text-slate-700">
+          <p className="mt-4 whitespace-pre-line text-sm text-ink">
             {p.descripcion}
           </p>
         )}
@@ -192,7 +192,7 @@ export default async function ProcesoPage({
       <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-semibold">Cómo participar</h2>
-          <Link href="/guia" className="text-xs font-medium text-emerald-700 hover:underline">
+          <Link href="/guia" className="text-xs font-medium text-brand-600 hover:underline">
             ¿Primera vez ofertando? Lee la guía completa →
           </Link>
         </div>
@@ -204,7 +204,7 @@ export default async function ProcesoPage({
                   Empieza por el pliego de condiciones y la ficha técnica: ahí están los
                   requisitos exactos, las garantías exigidas y los criterios de
                   evaluación.{" "}
-                  <a href="#documentos" className="font-medium text-emerald-700 hover:underline">
+                  <a href="#documentos" className="font-medium text-brand-600 hover:underline">
                     Ver los {docsClave.length} documentos clave ↓
                   </a>
                 </span>
@@ -222,7 +222,7 @@ export default async function ProcesoPage({
                 href="https://www.dgcp.gob.do/servicios/registro-de-proveedores/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-emerald-700 hover:underline"
+                className="font-medium text-brand-600 hover:underline"
               >
                 inscríbete aquí en la DGCP ↗
               </a>{" "}
@@ -251,7 +251,7 @@ export default async function ProcesoPage({
                   href={p.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-emerald-700 hover:underline"
+                  className="font-medium text-brand-600 hover:underline"
                 >
                   Portal Transaccional ↗
                 </a>
@@ -262,7 +262,7 @@ export default async function ProcesoPage({
             </Paso>
           </ol>
         ) : (
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-ink-soft">
             Este proceso ya no acepta ofertas nuevas (estado:{" "}
             <strong>{p.estado_proceso}</strong>
             {dias !== null && dias < 0 ? ", la recepción cerró" : ""}). Puedes revisar
@@ -283,7 +283,7 @@ export default async function ProcesoPage({
                   <div className="flex flex-col items-center">
                     <span
                       className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ring-4 ring-surface ${
-                        destacar ? "bg-amber-500 text-white" : "bg-slate-200 text-slate-500"
+                        destacar ? "bg-alerta-500 text-white" : "bg-hairline text-ink-soft"
                       }`}
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -312,9 +312,9 @@ export default async function ProcesoPage({
             {flags.map(([label, value]) => (
               <div
                 key={label}
-                className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2"
+                className="flex items-start justify-between gap-3 rounded-lg bg-canvas px-3 py-2"
               >
-                <dt className="text-slate-600">{label}</dt>
+                <dt className="text-ink-soft">{label}</dt>
                 <dd className="text-right font-medium">{value || "—"}</dd>
               </div>
             ))}
@@ -325,17 +325,17 @@ export default async function ProcesoPage({
       <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
         <h2 className="font-semibold">
           Artículos solicitados{" "}
-          <span className="font-normal text-slate-400">({articulos.length})</span>
+          <span className="font-normal text-ink-soft">({articulos.length})</span>
         </h2>
         {articulos.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-ink-soft">
             La API no reporta artículos para este proceso.
           </p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+                <tr className="border-b border-hairline text-xs uppercase tracking-wide text-ink-soft">
                   <th className="py-2 pr-3">Descripción</th>
                   <th className="py-2 pr-3">UNSPSC</th>
                   <th className="py-2 pr-3 text-right">Cantidad</th>
@@ -345,14 +345,14 @@ export default async function ProcesoPage({
               </thead>
               <tbody>
                 {articulos.map((a, i) => (
-                  <tr key={i} className="border-b border-slate-100 align-top">
+                  <tr key={i} className="border-b border-hairline align-top">
                     <td className="py-2 pr-3">
                       <div className="font-medium">{a.descripcion_usuario || a.descripcion_articulo}</div>
                       {a.descripcion_usuario && (
-                        <div className="text-xs text-slate-400">{a.descripcion_articulo}</div>
+                        <div className="text-xs text-ink-soft">{a.descripcion_articulo}</div>
                       )}
                     </td>
-                    <td className="py-2 pr-3 font-mono text-xs text-slate-500">
+                    <td className="py-2 pr-3 font-mono text-xs text-ink-soft">
                       {a.subclase_unspsc}
                     </td>
                     <td className="py-2 pr-3 text-right">
@@ -369,7 +369,7 @@ export default async function ProcesoPage({
               </tbody>
               {totalArticulos > 0 && (
                 <tfoot>
-                  <tr className="border-t-2 border-slate-200">
+                  <tr className="border-t-2 border-hairline">
                     <td colSpan={4} className="py-2 pr-3 text-right font-semibold">
                       Total estimado de artículos
                     </td>
@@ -388,27 +388,27 @@ export default async function ProcesoPage({
         <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
           <h2 className="font-semibold">
             Adjudicación — quién ganó{" "}
-            <span className="font-normal text-slate-400">({contratos.length})</span>
+            <span className="font-normal text-ink-soft">({contratos.length})</span>
           </h2>
           <ul className="mt-3 space-y-2">
             {contratos.map((c, i) => (
               <li
                 key={i}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-hairline px-4 py-3 text-sm"
               >
                 <div className="min-w-0">
                   <Link
                     href={`/proveedores/${encodeURIComponent(c.rpe)}`}
-                    className="font-semibold hover:text-emerald-700 hover:underline"
+                    className="font-semibold hover:text-brand-600 hover:underline"
                   >
                     {c.razon_social}
                   </Link>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-ink-soft">
                     RPE {c.rpe} · adjudicado {formatFecha(c.fecha_adjudicacion)} ·{" "}
                     {c.estado_contrato} ·{" "}
                     <Link
                       href={`/proveedores/${encodeURIComponent(c.rpe)}`}
-                      className="text-emerald-700 hover:underline"
+                      className="text-brand-600 hover:underline"
                     >
                       historial del proveedor →
                     </Link>
@@ -423,7 +423,7 @@ export default async function ProcesoPage({
                       href={c.url_contrato}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-lg border border-hairline px-2.5 py-1 text-xs font-medium hover:border-emerald-500 hover:text-emerald-700"
+                      className="rounded-lg border border-hairline px-2.5 py-1 text-xs font-medium hover:border-brand-500 hover:text-brand-600"
                     >
                       Ver contrato ↗
                     </a>
@@ -443,16 +443,16 @@ export default async function ProcesoPage({
       >
         <h2 className="font-semibold">
           Documentos del proceso{" "}
-          <span className="font-normal text-slate-400">({documentos.length})</span>
+          <span className="font-normal text-ink-soft">({documentos.length})</span>
         </h2>
         {documentos.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-ink-soft">
             La API no reporta documentos para este proceso.
           </p>
         ) : (
           <>
             {pliego && (
-              <div className="mt-3 overflow-hidden rounded-xl border border-emerald-300 bg-emerald-50/40">
+              <div className="mt-3 overflow-hidden rounded-xl border border-brand-200 bg-brand-50/40">
                 <VisorDocumento
                   url={pliego.url_documento}
                   urlVisor={urlDeLectura(pliego.url_documento)}
@@ -466,7 +466,7 @@ export default async function ProcesoPage({
 
             {docsClave.length > 0 && (
               <>
-                <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-brand-600">
                   Empieza por aquí — pliego, fichas y condiciones
                 </h3>
                 <ul className="mt-2 grid gap-2 md:grid-cols-2">
@@ -479,7 +479,7 @@ export default async function ProcesoPage({
             {docsOtros.length > 0 && (
               <>
                 {docsClave.length > 0 && (
-                  <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-ink-soft">
                     Otros documentos
                   </h3>
                 )}
@@ -510,12 +510,12 @@ function Paso({
 }) {
   return (
     <li className="flex gap-3">
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
         {n}
       </span>
       <div className="text-sm">
         <div className="font-semibold">{titulo}</div>
-        <div className="mt-0.5 text-slate-600">{children}</div>
+        <div className="mt-0.5 text-ink-soft">{children}</div>
       </div>
     </li>
   );
@@ -535,20 +535,20 @@ function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) 
         rel="noopener noreferrer"
         className={`flex items-start gap-3 rounded-lg border py-2.5 pl-3 pr-9 text-sm ${
           clave
-            ? "border-emerald-300 bg-emerald-50/50 hover:bg-emerald-50"
-            : "border-slate-200 hover:border-emerald-400 hover:bg-emerald-50"
+            ? "border-brand-200 bg-brand-50/50 hover:bg-brand-50"
+            : "border-hairline hover:border-brand-400 hover:bg-brand-50"
         }`}
       >
         <span className="mt-0.5 shrink-0" aria-hidden>
           {clave ? (
-            <IconStar className="h-4 w-4 text-amber-500" filled />
+            <IconStar className="h-4 w-4 text-alerta-500" filled />
           ) : (
-            <IconDoc className="h-4 w-4 text-slate-400" />
+            <IconDoc className="h-4 w-4 text-ink-soft" />
           )}
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-medium leading-snug">{d.nombre_documento}</span>
-          <span className="block text-xs text-slate-500">
+          <span className="block text-xs text-ink-soft">
             {d.tipo_documento} · {formatFecha(d.fecha_carga_archivo)}
           </span>
         </span>
@@ -558,7 +558,7 @@ function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) 
         target="_blank"
         rel="noopener noreferrer"
         title="Abrir en Compras Dominicanas"
-        className="absolute right-2 top-2 rounded p-1 text-slate-400 transition-colors hover:bg-white hover:text-emerald-700"
+        className="absolute right-2 top-2 rounded p-1 text-ink-soft transition-colors hover:bg-white hover:text-brand-600"
       >
         <IconExternal className="h-3.5 w-3.5" />
         <span className="sr-only">Abrir en el origen</span>

@@ -48,10 +48,10 @@ export function TimeSeries({ points }: { points: SeriesPoint[] }) {
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div className="flex items-center gap-4 text-xs text-ink-soft">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-sm bg-emerald-300" /> Plazas
+            <span className="h-2.5 w-2.5 rounded-sm bg-brand-200" /> Plazas
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded-full bg-sky-500" /> Gasto total
+            <span className="h-0.5 w-4 rounded-full bg-brand-400" /> Gasto total
           </span>
         </div>
         {active && (
@@ -77,7 +77,7 @@ export function TimeSeries({ points }: { points: SeriesPoint[] }) {
           x2={W - pad.r}
           y1={pad.t + plotH}
           y2={pad.t + plotH}
-          className="stroke-slate-200"
+          className="stroke-hairline"
         />
         {points.map((p, i) => {
           const isActive = (hover ?? n - 1) === i;
@@ -89,7 +89,7 @@ export function TimeSeries({ points }: { points: SeriesPoint[] }) {
                 width={barW}
                 height={pad.t + plotH - yCount(p.count)}
                 rx={2}
-                className={cn("transition-colors", isActive ? "fill-emerald-500" : "fill-emerald-200")}
+                className={cn("transition-colors", isActive ? "fill-brand-500" : "fill-brand-100")}
               />
               {i % labelEvery === 0 && (
                 <text
@@ -106,14 +106,14 @@ export function TimeSeries({ points }: { points: SeriesPoint[] }) {
           );
         })}
 
-        <path d={linePath} fill="none" className="stroke-sky-500" strokeWidth={2} />
+        <path d={linePath} fill="none" className="stroke-brand-400" strokeWidth={2} />
         {points.map((p, i) => (
           <circle
             key={p.key}
             cx={x(i)}
             cy={yTotal(p.total)}
             r={(hover ?? n - 1) === i ? 4 : 2.5}
-            className="fill-sky-500"
+            className="fill-brand-400"
           />
         ))}
 
@@ -123,7 +123,7 @@ export function TimeSeries({ points }: { points: SeriesPoint[] }) {
             x2={x(hover)}
             y1={pad.t}
             y2={pad.t + plotH}
-            className="stroke-emerald-400"
+            className="stroke-brand-400"
             strokeDasharray="3 3"
             opacity={0.6}
           />
@@ -181,13 +181,13 @@ export function BarList({
               {...(onSelect ? { type: "button" as const, onClick: () => onSelect(it.id) } : {})}
               className={cn(
                 "group relative block w-full overflow-hidden rounded-lg px-3 py-2 text-left",
-                onSelect && "cursor-pointer hover:ring-1 hover:ring-emerald-300",
-                selected && "ring-1 ring-emerald-500",
+                onSelect && "cursor-pointer hover:ring-1 hover:ring-brand-200",
+                selected && "ring-1 ring-brand-500",
               )}
               title={it.label}
             >
               <span
-                className="absolute inset-y-0 left-0 bg-emerald-100/80 transition-[width]"
+                className="absolute inset-y-0 left-0 bg-brand-100/80 transition-[width]"
                 style={{ width: `${pct}%` }}
                 aria-hidden
               />
@@ -196,7 +196,7 @@ export function BarList({
                   {it.label}
                   {it.sub && <span className="ml-2 text-xs text-ink-soft">{it.sub}</span>}
                 </span>
-                <span className="shrink-0 font-mono text-sm font-medium text-emerald-800">
+                <span className="shrink-0 font-mono text-sm font-medium text-brand-700">
                   {format(it.value)}
                 </span>
               </span>
@@ -219,7 +219,7 @@ export function Histogram({ bins }: { bins: { label: string; count: number }[] }
           <div key={b.label} className="flex min-w-0 flex-1 flex-col items-center">
             <div className="flex w-full flex-1 items-end">
               <div
-                className="w-full rounded-t-md bg-emerald-400 transition-[height] hover:bg-emerald-500"
+                className="w-full rounded-t-md bg-brand-400 transition-[height] hover:bg-brand-500"
                 style={{ height: `${Math.max(pct, 1)}%` }}
                 title={`${b.label}: ${formatInt(b.count)} plazas`}
               />

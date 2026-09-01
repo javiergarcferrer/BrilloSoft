@@ -54,7 +54,7 @@ export default async function ProveedorPage({
     <div className="space-y-5">
       <Link
         href="/licitaciones"
-        className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:underline"
+        className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
       >
         <IconArrowLeft className="h-4 w-4" />
         Volver al buscador
@@ -66,19 +66,19 @@ export default async function ProveedorPage({
         </div>
         <h1 className="mt-1 text-2xl font-semibold leading-tight">{nombre}</h1>
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
-          <div className="rounded-lg bg-slate-50 px-4 py-3">
+          <div className="rounded-lg bg-canvas px-4 py-3">
             <div className="text-xs text-ink-soft">Contratos registrados</div>
             <div className="mt-0.5 text-lg font-bold">
               {total.toLocaleString("es-DO")}
             </div>
           </div>
-          <div className="rounded-lg bg-emerald-600 px-4 py-3 text-white">
-            <div className="text-xs text-emerald-100">
+          <div className="rounded-lg bg-brand-500 px-4 py-3 text-white">
+            <div className="text-xs text-brand-100">
               Monto total (últimos {contratos.length.toLocaleString("es-DO")})
             </div>
             <div className="mt-0.5 text-lg font-bold">{formatMonto(suma, "DOP")}</div>
           </div>
-          <div className="rounded-lg bg-slate-50 px-4 py-3">
+          <div className="rounded-lg bg-canvas px-4 py-3">
             <div className="text-xs text-ink-soft">Instituciones cliente</div>
             <div className="mt-0.5 text-lg font-bold">
               {porInstitucion.size.toLocaleString("es-DO")}
@@ -105,9 +105,9 @@ export default async function ProveedorPage({
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-slate-100">
+                <div className="mt-1 h-2 rounded-full bg-hairline">
                   <div
-                    className="bar-grow h-2 rounded-full bg-emerald-500"
+                    className="bar-grow h-2 rounded-full bg-brand-500"
                     style={{ width: `${Math.max(2, (a.monto / maxAnio) * 100)}%` }}
                   />
                 </div>
@@ -124,7 +124,7 @@ export default async function ProveedorPage({
             {topInstituciones.map(([inst, a]) => (
               <li
                 key={inst}
-                className="flex items-baseline justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2"
+                className="flex items-baseline justify-between gap-2 rounded-lg bg-canvas px-3 py-2"
               >
                 <span className="line-clamp-1">{inst}</span>
                 <span className="shrink-0 text-xs text-ink-soft">
@@ -151,7 +151,7 @@ export default async function ProveedorPage({
                   <span>· {formatFecha(c.fecha_adjudicacion)}</span>
                   <Link
                     href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
-                    className="text-emerald-700 hover:underline"
+                    className="text-brand-600 hover:underline"
                   >
                     ver proceso →
                   </Link>

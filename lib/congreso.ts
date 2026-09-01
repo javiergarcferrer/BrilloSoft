@@ -234,6 +234,10 @@ export function limpiarTexto(valor: string | null | undefined): string {
 const ATONAS = new Set([
   "y", "e", "o", "u", "de", "del", "la", "las", "el", "los", "en", "a", "al",
   "por", "para", "con", "sin", "que", "su", "sus", "un", "una",
+  // Fórmulas de la técnica legislativa: aparecen en casi todos los títulos
+  // («…, mediante la cual se deroga…») y en versalita quedan de adorno.
+  "se", "cual", "cuales", "mediante", "sobre", "como", "lo", "le", "les",
+  "ni", "o", "sino", "según", "ante", "tras", "es",
 ]);
 
 /** Capitaliza un texto que viene TODO EN MAYÚSCULAS; deja intacto el resto. */

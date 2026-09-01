@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Sora } from "next/font/google";
+import { IBM_Plex_Mono, Instrument_Serif, Public_Sans } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import MobileTabBar from "@/components/mobile-tab-bar";
@@ -10,15 +10,31 @@ import GlobalNav from "@/components/global-nav";
 import SectionBar from "@/components/section-bar";
 import { SECCIONES } from "@/lib/secciones";
 
-const inter = Inter({
+/*
+  Tres familias, tres oficios (ver app/globals.css):
+    · Instrument Serif — la pregunta: titulares.
+    · Public Sans      — la explicación: cuerpo e interfaz. Es la tipografía
+      del estándar web de gobierno, puesta a servir al ciudadano.
+    · IBM Plex Mono    — el registro: montos, códigos, expedientes y fechas,
+      todo lo que se copia y se verifica.
+*/
+const publicSans = Public_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-public-sans",
   display: "swap",
 });
 
-const sora = Sora({
+const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
-  variable: "--font-sora",
+  weight: "400",
+  variable: "--font-instrument-serif",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
@@ -44,33 +60,54 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#171d2e",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
 
-function BrandMark() {
+/**
+ * El contrasello: un sello que no aprueba nada, pregunta.
+ *
+ * En el país del sello y la firma, la marca toma la forma del instrumento que
+ * valida documentos y la pone del lado del ciudadano: el aro lleva el registro
+ * y el centro, la «¿» —que en español anuncia que la pregunta apenas empieza—.
+ * Su punto va siempre en rojo sello: es la regla única de la identidad.
+ */
+function BrandMark({
+  className = "h-9 w-9",
+  fondo = "#171d2e",
+  trazo = "#f7f3ea",
+}: {
+  className?: string;
+  /** Color del sello. Tinta sobre papel; papel sobre tinta. */
+  fondo?: string;
+  trazo?: string;
+}) {
   return (
-    <svg viewBox="0 0 40 40" className="h-9 w-9" role="img" aria-label="Socrático.do">
-      <defs>
-        <linearGradient id="lrd-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#10b981" />
-          <stop offset="1" stopColor="#0ea5e9" />
-        </linearGradient>
-      </defs>
-      <rect width="40" height="40" rx="11" fill="url(#lrd-grad)" />
-      <rect x="11" y="12" width="13" height="2.4" rx="1.2" fill="white" opacity="0.95" />
-      <rect x="11" y="18" width="8.5" height="2.4" rx="1.2" fill="white" opacity="0.65" />
-      <circle cx="23.5" cy="24" r="5.4" fill="none" stroke="white" strokeWidth="2.3" />
-      <path d="M27.2 27.7 30.8 31.3" stroke="white" strokeWidth="2.3" strokeLinecap="round" />
+    <svg viewBox="0 0 96 96" className={className} role="img" aria-label="Socrático.do">
+      <rect width="96" height="96" rx="20" fill={fondo} />
+      <g transform="translate(48 50) scale(0.5) translate(-100 -96)">
+        {/* La «¿» se dibuja girando media vuelta el signo de cierre. */}
+        <g transform="rotate(180 100 96)">
+          <path
+            d="M 74 72 C 74 42 126 42 126 72 C 126 94 103 93 103 114"
+            fill="none"
+            stroke={trazo}
+            strokeWidth="15"
+            strokeLinecap="round"
+          />
+          {/* El punto es el sello: nunca cambia de color. */}
+          <circle cx="103" cy="143" r="10" fill="#a63a2a" />
+        </g>
+      </g>
     </svg>
   );
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${inter.variable} ${sora.variable}`}>
+    <html lang="es" className={`${publicSans.variable} ${instrumentSerif.variable} ${plexMono.variable}`}>
       <body className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))] antialiased lg:pb-0">
         {/*
           Chrome de dos niveles:
@@ -82,7 +119,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           El contenido nunca carga con tareas de orientación.
         */}
         <header
-          className="sticky top-0 z-50 bg-slate-900/90 text-white backdrop-blur-md"
+          className="sticky top-0 z-50 bg-ink/95 text-white backdrop-blur-md"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="mx-auto flex min-h-[64px] max-w-6xl items-center gap-4 px-4 py-2">
@@ -90,9 +127,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               href="/"
               className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-90"
             >
-              <BrandMark />
-              <span className="text-[15px] font-semibold tracking-tight max-[380px]:hidden">
-                Socrático<span className="text-emerald-400">.do</span>
+              <BrandMark className="h-9 w-9" fondo="#f7f3ea" trazo="#171d2e" />
+              <span className="font-display text-[19px] leading-none max-[380px]:hidden">
+                Socrático<span className="text-sello-400">.do</span>
               </span>
             </Link>
 
@@ -118,8 +155,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
               <div className="shrink-0 lg:w-60">
                 <div className="flex items-center gap-2.5">
-                  <BrandMark />
-                  <span className="font-semibold text-ink">Socrático.do</span>
+                  <BrandMark className="h-9 w-9" />
+                  <span className="font-display text-[19px] leading-none text-ink">
+                    Socrático<span className="punto-sello">.do</span>
+                  </span>
                 </div>
                 <p className="mt-4 max-w-xs text-xs leading-relaxed">
                   Qué compra, qué legisla y a quién paga el Estado dominicano,

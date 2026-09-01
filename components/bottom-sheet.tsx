@@ -45,7 +45,7 @@ export function BottomSheet({
         tabIndex={open ? 0 : -1}
         aria-label="Cerrar"
         onClick={onClose}
-        className={`absolute inset-0 bg-slate-900/45 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-ink/45 backdrop-blur-sm transition-opacity duration-300 ${
           open ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -66,7 +66,7 @@ export function BottomSheet({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-ink-soft transition active:scale-90"
+            className="grid h-9 w-9 place-items-center rounded-full bg-hairline text-ink-soft transition active:scale-90"
           >
             <IconX className="h-5 w-5" />
           </button>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { queEsNorma, resolverNorma, tipoDeRuta } from "@/lib/normativa";
-import { pesoDocumento } from "@/lib/documentos";
+import { pesoDocumento, urlDeLectura } from "@/lib/documentos";
 import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
 import VisorDocumento from "@/components/visor-documento";
@@ -89,6 +89,7 @@ export default async function NormaPage({ params }: Props) {
         {norma.url ? (
           <VisorDocumento
             url={norma.url}
+            urlVisor={urlDeLectura(norma.url)}
             nombre={`${tipo} ${norma.numero} — texto oficial`}
             tipo={peso?.tipo ?? "application/pdf"}
             bytes={peso?.bytes ?? null}

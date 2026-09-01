@@ -44,10 +44,10 @@ export default async function ContratosPage() {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white">
+      <section className="relative overflow-hidden rounded-3xl bg-ink text-white">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
         <div
-          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl"
+          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl"
           aria-hidden
         />
         <div className="relative p-6 sm:p-8">
@@ -58,7 +58,7 @@ export default async function ContratosPage() {
           <h1 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
             Qué está contratando el Estado
           </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-slate-300">
+          <p className="mt-1.5 max-w-xl text-sm text-hairline">
             Sobre los {formatInt(r.escaneados)} contratos más recientes del
             registro de la DGCP
             {r.desde && r.hasta && (
@@ -75,12 +75,12 @@ export default async function ContratosPage() {
               <div
                 key={k.etiqueta}
                 className={`rounded-xl p-4 ring-1 ${
-                  k.destacar ? "bg-emerald-500/15 ring-emerald-400/30" : "bg-white/5 ring-white/10"
+                  k.destacar ? "bg-brand-500/15 ring-brand-400/30" : "bg-white/5 ring-white/10"
                 }`}
               >
                 <div className="text-lg font-bold leading-tight sm:text-xl">{k.valor}</div>
                 <div
-                  className={`mt-0.5 text-xs ${k.destacar ? "text-emerald-200" : "text-slate-400"}`}
+                  className={`mt-0.5 text-xs ${k.destacar ? "text-brand-100" : "text-ink-soft"}`}
                 >
                   {k.etiqueta}
                 </div>
@@ -107,9 +107,9 @@ export default async function ContratosPage() {
                     {formatInt(m.n)} · {formatMonto(m.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-slate-100">
+                <div className="mt-1 h-2 rounded-full bg-hairline">
                   <div
-                    className="bar-grow h-2 rounded-full bg-emerald-500"
+                    className="bar-grow h-2 rounded-full bg-brand-500"
                     style={{ width: `${Math.max(2, (m.monto / maxMes) * 100)}%` }}
                   />
                 </div>
@@ -124,13 +124,13 @@ export default async function ContratosPage() {
           titulo="Mayores adjudicatarios"
           nota="Enlazan a su perfil"
           items={r.topAdjudicatarios}
-          color="bg-emerald-500"
+          color="bg-brand-500"
           hrefDe={(a) => (a.rpe ? `/proveedores/${a.rpe}` : undefined)}
         />
         <RankingContratos
           titulo="Instituciones que más adjudican"
           items={r.topInstituciones}
-          color="bg-sky-500"
+          color="bg-brand-400"
         />
       </div>
 
@@ -153,7 +153,7 @@ export default async function ContratosPage() {
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-soft">
                 {c.rpe ? (
-                  <Link href={`/proveedores/${c.rpe}`} className="text-emerald-700 hover:underline">
+                  <Link href={`/proveedores/${c.rpe}`} className="text-brand-600 hover:underline">
                     {c.razon_social}
                   </Link>
                 ) : (
@@ -166,7 +166,7 @@ export default async function ContratosPage() {
                 <Sep />
                 <Link
                   href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
-                  className="text-emerald-700 hover:underline"
+                  className="text-brand-600 hover:underline"
                 >
                   ver proceso →
                 </Link>
@@ -224,7 +224,7 @@ function RankingContratos({
         {items.map((a) => {
           const href = hrefDe?.(a);
           const nombre = href ? (
-            <Link href={href} className="font-medium text-emerald-700 hover:underline">
+            <Link href={href} className="font-medium text-brand-600 hover:underline">
               {a.clave}
             </Link>
           ) : (
@@ -238,7 +238,7 @@ function RankingContratos({
                   {a.n} · {formatMonto(a.monto, "DOP")}
                 </span>
               </div>
-              <div className="mt-1 h-2 rounded-full bg-slate-100">
+              <div className="mt-1 h-2 rounded-full bg-hairline">
                 <div
                   className={`bar-grow h-2 rounded-full ${color}`}
                   style={{ width: `${Math.max(2, (a.monto / max) * 100)}%` }}

@@ -332,7 +332,7 @@ export default function Buscador() {
             Oportunidades de compras públicas
           </h1>
           <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-ink-soft">
-            <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 text-emerald-500">
+            <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-brand-500 text-brand-500">
               <span className="live-dot" />
             </span>
             En vivo desde la API de datos abiertos de la DGCP
@@ -432,7 +432,7 @@ export default function Buscador() {
                 setStartdate(hoyMenosDias(30));
                 setEnddate("");
               }}
-              className="ml-1 text-xs font-medium text-ink-soft transition hover:text-rose-600"
+              className="ml-1 text-xs font-medium text-ink-soft transition hover:text-sello-600"
             >
               Limpiar todo
             </button>
@@ -445,7 +445,7 @@ export default function Buscador() {
               Consultando la DGCP…
             </span>
           ) : error ? (
-            <span className="text-rose-600">⚠ {error}</span>
+            <span className="text-sello-600">⚠ {error}</span>
           ) : data ? (
             <span>
               <strong className="text-ink">
@@ -513,7 +513,7 @@ export default function Buscador() {
           </div>
         ) : ordenados.length === 0 && !error ? (
           <div className="rounded-2xl bg-surface p-12 text-center shadow-soft ring-1 ring-hairline">
-            <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400">
+            <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-hairline text-ink-soft">
               <IconSearch className="h-6 w-6" />
             </span>
             <p className="mt-3 font-semibold text-ink">Sin resultados con estos filtros</p>
@@ -571,7 +571,7 @@ function FiltrosControles({
           ))}
         </datalist>
         {unidadTexto && !unidadSel && (
-          <span className="mt-1 block text-[11px] text-amber-600">
+          <span className="mt-1 block text-[11px] text-alerta-600">
             Selecciona una institución de la lista para aplicar el filtro.
           </span>
         )}

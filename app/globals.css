@@ -1,43 +1,105 @@
 @import "tailwindcss";
 
 /*
-  Licitaciones RD — design system
+  Socrático.do — sistema de diseño «El Contrasello»
   --------------------------------------------------------------------------
-  A govtech identity over the existing emerald/slate Tailwind palette: a calm
-  cool canvas, an institutional ink, a confident emerald brand and an accent
-  for "intelligent" moments. Display type (Sora) for headings, Inter for body.
-  Tokens live in @theme so utilities are generated (bg-canvas, text-ink,
-  shadow-card, font-display…). Standard Tailwind colors still work everywhere.
+  La identidad sale del vernáculo del documento oficial dominicano y lo pone
+  del lado del ciudadano: papel de oficio en vez de blanco de pantalla, tinta
+  de imprenta, el sello como acento escaso y el azul de bolígrafo para lo que
+  se puede accionar. Nada imita lo oficial; todo lo interroga.
+
+  Tres familias con tres oficios:
+    · Instrument Serif  — la pregunta (titulares).
+    · Public Sans       — la explicación (cuerpo e interfaz).
+    · IBM Plex Mono     — el registro (montos, códigos, expedientes).
+
+  Regla única de la marca: **el punto es el sello**. El punto del «¿», el
+  «.do» del logotipo y las viñetas van siempre en rojo sello.
+
+  Los tokens viven en @theme para que Tailwind genere las utilidades
+  (bg-canvas, text-ink, font-display, shadow-card…).
 */
 
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-sora), var(--font-inter), ui-sans-serif, system-ui,
-    sans-serif;
+  --font-display: var(--font-instrument-serif), Georgia, "Times New Roman",
+    serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo,
+    "Courier New", monospace;
 
-  /* Neutrals — cool, document-grade surfaces */
-  --color-canvas: #eef2f6;
-  --color-surface: #ffffff;
-  --color-ink: #0c1722;
-  --color-ink-soft: #56657a;
-  --color-hairline: #e3e9f0;
+  /* Papel, tinta y márgenes: la superficie del documento */
+  --color-canvas: #f7f3ea;
+  --color-surface: #fdfbf5;
+  --color-ink: #171d2e;
+  --color-ink-soft: #555b6b;
+  --color-hairline: #ded6c6;
 
-  /* Brand (emerald spine) + accent (teal) for highlights */
-  --color-brand-50: #ecfdf5;
-  --color-brand-500: #10b981;
-  --color-brand-600: #059669;
-  --color-brand-700: #047857;
-  --color-accent-400: #2dd4bf;
-  --color-accent-500: #14b8a6;
+  /*
+    `brand` es **la firma**: el azul de bolígrafo de todo lo accionable
+    —enlaces, botones, estados activos—. Es el color de trabajo, y por eso
+    es el que más aparece.
+  */
+  --color-brand-50: #eef1f9;
+  --color-brand-100: #dbe1f1;
+  --color-brand-200: #b9c4e3;
+  --color-brand-300: #8f9fd0;
+  --color-brand-400: #5c77bd;
+  --color-brand-500: #35519c;
+  --color-brand-600: #2a4180;
+  --color-brand-700: #223669;
+  --color-brand-800: #1b2b53;
+  --color-brand-900: #16223f;
 
-  /* Layered, cool-tinted shadows */
-  --shadow-soft: 0 1px 2px 0 rgb(12 23 34 / 0.04),
-    0 1px 3px 0 rgb(12 23 34 / 0.06);
-  --shadow-card: 0 1px 2px rgb(12 23 34 / 0.04),
-    0 10px 28px -12px rgb(12 23 34 / 0.16);
-  --shadow-pop: 0 18px 48px -12px rgb(12 23 34 / 0.28),
-    0 6px 16px -8px rgb(12 23 34 / 0.14);
+  /*
+    `sello` es la marca: rojo de tampón. Escaso por definición —el punto del
+    «¿», el «.do», la vertical de compras y lo que deroga—. Si aparece en
+    todas partes deja de pesar.
+  */
+  --color-sello-50: #fbeeeb;
+  --color-sello-100: #f5d9d3;
+  --color-sello-200: #ecb9ae;
+  --color-sello-400: #c0472f;
+  --color-sello-500: #b03f2b;
+  --color-sello-600: #a63a2a;
+  --color-sello-700: #8f3124;
+  --color-sello-800: #74271d;
+
+  /* Anotación al margen: la advertencia, en ocre de lápiz bicolor */
+  --color-alerta-50: #f9f0dc;
+  --color-alerta-100: #f0e0bc;
+  --color-alerta-500: #a8801f;
+  --color-alerta-600: #8c6a1f;
+  --color-alerta-700: #6f5318;
+
+  /* Sello de conformidad: verde apagado de archivo, para lo ya cumplido */
+  --color-valido-50: #e9f0ea;
+  --color-valido-500: #3d7a58;
+  --color-valido-600: #2f6b4a;
+  --color-valido-700: #275a3e;
+
+  /*
+    Matiz por vertical: solo orienta («¿dónde estoy?»), nunca colorea
+    contenido. Todos son tintas apagadas que conviven sobre papel.
+  */
+  --color-v-compras: #a63a2a;
+  --color-v-compras-tenue: #fbeeeb;
+  --color-v-congreso: #35519c;
+  --color-v-congreso-tenue: #eef1f9;
+  --color-v-normativa: #4b3f72;
+  --color-v-normativa-tenue: #f0edf6;
+  --color-v-nomina: #2f6b5e;
+  --color-v-nomina-tenue: #e8f0ee;
+  --color-v-democracia: #8c6a1f;
+  --color-v-democracia-tenue: #f9f0dc;
+
+  /* Sombras de papel: cortas y cálidas, no de vidrio */
+  --shadow-soft: 0 1px 2px 0 rgb(23 29 46 / 0.05),
+    0 1px 3px 0 rgb(23 29 46 / 0.05);
+  --shadow-card: 0 1px 2px rgb(23 29 46 / 0.05),
+    0 8px 24px -14px rgb(23 29 46 / 0.22);
+  --shadow-pop: 0 18px 44px -14px rgb(23 29 46 / 0.32),
+    0 6px 16px -8px rgb(23 29 46 / 0.16);
 }
 
 @layer base {
@@ -62,27 +124,35 @@
     overflow-x: hidden;
   }
 
+  /*
+    Los titulares llevan la serif —son las preguntas—; los rótulos pequeños de
+    sección se quedan en sans, y se marcan con la clase `rotulo`.
+  */
   h1,
-  h2,
-  h3 {
+  h2 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+  }
+
+  h3 {
+    letter-spacing: -0.01em;
   }
 
   ::selection {
-    background-color: color-mix(in oklab, var(--color-brand-500) 22%, white);
-    color: #053220;
+    background-color: color-mix(in oklab, var(--color-sello-500) 18%, white);
+    color: #3d140d;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brand-600);
+    outline: 2px solid var(--color-brand-500);
     outline-offset: 2px;
     border-radius: 6px;
   }
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: #c2ccd8 transparent;
+    scrollbar-color: #cabfa9 transparent;
   }
 }
 
@@ -90,22 +160,34 @@
 /* Utilities                                                           */
 /* ------------------------------------------------------------------ */
 
-/* Brand → accent gradient text for hero accents */
-.text-gradient {
-  background-image: linear-gradient(100deg, #34d399, #2dd4bf 55%, #38bdf8);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/*
+  Rótulo de registro: los epígrafes en versalitas monoespaciadas que separan
+  las secciones, como el encabezado de un formulario.
+*/
+.rotulo {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
-/* Faint engineering grid for dark hero panels */
+/*
+  El punto es el sello: la marca de agua de la identidad. Se aplica al punto
+  del «.do» y a cualquier punto que haga de viñeta.
+*/
+.punto-sello {
+  color: var(--color-sello-600);
+}
+
+/* Trama de papel milimetrado para los paneles oscuros */
 .app-grid-dark {
   background-image: linear-gradient(
       to right,
-      rgb(255 255 255 / 0.06) 1px,
+      rgb(247 243 234 / 0.07) 1px,
       transparent 1px
     ),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+    linear-gradient(to bottom, rgb(247 243 234 / 0.07) 1px, transparent 1px);
   background-size: 42px 42px;
   -webkit-mask-image: radial-gradient(ellipse 80% 80% at 30% 0%, black 35%, transparent 100%);
   mask-image: radial-gradient(ellipse 80% 80% at 30% 0%, black 35%, transparent 100%);
@@ -130,7 +212,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgb(255 255 255 / 0.6),
+    rgb(247 243 234 / 0.75),
     transparent
   );
   animation: lr-shimmer 1.5s infinite;

@@ -65,7 +65,7 @@ export function Explorer() {
   if (!data) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-6 text-sm text-ink-soft">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-t-brand-600" />
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-100 border-t-brand-600" />
         Cargando la nómina consolidada…
       </div>
     );
@@ -249,7 +249,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
               value={queryInput}
               onChange={(e) => setQueryInput(e.target.value)}
               placeholder="Buscar por institución, área o cargo…"
-              className="h-11 w-full rounded-full border border-hairline bg-slate-50 pl-10 pr-9 text-sm outline-none focus:border-emerald-400"
+              className="h-11 w-full rounded-full border border-hairline bg-canvas pl-10 pr-9 text-sm outline-none focus:border-brand-400"
             />
             {queryInput && (
               <button
@@ -266,7 +266,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
           <select
             value={instId ?? ""}
             onChange={(e) => setInstId(e.target.value === "" ? null : Number(e.target.value))}
-            className="h-11 rounded-full border border-hairline bg-slate-50 px-4 text-sm outline-none focus:border-emerald-400 lg:max-w-xs"
+            className="h-11 rounded-full border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400 lg:max-w-xs"
           >
             <option value="">Todas las instituciones ({data.instituciones.length})</option>
             {data.instituciones.map((o, i) => (
@@ -283,7 +283,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
               value={salMin}
               onChange={(e) => setSalMin(e.target.value)}
               placeholder="Sueldo mín."
-              className="h-11 w-28 rounded-full border border-hairline bg-slate-50 px-4 text-sm outline-none focus:border-emerald-400"
+              className="h-11 w-28 rounded-full border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400"
             />
             <span className="text-ink-soft">–</span>
             <input
@@ -292,7 +292,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
               value={salMax}
               onChange={(e) => setSalMax(e.target.value)}
               placeholder="máx."
-              className="h-11 w-24 rounded-full border border-hairline bg-slate-50 px-4 text-sm outline-none focus:border-emerald-400"
+              className="h-11 w-24 rounded-full border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400"
             />
           </div>
 

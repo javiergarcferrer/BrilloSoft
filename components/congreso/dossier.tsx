@@ -81,8 +81,8 @@ export default async function Dossier({
 
       <div className="divide-y divide-hairline">
         {ley && (
-          <div className="bg-emerald-50/60 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+          <div className="bg-brand-50/60 px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">
               Ya es ley — texto vigente
             </p>
             <p className="mt-1.5 text-sm font-medium text-ink">
@@ -95,7 +95,7 @@ export default async function Dossier({
             </p>
             <Link
               href={`/normativa/ley/${ley.numero}`}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-700"
             >
               Leer el texto de la ley →
             </Link>
@@ -148,10 +148,10 @@ export default async function Dossier({
                   <span
                     className={`mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                       ref.relacion === "deroga"
-                        ? "bg-rose-50 text-rose-700"
+                        ? "bg-sello-50 text-sello-700"
                         : ref.relacion === "cita"
                           ? "bg-canvas text-ink-soft"
-                          : "bg-amber-50 text-amber-700"
+                          : "bg-alerta-50 text-alerta-600"
                     }`}
                   >
                     {ETIQUETA_RELACION[ref.relacion]}

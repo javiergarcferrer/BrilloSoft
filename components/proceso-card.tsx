@@ -33,15 +33,15 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
             className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${estado.badge}`}
           >
             <span className={`relative inline-block h-1.5 w-1.5 rounded-full ${estado.dot}`}>
-              {estado.abierto && <span className="live-dot text-emerald-500" />}
+              {estado.abierto && <span className="live-dot text-brand-500" />}
             </span>
             {estado.label}
           </span>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+          <span className="rounded-full bg-hairline px-2 py-0.5 text-[11px] font-medium text-ink-soft">
             {p.modalidad}
           </span>
           {p.dirigido_mipymes === "Si" && (
-            <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700 ring-1 ring-inset ring-violet-600/20">
+            <span className="rounded-full bg-v-congreso-tenue px-2 py-0.5 text-[11px] font-medium text-v-congreso ring-1 ring-inset ring-v-congreso/20">
               MIPYMES
             </span>
           )}
@@ -53,8 +53,8 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
           aria-pressed={seguido}
           className={`-mr-1 -mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors ${
             seguido
-              ? "text-amber-400"
-              : "text-slate-300 hover:bg-amber-50 hover:text-amber-400"
+              ? "text-alerta-500"
+              : "text-hairline hover:bg-alerta-50 hover:text-alerta-500"
           }`}
         >
           <IconStar className="h-5 w-5" filled={seguido} />
@@ -67,7 +67,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
         </Link>
       </h2>
       <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink-soft">
-        <IconBuilding className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+        <IconBuilding className="h-3.5 w-3.5 shrink-0 text-ink-soft" />
         <span className="line-clamp-1">{p.unidad_compra}</span>
       </p>
 

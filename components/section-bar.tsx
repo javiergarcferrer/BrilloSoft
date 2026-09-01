@@ -61,7 +61,7 @@ export default function SectionBar() {
                 >
                   {vista.label}
                   {vista.seguimiento && seguidos > 0 && (
-                    <span className="grid h-4 min-w-4 place-items-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white">
+                    <span className="grid h-4 min-w-4 place-items-center rounded-full bg-brand-500 px-1 text-[9px] font-bold text-white">
                       {seguidos}
                     </span>
                   )}

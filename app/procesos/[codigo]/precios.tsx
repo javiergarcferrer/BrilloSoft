@@ -16,7 +16,7 @@ export default function PreciosHistoricos({
   return (
     <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
       <h2 className="font-semibold">Precios históricos de adjudicación</h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-ink-soft">
         Lo que el Estado realmente pagó en contratos recientes por artículos de la misma
         categoría UNSPSC — úsalo como referencia antes de fijar tu precio.
       </p>
@@ -52,18 +52,18 @@ function SubclaseStats({
   }, [subclase.codigo]);
 
   return (
-    <div className="rounded-lg border border-slate-200 p-4">
+    <div className="rounded-lg border border-hairline p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold">
           {subclase.descripcion}{" "}
-          <span className="font-mono text-xs font-normal text-slate-400">
+          <span className="font-mono text-xs font-normal text-ink-soft">
             UNSPSC {subclase.codigo}
           </span>
         </h3>
         {stats && stats.muestras > 0 && (
           <button
             onClick={() => setVerEjemplos((v) => !v)}
-            className="text-xs font-medium text-emerald-700 hover:underline"
+            className="text-xs font-medium text-brand-600 hover:underline"
           >
             {verEjemplos ? "Ocultar contratos recientes" : "Ver contratos recientes"}
           </button>
@@ -71,40 +71,40 @@ function SubclaseStats({
       </div>
 
       {error ? (
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-ink-soft">
           No se pudo consultar el histórico ahora mismo.
         </p>
       ) : !stats ? (
-        <div className="mt-3 h-12 animate-pulse rounded bg-slate-100" />
+        <div className="mt-3 h-12 animate-pulse rounded bg-hairline" />
       ) : stats.muestras === 0 ? (
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-ink-soft">
           Sin contratos recientes registrados en esta categoría.
         </p>
       ) : (
         <>
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-lg bg-slate-50 px-2 py-2">
-              <div className="text-xs text-slate-500">Mínimo</div>
+            <div className="rounded-lg bg-canvas px-2 py-2">
+              <div className="text-xs text-ink-soft">Mínimo</div>
               <div className="text-sm font-semibold">
                 {formatMonto(stats.min, divisa)}
               </div>
             </div>
-            <div className="rounded-lg bg-emerald-50 px-2 py-2 ring-1 ring-emerald-200">
-              <div className="text-xs text-emerald-700">
+            <div className="rounded-lg bg-brand-50 px-2 py-2 ring-1 ring-brand-100">
+              <div className="text-xs text-brand-600">
                 Mediana · {stats.muestras} contratos
               </div>
-              <div className="text-sm font-bold text-emerald-800">
+              <div className="text-sm font-bold text-brand-700">
                 {formatMonto(stats.mediana, divisa)}
               </div>
             </div>
-            <div className="rounded-lg bg-slate-50 px-2 py-2">
-              <div className="text-xs text-slate-500">Máximo</div>
+            <div className="rounded-lg bg-canvas px-2 py-2">
+              <div className="text-xs text-ink-soft">Máximo</div>
               <div className="text-sm font-semibold">
                 {formatMonto(stats.max, divisa)}
               </div>
             </div>
           </div>
-          <p className="mt-1.5 text-xs text-slate-400">
+          <p className="mt-1.5 text-xs text-ink-soft">
             Precios unitarios; los rangos amplios suelen mezclar presentaciones o
             alcances distintos — compara siempre con la descripción del contrato.
           </p>
@@ -114,7 +114,7 @@ function SubclaseStats({
               {stats.ejemplos.map((e, i) => (
                 <li
                   key={i}
-                  className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-xs"
+                  className="flex items-start justify-between gap-3 rounded-lg bg-canvas px-3 py-2 text-xs"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">
@@ -122,11 +122,11 @@ function SubclaseStats({
                     </span>
                     <Link
                       href={`/procesos/${encodeURIComponent(e.codigo_proceso)}`}
-                      className="text-emerald-700 hover:underline"
+                      className="text-brand-600 hover:underline"
                     >
                       {e.codigo_proceso}
                     </Link>{" "}
-                    <span className="text-slate-400">
+                    <span className="text-ink-soft">
                       · {formatFecha(e.fecha_creacion_contrato)}
                     </span>
                   </span>
@@ -134,7 +134,7 @@ function SubclaseStats({
                     <span className="block font-semibold">
                       {formatMonto(e.precio_unitario, divisa)}
                     </span>
-                    <span className="text-slate-400">
+                    <span className="text-ink-soft">
                       × {e.cantidad?.toLocaleString("es-DO")} {e.unidad_medida}
                     </span>
                   </span>

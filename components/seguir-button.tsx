@@ -31,8 +31,8 @@ export default function SeguirButton({
         aria-pressed={seguido}
         className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition active:scale-95 ${
           seguido
-            ? "bg-amber-400 text-white"
-            : "bg-slate-100 text-ink ring-1 ring-inset ring-hairline"
+            ? "bg-alerta-500 text-white"
+            : "bg-hairline text-ink ring-1 ring-inset ring-hairline"
         }`}
       >
         <IconStar className="h-5 w-5" filled={seguido} />
@@ -47,8 +47,8 @@ export default function SeguirButton({
       aria-pressed={seguido}
       className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition active:scale-95 ${
         seguido
-          ? "border-amber-300 bg-amber-50 text-amber-700"
-          : "border-hairline hover:border-emerald-500 hover:text-emerald-700"
+          ? "border-alerta-100 bg-alerta-50 text-alerta-600"
+          : "border-hairline hover:border-brand-500 hover:text-brand-600"
       }`}
     >
       <IconStar className="h-4 w-4" filled={seguido} />

@@ -50,7 +50,7 @@ export function DataTable({
       <div
         className={cn(
           GRID,
-          "border-b border-hairline bg-slate-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-soft",
+          "border-b border-hairline bg-canvas px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-soft",
         )}
       >
         <span className="text-right tabular-nums">#</span>
@@ -82,8 +82,8 @@ export function DataTable({
                     className={cn(
                       GRID,
                       "items-center px-4 text-sm",
-                      idx % 2 ? "bg-surface" : "bg-slate-50/50",
-                      "hover:bg-emerald-50",
+                      idx % 2 ? "bg-surface" : "bg-canvas/50",
+                      "hover:bg-brand-50",
                     )}
                     style={{ height: ROW_H }}
                   >

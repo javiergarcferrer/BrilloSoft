@@ -55,10 +55,10 @@ export default function SeguimientoPage() {
     <div className="space-y-5">
       <section className="rounded-2xl bg-surface p-5 shadow-soft ring-1 ring-hairline">
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          <IconStar className="h-5 w-5 text-amber-400" filled />
+          <IconStar className="h-5 w-5 text-alerta-500" filled />
           Mi seguimiento
           {procesos.length > 0 && (
-            <span className="ml-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+            <span className="ml-1 rounded-full bg-alerta-50 px-2 py-0.5 text-xs font-semibold text-alerta-600">
               {procesos.length}
             </span>
           )}
@@ -77,7 +77,7 @@ export default function SeguimientoPage() {
         </div>
       ) : procesos.length === 0 ? (
         <div className="rounded-2xl bg-surface p-12 text-center shadow-soft ring-1 ring-hairline">
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-400">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-alerta-50 text-alerta-500">
             <IconStar className="h-7 w-7" />
           </span>
           <p className="mt-4 font-semibold text-ink">Aún no sigues ningún proceso</p>

@@ -50,7 +50,7 @@ export default function InstallPrompt() {
       className="fixed inset-x-3 z-[60] rounded-2xl border border-hairline bg-surface p-3.5 shadow-pop bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:inset-x-auto lg:right-4 lg:max-w-sm"
     >
       <div className="flex items-center gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-sky-500 text-lg font-bold text-white">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-400 text-lg font-bold text-white">
           L
         </span>
         <div className="min-w-0 flex-1">

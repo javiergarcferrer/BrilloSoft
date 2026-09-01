@@ -35,16 +35,16 @@ export default function Compartir({ titulo }: { titulo: string }) {
     <span className="flex items-center gap-2">
       <button
         onClick={compartir}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium transition hover:border-emerald-500 hover:text-emerald-700 active:scale-95"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium transition hover:border-brand-500 hover:text-brand-600 active:scale-95"
       >
         <IconShare className="h-3.5 w-3.5" />
         Compartir
       </button>
       <button
         onClick={copiar}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium transition hover:border-emerald-500 hover:text-emerald-700 active:scale-95"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium transition hover:border-brand-500 hover:text-brand-600 active:scale-95"
       >
-        {copiado ? <IconCheck className="h-3.5 w-3.5 text-emerald-600" /> : null}
+        {copiado ? <IconCheck className="h-3.5 w-3.5 text-brand-500" /> : null}
         {copiado ? "Copiado" : "Copiar enlace"}
       </button>
     </span>

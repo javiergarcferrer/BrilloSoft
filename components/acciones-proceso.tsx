@@ -43,7 +43,7 @@ export default function AccionesProceso({
         <button
           onClick={compartir}
           aria-label="Compartir"
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-100 text-ink ring-1 ring-inset ring-hairline transition active:scale-95"
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-hairline text-ink ring-1 ring-inset ring-hairline transition active:scale-95"
         >
           <IconShare className="h-5 w-5" />
         </button>

@@ -1,16 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { IconDoc, IconDownload, IconExternal } from "@/components/icons";
+
+// pdf.js pesa: entra solo cuando alguien abre de verdad un documento.
+const LectorPdf = dynamic(() => import("@/components/lector-pdf"), { ssr: false });
 
 interface Props {
   /** URL pública del archivo en el origen oficial: enlaces y descarga. */
   url: string;
   /**
-   * URL que alimenta el visor, si el origen no deja incrustar la suya. Algunos
-   * orígenes sirven el PDF con `Content-Disposition: attachment` o un
-   * `frame-ancestors` que excluye a terceros: ahí se lee a través de una ruta
-   * propia. Los enlaces siguen apuntando al origen.
+   * URL desde la que el lector puede leer los bytes. Es obligatoria en la
+   * práctica porque ninguna fuente del Estado envía CORS: siempre es
+   * `/api/documento?url=…`. Los enlaces siguen apuntando al origen.
    */
   urlVisor?: string;
   nombre: string;
@@ -33,15 +36,18 @@ function pesoLegible(bytes: number | null): string | null {
  * Vista previa de un documento oficial. Se usa igual en toda la plataforma:
  * expedientes del Congreso, pliegos de la DGCP y normativa del Ejecutivo.
  *
- * Dos reglas fijas:
+ * Tres reglas fijas:
  *
  *  1. **No se carga sola.** Hay expedientes que son escaneos de decenas de
  *     megabytes; abrirlos por defecto castigaría cualquier conexión móvil. Se
- *     declara el peso y el visor aparece bajo demanda.
- *  2. **Los enlaces apuntan al origen.** Aunque el visor tenga que pasar por
- *     una ruta propia —porque el origen prohíbe incrustar o fuerza la
- *     descarga—, «abrir» y «descargar» llevan al archivo del Estado: nadie
- *     tiene que confiar en una copia nuestra.
+ *     declara el peso y el lector aparece bajo demanda.
+ *  2. **Se dibuja, no se incrusta.** Un `<iframe>` con un PDF no renderiza en
+ *     móvil: pinta un cajón con un botón «Abrir» que saca al lector de la
+ *     página. `LectorPdf` rasteriza con pdf.js y se comporta igual en todas
+ *     partes.
+ *  3. **Los enlaces apuntan al origen.** Aunque los bytes lleguen por una ruta
+ *     propia, «abrir» y «descargar» llevan al archivo del Estado: nadie tiene
+ *     que confiar en una copia nuestra.
  */
 export default function VisorDocumento({
   url,
@@ -102,18 +108,14 @@ export default function VisorDocumento({
 
       {abierto && esPdf && (
         <div className="border-t border-hairline">
-          {peso && (
-            <p className="bg-canvas/60 px-5 py-2 text-[11px] text-ink-soft">
-              {`Cargando ${peso} desde ${origen}.`}
+          {(peso || escaneo) && (
+            <p className="bg-canvas/60 px-5 py-2 text-[11px] leading-relaxed text-ink-soft">
+              {peso && `${peso} · servido desde ${origen}.`}
               {escaneo &&
                 " Es un escaneo: el texto no se puede buscar ni copiar, porque así lo publica el Estado."}
             </p>
           )}
-          <iframe
-            src={urlVisor ?? url}
-            title={`Documento: ${nombre}`}
-            className="h-[70vh] w-full border-0 bg-canvas"
-          />
+          <LectorPdf url={urlVisor ?? url} urlOrigen={url} />
         </div>
       )}
     </div>

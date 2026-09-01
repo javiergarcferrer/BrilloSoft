@@ -125,11 +125,11 @@ export default function VotoWidget({
   const pctFavor = total > 0 ? Math.round((agg.a_favor / total) * 100) : 0;
 
   return (
-    <section className="rounded-2xl border border-amber-300/50 bg-amber-50/60 p-5 shadow-soft">
+    <section className="rounded-2xl border border-alerta-100/50 bg-alerta-50/60 p-5 shadow-soft">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
-            <span aria-hidden className="h-2 w-2 rounded-full bg-amber-500" />
+            <span aria-hidden className="h-2 w-2 rounded-full bg-alerta-500" />
             ¿Apoyas esta iniciativa?
           </h2>
           <p className="mt-0.5 text-xs text-ink-soft">
@@ -145,12 +145,12 @@ export default function VotoWidget({
       {total > 0 && (
         <div className="mt-4">
           <div className="flex h-2.5 overflow-hidden rounded-full ring-1 ring-inset ring-hairline">
-            <div className="bg-emerald-500" style={{ width: `${pctFavor}%` }} />
-            <div className="flex-1 bg-rose-400" />
+            <div className="bg-brand-500" style={{ width: `${pctFavor}%` }} />
+            <div className="flex-1 bg-sello-400" />
           </div>
           <div className="mt-1.5 flex justify-between text-xs tabular-nums text-ink-soft">
-            <span className="font-medium text-emerald-700">{pctFavor}% a favor</span>
-            <span className="font-medium text-rose-600">{100 - pctFavor}% en contra</span>
+            <span className="font-medium text-brand-600">{pctFavor}% a favor</span>
+            <span className="font-medium text-sello-600">{100 - pctFavor}% en contra</span>
           </div>
         </div>
       )}
@@ -180,7 +180,7 @@ export default function VotoWidget({
       {estado === "anon" && (
         <p className="mt-3 text-xs leading-relaxed text-ink-soft">
           Para que tu voto cuente, {" "}
-          <Link href="/democracia/registro" className="font-semibold text-amber-700 hover:underline">
+          <Link href="/democracia/registro" className="font-semibold text-alerta-600 hover:underline">
             regístrate con tu cédula
           </Link>
           . Tu voto es privado; solo se publican los totales.
@@ -189,13 +189,13 @@ export default function VotoWidget({
       {estado === "sin-registro" && (
         <p className="mt-3 text-xs leading-relaxed text-ink-soft">
           Tu sesión no tiene una cédula registrada.{" "}
-          <Link href="/democracia/registro" className="font-semibold text-amber-700 hover:underline">
+          <Link href="/democracia/registro" className="font-semibold text-alerta-600 hover:underline">
             Completa tu registro
           </Link>{" "}
           para votar.
         </p>
       )}
-      {error && <p className="mt-3 text-xs font-medium text-rose-600">{error}</p>}
+      {error && <p className="mt-3 text-xs font-medium text-sello-600">{error}</p>}
     </section>
   );
 }
@@ -219,10 +219,10 @@ function BotonVoto({
       aria-pressed={activo}
       className={cn(
         "flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors active:scale-95 disabled:opacity-60",
-        activo && favor && "border-emerald-500 bg-emerald-500 text-white",
-        activo && !favor && "border-rose-500 bg-rose-500 text-white",
-        !activo && favor && "border-hairline bg-surface text-emerald-700 hover:border-emerald-400 hover:bg-emerald-50",
-        !activo && !favor && "border-hairline bg-surface text-rose-600 hover:border-rose-400 hover:bg-rose-50",
+        activo && favor && "border-brand-500 bg-brand-500 text-white",
+        activo && !favor && "border-sello-500 bg-sello-500 text-white",
+        !activo && favor && "border-hairline bg-surface text-brand-600 hover:border-brand-400 hover:bg-brand-50",
+        !activo && !favor && "border-hairline bg-surface text-sello-600 hover:border-sello-400 hover:bg-sello-50",
       )}
       {...props}
     >

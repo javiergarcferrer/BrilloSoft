@@ -13,6 +13,7 @@ import { getAgregado, refIniciativa } from "@/lib/democracia";
 import VotoWidget from "@/components/democracia/voto-widget";
 import Dossier from "@/components/congreso/dossier";
 import VisorDocumento from "@/components/visor-documento";
+import { urlDeLectura } from "@/lib/documentos";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
 
 export const revalidate = 3600;
@@ -93,14 +94,14 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
       </header>
 
       {ficha.promulgada && (
-        <section className="mt-5 rounded-xl border border-emerald-600/20 bg-emerald-50 px-4 py-3">
-          <p className="text-sm font-semibold text-emerald-800">
+        <section className="mt-5 rounded-xl border border-brand-500/20 bg-brand-50 px-4 py-3">
+          <p className="text-sm font-semibold text-brand-700">
             {ficha.numPromulgacion
               ? `Promulgada como Ley ${ficha.numPromulgacion}`
               : "Promulgada"}
           </p>
           {ficha.fechaPromulgacion && (
-            <p className="mt-0.5 text-xs text-emerald-700/80">
+            <p className="mt-0.5 text-xs text-brand-600/80">
               {formatFecha(ficha.fechaPromulgacion)}
             </p>
           )}
@@ -141,6 +142,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         {archivo && principal ? (
           <VisorDocumento
             url={archivo.url}
+            urlVisor={urlDeLectura(archivo.url)}
             nombre={principal.nombre || "Documento del expediente"}
             tipo={archivo.tipo}
             bytes={archivo.bytes}

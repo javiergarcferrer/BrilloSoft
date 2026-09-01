@@ -67,7 +67,7 @@ export default function GuiaPage() {
             href="https://www.dgcp.gob.do/servicios/registro-de-proveedores/"
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700"
+            className="rounded-lg bg-brand-500 px-3 py-1.5 font-medium text-white hover:bg-brand-600"
           >
             Inscribirse en el RPE (DGCP) ↗
           </a>
@@ -75,7 +75,7 @@ export default function GuiaPage() {
             href="https://comunidad.comprasdominicana.gob.do/"
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg border border-hairline px-3 py-1.5 font-medium hover:border-emerald-500 hover:text-emerald-700"
+            className="rounded-lg border border-hairline px-3 py-1.5 font-medium hover:border-brand-500 hover:text-brand-600"
           >
             Portal Transaccional ↗
           </a>
@@ -90,7 +90,7 @@ export default function GuiaPage() {
         <h2 className="font-semibold">2 · Conoce las modalidades (y dónde empezar)</h2>
         <dl className="mt-3 space-y-2 text-sm">
           {MODALIDADES.map(([m, d]) => (
-            <div key={m} className="rounded-lg bg-slate-50 px-4 py-2.5">
+            <div key={m} className="rounded-lg bg-canvas px-4 py-2.5">
               <dt className="font-semibold">{m}</dt>
               <dd className="mt-0.5 text-ink-soft">{d}</dd>
             </div>
@@ -127,7 +127,7 @@ export default function GuiaPage() {
         <h2 className="font-semibold">4 · Qué significa cada estado</h2>
         <dl className="mt-3 space-y-2 text-sm">
           {ESTADOS.map(([e, d]) => (
-            <div key={e} className="flex items-start gap-3 rounded-lg bg-slate-50 px-4 py-2.5">
+            <div key={e} className="flex items-start gap-3 rounded-lg bg-canvas px-4 py-2.5">
               <dt className="shrink-0 font-semibold">{e}</dt>
               <dd className="text-ink-soft">{d}</dd>
             </div>
@@ -135,9 +135,9 @@ export default function GuiaPage() {
         </dl>
       </section>
 
-      <section className="rounded-2xl bg-emerald-50 p-6 ring-1 ring-emerald-200">
-        <h2 className="font-semibold text-emerald-900">Consejos que ganan procesos</h2>
-        <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-emerald-900/80">
+      <section className="rounded-2xl bg-brand-50 p-6 ring-1 ring-brand-100">
+        <h2 className="font-semibold text-brand-900">Consejos que ganan procesos</h2>
+        <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-brand-900/80">
           <li>
             Cotiza con datos: revisa los <strong>precios históricos de adjudicación</strong>{" "}
             que mostramos en cada proceso antes de fijar tu precio.
@@ -161,7 +161,7 @@ export default function GuiaPage() {
         </ul>
         <Link
           href="/licitaciones"
-          className="mt-4 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+          className="mt-4 inline-block rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600"
         >
           Buscar oportunidades abiertas →
         </Link>

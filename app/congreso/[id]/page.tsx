@@ -103,14 +103,14 @@ export default async function IniciativaPage({ params }: Props) {
         <section
           className={
             perencion.estado === "en-riesgo"
-              ? "mt-5 rounded-xl border border-amber-600/20 bg-amber-50 px-4 py-3"
+              ? "mt-5 rounded-xl border border-alerta-600/20 bg-alerta-50 px-4 py-3"
               : "mt-5 rounded-xl border border-hairline bg-surface px-4 py-3 shadow-soft"
           }
         >
           <p
             className={
               perencion.estado === "en-riesgo"
-                ? "text-sm font-semibold text-amber-800"
+                ? "text-sm font-semibold text-alerta-700"
                 : "text-sm font-semibold text-ink"
             }
           >
