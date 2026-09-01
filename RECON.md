@@ -619,5 +619,54 @@ título.
 `lib/senado.ts` implementa esta vía con el contrato de las demás capas
 (timeout, un reintento, validación de respuesta, caché con ventanas largas) y
 la vertical Congreso pasa a cubrir **ambas cámaras**. Límites que la UI
-declara: listado = 50 más recientes por colección, búsqueda literal con
-tildes, sin textos de proyectos.
+declara: listado = 50 más recientes por colección y búsqueda literal con
+tildes.
+
+## 13. CUARTA PASADA — la documentación asociada sí está publicada
+
+> **CORRECCIÓN.** §12 concluyó «sin textos de proyectos». Es **falso**: el
+> consultante los publica, solo que fuera de la ficha y detrás de un botón que
+> hace postback. Verificado sobre `IdExpediente=39981` (Proyecto de Ley General
+> de Alianzas Público-Privadas, C2024-2028).
+
+### 13.1 Mecánica
+
+1. La ficha trae un `btnDocumentacion` que hace postback a
+   `documentacionasociada.aspx?CodigoColeccion=<col>&CodigoExpediente=<id>`.
+   Esa URL **responde igual por GET** dentro de la sesión: no hace falta
+   replicar el ViewState.
+2. La tabla `ctl00_tblDocumentos` lista `base de datos / sección / nombre`.
+   Cada fila repite el mismo enlace en sus tres celdas — deduplicar por `item`.
+3. `documentoredirect.aspx?bd=&item=&codigocoleccion=&codigoexpediente=` es un
+   302 hacia `documentoasociado.aspx` con los mismos parámetros: se va directo
+   al destino y se ahorra un salto.
+4. `documentoasociado.aspx` declara la ruta final dos veces —en un comentario
+   `<!-- HOST=… URL_FINAL=… -->` y en el `src` de su iframe— hacia
+   `sil.senadord.gob.do/mlx/docs/…`.
+5. Esa ruta es un `.htm` de **70 bytes** cuyo único contenido es
+   `window.location.href = 'X.pdf'`: el PDF hermano, en el mismo directorio.
+
+### 13.2 Qué se obtiene y qué no
+
+- El PDF se sirve por **nginx sin cookie de sesión** y **sin
+  `X-Frame-Options`** (solo `upgrade-insecure-requests`), así que se puede
+  enlazar y **previsualizar embebido** sin proxy: los bytes le llegan al lector
+  desde el Estado, no desde esta plataforma.
+- Pero son **escaneos**: el expediente de prueba son 29,9 MB, 58 páginas, 114
+  objetos imagen, 57 `DCTDecode`, **cero fuentes** y cero operadores de texto.
+  No hay capa de texto que extraer, así que **no hay sinopsis automática
+  posible** sin OCR. La UI declara el peso y no carga el visor sola.
+- No todos los expedientes tienen documentación (`39980` → 0 filas).
+
+### 13.3 Lo que sí sustituye a la sinopsis
+
+Ningún origen —ni el SIL de Diputados ni el consultante— publica resumen: el
+único texto descriptivo es el **título**, que en la técnica legislativa
+dominicana es autodescriptivo y **cita las normas que la pieza toca**.
+`lib/legislacion.ts` extrae esas citas con su relación (deroga / modifica /
+adiciona…, tomando el verbo *más cercano* hacia atrás, no el primero) y
+`lib/normativa.ts` las resuelve contra la Consultoría Jurídica, cuyo buscador
+acepta `DocumentNumber` como filtro único y responde en ~2 s. Resultado:
+«Deroga la Ley 47-20 — *De Alianzas Público-Privadas*, Gaceta 10972,
+20/02/2020» con enlace a su texto oficial. Eso es lo que responde «¿de qué
+trata?» sin inventar nada.

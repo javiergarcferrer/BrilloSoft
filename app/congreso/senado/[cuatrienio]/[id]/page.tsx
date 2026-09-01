@@ -1,11 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CondicionBadge } from "@/components/iniciativa-card";
-import { cuatrienioPorEtiqueta, getFichaSenado } from "@/lib/senado";
+import {
+  cuatrienioPorEtiqueta,
+  documentoPrincipal,
+  getArchivoSenado,
+  getDocumentosSenado,
+  getFichaSenado,
+} from "@/lib/senado";
 import { formatFecha } from "@/lib/format";
 import { getAgregado, refIniciativa } from "@/lib/democracia";
 import VotoWidget from "@/components/democracia/voto-widget";
-import { IconArrowLeft } from "@/components/icons";
+import Dossier from "@/components/congreso/dossier";
+import VisorDocumento from "@/components/congreso/visor-documento";
+import { IconArrowLeft, IconExternal } from "@/components/icons";
 
 export const revalidate = 3600;
 
@@ -33,7 +41,18 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
   if (!ficha) notFound();
 
   const ref = refIniciativa("senado", ficha.id, ficha.cuatrienio);
-  const agregado = await getAgregado("senado", ref);
+  const [agregado, documentos] = await Promise.all([
+    getAgregado("senado", ref),
+    getDocumentosSenado(ficha.cuatrienio, ficha.id),
+  ]);
+
+  // Solo se resuelve el archivo de la pieza principal: cada resolución son tres
+  // peticiones al consultante y el resto de la documentación queda enlazada
+  // desde el propio origen.
+  const principal = documentoPrincipal(documentos);
+  const archivo = principal
+    ? await getArchivoSenado(ficha.cuatrienio, ficha.id, principal.item, principal.bd)
+    : null;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -87,6 +106,88 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
           )}
         </section>
       )}
+
+      {/*
+        Orden deliberado: primero qué es y qué toca, después el texto oficial y
+        solo entonces el voto. Nadie debería opinar sobre una pieza que la
+        interfaz no le dejó entender.
+      */}
+      <Dossier
+        titulo={ficha.titulo}
+        tituloModificado={ficha.tituloModificado}
+        tipo={ficha.tipo}
+        condicion={
+          ficha.promulgada
+            ? "Promulgada"
+            : ficha.perimida
+              ? "Perimida"
+              : (ficha.estadoActual ?? ficha.condicion)
+        }
+        materia={ficha.materia}
+        proponente={ficha.proponentes[0] ?? ficha.poderOrigen}
+      />
+
+      <section className="mt-5 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+        <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
+          <h2 className="text-sm font-semibold text-ink">El documento</h2>
+          {documentos.length > 1 && (
+            <span className="text-xs tabular-nums text-ink-soft">
+              {documentos.length} piezas
+            </span>
+          )}
+        </div>
+
+        {archivo && principal ? (
+          <VisorDocumento
+            url={archivo.url}
+            nombre={principal.nombre || "Documento del expediente"}
+            tipo={archivo.tipo}
+            bytes={archivo.bytes}
+            origen="el SIL del Senado"
+          />
+        ) : documentos.length > 0 ? (
+          <p className="px-5 py-6 text-sm leading-relaxed text-ink-soft">
+            El expediente tiene {documentos.length}{" "}
+            {documentos.length === 1 ? "documento" : "documentos"}, pero el
+            consultante no entregó el archivo en este momento. Vuelve a
+            intentarlo o ábrelo desde el SIL del Senado.
+          </p>
+        ) : (
+          <p className="px-5 py-6 text-sm leading-relaxed text-ink-soft">
+            El Senado todavía no ha subido el texto de esta pieza. Aparece aquí
+            en cuanto lo publique.
+          </p>
+        )}
+
+        {documentos.length > 1 && (
+          <ul className="divide-y divide-hairline border-t border-hairline">
+            {documentos
+              .filter((d) => d.item !== principal?.item)
+              .map((d) => (
+                <li key={d.item} className="flex items-start gap-3 px-5 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-ink">{d.nombre}</p>
+                    <p className="mt-0.5 text-xs text-ink-soft">{d.seccion}</p>
+                  </div>
+                  {/*
+                    Se resuelve al hacer clic: resolver los ocho documentos de
+                    un expediente veterano al pintar la página serían dos
+                    docenas de peticiones al consultante.
+                  */}
+                  <a
+                    href={`/api/senado/documento?c=${encodeURIComponent(ficha.cuatrienio)}&e=${ficha.id}&item=${d.item}&bd=${d.bd}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+                  >
+                    Abrir
+                    <IconExternal className="h-3.5 w-3.5" />
+                  </a>
+                </li>
+              ))}
+          </ul>
+        )}
+      </section>
 
       {agregado && (
         <div className="mt-5">
@@ -158,8 +259,8 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
           )}
           <div className="border-t border-hairline bg-canvas/50 px-5 py-2.5">
             <p className="text-xs text-ink-soft">
-              El consultante del Senado publica metadatos y trámites, no los
-              textos de los proyectos.{" "}
+              El consultante publica los trámites como prosa fechada; el texto
+              íntegro va aparte, en la documentación del expediente.{" "}
               <Link href="/fuentes" className="text-brand-700 underline">
                 Detalle
               </Link>

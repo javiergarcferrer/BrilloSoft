@@ -16,6 +16,7 @@ import {
 import { formatFecha } from "@/lib/format";
 import { getAgregado, refIniciativa } from "@/lib/democracia";
 import VotoWidget from "@/components/democracia/voto-widget";
+import Dossier from "@/components/congreso/dossier";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
 
 export const revalidate = 300;
@@ -54,6 +55,10 @@ export default async function IniciativaPage({ params }: Props) {
     .map(normalizarDocumento)
     .sort((a, b) => (a.cargado ?? "").localeCompare(b.cargado ?? ""));
   const cadenaTexto = docs.filter((d) => d.etapa.texto);
+  const proponentePrincipal =
+    proponentes.results.find((p) => p.principal)?.nombreCompleto ??
+    proponentes.results[0]?.nombreCompleto ??
+    null;
   const perencion = ini.viva ? evaluarPerencion(ini.legislatura) : null;
 
   const ref = refIniciativa("diputados", ini.id);
@@ -121,6 +126,19 @@ export default async function IniciativaPage({ params }: Props) {
           </p>
         </section>
       )}
+
+      {/*
+        Antes de los metadatos: qué es la pieza, qué norma vigente toca y en qué
+        punto del trámite está. El SIL no publica sinopsis, así que se explica
+        desde el propio enunciado oficial.
+      */}
+      <Dossier
+        titulo={ini.titulo}
+        tipo={ini.tipo}
+        condicion={ini.condicion ?? ini.estado}
+        materia={ini.grupo ?? ini.materia}
+        proponente={proponentePrincipal}
+      />
 
       <section className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card sm:grid-cols-3">
         <Dato etiqueta="Tipo" valor={ini.tipo} />

@@ -507,11 +507,173 @@ async function fichaUpstream(etiqueta: string, id: number): Promise<FichaSenado 
   });
 }
 
+/* -------------------------------------------------------------- documentos */
+
+/**
+ * Documento asociado a un expediente. El consultante los publica en
+ * `documentacionasociada.aspx`; cada uno vive en una base documental distinta
+ * (`bd`) del MasterLex, y el archivo real solo se alcanza tras dos saltos.
+ */
+export interface DocumentoSenado {
+  /** Id del documento dentro de su base (`item`). */
+  item: number;
+  /** Base documental del MasterLex (`bd=28` = Documentos Legislativos). */
+  bd: number;
+  baseDatos: string;
+  seccion: string;
+  nombre: string;
+}
+
+/** Archivo real de un documento, ya resuelto. */
+export interface ArchivoSenado {
+  url: string;
+  /** `application/pdf` casi siempre; el consultante no declara otra cosa. */
+  tipo: string | null;
+  /** Tamaño en bytes según el origen, cuando lo declara. */
+  bytes: number | null;
+}
+
+/**
+ * Lista la documentación asociada a un expediente.
+ *
+ * Cada fila del FileMaster repite el mismo enlace en sus tres celdas (base de
+ * datos, sección y nombre), así que se parsea la fila completa y se deduplica
+ * por `item`.
+ */
+async function documentosUpstream(
+  etiqueta: string,
+  id: number,
+): Promise<DocumentoSenado[]> {
+  const cuatrienio = cuatrienioPorEtiqueta(etiqueta);
+  if (!cuatrienio) return [];
+
+  return conReintento(async () => {
+    const sesion = await abrirSesion(cuatrienio);
+    const html = await senadoGet(
+      sesion,
+      `${BASE}/documentacionasociada.aspx?CodigoColeccion=${cuatrienio.coleccion}` +
+        `&CodigoExpediente=${id}`,
+    );
+    return parsearDocumentos(html);
+  });
+}
+
+const FILA_DOC_RE = /<tr[^>]*>\s*((?:<td[^>]*>[\s\S]*?<\/td>\s*){3})<\/tr>/g;
+
+function parsearDocumentos(html: string): DocumentoSenado[] {
+  const tabla = /<table[^>]*id="ctl00_tblDocumentos"[\s\S]*?<\/table>/.exec(html);
+  if (!tabla) return [];
+
+  const vistos = new Set<number>();
+  const docs: DocumentoSenado[] = [];
+
+  for (const fila of tabla[0].matchAll(FILA_DOC_RE)) {
+    const enlace = /documentoredirect\.aspx\?bd=(\d+)&item=(\d+)/.exec(fila[1]);
+    if (!enlace) continue; // cabecera o fila de relleno
+    const item = Number(enlace[2]);
+    if (!Number.isFinite(item) || vistos.has(item)) continue;
+    vistos.add(item);
+
+    const celdas = [...fila[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) =>
+      limpiar(c[1].replace(/<[^>]+>/g, " ")),
+    );
+    docs.push({
+      item,
+      bd: Number(enlace[1]),
+      baseDatos: celdas[0] ?? "",
+      seccion: celdas[1] ?? "",
+      nombre: celdas[2] || celdas[1] || "Documento",
+    });
+  }
+  return docs;
+}
+
+/**
+ * Resuelve el archivo real de un documento. Son dos saltos porque el visor del
+ * MasterLex interpone una página:
+ *
+ *  1. `documentoasociado.aspx` (dentro de la sesión) declara la ruta final en
+ *     un comentario `URL_FINAL=` y en el `src` de su iframe.
+ *  2. Esa ruta suele ser un `.htm` de 70 bytes cuyo único contenido es un
+ *     `window.location.href = 'X.pdf'` hacia el PDF hermano.
+ *
+ * El PDF resultante sí es público: se sirve por nginx sin cookie de sesión y
+ * sin `X-Frame-Options`, que es lo que permite previsualizarlo.
+ */
+async function archivoUpstream(
+  etiqueta: string,
+  id: number,
+  item: number,
+  bd: number,
+): Promise<ArchivoSenado | null> {
+  const cuatrienio = cuatrienioPorEtiqueta(etiqueta);
+  if (!cuatrienio) return null;
+
+  return conReintento(async () => {
+    const sesion = await abrirSesion(cuatrienio);
+    const visor = await senadoGet(
+      sesion,
+      `${BASE}/documentoasociado.aspx?bd=${bd}&item=${item}` +
+        `&codigocoleccion=${cuatrienio.coleccion}&codigoexpediente=${id}`,
+    );
+
+    const ruta =
+      /URL_FINAL=(\S+?)\s*-->/.exec(visor)?.[1] ??
+      /id="pdfFrame"[^>]*src="([^"]+)"/.exec(visor)?.[1];
+    if (!ruta) throw new Error("el visor no declara la ruta del documento");
+
+    let url = new URL(desentificar(ruta), `${BASE}/`).toString();
+
+    // El `.htm` intermedio: 70 bytes con el salto al PDF hermano.
+    if (/\.html?$/i.test(url)) {
+      const res = await fetch(url, {
+        headers: { "User-Agent": USER_AGENT },
+        cache: "no-store",
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!res.ok) throw new Error(`el salto intermedio respondió ${res.status}`);
+      const salto = /location\.href\s*=\s*['"]([^'"]+)['"]/.exec(await res.text())?.[1];
+      if (salto) url = new URL(salto, url).toString();
+    }
+
+    // Peso y tipo declarados, para no prometer una vista previa ligera cuando
+    // el expediente es un escaneo de decenas de megabytes.
+    let tipo: string | null = null;
+    let bytes: number | null = null;
+    try {
+      const cab = await fetch(url, {
+        method: "HEAD",
+        headers: { "User-Agent": USER_AGENT },
+        cache: "no-store",
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      cab.body?.cancel();
+      if (cab.ok) {
+        tipo = cab.headers.get("content-type");
+        const largo = Number(cab.headers.get("content-length"));
+        bytes = Number.isFinite(largo) && largo > 0 ? largo : null;
+      }
+    } catch {
+      /* sin cabeceras: se muestra el enlace sin declarar peso */
+    }
+
+    return { url, tipo, bytes };
+  });
+}
+
 // Ventanas: el listado vigente se mueve a diario (15 min le sobra); búsquedas
 // y fichas cambian aún menos (1 h). Los fallos lanzan y NO se cachean.
 const listarCached = unstable_cache(listarUpstream, ["senado-lista"], { revalidate: 900 });
 const buscarCached = unstable_cache(buscarUpstream, ["senado-busqueda"], { revalidate: 3600 });
 const fichaCached = unstable_cache(fichaUpstream, ["senado-ficha"], { revalidate: 3600 });
+// La documentación es append-only y el archivo resuelto es inmutable: ventanas
+// largas para que la resolución (3 peticiones) no se repita por visita.
+const documentosCached = unstable_cache(documentosUpstream, ["senado-documentos"], {
+  revalidate: 3600,
+});
+const archivoCached = unstable_cache(archivoUpstream, ["senado-archivo"], {
+  revalidate: 86400,
+});
 
 /** Los 50 expedientes más recientes de una colección, con su censo. */
 export async function listarRecientesSenado(
@@ -561,4 +723,43 @@ export async function getFichaSenado(
 export async function getCensoSenado(): Promise<number | null> {
   const listado = await listarRecientesSenado();
   return listado?.total ?? null;
+}
+
+/** Documentación asociada a un expediente. `[]` si no hay o el origen falla. */
+export async function getDocumentosSenado(
+  etiqueta: string,
+  id: number,
+): Promise<DocumentoSenado[]> {
+  try {
+    return await documentosCached(etiqueta, id);
+  } catch (err) {
+    console.error(`[senado] documentos ${etiqueta}/${id}: ${String(err)}`);
+    return [];
+  }
+}
+
+/** URL pública del archivo de un documento. `null` si no se pudo resolver. */
+export async function getArchivoSenado(
+  etiqueta: string,
+  id: number,
+  item: number,
+  bd: number,
+): Promise<ArchivoSenado | null> {
+  try {
+    return await archivoCached(etiqueta, id, item, bd);
+  } catch (err) {
+    console.error(`[senado] archivo ${etiqueta}/${id}/${item}: ${String(err)}`);
+    return null;
+  }
+}
+
+/**
+ * De todos los documentos, el que contiene el texto de la pieza. El MasterLex
+ * no marca cuál es, pero la sección lo dice («Proyectos de Ley.»); si no,
+ * vale el primero, que es el depósito original.
+ */
+export function documentoPrincipal(docs: DocumentoSenado[]): DocumentoSenado | null {
+  if (docs.length === 0) return null;
+  const texto = docs.find((d) => /proyecto|ley|resoluci/i.test(d.seccion));
+  return texto ?? docs[0];
 }

@@ -121,13 +121,29 @@ documented in `RECON.md` §12:
    no robots.txt.
 
 Source limits the UI must keep declaring: list = 50 most recent per collection
-(no GET pagination), search is a **literal accent-sensitive substring**, and
-fichas carry metadata + dated historial prose but no project texts. Senate
+(no GET pagination) and search is a **literal accent-sensitive substring**.
+Fichas *do* reach the project texts (RECON §13): `documentacionasociada.aspx`
+answers by GET inside the session, and the chain
+`documentoasociado.aspx` → 70-byte `.htm` → sibling PDF resolves to a file
+nginx serves publicly and frameable — so the ficha embeds it. Those PDFs are
+**scans with no text layer**, so no automatic synopsis is possible; say so
+rather than implying the text is searchable. Senate
 routes: `/congreso/senado` (list/search + `?c=` cuatrienio) and
 `/congreso/senado/[cuatrienio]/[id]` (ficha). `parseNumeroSenado` treats
 `01886-2026-SLO-SE` as a citation; identity is `IdExpediente` **per
 collection**. The `TÍTULO MODIFICADO:` marker and PLO/SLO legislatura codes are
 shared with Diputados (plus `SLE` extraordinarias, which have no fixed dates).
+
+### Reading a bill — `lib/legislacion.ts`
+Neither chamber publishes a synopsis, so this module explains instead of
+summarizing, from the official wording only: `referenciasNormativas` pulls the
+norms a title cites with their relation (deroga/modifica/adiciona…, taking the
+**nearest** preceding verb so «deroga la Ley 189-11 y modifica el Decreto 95-12»
+splits correctly), and `queEs`/`queSigue` translate instrument and procedural
+condition into plain es-DO. `resolverNorma` in `lib/normativa.ts` turns each
+citation into the official text at the Consultoría (its search accepts
+`DocumentNumber` as the only filter). Rendered by `components/congreso/dossier.tsx`
+on both chambers' fichas, above the vote widget — understand, read, then vote.
 
 ### Pages — `app/`
 - `/` → panorama (server). `/licitaciones` → `app/buscador.tsx` (client) inside

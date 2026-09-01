@@ -191,7 +191,7 @@ export default async function FuentesPage() {
         </Fuente>
 
         <Fuente
-          nombre="Servidor de documentos del Congreso"
+          nombre="Servidor de documentos de Diputados"
           estado="bloqueada"
           etiqueta="Inalcanzable"
         >
@@ -204,7 +204,9 @@ export default async function FuentesPage() {
             Pero viven en un servidor on-premise en RD que rechaza la conexión en
             el handshake TLS desde fuera del país. Los enlaces “Abrir” de cada
             ficha apuntan al origen real y funcionan desde una red dominicana; la
-            extracción automática de texto sigue bloqueada.
+            extracción automática de texto sigue bloqueada. El Senado sí sirve
+            los suyos por internet abierto, y por eso sus fichas traen el
+            documento incrustado y las de Diputados no.
           </p>
         </Fuente>
 
@@ -218,7 +220,9 @@ export default async function FuentesPage() {
             Senado enlaza («consultante»), con seis colecciones por cuatrienio
             desde 2002. Alimenta el listado, la búsqueda y las fichas del
             Senado: estado procesal, historial de trámites, proponentes,
-            promulgación y el número del expediente gemelo en Diputados.
+            promulgación, el número del expediente gemelo en Diputados y —vía
+            su documentación asociada— el PDF del proyecto tal como se
+            depositó.
           </p>
           <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
             <Metrica
@@ -232,8 +236,9 @@ export default async function FuentesPage() {
             />
           </dl>
           <p className="mt-3 text-xs text-ink-soft">
-            Publica metadatos, no los textos de los proyectos. Su búsqueda es
-            literal y distingue tildes, muestra 50 filas por consulta y cada
+            Los textos que publica son escaneos: PDF de imágenes, sin capa de
+            texto, así que se pueden leer y descargar pero no buscar por
+            palabra. Su búsqueda es literal y distingue tildes, muestra 50 filas por consulta y cada
             colección exige su propia sesión. Se lee con caché larga y volumen
             mínimo: el <code className="rounded bg-canvas px-1 py-0.5 font-mono">robots.txt</code>{" "}
             de la web del Senado sigue vetando rastreadores de IA y limitando el

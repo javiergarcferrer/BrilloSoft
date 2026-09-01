@@ -16,6 +16,8 @@
  *  4. GET/POST de solo lectura; User-Agent identificable; un reintento.
  */
 
+import { unstable_cache } from "next/cache";
+
 const BASE = "https://www.consultoria.gov.do";
 
 const USER_AGENT =
@@ -195,4 +197,87 @@ export async function getResumenNormativa(anio = new Date().getFullYear()): Prom
     totalDecretos: decretos.length,
     totalLeyes: leyes.length,
   };
+}
+
+/* --------------------------------------------------- resolución de una cita */
+
+/** Código de tipo del formulario para el nombre que usa el título de una ley. */
+const CODIGO_POR_TIPO: Record<string, TipoNormativa> = {
+  ley: "1",
+  decreto: "3",
+  reglamento: "4",
+  "resolución": "7",
+  resolucion: "7",
+};
+
+/**
+ * Resuelve una cita normativa (`Ley 47-20`) al documento oficial.
+ *
+ * El buscador acepta `DocumentNumber` como único filtro y responde en ~2 s
+ * —la regla de «siempre filtrar» se cumple con el número—, así que una cita
+ * cuesta una sesión más una consulta. Devuelve `null` si no hay coincidencia
+ * exacta: se prefiere no enlazar antes que enlazar a otra norma.
+ */
+async function normaUpstream(tipo: string, numero: string): Promise<Documento | null> {
+  const codigo = CODIGO_POR_TIPO[tipo.toLowerCase()];
+  if (!codigo) return null;
+
+  const sesion = await abrirSesion();
+  if (!sesion) throw new Error("sin sesión en la Consultoría");
+
+  const cuerpo = new URLSearchParams({
+    __RequestVerificationToken: sesion.token,
+    DocumentTypeCode: codigo,
+    DocumentCategory: "0",
+    DocumentNumber: numero,
+    DocumentTitle: "",
+    GacetaOficial: "",
+    PublicationYearOperator: "",
+    PublicationYear: "",
+    PublicationYearEnd: "",
+    EmisionDateOperator: "",
+    EmisionDate: "",
+    EmisionDateEnd: "",
+    President: "",
+    Consultor: "",
+    Category: "",
+    Institution: "",
+  });
+
+  const res = await fetch(`${BASE}/Consulta/Home/Search?Length=7`, {
+    method: "POST",
+    headers: {
+      "User-Agent": USER_AGENT,
+      Cookie: sesion.cookie,
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: cuerpo.toString(),
+    cache: "no-store",
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`la búsqueda respondió ${res.status}`);
+
+  const normalizado = numero.replace(/\s+/g, "");
+  return (
+    parsearFilas(await res.text()).find((d) => d.numero.replace(/\s+/g, "") === normalizado) ??
+    null
+  );
+}
+
+// Una norma publicada no cambia: ventana larga y un fallo nunca se cachea.
+const normaCached = unstable_cache(normaUpstream, ["normativa-cita"], { revalidate: 86400 });
+
+/** Documento oficial de una cita normativa, o `null` si no se pudo resolver. */
+export async function resolverNorma(
+  tipo: string,
+  numero: string | null,
+): Promise<Documento | null> {
+  if (!numero) return null;
+  try {
+    return await normaCached(tipo, numero);
+  } catch (err) {
+    console.error(`[normativa] cita ${tipo} ${numero}: ${String(err)}`);
+    return null;
+  }
 }
