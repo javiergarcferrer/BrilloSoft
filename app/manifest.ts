@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Gobiername.data — Inteligencia sobre el Estado dominicano",
-    short_name: "Gobiername.data",
+    name: "Socrático.do — Preguntarle al Estado con sus propios datos",
+    short_name: "Socrático.do",
     description:
       "Qué compra, qué legisla y a quién paga el Estado dominicano: compras públicas, Congreso Nacional y nómina estatal, leídos en vivo desde sus fuentes oficiales.",
     lang: "es",

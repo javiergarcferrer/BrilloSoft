@@ -1,8 +1,11 @@
-# Gobiername.data
+# Socrático.do
 
 Plataforma de inteligencia sobre el Estado dominicano: **qué compra, qué legisla
-y a quién paga**. Reúne tres fuentes oficiales en un solo lugar, leídas en vivo
-y cacheadas — sin base de datos intermedia, sin credenciales.
+y a quién paga**. El nombre es el método: preguntarle al Estado con sus propios
+datos, y dejar que las respuestas se lean enteras. Reúne fuentes oficiales en un
+solo lugar, leídas en vivo y cacheadas — sin base de datos intermedia, sin
+credenciales, salvo la vertical de voto ciudadano, que las necesita y las
+declara.
 
 | Dominio | Ruta | Fuente |
 |---|---|---|

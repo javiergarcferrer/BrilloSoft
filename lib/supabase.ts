@@ -20,6 +20,8 @@ export function supabase(): SupabaseClient {
         autoRefreshToken: true,
         // El pool de Auth se comparte con otra app del mismo proyecto:
         // una clave de storage propia evita pisar su sesión en localStorage.
+        // NO renombrar con la marca: cambiarla cierra la sesión de cada
+        // votante ya registrado, que la tiene guardada bajo esta clave.
         storageKey: "gobiername-democracia-auth",
       },
     });

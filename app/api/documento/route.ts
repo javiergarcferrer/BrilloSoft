@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     upstream = await fetch(url, {
       headers: {
         "User-Agent":
-          "GobiernoRD-Inteligencia/1.0 (lectura de documento público; herramienta independiente)",
+          "Socratico-Inteligencia/1.0 (lectura de documento público; herramienta independiente)",
       },
       signal: AbortSignal.timeout(30_000),
       cache: "no-store",

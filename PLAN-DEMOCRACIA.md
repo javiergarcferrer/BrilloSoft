@@ -21,7 +21,7 @@ abajo.
 |---|---|
 | Persistencia | **Supabase**, proyecto existente `Transac` (`amuyclnyjyhigeyhuufs`) |
 | Identidad v1 | **Cédula válida (Luhn) + OTP a email**; un voto por cédula |
-| Ubicación | **Vertical `/democracia`** dentro de Gobiername.data |
+| Ubicación | **Vertical `/democracia`** dentro de Socrático.do |
 
 Esto **rompe deliberadamente** las dos reglas fundacionales de la plataforma
 («sin base de datos, sin variables de entorno»). La excepción queda acotada,

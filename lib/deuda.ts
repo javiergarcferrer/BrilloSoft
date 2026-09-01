@@ -22,7 +22,7 @@ const PAGINA = `${BASE}/inicio/estadisticas`;
 const inflate = promisify(inflateRaw);
 
 const USER_AGENT =
-  "GobiernoRD-Inteligencia/1.0 (monitoreo de deuda pública; herramienta independiente)";
+  "Socratico-Inteligencia/1.0 (monitoreo de deuda pública; herramienta independiente)";
 
 export interface Deuda {
   /** Saldo de la deuda pública total del SPNF, en millones de US$. */

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**Gobiername.data** — a Spanish-language (es-DO) intelligence platform over
+**Socrático.do** — a Spanish-language (es-DO) intelligence platform over
 Dominican state data. It covers three domains, each a thin cached front end over
 a public source:
 

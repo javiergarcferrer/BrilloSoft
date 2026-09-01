@@ -19,7 +19,7 @@
 const BASE = "https://www.diputadosrd.gob.do/sil/api";
 
 const USER_AGENT =
-  "GobiernoRD-Inteligencia/1.0 (monitoreo legislativo; herramienta independiente)";
+  "Socratico-Inteligencia/1.0 (monitoreo legislativo; herramienta independiente)";
 
 /** El origen pagina de 10 en 10 y no acepta otro tamaño. */
 export const SIL_PAGE_SIZE = 10;

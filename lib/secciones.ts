@@ -1,7 +1,7 @@
 /**
  * Arquitectura de información de la plataforma — fuente única de verdad.
  *
- * Gobiername.data cubre tres verticales (licitaciones, congreso, nómina) y un
+ * Socrático.do cubre tres verticales (licitaciones, congreso, nómina) y un
  * panorama transversal. Todo el chrome —nav global, barra de sección, tab bar
  * móvil, agrupación del pie— se deriva de este módulo para que la separación
  * entre verticales sea estructural y no una convención repetida a mano.

@@ -21,7 +21,7 @@ import { unstable_cache } from "next/cache";
 const BASE = "https://www.consultoria.gov.do";
 
 const USER_AGENT =
-  "GobiernoRD-Inteligencia/1.0 (monitoreo normativo; herramienta independiente)";
+  "Socratico-Inteligencia/1.0 (monitoreo normativo; herramienta independiente)";
 
 const TIMEOUT_MS = 30_000;
 

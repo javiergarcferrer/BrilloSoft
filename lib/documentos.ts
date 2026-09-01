@@ -42,7 +42,7 @@ export async function pesoDocumento(
       method: "HEAD",
       headers: {
         "User-Agent":
-          "GobiernoRD-Inteligencia/1.0 (lectura de documento público; herramienta independiente)",
+          "Socratico-Inteligencia/1.0 (lectura de documento público; herramienta independiente)",
       },
       signal: AbortSignal.timeout(15_000),
       next: { revalidate: 86_400 },

@@ -32,7 +32,7 @@ import urllib.request
 
 DIR = os.path.join(os.path.dirname(__file__), "fuentes-nomina")
 OUT = os.path.join(os.path.dirname(__file__), "..", "public", "data", "nomina.json")
-UA = "GobiernoRD-Inteligencia/1.0 (consolidacion de nominas publicas; herramienta independiente)"
+UA = "Socratico-Inteligencia/1.0 (consolidacion de nominas publicas; herramienta independiente)"
 
 MONTHS = {m: i + 1 for i, m in enumerate(
     ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",

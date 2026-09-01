@@ -43,7 +43,7 @@ import {
 const BASE = "https://sil.senadord.gob.do/wfilemaster";
 
 const USER_AGENT =
-  "GobiernoRD-Inteligencia/1.0 (monitoreo legislativo; herramienta independiente)";
+  "Socratico-Inteligencia/1.0 (monitoreo legislativo; herramienta independiente)";
 
 const TIMEOUT_MS = 20_000;
 

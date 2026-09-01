@@ -19,7 +19,7 @@ import urllib.request
 import zipfile
 
 BASE = "https://www.creditopublico.gob.do"
-UA = "GobiernoRD-Inteligencia/1.0 (instantanea de deuda; herramienta independiente)"
+UA = "Socratico-Inteligencia/1.0 (instantanea de deuda; herramienta independiente)"
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
          "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 

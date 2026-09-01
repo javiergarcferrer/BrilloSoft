@@ -24,13 +24,13 @@ const sora = Sora({
 
 export const metadata: Metadata = {
   title: {
-    default: "Gobiername.data — Inteligencia sobre el Estado dominicano",
-    template: "%s · Gobiername.data",
+    default: "Socrático.do — Preguntarle al Estado con sus propios datos",
+    template: "%s · Socrático.do",
   },
   description:
     "Qué compra, qué legisla y a quién paga el Estado dominicano: compras públicas de la DGCP, iniciativas del Congreso Nacional y la nómina pública, leídas en vivo desde sus fuentes oficiales.",
   openGraph: {
-    title: "Gobiername.data",
+    title: "Socrático.do",
     description:
       "Compras públicas, Congreso Nacional y nómina estatal de República Dominicana, en un solo lugar.",
     locale: "es_DO",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Gobiername.data",
+    title: "Socrático.do",
   },
 };
 
@@ -52,7 +52,7 @@ export const viewport: Viewport = {
 
 function BrandMark() {
   return (
-    <svg viewBox="0 0 40 40" className="h-9 w-9" role="img" aria-label="Gobiername.data">
+    <svg viewBox="0 0 40 40" className="h-9 w-9" role="img" aria-label="Socrático.do">
       <defs>
         <linearGradient id="lrd-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
           <stop stopColor="#10b981" />
@@ -92,7 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             >
               <BrandMark />
               <span className="text-[15px] font-semibold tracking-tight max-[380px]:hidden">
-                Gobiername<span className="text-emerald-400">.data</span>
+                Socrático<span className="text-emerald-400">.do</span>
               </span>
             </Link>
 
@@ -119,7 +119,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="shrink-0 lg:w-60">
                 <div className="flex items-center gap-2.5">
                   <BrandMark />
-                  <span className="font-semibold text-ink">Gobiername.data</span>
+                  <span className="font-semibold text-ink">Socrático.do</span>
                 </div>
                 <p className="mt-4 max-w-xs text-xs leading-relaxed">
                   Qué compra, qué legisla y a quién paga el Estado dominicano,

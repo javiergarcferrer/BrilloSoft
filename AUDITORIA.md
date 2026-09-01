@@ -8,7 +8,7 @@ claves, lectura en vivo con caché.
 
 - **Fecha:** 2026-08-31
 - **Método:** peticiones HTTP directas con User-Agent identificable
-  (`GobiernoRD-Inteligencia/1.0`), 2–6 por host, empezando siempre por
+  (`Socratico-Inteligencia/1.0`), 2–6 por host, empezando siempre por
   `robots.txt`. Sin volumen, sin evasión de bloqueos, sin tocar nada con
   autenticación.
 - **Convención:** ✅ = comprobado contra una respuesta real. ⚠️ = parcial o con
