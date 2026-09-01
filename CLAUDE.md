@@ -12,7 +12,12 @@ a public source:
 |---|---|---|---|
 | Compras públicas | `/licitaciones` | DGCP open-data API | `lib/dgcp.ts` |
 | Congreso Nacional | `/congreso` | SIL Diputados + consultante del Senado | `lib/congreso.ts`, `lib/senado.ts` |
-| Nómina estatal | `/nomina` | Static payroll snapshot | `lib/nomina.ts` |
+| Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (token + POST) | `lib/normativa.ts` |
+| Nómina estatal | `/nomina` | Static payroll snapshot (11 institutions) | `lib/nomina.ts`, `lib/nomina-server.ts` |
+| Deuda pública | card on `/` | Crédito Público XLSX (+ committed snapshot) | `lib/deuda.ts` |
+| Democracia | `/democracia` | Supabase, schema `democracia` (the one exception) | `lib/democracia.ts`, `lib/supabase.ts` |
+
+`lib/secciones.ts` is the single source of truth for verticals and navigation.
 
 `/` is the **panorama**: live cross-domain indicators plus the signals that need
 attention now (tenders closing this week, initiatives about to lapse).
@@ -33,6 +38,79 @@ on legislation), which by nature needs persistence and auth. It uses Supabase
 in the app env. See `PLAN-DEMOCRACIA.md`. Do not let this exception leak into
 the stateless surfaces: no other vertical reads or writes the DB.
 
+## Documents that govern a session
+
+Only this file loads automatically. The others below are normative too; the
+table says which one owns what and when a session must open it. The
+`.claude/rules/*.md` files load by themselves when you touch matching paths
+and condense the relevant document; they never replace it.
+
+| Document | Owns | Open it when |
+|---|---|---|
+| `CLAUDE.md` | Architecture, invariants, commands, session protocol | Always (automatic) |
+| `IDENTIDAD.md` | Visual system, voice, cognitive ergonomics. «If the UI contradicts it, the UI is wrong.» | Any change under `app/` or `components/` |
+| `RECON.md` | Congress sources: verified mechanics of the SIL, the Senate consultante, document chains, field quirks, hygiene | Touching `lib/congreso.ts`, `lib/senado.ts`, `lib/legislacion.ts`, the fichas |
+| `AUDITORIA.md` | Every other state source: status ✅/⚠️/❌, access families, architecture rules (§9, §E), integration plan (§D), blocks and their institutional unblock | Adding or changing a source; planning what to build next |
+| `PLAN-DEMOCRACIA.md` | The database exception: schema, RLS, RPCs, security measures, what is out of v1 | Touching `democracia`, `supabase*`, `cedula`, `supabase/migrations` |
+| `README.md` | Public description and feature list | Keep true when routes, features or stack change |
+| `.claude/` | The harness: hooks (gate, guards), rules, skills, agents | Changing how sessions work; never to weaken a check |
+
+## How a session operates
+
+The owner runs this company alone and is not in the loop while you work.
+Sessions must finish work, not hand back questions.
+
+1. **Decide, record, proceed.** Routine judgment calls are yours; write the
+   reasoning in the commit body. Ask only for what is irreversible or costs
+   money: applying migrations to the live Supabase project, changing its Auth
+   settings, adding credentials or dependencies that carry keys, deleting
+   data, institutional requests. For those, prepare everything, list the
+   exact steps, and stop.
+2. **Verify before you claim.** A source "works" only after a real response
+   with the identifiable User-Agent; a change is "done" only after
+   `./.claude/hooks/verificar.sh --completo` prints `RESULT: clean`. Hooks run
+   the fast gate after every TypeScript edit and before the session ends.
+3. **Documentation is memory.** Whatever the next session would have to
+   rediscover goes into the owning document above, in the ✅/⚠️/❌
+   convention, and into `/fuentes` when it concerns a source. Chat is not
+   memory.
+4. **Deliver to `main`.** Every push to `main` deploys to production. Rebase
+   on `origin/main` (other sessions push too), run the gate, push. Never
+   force-push, never another branch, never `--no-verify`. `/entregar` is the
+   checklist; commit messages are Spanish, imperative subject, prose body
+   that explains why.
+5. **Never weaken a check to pass it.** If a hook or the gate is wrong, leave
+   it red and say so with evidence. The legal moves are: use the primitive,
+   add the token, extract the sibling.
+6. **Never evade a block.** WAF, challenge, 403/470, robots, CAPTCHA: the
+   answer is institutional and is written down, not worked around. Never use
+   a leaked credential.
+
+Skills: `/verificar` (the gate), `/entregar` (docs → gate → commit → push),
+`/nueva-fuente` (QRSPI for a state source). Agents: `recon` (field
+reconnaissance with the platform's hygiene), `revisor` (read-only review
+against every rule above).
+
+## Open decisions (owner only — do not re-ask, do not decide)
+
+- **Credentials for BCRD / Superintendencia de Bancos** (AUDITORIA §8.3):
+  would be the first env var on a stateless surface. Until decided, macro
+  comes only from the BCRD CDN files (§A.6) or not at all.
+- **Dedicated Supabase project for /democracia in production**
+  (PLAN-DEMOCRACIA §1): the pilot shares the `Transac` Auth pool.
+- **Supabase Auth panel**: Site URL still `http://localhost:3000`, production
+  domain not in the redirect allowlist, Magic Link template should send
+  `{{ .Token }}`. Registration works without it (link paste path); fixing it
+  is a panel action.
+- **Institutional requests**: ONE whitelist, Cámara de Cuentas and 911 under
+  Ley 200-04, JCE electoral archive, BCRD file index, report of the exposed
+  311 token to OGTIC (AUDITORIA §A.9, §F).
+
+Resolved, so nobody reopens them: XLSX parsing is done without a dependency
+(`lib/deuda.ts` reads the ZIP directly); the Senate is read through its public
+consultante, not its WordPress; PDFs are rasterized with pdf.js legacy on a
+canvas through `/api/documento`.
+
 ## Commands
 
 ```bash
@@ -43,8 +121,10 @@ npm run start    # serve the production build
 npx tsc --noEmit # typecheck only
 ```
 
-There is no test suite and no ESLint config; `next build` is the gate. Deploys to
-Vercel automatically on push to `main` (production: https://brillo-soft.vercel.app).
+There is no test suite and no ESLint config; `next build` is the gate, wrapped
+by `./.claude/hooks/verificar.sh --completo` (typecheck, identity scan,
+statelessness and secret scan, build). Deploys to Vercel automatically on push
+to `main` (production: https://brillo-soft.vercel.app).
 The lockfile pins **Next 15**; build against it (`npm ci`) — Turbopack on 16
 tolerates things webpack on 15 rejects, such as `node:` imports reaching a
 client bundle.
