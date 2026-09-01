@@ -41,11 +41,17 @@ verified mechanics per source live there; this is what every adapter obeys.
 ## Two adapter classes (AUDITORIA.md §D)
 - **Live source, cached by minutes** (`lib/dgcp.ts`, `lib/congreso.ts`):
   fetch `revalidate`, the request path is fast, the page waits for it.
-- **Slow source, cached by day** (`lib/senado.ts`, `lib/normativa.ts`, the
-  planned `lib/fiscal.ts` over SIGEF): `unstable_cache` with a daily window,
-  timeout up to 120 s, queries scoped (by institution, by year), the current
-  month degraded to the last closed one. Latency is part of the contract:
-  design the cache before the feature (§E.4).
+- **Slow source, cached by day** (`lib/senado.ts`, `lib/normativa.ts`):
+  `unstable_cache` with a daily window, timeout up to 120 s, queries scoped (by
+  institution, by year), the current month degraded to the last closed one.
+  Latency is part of the contract: design the cache before the feature (§E.4).
+- **Too slow even for that → snapshot** (`lib/fiscal.ts` over SIGEF): measured
+  at 97 s for a whole institutional section and 20–90 s for a single
+  institution, past any function budget, so it is built by
+  `scripts/build-fiscal.py` and served from `public/data/fiscal.json`. The rule
+  when a source lands here: the UI states the cut date and the snapshot's age,
+  and the cut is the last period with **real** data (SIGEF returns zero-filled
+  rows for the month in progress).
 - Large downloads (RNC padrón, MapaInversiones CSV, 74 payroll CSVs) are
   **build-time snapshots** via `scripts/build-*.py` restricted to what the
   platform shows, never fetched in a request.
