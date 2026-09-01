@@ -13,6 +13,7 @@
 
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { textoAncla, type Ancla } from "@/lib/cifras";
 
 /* -------------------------------------------------------------- superficie */
 
@@ -113,29 +114,44 @@ export function Rotulo({
 
 /**
  * Una cifra del registro: monto, censo, plazo. Siempre en mono y tabular —se
- * copia, se compara y se verifica—, con su etiqueta en sans y, si hace falta,
- * la fuente debajo. Nunca se muestra un número sin decir de qué es.
+ * copia, se compara y se verifica—, con su etiqueta encima y **su ancla
+ * debajo**.
+ *
+ * El ancla no es decoración: un número sin referencia obliga al lector a
+ * inventarse el contexto, y en una plataforma de transparencia el contexto
+ * inventado es el error más caro. `ancla` declara de dónde sale la cifra —
+ * censo, muestra o instantánea— y la línea se compone sola. Cuando no hay
+ * nada honesto que decir, no se escribe nada: mejor un número desnudo que un
+ * contexto fabricado.
+ *
+ * La cifra de una **muestra** nunca puede ser el denominador de un porcentaje.
+ * `comparable()` en `lib/cifras.ts` lo decide; aquí solo se declara.
  */
 export function Cifra({
   etiqueta,
   valor,
   nota,
+  ancla,
   tono = "text-ink",
   className,
 }: {
   etiqueta: ReactNode;
   valor: ReactNode;
   nota?: ReactNode;
+  ancla?: Ancla;
   tono?: string;
   className?: string;
 }) {
+  const contexto = nota ?? textoAncla(ancla);
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <span className="text-xs leading-tight text-ink-soft">{etiqueta}</span>
       <span className={cn("font-mono text-xl font-semibold tabular-nums", tono)}>
         {valor}
       </span>
-      {nota && <span className="text-[11px] leading-snug text-ink-soft">{nota}</span>}
+      {contexto && (
+        <span className="text-[11px] leading-snug text-ink-soft">{contexto}</span>
+      )}
     </div>
   );
 }

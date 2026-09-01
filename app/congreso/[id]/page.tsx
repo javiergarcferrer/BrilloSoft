@@ -13,10 +13,11 @@ import {
   normalizarIniciativa,
   normalizarProponente,
 } from "@/lib/congreso";
-import { formatFecha } from "@/lib/format";
+import { formatFecha, hace } from "@/lib/format";
 import { getAgregado, refIniciativa } from "@/lib/democracia";
 import VotoWidget from "@/components/democracia/voto-widget";
 import Dossier from "@/components/congreso/dossier";
+import Plegable from "@/components/plegable";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
 
 export const revalidate = 300;
@@ -141,42 +142,7 @@ export default async function IniciativaPage({ params }: Props) {
         promulgadaComo={ini.numPromulgacion}
       />
 
-      <section className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg border border-hairline bg-surface p-5  sm:grid-cols-3">
-        <Dato etiqueta="Tipo" valor={ini.tipo} />
-        <Dato etiqueta="Cámara de origen" valor={ini.camaraOrigen} />
-        <Dato etiqueta="Estado" valor={ini.estado} />
-        <Dato etiqueta="Tema" valor={ini.grupo} />
-        <Dato etiqueta="Materia" valor={ini.materia} />
-        <Dato etiqueta="Legislatura" valor={ini.legislatura} mono />
-        <Dato etiqueta="Depositada" valor={formatFecha(ini.fechaDeposito ?? undefined)} />
-        <Dato
-          etiqueta="Último cambio"
-          valor={formatFecha(ini.fechaUltimoCambio ?? undefined)}
-        />
-        <Dato
-          etiqueta="Promulgación"
-          valor={
-            ini.promulgada
-              ? [ini.numPromulgacion, formatFecha(ini.fechaPromulgacion ?? undefined)]
-                  .filter(Boolean)
-                  .join(" · ")
-              : "No promulgada"
-          }
-        />
-      </section>
 
-      {agregado && (
-        <div className="mt-5">
-          <VotoWidget
-            camara="diputados"
-            refIni={ref}
-            numero={ini.numero?.completo ?? null}
-            titulo={ini.titulo}
-            grupo={ini.grupo}
-            inicial={agregado}
-          />
-        </div>
-      )}
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-5">
@@ -251,6 +217,22 @@ export default async function IniciativaPage({ params }: Props) {
             )}
           </Panel>
 
+        </div>
+
+      {agregado && (
+        <div className="mt-5">
+          <VotoWidget
+            camara="diputados"
+            refIni={ref}
+            numero={ini.numero?.completo ?? null}
+            titulo={ini.titulo}
+            grupo={ini.grupo}
+            inicial={agregado}
+          />
+        </div>
+      )}
+
+        <div className="flex flex-col gap-5">
           <Panel titulo="Trámites">
             {historicos.results.length > 0 ? (
               <ol className="px-5 py-4">
@@ -309,6 +291,50 @@ export default async function IniciativaPage({ params }: Props) {
           )}
         </Panel>
       </div>
+
+      {/*
+        La ficha técnica va al final: es el registro literal para verificar,
+        no lo que se lee para entender. Nueve celdas de taxonomía cruda justo
+        antes del botón de votar era el bloque de mayor densidad y menor valor
+        decisorio, colocado en el momento de decidir.
+      */}
+      <Plegable
+        className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface"
+        etiqueta="Ver la ficha técnica"
+        etiquetaCerrar="Ocultar la ficha técnica"
+      >
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-5 sm:grid-cols-3">
+          <Dato etiqueta="Tipo" valor={ini.tipo} />
+          <Dato etiqueta="Cámara de origen" valor={ini.camaraOrigen} />
+          <Dato etiqueta="Estado" valor={ini.estado} />
+          <Dato etiqueta="Tema" valor={ini.grupo} />
+          <Dato etiqueta="Materia" valor={ini.materia} />
+          <Dato etiqueta="Legislatura" valor={ini.legislatura} mono />
+          <Dato
+            etiqueta="Depositada"
+            valor={formatFecha(ini.fechaDeposito ?? undefined)}
+            nota={hace(ini.fechaDeposito)}
+            mono
+          />
+          <Dato
+            etiqueta="Último cambio"
+            valor={formatFecha(ini.fechaUltimoCambio ?? undefined)}
+            nota={hace(ini.fechaUltimoCambio)}
+            mono
+          />
+          <Dato
+            etiqueta="Promulgación"
+            valor={
+              ini.promulgada
+                ? [ini.numPromulgacion, formatFecha(ini.fechaPromulgacion ?? undefined)]
+                    .filter(Boolean)
+                    .join(" · ")
+                : "No promulgada"
+            }
+            mono
+          />
+        </dl>
+      </Plegable>
     </div>
   );
 }
@@ -336,15 +362,18 @@ function Panel({
 function Dato({
   etiqueta,
   valor,
+  nota,
   mono,
 }: {
   etiqueta: string;
   valor: string | null;
+  /** Antigüedad en llano: «hace 4 meses». Una fecha sola obliga a restar. */
+  nota?: string | null;
   mono?: boolean;
 }) {
   return (
     <div>
-      <dt className="text-xs font-medium text-ink-soft">{etiqueta}</dt>
+      <dt className="rotulo text-ink-soft">{etiqueta}</dt>
       <dd
         className={
           mono
@@ -354,6 +383,7 @@ function Dato({
       >
         {valor ?? "—"}
       </dd>
+      {nota && <p className="mt-0.5 text-[11px] text-ink-soft">{nota}</p>}
     </div>
   );
 }

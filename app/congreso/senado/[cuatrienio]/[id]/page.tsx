@@ -8,7 +8,7 @@ import {
   getDocumentosSenado,
   getFichaSenado,
 } from "@/lib/senado";
-import { formatFecha } from "@/lib/format";
+import { formatFecha, hace } from "@/lib/format";
 import { getAgregado, refIniciativa } from "@/lib/democracia";
 import VotoWidget from "@/components/democracia/voto-widget";
 import Dossier from "@/components/congreso/dossier";
@@ -217,6 +217,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         <Dato
           etiqueta="Recibido por el Senado"
           valor={ficha.fechaRecibido ? formatFecha(ficha.fechaRecibido) : null}
+          nota={hace(ficha.fechaRecibido)}
         />
         <Dato
           etiqueta="Despachada"
@@ -350,15 +351,18 @@ function Panel({
 function Dato({
   etiqueta,
   valor,
+  nota,
   mono,
 }: {
   etiqueta: string;
   valor: string | null;
+  /** Antigüedad en llano: «hace 4 meses». Una fecha sola obliga a restar. */
+  nota?: string | null;
   mono?: boolean;
 }) {
   return (
     <div>
-      <dt className="text-xs font-medium text-ink-soft">{etiqueta}</dt>
+      <dt className="rotulo text-ink-soft">{etiqueta}</dt>
       <dd
         className={
           mono
@@ -368,6 +372,7 @@ function Dato({
       >
         {valor ?? "—"}
       </dd>
+      {nota && <p className="mt-0.5 text-[11px] text-ink-soft">{nota}</p>}
     </div>
   );
 }

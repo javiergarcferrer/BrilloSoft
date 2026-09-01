@@ -79,8 +79,13 @@ export default function VotoWidget({
     if (data) setAgg(data as Agregado);
   }
 
+  /** Solo quien tiene sesión y registro puede votar; el resto ni lo intenta. */
+  const puedeVotar = estado === "listo";
+
   async function votar(valor: -1 | 1) {
-    if (enviando) return;
+    // Sin registro no se dispara nada: contar el voto de forma optimista y
+    // luego culpar a la red de un fallo de permisos es mentirle al usuario.
+    if (enviando || !puedeVotar) return;
     setError(null);
     setEnviando(true);
     const previo = miVoto;
@@ -114,7 +119,7 @@ export default function VotoWidget({
     const { data, error: err } = await rpc;
     const ok = !err && (data as { ok?: boolean } | null)?.ok !== false;
     if (!ok) {
-      setError("No se pudo registrar el voto. Intenta de nuevo.");
+      setError("No se pudo registrar el voto. Vuelve a intentarlo en un momento.");
       setMiVoto(previo);
     }
     await refrescarAgregado();
@@ -137,12 +142,19 @@ export default function VotoWidget({
           </p>
         </div>
         <span className="font-mono text-right text-xs tabular-nums text-ink-soft">
-          {total.toLocaleString("es-DO")} {total === 1 ? "voto" : "votos"}
+          {miVoto === null
+            ? `${total.toLocaleString("es-DO")} ${total === 1 ? "persona ya opinó" : "personas ya opinaron"}`
+            : `${total.toLocaleString("es-DO")} ${total === 1 ? "voto" : "votos"}`}
         </span>
       </div>
 
-      {/* barra de apoyo */}
-      {total > 0 && (
+      {/*
+        El agregado solo aparece después de votar. Enseñar «68% a favor» antes
+        de preguntar ancla la respuesta —es el efecto mejor documentado en
+        votación pública—, y esta plataforma dice que la conclusión la saca el
+        lector. El ranking de /democracia sigue siendo el sitio del agregado.
+      */}
+      {total > 0 && miVoto !== null && (
         <div className="mt-4">
           <div className="flex h-2.5 overflow-hidden rounded-full ring-1 ring-inset ring-hairline">
             <div className="bg-brand-500" style={{ width: `${pctFavor}%` }} />
@@ -155,46 +167,61 @@ export default function VotoWidget({
         </div>
       )}
 
+      {/*
+        El motivo antes que el control: si los botones están apagados, el
+        lector tiene que saber por qué **antes** de intentar pulsarlos, no
+        después de un error.
+      */}
+      {(estado === "anon" || estado === "sin-registro") && (
+        <p className="mt-4 rounded-lg border border-hairline bg-canvas px-3.5 py-2.5 text-xs leading-relaxed text-ink-soft">
+          {estado === "anon" ? (
+            <>
+              Para votar hace falta{" "}
+              <Link
+                href="/democracia/registro"
+                className="font-semibold text-brand-700 hover:underline"
+              >
+                registrarse con la cédula
+              </Link>
+              . Tu voto es privado: solo se publican los totales.
+            </>
+          ) : (
+            <>
+              Tu sesión no tiene una cédula registrada.{" "}
+              <Link
+                href="/democracia/registro"
+                className="font-semibold text-brand-700 hover:underline"
+              >
+                Completa tu registro
+              </Link>{" "}
+              para votar.
+            </>
+          )}
+        </p>
+      )}
+
       {/* botones */}
       <div className="mt-4 grid grid-cols-2 gap-3">
         <BotonVoto
           activo={miVoto === 1}
-          disabled={enviando || estado === "cargando"}
+          disabled={enviando || !puedeVotar}
           onClick={() => votar(1)}
           tono="favor"
-          conteo={agg.a_favor}
+          conteo={miVoto === null ? null : agg.a_favor}
         >
           A favor
         </BotonVoto>
         <BotonVoto
           activo={miVoto === -1}
-          disabled={enviando || estado === "cargando"}
+          disabled={enviando || !puedeVotar}
           onClick={() => votar(-1)}
           tono="contra"
-          conteo={agg.en_contra}
+          conteo={miVoto === null ? null : agg.en_contra}
         >
           En contra
         </BotonVoto>
       </div>
 
-      {estado === "anon" && (
-        <p className="mt-3 text-xs leading-relaxed text-ink-soft">
-          Para que tu voto cuente, {" "}
-          <Link href="/democracia/registro" className="font-semibold text-brand-700 hover:underline">
-            regístrate con tu cédula
-          </Link>
-          . Tu voto es privado; solo se publican los totales.
-        </p>
-      )}
-      {estado === "sin-registro" && (
-        <p className="mt-3 text-xs leading-relaxed text-ink-soft">
-          Tu sesión no tiene una cédula registrada.{" "}
-          <Link href="/democracia/registro" className="font-semibold text-brand-700 hover:underline">
-            Completa tu registro
-          </Link>{" "}
-          para votar.
-        </p>
-      )}
       {error && <p className="mt-3 text-xs font-medium text-alerta-700">{error}</p>}
     </section>
   );
@@ -209,7 +236,7 @@ function BotonVoto({
 }: {
   activo: boolean;
   tono: "favor" | "contra";
-  conteo: number;
+  conteo: number | null;
   children: React.ReactNode;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const favor = tono === "favor";
@@ -228,7 +255,11 @@ function BotonVoto({
     >
       <Pulgar arriba={favor} />
       {children}
-      <span className="font-mono tabular-nums opacity-80">{conteo.toLocaleString("es-DO")}</span>
+      {conteo !== null && (
+        <span className="font-mono tabular-nums opacity-80">
+          {conteo.toLocaleString("es-DO")}
+        </span>
+      )}
     </button>
   );
 }
