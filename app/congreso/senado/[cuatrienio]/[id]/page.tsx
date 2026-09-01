@@ -12,7 +12,7 @@ import { formatFecha } from "@/lib/format";
 import { getAgregado, refIniciativa } from "@/lib/democracia";
 import VotoWidget from "@/components/democracia/voto-widget";
 import Dossier from "@/components/congreso/dossier";
-import VisorDocumento from "@/components/congreso/visor-documento";
+import VisorDocumento from "@/components/visor-documento";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
 
 export const revalidate = 3600;
@@ -145,6 +145,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
             tipo={archivo.tipo}
             bytes={archivo.bytes}
             origen="el SIL del Senado"
+            escaneo
           />
         ) : documentos.length > 0 ? (
           <p className="px-5 py-6 text-sm leading-relaxed text-ink-soft">

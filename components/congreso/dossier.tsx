@@ -8,7 +8,7 @@ import {
   referenciasNormativas,
   type ReferenciaNorma,
 } from "@/lib/legislacion";
-import { resolverNorma } from "@/lib/normativa";
+import { RUTA_POR_TIPO, resolverNorma } from "@/lib/normativa";
 import type { Documento as DocumentoNormativo } from "@/lib/normativa";
 import { formatFecha } from "@/lib/format";
 import { desdeMayusculas } from "@/lib/congreso";
@@ -93,17 +93,12 @@ export default async function Dossier({
                 .filter(Boolean)
                 .join(" · ")}
             </p>
-            {ley.url && (
-              <a
-                href={ley.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800"
-              >
-                Leer el texto de la ley
-                <IconExternal className="h-3.5 w-3.5" />
-              </a>
-            )}
+            <Link
+              href={`/normativa/ley/${ley.numero}`}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800"
+            >
+              Leer el texto de la ley →
+            </Link>
           </div>
         )}
 
@@ -170,16 +165,25 @@ export default async function Dossier({
                           {norma.fecha && ` · ${formatFecha(norma.fechaIso ?? undefined)}`}
                           {norma.gaceta && ` · Gaceta ${norma.gaceta}`}
                         </p>
-                        {norma.url && (
-                          <a
-                            href={norma.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        {RUTA_POR_TIPO[ref.tipo] && ref.numero ? (
+                          <Link
+                            href={`/normativa/${RUTA_POR_TIPO[ref.tipo]}/${ref.numero}`}
                             className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
                           >
-                            Texto oficial en la Consultoría Jurídica
-                            <IconExternal className="h-3.5 w-3.5" />
-                          </a>
+                            Leer el texto de esta norma →
+                          </Link>
+                        ) : (
+                          norma.url && (
+                            <a
+                              href={norma.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+                            >
+                              Texto oficial en la Consultoría Jurídica
+                              <IconExternal className="h-3.5 w-3.5" />
+                            </a>
+                          )
                         )}
                       </>
                     ) : (

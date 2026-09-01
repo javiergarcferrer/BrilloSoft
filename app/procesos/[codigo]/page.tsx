@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProceso, normalize, type Documento } from "@/lib/dgcp";
+import { pesoDocumento, urlDeLectura } from "@/lib/documentos";
+import VisorDocumento from "@/components/visor-documento";
 import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
 import { cierreMeta, estadoMeta } from "@/lib/estados";
 import PreciosHistoricos from "./precios";
@@ -65,6 +67,11 @@ export default async function ProcesoPage({
   const abiertoParaOfertar = p.estado_proceso === "Proceso publicado" && dias !== null && dias >= 0;
   const docsClave = documentos.filter(esDocClave);
   const docsOtros = documentos.filter((d) => !esDocClave(d));
+
+  // El pliego manda: es el documento que dice qué se compra y con qué reglas.
+  // Se lee aquí mismo; el resto se abre desde su tarjeta.
+  const pliego = docsClave[0] ?? documentos[0] ?? null;
+  const pesoPliego = pliego ? await pesoDocumento(pliego.url_documento) : null;
   const totalArticulos = articulos.reduce(
     (s, a) => s + (a.precio_total_estimado || 0),
     0
@@ -444,6 +451,19 @@ export default async function ProcesoPage({
           </p>
         ) : (
           <>
+            {pliego && (
+              <div className="mt-3 overflow-hidden rounded-xl border border-emerald-300 bg-emerald-50/40">
+                <VisorDocumento
+                  url={pliego.url_documento}
+                  urlVisor={urlDeLectura(pliego.url_documento)}
+                  nombre={pliego.nombre_documento}
+                  tipo={pesoPliego?.tipo ?? "application/pdf"}
+                  bytes={pesoPliego?.bytes ?? null}
+                  origen="Compras Dominicanas"
+                />
+              </div>
+            )}
+
             {docsClave.length > 0 && (
               <>
                 <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-700">
@@ -503,12 +523,17 @@ function Paso({
 
 function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) {
   return (
-    <li>
+    <li className="relative">
+      {/*
+        El enlace principal lleva a la lectura en el navegador: el origen sirve
+        estos PDF como descarga forzada, y bajar un archivo para saber qué dice
+        no es acceso a la información. El enlace pequeño va al original.
+      */}
       <a
-        href={d.url_documento}
+        href={urlDeLectura(d.url_documento)}
         target="_blank"
         rel="noopener noreferrer"
-        className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 text-sm ${
+        className={`flex items-start gap-3 rounded-lg border py-2.5 pl-3 pr-9 text-sm ${
           clave
             ? "border-emerald-300 bg-emerald-50/50 hover:bg-emerald-50"
             : "border-slate-200 hover:border-emerald-400 hover:bg-emerald-50"
@@ -521,12 +546,22 @@ function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) 
             <IconDoc className="h-4 w-4 text-slate-400" />
           )}
         </span>
-        <span>
+        <span className="min-w-0 flex-1">
           <span className="block font-medium leading-snug">{d.nombre_documento}</span>
           <span className="block text-xs text-slate-500">
             {d.tipo_documento} · {formatFecha(d.fecha_carga_archivo)}
           </span>
         </span>
+      </a>
+      <a
+        href={d.url_documento}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Abrir en Compras Dominicanas"
+        className="absolute right-2 top-2 rounded p-1 text-slate-400 transition-colors hover:bg-white hover:text-emerald-700"
+      >
+        <IconExternal className="h-3.5 w-3.5" />
+        <span className="sr-only">Abrir en el origen</span>
       </a>
     </li>
   );

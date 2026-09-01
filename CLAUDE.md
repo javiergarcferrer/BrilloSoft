@@ -150,6 +150,24 @@ Diputados `Ley núm. 43-26`), so `numeroDeNorma` normalizes before searching.
 Rendered by `components/congreso/dossier.tsx`
 on both chambers' fichas, above the vote widget — understand, read, then vote.
 
+### Reading documents — `lib/documentos.ts` + `components/visor-documento.tsx`
+One principle across every vertical: a page that names a document must let you
+read it. `VisorDocumento` is the shared reader — never autoloads (some
+expedientes are 30 MB scans), declares weight, and its *open* and *download*
+links always point at the origin even when the iframe does not. Three cases the
+sources impose:
+- **Senate SIL** — serves PDFs public, `inline`, no `X-Frame-Options`: embedded
+  straight from the origin, no proxy. They are scans (`escaneo` prop warns that
+  the text is not searchable).
+- **Consultoría** — `inline`, no CSP, and the PDFs are *digital text*: embedded
+  directly, and each norm has its own page at `/normativa/[tipo]/[numero]`
+  (`ley|decreto|reglamento|resolucion`), which the Congress dossier links to.
+- **DGCP (comprasdominicana)** — sends `Content-Disposition: attachment` and a
+  `frame-ancestors` excluding third parties, so the pliego is read through
+  `/api/documento?url=`, which re-serves the same bytes `inline`. That route is
+  **not an open proxy**: only hosts in `ORIGENES_DOCUMENTO`, 25 MB cap, no
+  visitor headers forwarded. Adding a host there is a deliberate decision.
+
 ### Pages — `app/`
 - `/` → panorama (server). `/licitaciones` → `app/buscador.tsx` (client) inside
   `<Suspense>`. Filters live entirely in

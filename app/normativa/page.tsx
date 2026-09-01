@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
+  RUTA_POR_TIPO,
   TIPOS_NORMATIVA,
   buscarNormativa,
   type Documento,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/normativa";
 import { formatFecha } from "@/lib/format";
 import { IconExternal, IconDoc } from "@/components/icons";
+import { desdeMayusculas } from "@/lib/congreso";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = {
@@ -121,8 +123,8 @@ export default async function NormativaPage({
 
       <p className="mt-4 text-xs leading-relaxed text-ink-soft">
         Fuente: Consultoría Jurídica del Poder Ejecutivo. La consulta se acota por
-        año porque el origen no pagina; los enlaces «Abrir» llevan al documento en
-        el sitio oficial.{" "}
+        año porque el origen no pagina. «Leer» abre el texto íntegro dentro de la
+        plataforma, servido desde el sitio oficial.{" "}
         <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
           Estado de las fuentes
         </Link>
@@ -133,6 +135,13 @@ export default async function NormativaPage({
 }
 
 function FilaDoc({ doc }: { doc: Documento }) {
+  // El número normalizado es la identidad de la ficha propia; si el origen lo
+  // escribe de otra forma, la fila se queda con el enlace al documento.
+  const ruta =
+    RUTA_POR_TIPO[doc.tipo] && /^\d{1,4}-\d{2,4}$/.test(doc.numero.trim())
+      ? `/normativa/${RUTA_POR_TIPO[doc.tipo]}/${doc.numero.trim()}`
+      : null;
+
   return (
     <li className="flex items-start gap-3 px-4 py-3.5 sm:px-5">
       <IconDoc className="mt-0.5 h-4 w-4 shrink-0 text-ink-soft" />
@@ -144,18 +153,29 @@ function FilaDoc({ doc }: { doc: Documento }) {
           {doc.fecha && <span className="tabular-nums text-ink-soft">{formatFecha(doc.fechaIso ?? undefined)}</span>}
           {doc.gaceta && <span className="text-ink-soft">Gaceta {doc.gaceta}</span>}
         </div>
-        <p className="mt-1 text-sm leading-snug text-ink">{doc.titulo}</p>
+        <p className="mt-1 text-sm leading-snug text-ink">
+          {desdeMayusculas(doc.titulo)}
+        </p>
       </div>
-      {doc.url && (
-        <a
-          href={doc.url}
-          target="_blank"
-          rel="noopener noreferrer"
+      {ruta ? (
+        <Link
+          href={ruta}
           className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
         >
-          Abrir
-          <IconExternal className="h-3.5 w-3.5" />
-        </a>
+          Leer
+        </Link>
+      ) : (
+        doc.url && (
+          <a
+            href={doc.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+          >
+            Abrir
+            <IconExternal className="h-3.5 w-3.5" />
+          </a>
+        )
       )}
     </li>
   );

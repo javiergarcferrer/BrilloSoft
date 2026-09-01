@@ -210,6 +210,36 @@ const CODIGO_POR_TIPO: Record<string, TipoNormativa> = {
   resolucion: "7",
 };
 
+/** Segmento de URL de cada tipo, para las fichas de norma. */
+export const RUTA_POR_TIPO: Record<string, string> = {
+  Ley: "ley",
+  Decreto: "decreto",
+  Reglamento: "reglamento",
+  "Resolución": "resolucion",
+};
+
+/** ¿Es un tipo con ficha propia? Devuelve su nombre canónico. */
+export function tipoDeRuta(slug: string): string | null {
+  const encontrado = Object.entries(RUTA_POR_TIPO).find(([, r]) => r === slug);
+  return encontrado?.[0] ?? null;
+}
+
+/** Qué es cada instrumento del Ejecutivo, en una frase. */
+export function queEsNorma(tipo: string): string | null {
+  switch (tipo) {
+    case "Ley":
+      return "Una ley de la República: la aprobó el Congreso en sus dos cámaras y la promulgó el Presidente. Obliga a todo el mundo hasta que otra ley la derogue.";
+    case "Decreto":
+      return "Un decreto del Poder Ejecutivo: lo dicta el Presidente por sí solo, sin pasar por el Congreso. No puede contradecir una ley, y otro decreto puede dejarlo sin efecto.";
+    case "Reglamento":
+      return "Un reglamento: desarrolla cómo se aplica una ley en la práctica. Vive subordinado a la ley que reglamenta.";
+    case "Resolución":
+      return "Una resolución: una decisión administrativa de alcance acotado, normalmente de un ministerio u organismo.";
+    default:
+      return null;
+  }
+}
+
 /**
  * Resuelve una cita normativa (`Ley 47-20`) al documento oficial.
  *

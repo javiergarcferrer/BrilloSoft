@@ -4,13 +4,22 @@ import { useState } from "react";
 import { IconDoc, IconDownload, IconExternal } from "@/components/icons";
 
 interface Props {
-  /** URL pública del archivo en el origen oficial. */
+  /** URL pública del archivo en el origen oficial: enlaces y descarga. */
   url: string;
+  /**
+   * URL que alimenta el visor, si el origen no deja incrustar la suya. Algunos
+   * orígenes sirven el PDF con `Content-Disposition: attachment` o un
+   * `frame-ancestors` que excluye a terceros: ahí se lee a través de una ruta
+   * propia. Los enlaces siguen apuntando al origen.
+   */
+  urlVisor?: string;
   nombre: string;
   tipo: string | null;
   bytes: number | null;
   /** Origen que lo publica, para dejarlo dicho junto al visor. */
   origen: string;
+  /** El origen publica imágenes sin capa de texto: se advierte antes de abrir. */
+  escaneo?: boolean;
 }
 
 function pesoLegible(bytes: number | null): string | null {
@@ -21,15 +30,28 @@ function pesoLegible(bytes: number | null): string | null {
 }
 
 /**
- * Vista previa del documento oficial.
+ * Vista previa de un documento oficial. Se usa igual en toda la plataforma:
+ * expedientes del Congreso, pliegos de la DGCP y normativa del Ejecutivo.
  *
- * No se carga sola: estos expedientes son escaneos que pasan de 20 MB y
- * abrirlos por defecto castigaría cualquier conexión móvil. Se declara el peso
- * y el visor aparece bajo demanda, embebido desde el propio origen (que sirve
- * el archivo sin `X-Frame-Options`) para que nadie tenga que confiar en una
- * copia nuestra: los bytes vienen del Estado.
+ * Dos reglas fijas:
+ *
+ *  1. **No se carga sola.** Hay expedientes que son escaneos de decenas de
+ *     megabytes; abrirlos por defecto castigaría cualquier conexión móvil. Se
+ *     declara el peso y el visor aparece bajo demanda.
+ *  2. **Los enlaces apuntan al origen.** Aunque el visor tenga que pasar por
+ *     una ruta propia —porque el origen prohíbe incrustar o fuerza la
+ *     descarga—, «abrir» y «descargar» llevan al archivo del Estado: nadie
+ *     tiene que confiar en una copia nuestra.
  */
-export default function VisorDocumento({ url, nombre, tipo, bytes, origen }: Props) {
+export default function VisorDocumento({
+  url,
+  urlVisor,
+  nombre,
+  tipo,
+  bytes,
+  origen,
+  escaneo,
+}: Props) {
   const [abierto, setAbierto] = useState(false);
   const peso = pesoLegible(bytes);
   const esPdf = (tipo ?? "").includes("pdf") || /\.pdf$/i.test(url);
@@ -82,12 +104,13 @@ export default function VisorDocumento({ url, nombre, tipo, bytes, origen }: Pro
         <div className="border-t border-hairline">
           {peso && (
             <p className="bg-canvas/60 px-5 py-2 text-[11px] text-ink-soft">
-              Cargando {peso} desde {origen}. Es un escaneo: el texto no se puede
-              buscar ni copiar, porque así lo publica el Estado.
+              {`Cargando ${peso} desde ${origen}.`}
+              {escaneo &&
+                " Es un escaneo: el texto no se puede buscar ni copiar, porque así lo publica el Estado."}
             </p>
           )}
           <iframe
-            src={url}
+            src={urlVisor ?? url}
             title={`Documento: ${nombre}`}
             className="h-[70vh] w-full border-0 bg-canvas"
           />

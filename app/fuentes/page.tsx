@@ -52,6 +52,14 @@ export default async function FuentesPage() {
             Públicas. Alimenta el buscador de licitaciones, los precios históricos
             de adjudicación y el panel de mercado.
           </p>
+          <p className="mt-2">
+            Los pliegos y actas de cada proceso son públicos, pero
+            comprasdominicana los manda como descarga forzada y prohíbe
+            incrustarlos: bajar un archivo para saber qué dice no es acceso a la
+            información, así que la plataforma los vuelve a servir para lectura
+            —los mismos bytes, sin editar— y los enlaces de abrir y descargar
+            siguen apuntando al original.
+          </p>
           <p className="mt-2 text-xs text-ink-soft">
             Las búsquedas por texto escanean hasta 6 páginas de 1000 registros
             dentro del rango de fechas; cuando el barrido no cubre todo, la
@@ -143,6 +151,12 @@ export default async function FuentesPage() {
               normativa
             </Link>
             , donde se ve el conteo en vivo por año.
+          </p>
+          <p className="mt-2">
+            Sus PDF sí traen capa de texto —no son escaneos— y el origen los
+            sirve incrustables, así que cada norma se lee entera dentro de la
+            plataforma, con el buscador del propio visor. Es también la vía al
+            articulado de las piezas del Congreso ya promulgadas.
           </p>
           <p className="mt-3 text-xs text-ink-soft">
             Toda la lectura es GET/POST de consulta y se acota por año: el origen
