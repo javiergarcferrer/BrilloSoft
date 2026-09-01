@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { CondicionBadge } from "@/components/iniciativa-card";
 import { cuatrienioPorEtiqueta, getFichaSenado } from "@/lib/senado";
 import { formatFecha } from "@/lib/format";
+import { getAgregado, refIniciativa } from "@/lib/democracia";
+import VotoWidget from "@/components/democracia/voto-widget";
 import { IconArrowLeft } from "@/components/icons";
 
 export const revalidate = 3600;
@@ -29,6 +31,9 @@ export async function generateMetadata({ params }: Props) {
 export default async function ExpedienteSenadoPage({ params }: Props) {
   const ficha = await cargarFicha(params);
   if (!ficha) notFound();
+
+  const ref = refIniciativa("senado", ficha.id, ficha.cuatrienio);
+  const agregado = await getAgregado("senado", ref);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -81,6 +86,19 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
             </p>
           )}
         </section>
+      )}
+
+      {agregado && (
+        <div className="mt-5">
+          <VotoWidget
+            camara="senado"
+            refIni={ref}
+            numero={ficha.numero?.completo ?? null}
+            titulo={ficha.titulo}
+            grupo={ficha.materia}
+            inicial={agregado}
+          />
+        </div>
       )}
 
       <section className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card sm:grid-cols-3">

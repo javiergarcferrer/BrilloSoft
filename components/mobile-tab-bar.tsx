@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SECCIONES, seccionDe } from "@/lib/secciones";
-import { IconChartBar, IconCoins, IconLayers, IconSparkles } from "./icons";
+import { IconChartBar, IconCheck, IconCoins, IconLayers, IconSparkles } from "./icons";
 import { cn } from "@/lib/cn";
 import type { SeccionId } from "@/lib/secciones";
 
@@ -19,6 +19,7 @@ const ICONOS: Record<SeccionId, (p: { className?: string }) => React.ReactElemen
   licitaciones: IconCoins,
   congreso: IconLayers,
   nomina: IconChartBar,
+  democracia: IconCheck,
 };
 
 export default function MobileTabBar() {
@@ -50,7 +51,7 @@ export default function MobileTabBar() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Navegación principal"
     >
-      <div className="mx-auto grid max-w-md grid-cols-4">
+      <div className="mx-auto grid max-w-md grid-cols-5">
         {tabs.map(({ href, label, Icon, activa, barra, texto }) => (
           <Link
             key={href}

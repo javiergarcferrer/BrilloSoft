@@ -17,7 +17,7 @@
  * Las clases de Tailwind viven aquí como literales para que el escáner las vea.
  */
 
-export type SeccionId = "licitaciones" | "congreso" | "nomina";
+export type SeccionId = "licitaciones" | "congreso" | "nomina" | "democracia";
 
 export interface VistaSeccion {
   href: string;
@@ -115,6 +115,24 @@ export const SECCIONES: Seccion[] = [
       barra: "bg-sky-500",
       punto: "bg-sky-500",
       chip: "bg-sky-50 text-sky-700",
+    },
+  },
+  {
+    id: "democracia",
+    nombre: "Democracia",
+    href: "/democracia",
+    descriptor: "Voto ciudadano · piloto",
+    rutas: ["/democracia"],
+    vistas: [
+      { href: "/democracia", label: "Consenso", exact: true },
+      { href: "/democracia/seguridad", label: "Seguridad" },
+    ],
+    conBuscadorGlobal: false,
+    hue: {
+      activo: "text-amber-700",
+      barra: "bg-amber-500",
+      punto: "bg-amber-500",
+      chip: "bg-amber-50 text-amber-700",
     },
   },
 ];

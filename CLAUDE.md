@@ -19,9 +19,19 @@ attention now (tenders closing this week, initiatives about to lapse).
 `/fuentes` declares what feeds the platform, what is blocked and with which
 coverage limits — keep it truthful when sources change.
 
-**There is no database and no environment variables** — all data is fetched live
-and cached via Next's fetch `revalidate`. Never introduce a DB, API keys, or
-secrets.
+**The intelligence platform has no database and no environment variables** —
+all data is fetched live and cached via Next's fetch `revalidate`. Never
+introduce a DB, API keys, or secrets **into the read-only intelligence
+surfaces** (licitaciones, congreso, nómina, the panorama, /fuentes, and the
+audit-driven additions like deuda and normativa). Those stay stateless.
+
+**The one documented exception is the `/democracia` vertical** (citizen voting
+on legislation), which by nature needs persistence and auth. It uses Supabase
+(project `Transac`) confined to a `democracia` schema, and the app carries only
+**publishable** keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
+— the sensitive material (the cédula-hash pepper) lives inside Postgres, never
+in the app env. See `PLAN-DEMOCRACIA.md`. Do not let this exception leak into
+the stateless surfaces: no other vertical reads or writes the DB.
 
 ## Commands
 

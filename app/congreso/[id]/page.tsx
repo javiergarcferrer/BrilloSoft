@@ -14,6 +14,8 @@ import {
   normalizarProponente,
 } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
+import { getAgregado, refIniciativa } from "@/lib/democracia";
+import VotoWidget from "@/components/democracia/voto-widget";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
 
 export const revalidate = 300;
@@ -53,6 +55,9 @@ export default async function IniciativaPage({ params }: Props) {
     .sort((a, b) => (a.cargado ?? "").localeCompare(b.cargado ?? ""));
   const cadenaTexto = docs.filter((d) => d.etapa.texto);
   const perencion = ini.viva ? evaluarPerencion(ini.legislatura) : null;
+
+  const ref = refIniciativa("diputados", ini.id);
+  const agregado = await getAgregado("diputados", ref);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -140,6 +145,19 @@ export default async function IniciativaPage({ params }: Props) {
           }
         />
       </section>
+
+      {agregado && (
+        <div className="mt-5">
+          <VotoWidget
+            camara="diputados"
+            refIni={ref}
+            numero={ini.numero?.completo ?? null}
+            titulo={ini.titulo}
+            grupo={ini.grupo}
+            inicial={agregado}
+          />
+        </div>
+      )}
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-5">
