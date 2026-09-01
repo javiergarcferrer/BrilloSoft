@@ -17,7 +17,7 @@
  * Las clases de Tailwind viven aquí como literales para que el escáner las vea.
  */
 
-export type SeccionId = "licitaciones" | "congreso" | "nomina" | "democracia";
+export type SeccionId = "licitaciones" | "congreso" | "normativa" | "nomina" | "democracia";
 
 export interface VistaSeccion {
   href: string;
@@ -100,6 +100,21 @@ export const SECCIONES: Seccion[] = [
       barra: "bg-violet-500",
       punto: "bg-violet-500",
       chip: "bg-violet-50 text-violet-700",
+    },
+  },
+  {
+    id: "normativa",
+    nombre: "Normativa",
+    href: "/normativa",
+    descriptor: "Decretos y leyes · Poder Ejecutivo",
+    rutas: ["/normativa"],
+    vistas: [{ href: "/normativa", label: "Decretos y leyes" }],
+    conBuscadorGlobal: false,
+    hue: {
+      activo: "text-indigo-700",
+      barra: "bg-indigo-500",
+      punto: "bg-indigo-500",
+      chip: "bg-indigo-50 text-indigo-700",
     },
   },
   {

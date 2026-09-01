@@ -85,9 +85,10 @@ export default async function Panorama() {
             Qué compra, qué legisla y a quién paga el Estado
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
-            Tres fuentes oficiales, leídas en vivo y puestas en un mismo lugar:
-            compras públicas de la DGCP, iniciativas del Congreso Nacional y la
-            nómina pública. Sin intermediarios y sin copiar los datos a ningún lado.
+            Fuentes oficiales leídas en vivo y puestas en un mismo lugar: compras
+            públicas, Congreso Nacional, normativa del Ejecutivo, nómina estatal y
+            deuda pública. Sin intermediarios y sin copiar los datos a ningún lado
+            — y con un piloto de voto ciudadano sobre lo que se legisla.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2.5">

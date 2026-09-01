@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SECCIONES, seccionDe } from "@/lib/secciones";
-import { IconChartBar, IconCheck, IconCoins, IconLayers, IconSparkles } from "./icons";
+import { IconChartBar, IconCheck, IconCoins, IconDoc, IconLayers, IconSparkles } from "./icons";
 import { cn } from "@/lib/cn";
 import type { SeccionId } from "@/lib/secciones";
 
@@ -18,6 +18,7 @@ import type { SeccionId } from "@/lib/secciones";
 const ICONOS: Record<SeccionId, (p: { className?: string }) => React.ReactElement> = {
   licitaciones: IconCoins,
   congreso: IconLayers,
+  normativa: IconDoc,
   nomina: IconChartBar,
   democracia: IconCheck,
 };
@@ -51,14 +52,16 @@ export default function MobileTabBar() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Navegación principal"
     >
-      <div className="mx-auto grid max-w-md grid-cols-5">
+      {/* Con seis destinos ya no caben fijos: fila deslizable con anchos
+          mínimos, sin barra de scroll visible. */}
+      <div className="flex justify-start overflow-x-auto [scrollbar-width:none] sm:justify-center [&::-webkit-scrollbar]:hidden">
         {tabs.map(({ href, label, Icon, activa, barra, texto }) => (
           <Link
             key={href}
             href={href}
             aria-current={activa ? "page" : undefined}
             className={cn(
-              "group relative flex flex-col items-center gap-1 px-1 pb-1.5 pt-2 text-[11px] font-medium transition-colors active:scale-95",
+              "group relative flex min-w-[4.5rem] flex-1 flex-col items-center gap-1 px-1 pb-1.5 pt-2 text-[11px] font-medium transition-colors active:scale-95",
               activa ? texto : "text-ink-soft",
             )}
           >

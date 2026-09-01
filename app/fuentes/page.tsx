@@ -130,6 +130,28 @@ export default async function FuentesPage() {
         </Fuente>
 
         <Fuente
+          nombre="Consultoría Jurídica — normativa del Ejecutivo"
+          estado="activa"
+          etiqueta="Conectada"
+        >
+          <p>
+            Consulta pública de la Consultoría Jurídica del Poder Ejecutivo:
+            leyes, decretos, reglamentos, resoluciones y Gaceta Oficial (desde
+            1926). No hay API — es una app con token antiforgery, de la misma
+            familia que el consultante del Senado. Alimenta la vertical de{" "}
+            <Link href="/normativa" className="font-medium text-brand-700 hover:underline">
+              normativa
+            </Link>
+            , donde se ve el conteo en vivo por año.
+          </p>
+          <p className="mt-3 text-xs text-ink-soft">
+            Toda la lectura es GET/POST de consulta y se acota por año: el origen
+            no pagina y cuelga si se le pide todo el histórico de una vez. Los
+            operadores de fecha son numéricos, no el signo igual.
+          </p>
+        </Fuente>
+
+        <Fuente
           nombre="Crédito Público — deuda del SPNF"
           estado={deuda !== null ? "activa" : "caida"}
           etiqueta={deuda !== null ? "Conectada" : "Sin respuesta"}
