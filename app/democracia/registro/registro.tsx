@@ -67,17 +67,48 @@ export default function Registro() {
     setPaso("codigo");
   }
 
+  /**
+   * El correo puede traer dos cosas y las dos sirven.
+   *
+   * Supabase decide qué manda según su plantilla: si lleva `{{ .Token }}`
+   * envía seis dígitos; si lleva `{{ .ConfirmationURL }}`, un enlace. Pero ese
+   * enlace **contiene el mismo token** en su parámetro `token`, así que pegarlo
+   * verifica igual de bien que teclear el código —y sin depender de que la
+   * redirección del enlace esté permitida, que es un ajuste aparte del
+   * proyecto—. Aquí se acepta cualquiera de las dos formas.
+   */
+  function leerEntrada(bruto: string): { token: string } | { hash: string } | null {
+    const limpio = bruto.trim();
+    const digitos = limpio.replace(/\D/g, "");
+    if (/^\d{6}$/.test(limpio) || (digitos.length === 6 && !/[a-z]/i.test(limpio))) {
+      return { token: digitos };
+    }
+    // Un enlace de verificación: el token viaja como `token` o `token_hash`.
+    const m = /[?&](?:token_hash|token)=([^&\s]+)/.exec(limpio);
+    if (m) return { hash: decodeURIComponent(m[1]) };
+    return null;
+  }
+
   async function verificar(e: React.FormEvent) {
     e.preventDefault();
-    const token = codigo.replace(/\D/g, "");
-    if (token.length < 6) return;
+    const entrada = leerEntrada(codigo);
+    if (!entrada) return;
     setError(null);
     setCargando(true);
 
-    const { error: errOtp } = await supabase().auth.verifyOtp({ email, token, type: "email" });
+    const errOtp =
+      "token" in entrada
+        ? (await supabase().auth.verifyOtp({ email, token: entrada.token, type: "email" })).error
+        : ((await supabase().auth.verifyOtp({ token_hash: entrada.hash, type: "email" })).error &&
+           (await supabase().auth.verifyOtp({ token_hash: entrada.hash, type: "magiclink" })).error);
+
     if (errOtp) {
       setCargando(false);
-      setError("Código inválido o vencido. Revisa tu correo.");
+      setError(
+        "token" in entrada
+          ? "Código inválido o vencido. Pide uno nuevo."
+          : "Ese enlace ya se usó o venció. Pide un correo nuevo.",
+      );
       return;
     }
 
@@ -238,23 +269,38 @@ export default function Registro() {
 
       {(paso === "codigo" || paso === "registrando") && (
         <form onSubmit={verificar} className="space-y-4 rounded-lg border border-hairline bg-surface p-5 ">
-          <p className="text-sm text-ink-soft">
-            Escribe el código de 6 dígitos que enviamos a{" "}
-            <span className="font-medium text-ink">{email}</span>. Si el correo
-            trae un enlace en vez del código, púlsalo: vuelves aquí verificado.
+          <p className="text-sm leading-relaxed text-ink-soft">
+            Revisa el correo que enviamos a{" "}
+            <span className="font-medium text-ink">{email}</span>.
           </p>
-          <input
-            inputMode="numeric"
+          <ul className="space-y-1.5 text-xs leading-relaxed text-ink-soft">
+            <li className="flex gap-2">
+              <span aria-hidden className="mt-[0.45em] h-1 w-1 shrink-0 rounded-full bg-sello-600" />
+              <span>
+                Si trae un <strong className="font-medium text-ink">código de 6 dígitos</strong>,
+                escríbelo aquí.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden className="mt-[0.45em] h-1 w-1 shrink-0 rounded-full bg-sello-600" />
+              <span>
+                Si trae un <strong className="font-medium text-ink">enlace</strong>, mantén
+                pulsado, copia la dirección y pégala aquí. Sirve igual.
+              </span>
+            </li>
+          </ul>
+          <textarea
+            rows={codigo.length > 40 ? 3 : 1}
             value={codigo}
-            onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="000000"
+            onChange={(e) => setCodigo(e.target.value)}
+            placeholder="000000 — o pega aquí el enlace del correo"
             autoComplete="one-time-code"
-            className="h-14 w-full rounded-lg border border-hairline bg-canvas text-center font-mono text-2xl tracking-[0.4em] tabular-nums text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+            className="w-full resize-none rounded-lg border border-hairline bg-canvas px-3 py-3 font-mono text-sm tabular-nums text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
           />
           {error && <p className="text-xs font-medium text-alerta-700">{error}</p>}
           <button
             type="submit"
-            disabled={codigo.length < 6 || paso === "registrando"}
+            disabled={!leerEntrada(codigo) || paso === "registrando"}
             className="h-11 w-full rounded-lg bg-brand-600 text-sm font-semibold text-white transition-colors hover:bg-brand-600 active:scale-95 disabled:opacity-50"
           >
             {paso === "registrando" ? "Registrando…" : "Verificar y registrar"}
