@@ -115,8 +115,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <footer className="mt-10 border-t border-hairline bg-surface">
           <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-ink-soft">
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="lg:col-span-2">
+            <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
+              <div className="shrink-0 lg:w-60">
                 <div className="flex items-center gap-2.5">
                   <BrandMark />
                   <span className="font-semibold text-ink">Gobiername.data</span>
@@ -128,32 +128,103 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </p>
               </div>
 
-              {SECCIONES.map((seccion) => (
-                <nav key={seccion.id} aria-label={seccion.nombre}>
-                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink">
-                    <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${seccion.hue.punto}`} />
-                    {seccion.nombre}
-                  </p>
-                  <ul className="mt-3 space-y-1.5">
-                    {seccion.vistas.map((vista) => (
-                      <li key={vista.href}>
-                        <Link href={vista.href} className="hover:text-brand-700">
-                          {vista.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </nav>
-              ))}
+              <div className="grid flex-1 grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
+                {SECCIONES.map((seccion) => (
+                  <nav key={seccion.id} aria-label={seccion.nombre}>
+                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink">
+                      <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${seccion.hue.punto}`} />
+                      {seccion.nombre}
+                    </p>
+                    <ul className="mt-3 space-y-1.5">
+                      {seccion.vistas.map((vista) => (
+                        <li key={vista.href}>
+                          <Link href={vista.href} className="hover:text-brand-700">
+                            {vista.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+                ))}
+              </div>
             </div>
 
-            <div className="mt-8 flex flex-col gap-2 border-t border-hairline pt-5 text-xs sm:flex-row sm:items-center sm:justify-between">
+            {/*
+              Banda de seguridad y cumplimiento: los estándares a la vista en
+              toda la plataforma, con el marco normativo dominicano nombrado.
+              La credibilidad institucional se declara página por página.
+            */}
+            <div className="mt-10 rounded-2xl border border-hairline bg-canvas/60 p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 text-brand-700"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z" />
+                    <path d="M9.5 12l1.8 1.8 3.4-3.6" />
+                  </svg>
+                  Seguridad y cumplimiento
+                </h2>
+                <Link
+                  href="/seguridad"
+                  className="text-xs font-medium text-brand-700 hover:underline"
+                >
+                  Postura completa →
+                </Link>
+              </div>
+
+              <div className="mt-4 grid gap-x-8 gap-y-4 text-xs leading-relaxed sm:grid-cols-3">
+                <div>
+                  <p className="font-mono text-[11px] font-semibold text-brand-700">
+                    Ley 172-13
+                  </p>
+                  <p className="mt-1 font-semibold text-ink">Protección de datos personales</p>
+                  <p className="mt-0.5">
+                    Las superficies de inteligencia no guardan datos personales.
+                    En Democracia, la cédula se cifra con una clave que no sale
+                    de la base y el voto es privado a nivel de base de datos.
+                  </p>
+                </div>
+                <div>
+                  <p className="font-mono text-[11px] font-semibold text-brand-700">
+                    Ley 200-04
+                  </p>
+                  <p className="mt-1 font-semibold text-ink">Acceso a la información pública</p>
+                  <p className="mt-0.5">
+                    Fuentes oficiales leídas con agente identificable,
+                    respetando robots.txt y sin evadir bloqueos. Lo que una
+                    fuente niega, se declara.
+                  </p>
+                </div>
+                <div>
+                  <p className="font-mono text-[11px] font-semibold text-brand-700">
+                    NORTIC · OGTIC
+                  </p>
+                  <p className="mt-1 font-semibold text-ink">Estándares web del Estado</p>
+                  <p className="mt-0.5">
+                    HTTPS de extremo a extremo, minimización de datos, código y
+                    migraciones auditables en el repositorio.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2 border-t border-hairline pt-5 text-xs sm:flex-row sm:items-center sm:justify-between">
               <p>
-                Fuentes: DGCP, los SIL de la Cámara de Diputados y del Senado, y
-                la nómina pública de empleados fijos.
+                Fuentes: DGCP, los SIL de ambas cámaras del Congreso, la
+                Consultoría Jurídica del Poder Ejecutivo, Crédito Público y las
+                nóminas de transparencia institucional.
               </p>
-              <nav className="flex gap-x-4">
+              <nav className="flex shrink-0 gap-x-4">
                 <Link href="/" className="hover:text-brand-700">Panorama</Link>
+                <Link href="/seguridad" className="hover:text-brand-700">Seguridad</Link>
                 <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
                   Estado de las fuentes
                 </Link>
