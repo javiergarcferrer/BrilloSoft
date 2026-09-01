@@ -142,7 +142,12 @@ norms a title cites with their relation (deroga/modifica/adiciona…, taking the
 splits correctly), and `queEs`/`queSigue` translate instrument and procedural
 condition into plain es-DO. `resolverNorma` in `lib/normativa.ts` turns each
 citation into the official text at the Consultoría (its search accepts
-`DocumentNumber` as the only filter). Rendered by `components/congreso/dossier.tsx`
+`DocumentNumber` as the only filter). When a piece was
+enacted, the dossier resolves its own promulgation number and links the law's
+text — the only route to articulado on Diputados fichas, whose document server
+is unreachable. Each chamber writes that number differently (Senate `136-15`,
+Diputados `Ley núm. 43-26`), so `numeroDeNorma` normalizes before searching.
+Rendered by `components/congreso/dossier.tsx`
 on both chambers' fichas, above the vote widget — understand, read, then vote.
 
 ### Pages — `app/`

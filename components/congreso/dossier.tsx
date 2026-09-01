@@ -2,6 +2,7 @@ import Link from "next/link";
 import { IconExternal, IconLayers } from "@/components/icons";
 import {
   ETIQUETA_RELACION,
+  numeroDeNorma,
   queEs,
   queSigue,
   referenciasNormativas,
@@ -21,6 +22,8 @@ interface Props {
   condicion: string | null;
   materia?: string | null;
   proponente?: string | null;
+  /** Número con que se promulgó («136-15»), si completó el trámite. */
+  promulgadaComo?: string | null;
 }
 
 /** Cuántas citas se resuelven contra la Consultoría por ficha. */
@@ -47,6 +50,7 @@ export default async function Dossier({
   condicion,
   materia,
   proponente,
+  promulgadaComo,
 }: Props) {
   const refs = referenciasNormativas([titulo, tituloModificado].filter(Boolean).join(". "));
   const citas: CitaResuelta[] = await Promise.all(
@@ -57,9 +61,16 @@ export default async function Dossier({
   );
   for (const ref of refs.slice(MAX_CITAS_RESUELTAS)) citas.push({ ref, norma: null });
 
-  const esto = queEs(tipo);
+  // Si completó el trámite, su texto definitivo está en la Consultoría: es la
+  // única vía al articulado en las fichas de Diputados, cuyo servidor de
+  // documentos no acepta conexiones desde fuera del país.
+  const ley = await resolverNorma("Ley", numeroDeNorma(promulgadaComo));
+
+  const esto = ley ? null : queEs(tipo);
   const sigue = queSigue(condicion);
-  if (!esto && !sigue && citas.length === 0) return null;
+  if (!esto && !sigue && !ley && citas.length === 0 && !materia && !proponente) {
+    return null;
+  }
 
   return (
     <section className="mt-5 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
@@ -69,18 +80,52 @@ export default async function Dossier({
       </div>
 
       <div className="divide-y divide-hairline">
-        {esto && (
-          <div className="px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-              Qué es
+        {ley && (
+          <div className="bg-emerald-50/60 px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+              Ya es ley — texto vigente
             </p>
-            <p className="mt-1.5 text-sm leading-relaxed text-ink">{esto}</p>
+            <p className="mt-1.5 text-sm font-medium text-ink">
+              {`Ley ${ley.numero}${ley.titulo ? `, ${desdeMayusculas(ley.titulo)}` : ""}`}
+            </p>
+            <p className="mt-0.5 text-xs text-ink-soft">
+              {[ley.gaceta && `Gaceta ${ley.gaceta}`, ley.fecha && formatFecha(ley.fechaIso ?? undefined)]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            {ley.url && (
+              <a
+                href={ley.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-800"
+              >
+                Leer el texto de la ley
+                <IconExternal className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </div>
+        )}
+
+        {(esto || materia || proponente) && (
+          <div className="px-5 py-4">
+            {esto && (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+                  Qué es
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink">{esto}</p>
+              </>
+            )}
             {(materia || proponente) && (
-              <p className="mt-2 text-xs leading-relaxed text-ink-soft">
+              <p className={esto ? "mt-2 text-xs leading-relaxed text-ink-soft" : "text-xs leading-relaxed text-ink-soft"}>
                 {proponente && (
                   <>
-                    La propone <span className="font-medium text-ink">{proponente}</span>
-                    {materia && " y "}
+                    La propone{" "}
+                    <span className="font-medium text-ink">
+                      {desdeMayusculas(proponente)}
+                    </span>
+                    {materia ? " y " : "."}
                   </>
                 )}
                 {materia && (
@@ -89,9 +134,9 @@ export default async function Dossier({
                     <span className="font-medium text-ink">
                       {desdeMayusculas(materia)}
                     </span>
+                    .
                   </>
                 )}
-                .
               </p>
             )}
           </div>

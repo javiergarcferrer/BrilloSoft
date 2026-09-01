@@ -125,6 +125,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         }
         materia={ficha.materia}
         proponente={ficha.proponentes[0] ?? ficha.poderOrigen}
+        promulgadaComo={ficha.numPromulgacion}
       />
 
       <section className="mt-5 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">

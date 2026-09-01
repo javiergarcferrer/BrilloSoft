@@ -138,6 +138,7 @@ export default async function IniciativaPage({ params }: Props) {
         condicion={ini.condicion ?? ini.estado}
         materia={ini.grupo ?? ini.materia}
         proponente={proponentePrincipal}
+        promulgadaComo={ini.numPromulgacion}
       />
 
       <section className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card sm:grid-cols-3">

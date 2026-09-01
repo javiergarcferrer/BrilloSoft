@@ -141,6 +141,18 @@ function normalizarTipoNorma(bruto: string): string {
   return bruto;
 }
 
+/**
+ * Número normativo dentro de un texto libre.
+ *
+ * Cada cámara escribe la promulgación a su manera —el Senado guarda `136-15`
+ * pelado y Diputados `Ley núm. 43-26`—, así que se extrae la forma canónica
+ * antes de buscarla en la Consultoría.
+ */
+export function numeroDeNorma(valor: string | null | undefined): string | null {
+  const m = /(\d{1,4})\s*-\s*(\d{2,4})/.exec(valor ?? "");
+  return m ? `${m[1]}-${m[2]}` : null;
+}
+
 /* ------------------------------------------------- instrumento y condición */
 
 /** Qué es la pieza, en una frase. */
