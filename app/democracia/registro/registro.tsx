@@ -7,7 +7,20 @@ import { cedulaValida, formatearCedula, limpiarCedula } from "@/lib/cedula";
 import { IconArrowLeft, IconCheck, IconShield } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
-type Paso = "datos" | "codigo" | "registrando" | "listo" | "sesion";
+/**
+ * `cedula-pendiente` cubre el caso del **enlace**: quien pulsa el enlace del
+ * correo en vez de teclear el código vuelve con sesión abierta, pero en otra
+ * pestaña, sin la cédula que escribió. En vez de dejarlo en un callejón, se le
+ * pide solo la cédula y se completa el registro. La cédula nunca se guarda en
+ * el navegador para «recordarla»: se vuelve a pedir.
+ */
+type Paso =
+  | "datos"
+  | "codigo"
+  | "cedula-pendiente"
+  | "registrando"
+  | "listo"
+  | "sesion";
 
 export default function Registro() {
   const [paso, setPaso] = useState<Paso>("datos");
@@ -23,7 +36,9 @@ export default function Registro() {
       const { data } = await supabase().auth.getSession();
       if (!data.session) return;
       const { data: votante } = await db().from("votantes").select("id").maybeSingle();
-      setPaso(votante ? "sesion" : "datos");
+      // Con sesión pero sin votante, el registro quedó a medias: falta la cédula.
+      setPaso(votante ? "sesion" : "cedula-pendiente");
+      if (data.session.user.email) setEmail(data.session.user.email);
     })();
   }, []);
 
@@ -37,7 +52,12 @@ export default function Registro() {
     setCargando(true);
     const { error: err } = await supabase().auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        // Si la plantilla del correo manda un enlace en vez del código, que
+        // al menos aterrice aquí y no en la portada.
+        emailRedirectTo: `${window.location.origin}/democracia/registro`,
+      },
     });
     setCargando(false);
     if (err) {
@@ -61,7 +81,16 @@ export default function Registro() {
       return;
     }
 
+    await completarRegistro("codigo");
+  }
+
+  /**
+   * Cierra el registro con la sesión ya abierta. `volverA` es el paso al que
+   * regresar si la cédula no pasa: el que la pidió.
+   */
+  async function completarRegistro(volverA: Paso) {
     setPaso("registrando");
+    setCargando(true);
     const { data, error: errReg } = await db().rpc("registrar_votante", {
       p_cedula: limpiarCedula(cedula),
     });
@@ -74,10 +103,17 @@ export default function Registro() {
         sesion_requerida: "Sesión no encontrada. Reinicia el registro.",
       };
       setError(mapa[r?.error ?? ""] ?? "No se pudo completar el registro.");
-      setPaso("codigo");
+      setPaso(volverA);
       return;
     }
     setPaso("listo");
+  }
+
+  async function registrarConSesion(e: React.FormEvent) {
+    e.preventDefault();
+    if (!cedulaOk) return;
+    setError(null);
+    await completarRegistro("cedula-pendiente");
   }
 
   if (paso === "sesion" || paso === "listo") {
@@ -161,11 +197,51 @@ export default function Registro() {
         </form>
       )}
 
+      {paso === "cedula-pendiente" && (
+        <form
+          onSubmit={registrarConSesion}
+          className="space-y-4 rounded-lg border border-hairline bg-surface p-5"
+        >
+          <p className="text-sm text-ink-soft">
+            Tu correo ya está verificado
+            {email && (
+              <>
+                {" "}
+                (<span className="font-medium text-ink">{email}</span>)
+              </>
+            )}
+            . Falta la cédula para completar el registro.
+          </p>
+          <div>
+            <label htmlFor="cedula-pendiente" className="rotulo text-ink-soft">
+              Cédula
+            </label>
+            <input
+              id="cedula-pendiente"
+              inputMode="numeric"
+              value={cedula}
+              onChange={(e) => setCedula(formatearCedula(e.target.value))}
+              placeholder="000-0000000-0"
+              className="mt-1.5 h-11 w-full rounded-lg border border-hairline bg-canvas px-3 font-mono text-sm tabular-nums text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+            />
+          </div>
+          {error && <p className="text-xs font-medium text-alerta-700">{error}</p>}
+          <button
+            type="submit"
+            disabled={!cedulaOk || cargando}
+            className="h-11 w-full rounded-lg bg-brand-600 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-95 disabled:opacity-50"
+          >
+            Completar el registro
+          </button>
+        </form>
+      )}
+
       {(paso === "codigo" || paso === "registrando") && (
         <form onSubmit={verificar} className="space-y-4 rounded-lg border border-hairline bg-surface p-5 ">
           <p className="text-sm text-ink-soft">
             Escribe el código de 6 dígitos que enviamos a{" "}
-            <span className="font-medium text-ink">{email}</span>.
+            <span className="font-medium text-ink">{email}</span>. Si el correo
+            trae un enlace en vez del código, púlsalo: vuelves aquí verificado.
           </p>
           <input
             inputMode="numeric"
