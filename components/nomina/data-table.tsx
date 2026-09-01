@@ -13,12 +13,17 @@ import {
 export type SortKey = "institucion" | "area" | "cargo" | "sueldo";
 export type SortDir = "asc" | "desc";
 
-const ROW_H = 40;
+/**
+ * Alto de fila. En teléfono la fila lleva dos líneas (cargo + área·institución)
+ * porque las cinco columnas no caben en 326px de pista; la virtualización mide
+ * en píxeles, así que el alto tiene que ser el mismo que pinta el CSS.
+ */
+const ROW_H = 52;
 const VIEWPORT_H = 600;
 const OVERSCAN = 12;
 
 const GRID =
-  "grid grid-cols-[3.5rem_6rem_minmax(0,2.2fr)_minmax(0,2.6fr)_7.5rem] gap-x-3";
+  "grid grid-cols-[minmax(0,1fr)_7.5rem] gap-x-3 sm:grid-cols-[3.5rem_6rem_minmax(0,2.2fr)_minmax(0,2.6fr)_7.5rem]";
 
 export function DataTable({
   rows,
@@ -53,9 +58,11 @@ export function DataTable({
           "border-b border-hairline bg-canvas px-4 py-2.5 rotulo text-ink-soft",
         )}
       >
-        <span className="font-mono text-right tabular-nums">#</span>
-        <HeaderCell label="Inst." col="institucion" {...{ sortKey, sortDir, onSort }} />
-        <HeaderCell label="Área" col="area" {...{ sortKey, sortDir, onSort }} />
+        <span className="hidden font-mono text-right tabular-nums sm:inline">#</span>
+        <span className="hidden sm:contents">
+          <HeaderCell label="Inst." col="institucion" {...{ sortKey, sortDir, onSort }} />
+          <HeaderCell label="Área" col="area" {...{ sortKey, sortDir, onSort }} />
+        </span>
         <HeaderCell label="Cargo" col="cargo" {...{ sortKey, sortDir, onSort }} />
         <HeaderCell label="Sueldo" col="sueldo" align="right" {...{ sortKey, sortDir, onSort }} />
       </div>
@@ -87,20 +94,29 @@ export function DataTable({
                     )}
                     style={{ height: ROW_H }}
                   >
-                    <span className="font-mono text-right tabular-nums text-xs text-ink-soft">
+                    <span className="hidden font-mono text-right tabular-nums text-xs text-ink-soft sm:inline">
                       {formatInt(idx + 1)}
                     </span>
                     <span
-                      className="truncate font-medium text-ink"
+                      className="hidden truncate font-mono font-medium text-ink sm:inline"
                       title={inst.nombre}
                     >
                       {inst.codigo}
                     </span>
-                    <span className="truncate text-ink" title={areas[r[COL.AREA]]}>
+                    <span
+                      className="hidden truncate text-ink sm:inline"
+                      title={areas[r[COL.AREA]]}
+                    >
                       {areas[r[COL.AREA]]}
                     </span>
-                    <span className="truncate text-ink-soft" title={cargos[r[COL.CARGO]]}>
-                      {cargos[r[COL.CARGO]]}
+                    {/* Teléfono: cargo arriba, área e institución debajo. */}
+                    <span className="min-w-0">
+                      <span className="block truncate text-ink" title={cargos[r[COL.CARGO]]}>
+                        {cargos[r[COL.CARGO]]}
+                      </span>
+                      <span className="block truncate text-[11px] text-ink-soft sm:hidden">
+                        {areas[r[COL.AREA]]} · {inst.codigo}
+                      </span>
                     </span>
                     <span className="text-right font-mono tabular-nums text-ink">
                       {formatDOP(r[COL.SUELDO])}

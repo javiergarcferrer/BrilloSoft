@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
 import ProcesoCard from "@/components/proceso-card";
+import { cn } from "@/lib/cn";
 import { BottomSheet } from "@/components/bottom-sheet";
 import {
   IconChevronLeft,
@@ -288,10 +289,35 @@ export default function Buscador() {
 
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  // Active (non-default) filters as removable chips — fast one-tap clearing.
-  const chips: { key: string; label: string; clear: () => void }[] = [];
-  if (estado && estado !== "Proceso publicado")
-    chips.push({ key: "est", label: estado, clear: () => setEstado("Proceso publicado") });
+  /*
+    Todos los filtros puestos, incluidos los que vienen por defecto.
+    Emitir un chip solo cuando el valor difiere del inicial deja invisibles
+    justo los dos que más recortan —estado y ventana de fechas—: quien busca
+    «hospital» y ve «0 coincidencias» nunca se entera de que está mirando
+    treinta días de procesos publicados. El estado del sistema que más pesa no
+    puede ser el que se le pide recordar sin habérselo dicho.
+
+    `porDefecto` los distingue en gris: quitarlos **abre** la búsqueda en vez
+    de restaurar nada.
+  */
+  const chips: {
+    key: string;
+    label: string;
+    clear: () => void;
+    porDefecto?: boolean;
+  }[] = [];
+  chips.push(
+    estado === "Proceso publicado"
+      ? {
+          key: "est",
+          label: "solo publicados",
+          porDefecto: true,
+          clear: () => setEstado(""),
+        }
+      : estado
+        ? { key: "est", label: estado, clear: () => setEstado("") }
+        : { key: "est", label: "todos los estados", porDefecto: true, clear: () => setEstado("Proceso publicado") },
+  );
   if (modalidad) chips.push({ key: "mod", label: modalidad, clear: () => setModalidad("") });
   if (unidadSel)
     chips.push({
@@ -303,8 +329,18 @@ export default function Buscador() {
       clear: () => setUnidadTexto(""),
     });
   if (mipyme) chips.push({ key: "mip", label: "MIPYMES", clear: () => setMipyme(false) });
-  if (startdate !== hoyMenosDias(30))
-    chips.push({ key: "desde", label: `desde ${startdate}`, clear: () => setStartdate(hoyMenosDias(30)) });
+  chips.push(
+    startdate === hoyMenosDias(30)
+      ? {
+          key: "desde",
+          label: "últimos 30 días",
+          porDefecto: true,
+          clear: () => setStartdate(""),
+        }
+      : startdate
+        ? { key: "desde", label: `desde ${startdate}`, clear: () => setStartdate(hoyMenosDias(30)) }
+        : { key: "desde", label: "todo el histórico", porDefecto: true, clear: () => setStartdate(hoyMenosDias(30)) },
+  );
   if (enddate) chips.push({ key: "hasta", label: `hasta ${enddate}`, clear: () => setEnddate("") });
 
   const filtros: FiltrosProps = {
@@ -378,7 +414,17 @@ export default function Buscador() {
               <button
                 key={c.key}
                 onClick={c.clear}
-                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/15 transition active:scale-95"
+                title={
+                  c.porDefecto
+                    ? "Filtro por defecto — quítalo para ampliar la búsqueda"
+                    : "Quitar este filtro"
+                }
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition active:scale-95",
+                  c.porDefecto
+                    ? "border-hairline bg-canvas text-ink-soft hover:text-ink"
+                    : "border-brand-200 bg-brand-50 text-brand-700",
+                )}
               >
                 <span className="max-w-[8.5rem] truncate">{c.label}</span>
                 <IconX className="h-3 w-3 shrink-0" />
@@ -417,7 +463,17 @@ export default function Buscador() {
               <button
                 key={c.key}
                 onClick={c.clear}
-                className="inline-flex items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/15 transition hover:bg-brand-100 active:scale-95"
+                title={
+                  c.porDefecto
+                    ? "Filtro por defecto — quítalo para ampliar la búsqueda"
+                    : "Quitar este filtro"
+                }
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition active:scale-95",
+                  c.porDefecto
+                    ? "border-hairline bg-canvas text-ink-soft hover:text-ink"
+                    : "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100",
+                )}
               >
                 {c.label}
                 <IconX className="h-3 w-3" />
@@ -511,7 +567,30 @@ export default function Buscador() {
               />
             ))}
           </div>
-        ) : ordenados.length === 0 && !error ? (
+        ) : error ? (
+          /*
+            «No hay resultados» y «la fuente no contestó» son dos cosas
+            distintas, y antes se pintaban igual: una rejilla vacía con una
+            línea ocre de 12px. Sin esta rama, quien tropieza con un 502 de la
+            DGCP se queda con una página en blanco y sin la única acción útil.
+          */
+          <div className="rounded-lg border border-alerta-600/25 bg-alerta-50 px-5 py-10 text-center">
+            <p className="font-sans text-sm font-semibold text-ink">
+              La DGCP no respondió
+            </p>
+            <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-ink-soft">
+              No es un problema de tu búsqueda: los filtros siguen puestos. La
+              fuente oficial no contestó a tiempo.
+            </p>
+            <button
+              type="button"
+              onClick={() => fetchData()}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : ordenados.length === 0 ? (
           <div className="rounded-lg bg-surface p-12 text-center border border-hairline">
             <span className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-hairline text-ink-soft">
               <IconSearch className="h-6 w-6" />

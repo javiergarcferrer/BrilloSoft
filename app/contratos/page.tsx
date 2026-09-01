@@ -51,6 +51,12 @@ export default async function ContratosPage() {
             <span aria-hidden className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400" />
             Contratos adjudicados · se actualiza cada 30 min
           </div>
+          {r.truncado && (
+            <p className="rotulo mt-3 inline-flex items-center gap-2 text-alerta-200">
+              <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-alerta-400" />
+              Muestra · {formatInt(r.escaneados)} de {formatInt(r.totalRegistro)} contratos
+            </p>
+          )}
           <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
             ¿Qué está contratando el Estado?
           </h1>

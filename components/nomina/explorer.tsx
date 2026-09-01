@@ -249,7 +249,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
               value={queryInput}
               onChange={(e) => setQueryInput(e.target.value)}
               placeholder="Buscar por institución, área o cargo…"
-              className="h-11 w-full rounded-full border border-hairline bg-canvas pl-10 pr-9 text-sm outline-none focus:border-brand-400"
+              className="h-11 w-full rounded-lg border border-hairline bg-canvas pl-10 pr-9 text-sm outline-none focus:border-brand-400"
             />
             {queryInput && (
               <button
@@ -266,7 +266,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
           <select
             value={instId ?? ""}
             onChange={(e) => setInstId(e.target.value === "" ? null : Number(e.target.value))}
-            className="h-11 rounded-full border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400 lg:max-w-xs"
+            className="h-11 rounded-lg border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400 lg:max-w-xs"
           >
             <option value="">Todas las instituciones ({data.instituciones.length})</option>
             {data.instituciones.map((o, i) => (
@@ -300,7 +300,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
             <button
               type="button"
               onClick={reset}
-              className="inline-flex items-center gap-1.5 self-start rounded-full px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 lg:self-auto"
+              className="inline-flex items-center gap-1.5 self-start rounded-md px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 lg:self-auto"
             >
               <IconX className="h-3.5 w-3.5" /> Limpiar
             </button>
@@ -318,17 +318,32 @@ function ExplorerReady({ data }: { data: NominaData }) {
 
       {/* ---------- KPI cards ---------- */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Kpi icon={IconLayers} label="Plazas" value={formatInt(kpis.count)} />
-        <Kpi icon={IconCoins} label="Masa salarial mensual" value={formatCompactDOP(kpis.total)} />
-        <Kpi icon={IconChartBar} label="Sueldo promedio" value={formatDOP(kpis.avg)} />
-        <Kpi icon={IconTrendingUp} label="Sueldo mediano" value={formatDOP(kpis.median)} />
-        <Kpi icon={IconBuilding} label="Instituciones" value={formatInt(kpis.insts)} />
+        <Kpi
+          icon={IconLayers}
+          label="Plazas"
+          value={formatInt(kpis.count)}
+          base={`de ${formatInt(data.rows.length)} en la foto`}
+        />
+        <Kpi
+          icon={IconCoins}
+          label="Masa salarial mensual"
+          value={formatCompactDOP(kpis.total)}
+          base="último mes publicado por cada institución"
+        />
+        <Kpi icon={IconChartBar} label="Sueldo promedio" value={formatDOP(kpis.avg)} base="bruto mensual" />
+        <Kpi icon={IconTrendingUp} label="Sueldo mediano" value={formatDOP(kpis.median)} base="bruto mensual" />
+        <Kpi
+          icon={IconBuilding}
+          label="Instituciones"
+          value={formatInt(kpis.insts)}
+          base="con nómina publicada y legible"
+        />
         <Kpi icon={IconMapPin} label="Cargos distintos" value={formatInt(kpis.cargos)} />
       </div>
 
       {/* ---------- view tabs ---------- */}
       <div className="flex items-center justify-between gap-3">
-        <div className="inline-flex rounded-full border border-hairline bg-surface p-1">
+        <div className="inline-flex rounded-lg border border-hairline bg-surface p-1">
           <TabBtn active={view === "resumen"} onClick={() => setView("resumen")} icon={IconChartBar}>
             Resumen
           </TabBtn>
@@ -348,7 +363,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
             title="Instituciones"
             subtitle="Cada institución aporta su último mes publicado (clic para filtrar)"
             action={
-              <div className="inline-flex rounded-full border border-hairline p-0.5 text-xs">
+              <div className="inline-flex rounded-lg border border-hairline p-0.5 text-xs">
                 {(
                   [
                     ["total", "Masa"],
@@ -361,7 +376,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
                     type="button"
                     onClick={() => setMetric(m)}
                     className={cn(
-                      "rounded-full px-2.5 py-1 transition-colors",
+                      "rounded-md px-2.5 py-1 transition-colors",
                       metric === m ? "bg-brand-600 text-white" : "text-ink-soft hover:text-ink",
                     )}
                   >
@@ -483,14 +498,33 @@ function sortLabel(k: SortKey): string {
   return { institucion: "institución", area: "área", cargo: "cargo", sueldo: "sueldo" }[k];
 }
 
-function Kpi({ icon: Icon, label, value }: { icon: IconType; label: string; value: string }) {
+/**
+ * Un KPI de nómina con **su base debajo de la cifra**.
+ *
+ * «Masa salarial mensual» es la suma del último mes publicado por cada
+ * institución: meses distintos sumados en un solo peso. Esa advertencia vivía
+ * al final de la página, después de dos rejillas de gráficos, y nadie asocia
+ * una nota al pie con un número que leyó tres pantallas antes.
+ */
+function Kpi({
+  icon: Icon,
+  label,
+  value,
+  base,
+}: {
+  icon: IconType;
+  label: string;
+  value: string;
+  base?: string;
+}) {
   return (
-    <div className="rounded-lg border border-hairline bg-surface p-3.5 ">
+    <div className="rounded-lg border border-hairline bg-surface p-3.5">
       <div className="flex items-center gap-1.5 text-ink-soft">
         <Icon className="h-3.5 w-3.5" />
         <span className="rotulo">{label}</span>
       </div>
-      <p className="font-mono mt-1.5 font-display text-xl text-ink tabular-nums">{value}</p>
+      <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums text-ink">{value}</p>
+      {base && <p className="mt-1 text-[11px] leading-snug text-ink-soft">{base}</p>}
     </div>
   );
 }

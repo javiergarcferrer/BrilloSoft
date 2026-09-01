@@ -12,7 +12,7 @@ import { getCensoSenado } from "@/lib/senado";
 import { getDeuda } from "@/lib/deuda";
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
-import { formatMonto, diasHasta } from "@/lib/format";
+import { diasHasta, formatMagnitud, formatMonto } from "@/lib/format";
 import { SECCIONES } from "@/lib/secciones";
 import {
   IconArrowRight,
@@ -118,7 +118,7 @@ export default async function Panorama() {
             compras
               ? [
                   {
-                    etiqueta: "Abiertos para ofertar",
+                    etiqueta: "Abiertos ahora mismo",
                     valor: formatInt(abiertos.length),
                     destacar: true,
                   },
@@ -162,15 +162,10 @@ export default async function Panorama() {
                 ]
               : []),
             ...(diasCierre !== null
-              ? [{ etiqueta: "Días de legislatura", valor: `${diasCierre}` }]
+              ? [{ etiqueta: "Cierra la legislatura en", valor: `${diasCierre} días` }]
               : []),
             ...(censoCongreso !== null
-              ? [
-                  {
-                    etiqueta: `Vigentes (de ${muestraCongreso.muestra})`,
-                    valor: formatInt(resumen.vivas),
-                  },
-                ]
+              ? []
               : []),
           ]}
         />
@@ -187,7 +182,7 @@ export default async function Panorama() {
             nomina
               ? [
                   {
-                    etiqueta: "Plazas en la foto",
+                    etiqueta: "Empleados públicos contados",
                     valor: formatInt(nomina.plazas),
                     destacar: true,
                   },
@@ -230,20 +225,20 @@ export default async function Panorama() {
           <div className="mt-4 grid grid-cols-3 gap-4">
             <IndicadorDeuda
               etiqueta="Deuda total"
-              valor={`US$${(deuda.saldoTotal / 1000).toFixed(1)}MM`}
+              valor={formatMagnitud(deuda.saldoTotal)}
               destacar
             />
             <IndicadorDeuda
               etiqueta="Externa"
-              valor={`US$${(deuda.saldoExterna / 1000).toFixed(1)}MM`}
+              valor={formatMagnitud(deuda.saldoExterna)}
             />
             <IndicadorDeuda
               etiqueta="Interna"
-              valor={`US$${(deuda.saldoInterna / 1000).toFixed(1)}MM`}
+              valor={formatMagnitud(deuda.saldoInterna)}
             />
           </div>
           <p className="mt-3 text-xs text-ink-soft">
-            En miles de millones de dólares. Fuente: Dirección General de Crédito
+            Fuente: Dirección General de Crédito
             Público del Ministerio de Hacienda.
             {deuda.desdeInstantanea && (
               <>
@@ -261,7 +256,7 @@ export default async function Panorama() {
         <Panel
           titulo="Cierran esta semana"
           nota={`${cierranPronto.length}`}
-          href="/licitaciones?preset=cierran"
+          href="/licitaciones?orden=cierre"
           Icon={IconClock}
         >
           {cierranPronto.length > 0 ? (
@@ -293,7 +288,7 @@ export default async function Panorama() {
         </Panel>
 
         <Panel
-          titulo="Por perimir en el Congreso"
+          titulo="Se archivan al cerrar la legislatura"
           nota={`${resumen.enRiesgo.length}`}
           href="/congreso/perencion"
           Icon={IconClock}
@@ -471,11 +466,17 @@ function IndicadorDeuda({
   return (
     <div className="rounded-lg bg-canvas/60 px-4 py-3 border border-hairline">
       <div className="text-xs text-ink-soft">{etiqueta}</div>
+      {/*
+        Las tres cifras son comparables entre sí, así que las tres van en mono
+        tabular: lo único que distingue a la destacada es el tamaño. Con una
+        en mono y dos en sans, los dígitos no alinean y el ojo lee dos de
+        ellas como texto.
+      */}
       <div
         className={
           destacar
             ? "mt-0.5 font-mono text-lg font-semibold tabular-nums tracking-tight text-ink"
-            : "mt-0.5 text-base font-semibold tabular-nums text-ink"
+            : "mt-0.5 font-mono text-base font-semibold tabular-nums text-ink"
         }
       >
         {valor}

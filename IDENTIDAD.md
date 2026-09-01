@@ -95,13 +95,98 @@ lista van en rojo. Es la regla única y no admite excepción.
 
 ## Ergonomía cognitiva
 
-Las etiquetas cambian de forma según cuánto tiempo tiene el ojo:
+> La lente, prestada de la doctrina de UI de RosetSoft
+> (`docs/engineering-lenses.md` §2): **¿qué tiene que sostener el lector en la
+> cabeza que la aplicación podría haber sostenido por él?**
+>
+> El ciudadano no estudia esta plataforma: la *consulta*, en el teléfono, entre
+> otras dos cosas. Cada unidad de memoria de trabajo que le gastamos es una que
+> no tiene para lo que vino a hacer.
+
+Cuando ciudadano y periodista quieren cosas opuestas, **manda el ciudadano**:
+por defecto se muestra poco y explicado, y la densidad se despliega bajo
+demanda. El periodista pierde dos toques; el ciudadano no se pierde.
+
+### 1. Un número solo no significa nada; una comparación sí — y no puedes inventarla
+
+«RD$1,986,088,830» es una cadena. «RD$1,986,088,830 en juego en 384 procesos
+abiertos hoy» es un hecho sobre el que alguien puede actuar. La segunda mitad
+de la regla pesa más que la primera: **si no tenemos el ancla, se muestra la
+cifra sin ella y se dice por qué. Nunca se fabrica un contexto.**
+
+`lib/cifras.ts` lo implementa y prohíbe los tres errores clásicos: crecer desde
+cero no es un porcentaje (no hay `+∞ %` ni `+100 %`), la variación de un
+porcentaje se mide en **puntos** y no en por ciento, y la dirección no es
+valencia — que la deuda suba no es «bueno» porque el número creció.
+
+### 2. Una lectura está acotada o está paginada, nunca ninguna de las dos — y una lectura truncada lo declara
+
+Media plataforma lee por barrido: 6 páginas de la DGCP, 10 del SIL, el último
+mes de cada nómina. Esas cifras **no pueden ser el denominador de nada**, y
+mezclarlas con censos en la misma fila de tarjetas invita a dividir una por
+otra. Cada cifra declara su base junto a la cifra, no en una nota al pie que
+nadie asocia tres pantallas después. `Alcance` en `lib/cifras.ts` distingue
+registro, muestra e instantánea.
+
+### 3. Reconocer, no recordar
+
+- **La jerga se traduce en el punto de uso**, no en un glosario que nadie abre.
+  Primero lo que el término hace, después cómo se llama: «se archiva si no
+  avanza», y *perime* detrás. `lib/glosario.ts`.
+- **El estado del sistema se ve**, incluidos los filtros que vienen de fábrica.
+  Un chip que solo aparece cuando difiere del valor por defecto deja invisibles
+  justo los que más recortan: quien busca y ve «0 coincidencias» nunca se
+  entera de que estaba mirando treinta días.
+- **La magnitud viaja con el número.** «MM» se lee *millones* en el uso
+  dominicano: abreviar así miles de millones se equivoca por tres órdenes de
+  magnitud en la cifra más grande del sitio.
+- **La antigüedad se calcula aquí, no en la cabeza del lector.** Una fecha
+  absoluta obliga a restar; en una lista de veinte, nadie resta y se deja de
+  comparar. `hace()` en `lib/format.ts`.
+
+### 4. El orden de los bloques es el orden en que se entiende
+
+Qué es → en qué punto está → qué cambia del ordenamiento → el texto → opinar.
+**Nadie debería opinar sobre una pieza que la interfaz no le dejó entender**, y
+por eso el widget de voto va después del documento, nunca antes.
+
+Corolario: **el agregado no se enseña antes de preguntar.** «68 % a favor»
+visible antes de votar ancla la respuesta —el efecto mejor documentado en
+votación pública— en una plataforma cuya voz dice que la conclusión la saca el
+lector.
+
+### 5. Revelación progresiva
+
+Un historial de 33 trámites en bruto no informa: entierra el único que importa
+bajo treinta y dos rutinarios. Se muestra el resumen que responde la pregunta y
+el resto queda a un toque, sin perder nada. El botón dice **cuántos hay**, no
+«ver más»: quien decide si abre necesita saber a qué se enfrenta.
+`components/plegable.tsx`.
+
+### 6. Un control apagado explica por qué antes de que lo pulses
+
+Y «no hay resultados» y «la fuente no contestó» son dos pantallas distintas: la
+segunda dice qué pasó, qué sigue en pie y ofrece la única acción útil.
+
+### 7. Las etiquetas cambian de forma según cuánto tiempo tiene el ojo
 
 - **Nav global (escritorio)** — preguntas. Hay espacio y el usuario está
-  eligiendo a dónde ir: la pregunta es más informativa que el sustantivo.
-- **Barra de sección y tab bar móvil** — sustantivos cortos. Ahí el usuario ya
-  sabe dónde está y necesita reconocer, no leer. Una pregunta de tres palabras
-  en una pestaña de 72px es ruido.
-- **Un color = un significado**, en toda la plataforma: azul se puede pulsar,
-  rojo es el sello o lo que deroga, ocre avisa, verde ya está hecho, gris es
-  contexto. Nunca se usa un color solo porque «queda bien».
+  eligiendo a dónde ir: la pregunta informa más que el sustantivo.
+- **Barra de sección y tab bar móvil** — sustantivos cortos. Ahí ya sabe dónde
+  está y necesita reconocer, no leer.
+- **Un color = un significado**, en toda la plataforma. Nunca se usa un color
+  porque «queda bien».
+
+### 8. Cómo se sostiene esto
+
+> «Un rojo aquí es un problema de enrutamiento, no de regla. Subir un piso,
+> ampliar una lista de excepciones o relajar un emparejador **registra** el
+> hallazgo en vez de arreglarlo.» — RosetSoft, `design-system.md` §14
+
+Las jugadas legales son tres: usar la primitiva, añadir el token, o extraer el
+hermano. Y la causa raíz de que esta identidad se diluyera dos veces está
+diagnosticada en la misma doctrina: **donde existe una primitiva compartida la
+adopción es alta; donde no existe, la idea se reimplementa en cada sitio.** Por
+eso el sistema vive en `components/papel.tsx`, `components/marca.tsx`,
+`components/plegable.tsx`, `lib/cifras.ts` y `lib/glosario.ts`, y no en
+cuarenta archivos que hay que acertar uno por uno.

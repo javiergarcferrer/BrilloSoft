@@ -54,11 +54,40 @@ export default async function EstadisticasPage() {
   const maxMod = porModalidad[0]?.[1].monto || 1;
   const totalN = lista.length || 1;
 
-  const kpis = [
-    { etiqueta: "Procesos publicados", valor: total.toLocaleString("es-DO") },
-    { etiqueta: "Abiertos para ofertar", valor: abiertos.length.toLocaleString("es-DO"), destacar: true },
-    { etiqueta: "Monto estimado (muestra)", valor: formatMonto(montoTotal, "DOP") },
-    { etiqueta: "Dirigidos a MIPYMES", valor: mipymes.toLocaleString("es-DO") },
+  /*
+    Cada cifra declara **su base**, porque tres de las cuatro salen de un
+    barrido acotado y una del censo. Ponerlas juntas sin marcarlas invita a
+    dividir una por otra: «4.812 publicados» y «730 abiertos» parecen un 15 %
+    y no lo son — el 730 sale de una muestra de mil.
+  */
+  const escaneados = lista.length.toLocaleString("es-DO");
+  const kpis: {
+    etiqueta: string;
+    valor: string;
+    base?: string;
+    destacar?: boolean;
+  }[] = [
+    {
+      etiqueta: "Procesos publicados",
+      valor: total.toLocaleString("es-DO"),
+      base: "registro completo · 30 días",
+    },
+    {
+      etiqueta: "Abiertos ahora mismo",
+      valor: abiertos.length.toLocaleString("es-DO"),
+      base: `muestra de ${escaneados}`,
+      destacar: true,
+    },
+    {
+      etiqueta: "Monto estimado",
+      valor: formatMonto(montoTotal, "DOP"),
+      base: `muestra de ${escaneados}`,
+    },
+    {
+      etiqueta: "Dirigidos a MIPYMES",
+      valor: mipymes.toLocaleString("es-DO"),
+      base: `muestra de ${escaneados}`,
+    },
   ];
 
   return (
@@ -92,7 +121,12 @@ export default async function EstadisticasPage() {
                     : "bg-white/5 ring-white/10"
                 }`}
               >
-                <div className="font-mono text-lg font-semibold leading-tight tabular-nums sm:text-xl">{k.valor}</div>
+                <div className="font-mono text-lg font-semibold leading-tight tabular-nums sm:text-xl">
+                {k.valor}
+              </div>
+              {k.base && (
+                <div className="rotulo mt-1 text-white/50">{k.base}</div>
+              )}
                 <div
                   className={`mt-0.5 text-xs ${
                     k.destacar ? "text-brand-100" : "text-white/60"
