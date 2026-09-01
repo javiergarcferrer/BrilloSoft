@@ -251,6 +251,13 @@ export default async function Panorama() {
           <p className="mt-3 text-xs text-ink-soft">
             En miles de millones de dólares. Fuente: Dirección General de Crédito
             Público del Ministerio de Hacienda.
+            {deuda.desdeInstantanea && (
+              <>
+                {" "}
+                Instantánea verificada del {deuda.generadoEn}: el servidor del
+                origen no acepta lecturas desde la nube.
+              </>
+            )}
           </p>
         </section>
       )}

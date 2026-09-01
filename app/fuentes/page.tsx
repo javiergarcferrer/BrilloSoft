@@ -154,14 +154,21 @@ export default async function FuentesPage() {
         <Fuente
           nombre="Crédito Público — deuda del SPNF"
           estado={deuda !== null ? "activa" : "caida"}
-          etiqueta={deuda !== null ? "Conectada" : "Sin respuesta"}
+          etiqueta={
+            deuda === null
+              ? "Sin respuesta"
+              : deuda.desdeInstantanea
+                ? "Instantánea"
+                : "Conectada"
+          }
         >
           <p>
             Dirección General de Crédito Público del Ministerio de Hacienda.
             Publica la evolución del saldo de la deuda del Sector Público No
             Financiero como archivos XLSX mensuales con URL predecible; la
-            plataforma localiza el más reciente y lee el saldo sin descargar
-            nada al usuario.
+            plataforma intenta la lectura en vivo y, como el servidor del origen
+            no acepta conexiones desde la nube, sirve la última instantánea
+            verificada declarando su fecha.
           </p>
           {deuda && (
             <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
@@ -170,7 +177,10 @@ export default async function FuentesPage() {
                 valor={`US$${(deuda.saldoTotal / 1000).toFixed(1)}MM`}
               />
               <Metrica etiqueta="Saldo a" valor={deuda.periodo} />
-              <Metrica etiqueta="Formato" valor="XLSX mensual" />
+              <Metrica
+                etiqueta={deuda.desdeInstantanea ? "Instantánea del" : "Formato"}
+                valor={deuda.desdeInstantanea ? (deuda.generadoEn ?? "—") : "XLSX mensual"}
+              />
             </dl>
           )}
           <p className="mt-3 text-xs text-ink-soft">

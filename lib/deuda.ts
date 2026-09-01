@@ -10,8 +10,12 @@
  * Reconocimiento en AUDITORIA.md §3.3 y PLAN-DEMOCRACIA.md §1.
  */
 
+// Módulo SOLO de servidor (usa node:zlib y node:fs): no importarlo desde
+// componentes cliente — webpack en Next 15 lo rechaza (lección de lib/nomina).
 import { inflateRaw } from "node:zlib";
 import { promisify } from "node:util";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 const BASE = "https://www.creditopublico.gob.do";
 const PAGINA = `${BASE}/inicio/estadisticas`;
@@ -29,6 +33,15 @@ export interface Deuda {
   periodo: string;
   /** URL del XLSX de origen. */
   fuente: string;
+  /**
+   * true cuando el dato viene de la instantánea commiteada
+   * (`public/data/deuda.json`) porque el origen no respondió: el servidor de
+   * Crédito Público es on-premise en RD y rechaza el egreso de la nube.
+   * Regenerar con `python3 scripts/build-deuda.py`.
+   */
+  desdeInstantanea: boolean;
+  /** Fecha de generación de la instantánea (solo cuando desdeInstantanea). */
+  generadoEn?: string;
 }
 
 async function fetchBuffer(url: string, revalidate: number): Promise<ArrayBuffer | null> {
@@ -96,7 +109,9 @@ function texto(xml: string, re: RegExp): string[] {
  * La columna B trae la etiqueta y la C el saldo; las dos filas siguientes son
  * Externa e Interna (AUDITORIA.md §3.3).
  */
-function parsearSaldo(archivos: ArchivoZip[]): Omit<Deuda, "fuente"> | null {
+function parsearSaldo(
+  archivos: ArchivoZip[],
+): Omit<Deuda, "fuente" | "desdeInstantanea" | "generadoEn"> | null {
   const sheet = archivos.find((a) => a.nombre === "xl/worksheets/sheet1.xml");
   const shared = archivos.find((a) => a.nombre === "xl/sharedStrings.xml");
   const workbook = archivos.find((a) => a.nombre === "xl/workbook.xml");
@@ -172,11 +187,41 @@ const MESES = [
 ];
 
 /**
+ * Saldo de deuda con doble vía: primero la lectura **en vivo** del XLSX más
+ * reciente; si el origen no responde (rechaza el egreso de la nube), cae a la
+ * **instantánea commiteada**, que declara su período y su fecha de generación.
+ */
+export async function getDeuda(): Promise<Deuda | null> {
+  const vivo = await getDeudaEnVivo();
+  if (vivo) return vivo;
+  return leerInstantanea();
+}
+
+async function leerInstantanea(): Promise<Deuda | null> {
+  try {
+    const ruta = path.join(process.cwd(), "public", "data", "deuda.json");
+    const crudo = JSON.parse(await readFile(ruta, "utf8")) as {
+      generadoEn: string;
+      periodo: string;
+      saldoTotal: number;
+      saldoExterna: number;
+      saldoInterna: number;
+      fuente: string;
+    };
+    if (!crudo?.saldoTotal || !crudo.periodo) return null;
+    return { ...crudo, desdeInstantanea: true };
+  } catch (err) {
+    console.error(`[deuda] instantánea: ${String(err)}`);
+    return null;
+  }
+}
+
+/**
  * Localiza y lee el XLSX de saldo más reciente. La página de estadísticas
  * enlaza los archivos del año en curso; tomamos el de «Saldo Evolución» del
  * mes más reciente. Si la página no responde, degradamos a `null`.
  */
-export async function getDeuda(): Promise<Deuda | null> {
+async function getDeudaEnVivo(): Promise<Deuda | null> {
   const htmlBuf = await fetchBuffer(PAGINA, 21_600);
   if (!htmlBuf) return null;
   const html = Buffer.from(htmlBuf).toString("utf8");
@@ -203,7 +248,7 @@ export async function getDeuda(): Promise<Deuda | null> {
     if (!buf) continue;
     const archivos = await leerZip(buf);
     const saldo = parsearSaldo(archivos);
-    if (saldo) return { ...saldo, fuente: url };
+    if (saldo) return { ...saldo, fuente: url, desdeInstantanea: false };
   }
   return null;
 }
