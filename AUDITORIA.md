@@ -378,6 +378,13 @@ límites (como ya hace con las cuatro actuales).
 
 ## 8. Plan de integración por fases
 
+> **Estado (2026-09-01): Fases 1 y 2 implementadas y en producción.** El
+> indicador de deuda (`lib/deuda.ts`, tarjeta en el panorama) y la vertical de
+> normativa (`lib/normativa.ts`, `/normativa`) ya están desplegados. Ambos
+> siguen el patrón sin-BD. Además se implementó **Democracia Legislativa**
+> (`/democracia`), la única excepción con base de datos, documentada en
+> `PLAN-DEMOCRACIA.md`.
+
 ### Fase 1 — Deuda pública (Crédito Público) · esfuerzo bajo, valor alto
 - `lib/deuda.ts`: resolver el XLSX del mes vigente sondeando el patrón de URL
   (§3.3) con fallback al mes anterior; parsear la serie de saldo/evolución;
