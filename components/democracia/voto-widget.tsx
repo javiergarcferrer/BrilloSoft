@@ -7,7 +7,7 @@ import type { Agregado, Camara } from "@/lib/democracia";
 import { cn } from "@/lib/cn";
 
 /**
- * Widget de voto ciudadano 👍/👎 sobre una iniciativa, embebido en su ficha.
+ * Widget de voto ciudadano (a favor / en contra) sobre una iniciativa, embebido en su ficha.
  *
  * Muestra el agregado en vivo (público) y, si hay sesión con votante
  * registrado, el voto propio, que puede cambiarse o quitarse. Sin registro,
@@ -125,18 +125,18 @@ export default function VotoWidget({
   const pctFavor = total > 0 ? Math.round((agg.a_favor / total) * 100) : 0;
 
   return (
-    <section className="rounded-2xl border border-alerta-100/50 bg-alerta-50/60 p-5 shadow-soft">
+    <section className="rounded-lg border border-brand-100 bg-brand-50/50 p-5 ">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
-            <span aria-hidden className="h-2 w-2 rounded-full bg-alerta-500" />
+          <h2 className="font-sans flex items-center gap-2 text-sm font-semibold text-ink">
+            <span aria-hidden className="h-2 w-2 rounded-full bg-sello-600" />
             ¿Apoyas esta iniciativa?
           </h2>
           <p className="mt-0.5 text-xs text-ink-soft">
             Voto ciudadano · piloto independiente, no oficial
           </p>
         </div>
-        <span className="text-right text-xs tabular-nums text-ink-soft">
+        <span className="font-mono text-right text-xs tabular-nums text-ink-soft">
           {total.toLocaleString("es-DO")} {total === 1 ? "voto" : "votos"}
         </span>
       </div>
@@ -146,9 +146,9 @@ export default function VotoWidget({
         <div className="mt-4">
           <div className="flex h-2.5 overflow-hidden rounded-full ring-1 ring-inset ring-hairline">
             <div className="bg-brand-500" style={{ width: `${pctFavor}%` }} />
-            <div className="flex-1 bg-sello-400" />
+            <div className="flex-1 bg-ink-soft/30" />
           </div>
-          <div className="mt-1.5 flex justify-between text-xs tabular-nums text-ink-soft">
+          <div className="font-mono mt-1.5 flex justify-between text-xs tabular-nums text-ink-soft">
             <span className="font-medium text-brand-600">{pctFavor}% a favor</span>
             <span className="font-medium text-sello-600">{100 - pctFavor}% en contra</span>
           </div>
@@ -180,7 +180,7 @@ export default function VotoWidget({
       {estado === "anon" && (
         <p className="mt-3 text-xs leading-relaxed text-ink-soft">
           Para que tu voto cuente, {" "}
-          <Link href="/democracia/registro" className="font-semibold text-alerta-600 hover:underline">
+          <Link href="/democracia/registro" className="font-semibold text-brand-700 hover:underline">
             regístrate con tu cédula
           </Link>
           . Tu voto es privado; solo se publican los totales.
@@ -189,13 +189,13 @@ export default function VotoWidget({
       {estado === "sin-registro" && (
         <p className="mt-3 text-xs leading-relaxed text-ink-soft">
           Tu sesión no tiene una cédula registrada.{" "}
-          <Link href="/democracia/registro" className="font-semibold text-alerta-600 hover:underline">
+          <Link href="/democracia/registro" className="font-semibold text-brand-700 hover:underline">
             Completa tu registro
           </Link>{" "}
           para votar.
         </p>
       )}
-      {error && <p className="mt-3 text-xs font-medium text-sello-600">{error}</p>}
+      {error && <p className="mt-3 text-xs font-medium text-alerta-700">{error}</p>}
     </section>
   );
 }
@@ -218,17 +218,17 @@ function BotonVoto({
       type="button"
       aria-pressed={activo}
       className={cn(
-        "flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors active:scale-95 disabled:opacity-60",
+        "flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors active:scale-95 disabled:opacity-60",
         activo && favor && "border-brand-500 bg-brand-500 text-white",
-        activo && !favor && "border-sello-500 bg-sello-500 text-white",
+        activo && !favor && "border-ink bg-ink text-canvas",
         !activo && favor && "border-hairline bg-surface text-brand-600 hover:border-brand-400 hover:bg-brand-50",
-        !activo && !favor && "border-hairline bg-surface text-sello-600 hover:border-sello-400 hover:bg-sello-50",
+        !activo && !favor && "border-hairline bg-surface text-ink hover:border-ink hover:bg-canvas",
       )}
       {...props}
     >
       <Pulgar arriba={favor} />
       {children}
-      <span className="tabular-nums opacity-80">{conteo.toLocaleString("es-DO")}</span>
+      <span className="font-mono tabular-nums opacity-80">{conteo.toLocaleString("es-DO")}</span>
     </button>
   );
 }

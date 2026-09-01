@@ -38,7 +38,7 @@ export default async function SenadoPage({
   return (
     <div className="mx-auto max-w-4xl">
       <header className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+        <h1 className="font-display text-3xl text-ink sm:text-4xl">
           Senado de la República
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
@@ -64,7 +64,7 @@ export default async function SenadoPage({
             defaultValue={q}
             placeholder="Buscar en las descripciones — p. ej. “código penal”"
             aria-label="Buscar expedientes del Senado"
-            className="h-11 w-full rounded-xl border border-hairline bg-surface pl-9 pr-3 text-sm text-ink shadow-soft placeholder:text-ink-soft/70 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            className="h-11 w-full rounded-lg border border-hairline bg-surface pl-9 pr-3 text-sm text-ink  placeholder:text-ink-soft/70 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           />
         </div>
         {cuatrienio.etiqueta !== CUATRIENIO_VIGENTE.etiqueta && (
@@ -72,7 +72,7 @@ export default async function SenadoPage({
         )}
         <button
           type="submit"
-          className="h-11 shrink-0 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-95"
+          className="h-11 shrink-0 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-95"
         >
           Buscar
         </button>
@@ -111,7 +111,7 @@ export default async function SenadoPage({
       {listado ? (
         <>
           <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
-            <span className="tabular-nums">
+            <span className="font-mono tabular-nums">
               {`${listado.total.toLocaleString("es-DO")} ${
                 listado.total === 1 ? "expediente" : "expedientes"
               }`}
@@ -126,7 +126,7 @@ export default async function SenadoPage({
             </span>
           </div>
 
-          <section className="mt-3 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+          <section className="mt-3 overflow-hidden rounded-lg border border-hairline bg-surface ">
             {listado.expedientes.length > 0 ? (
               <ul>
                 {listado.expedientes.map((exp) => (
@@ -154,7 +154,7 @@ export default async function SenadoPage({
           )}
         </>
       ) : (
-        <section className="mt-4 rounded-2xl border border-hairline bg-surface px-5 py-12 text-center shadow-card">
+        <section className="mt-4 rounded-lg border border-hairline bg-surface px-5 py-12 text-center ">
           <p className="text-sm font-medium text-ink">El Senado no respondió</p>
           <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
             El sistema de consulta del Senado está caído o rechazó la conexión.
@@ -192,7 +192,7 @@ function ExpedienteRow({ exp }: { exp: ExpedienteSenado }) {
               <span aria-hidden className="text-hairline">
                 ·
               </span>
-              <span className="tabular-nums">Creada {formatFecha(exp.fechaCreacion)}</span>
+              <span className="font-mono tabular-nums">Creada {formatFecha(exp.fechaCreacion)}</span>
             </>
           )}
         </div>

@@ -65,7 +65,7 @@ export default function VisorDocumento({
   return (
     <div>
       <div className="flex flex-wrap items-start gap-3 px-5 py-4">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-hairline bg-canvas text-ink-soft">
           <IconDoc className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -82,7 +82,7 @@ export default function VisorDocumento({
             type="button"
             onClick={() => setAbierto((v) => !v)}
             aria-expanded={abierto}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-800"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-700"
           >
             {abierto ? "Ocultar el documento" : "Leer el documento aquí"}
           </button>

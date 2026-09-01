@@ -57,7 +57,7 @@ export default async function NormaPage({ params }: Props) {
       </Link>
 
       <header className="mt-3">
-        <p className="font-mono text-sm font-semibold tabular-nums text-brand-700">
+        <p className="font-mono text-sm font-semibold tabular-nums text-ink">
           {tipo} {norma.numero}
         </p>
         <h1 className="mt-1.5 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
@@ -74,17 +74,17 @@ export default async function NormaPage({ params }: Props) {
       </header>
 
       {explicacion && (
-        <section className="mt-5 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+        <section className="mt-5 rounded-lg border border-hairline bg-surface p-5 ">
+          <p className="rotulo text-ink-soft">
             Qué es
           </p>
           <p className="mt-1.5 text-sm leading-relaxed text-ink">{explicacion}</p>
         </section>
       )}
 
-      <section className="mt-5 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+      <section className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface ">
         <div className="border-b border-hairline px-5 py-3.5">
-          <h2 className="text-sm font-semibold text-ink">El texto</h2>
+          <h2 className="font-sans text-sm font-semibold text-ink">El texto</h2>
         </div>
         {norma.url ? (
           <VisorDocumento

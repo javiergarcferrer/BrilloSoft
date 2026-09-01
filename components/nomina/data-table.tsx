@@ -46,14 +46,14 @@ export function DataTable({
   const visible = rows.slice(start, end);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-hairline bg-surface">
+    <div className="overflow-hidden rounded-lg border border-hairline bg-surface">
       <div
         className={cn(
           GRID,
-          "border-b border-hairline bg-canvas px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-ink-soft",
+          "border-b border-hairline bg-canvas px-4 py-2.5 rotulo text-ink-soft",
         )}
       >
-        <span className="text-right tabular-nums">#</span>
+        <span className="font-mono text-right tabular-nums">#</span>
         <HeaderCell label="Inst." col="institucion" {...{ sortKey, sortDir, onSort }} />
         <HeaderCell label="Área" col="area" {...{ sortKey, sortDir, onSort }} />
         <HeaderCell label="Cargo" col="cargo" {...{ sortKey, sortDir, onSort }} />
@@ -87,7 +87,7 @@ export function DataTable({
                     )}
                     style={{ height: ROW_H }}
                   >
-                    <span className="text-right tabular-nums text-xs text-ink-soft">
+                    <span className="font-mono text-right tabular-nums text-xs text-ink-soft">
                       {formatInt(idx + 1)}
                     </span>
                     <span

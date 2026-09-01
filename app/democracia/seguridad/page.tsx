@@ -22,7 +22,7 @@ export default function SeguridadPage() {
       </Link>
 
       <header className="mb-6 mt-3">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-alerta-600">
+        <div className="flex items-center gap-2 rotulo text-alerta-600">
           <IconShield className="h-4 w-4" />
           Dossier de seguridad y privacidad
         </div>
@@ -83,8 +83,8 @@ export default function SeguridadPage() {
         </Medida>
       </div>
 
-      <section className="mt-8 rounded-2xl border border-alerta-100/50 bg-alerta-50/60 p-5">
-        <h2 className="text-sm font-semibold text-ink">Lo que este piloto todavía no hace</h2>
+      <section className="mt-8 rounded-lg border border-alerta-100/50 bg-alerta-50/60 p-5">
+        <h2 className="font-sans text-sm font-semibold text-ink">Lo que este piloto todavía no hace</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
           Honestidad sobre los límites: hoy verificamos que la cédula sea{" "}
           <strong>válida</strong> y que controles un correo, pero no que la cédula
@@ -101,7 +101,7 @@ export default function SeguridadPage() {
         dominicano. Marco normativo de referencia: Ley 172-13 (protección de
         datos personales) y las normas NORTIC de la OGTIC sobre seguridad web y
         datos abiertos.{" "}
-        <Link href="/democracia" className="font-medium text-alerta-600 hover:underline">
+        <Link href="/democracia" className="font-medium text-brand-700 hover:underline">
           Volver a Democracia Legislativa
         </Link>
         .
@@ -112,9 +112,9 @@ export default function SeguridadPage() {
 
 function Medida({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-hairline bg-surface p-5 shadow-card">
-      <h2 className="flex items-start gap-2.5 text-base font-semibold text-ink">
-        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-500 text-white">
+    <section className="rounded-lg border border-hairline bg-surface p-5 ">
+      <h2 className="font-sans flex items-start gap-2.5 text-base font-semibold text-ink">
+        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-valido-600 text-white">
           <IconCheck className="h-3.5 w-3.5" />
         </span>
         {titulo}

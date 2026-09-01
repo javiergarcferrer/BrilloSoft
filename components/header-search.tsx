@@ -23,7 +23,7 @@ export default function HeaderSearch() {
   return (
     <Suspense
       fallback={
-        <div className="h-12 w-full max-w-xl rounded-full bg-white/10 ring-1 ring-inset ring-white/15" />
+        <div className="h-10 w-full max-w-xl rounded-lg bg-canvas/10 ring-1 ring-inset ring-canvas/20" />
       }
     >
       <TopSearch />

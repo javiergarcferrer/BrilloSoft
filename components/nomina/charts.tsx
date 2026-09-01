@@ -219,7 +219,7 @@ export function Histogram({ bins }: { bins: { label: string; count: number }[] }
           <div key={b.label} className="flex min-w-0 flex-1 flex-col items-center">
             <div className="flex w-full flex-1 items-end">
               <div
-                className="w-full rounded-t-md bg-brand-400 transition-[height] hover:bg-brand-500"
+                className="w-full rounded-t-md bg-ink-soft/70 transition-[height] hover:bg-ink"
                 style={{ height: `${Math.max(pct, 1)}%` }}
                 title={`${b.label}: ${formatInt(b.count)} plazas`}
               />

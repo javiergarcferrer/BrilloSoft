@@ -45,7 +45,7 @@ export function BottomSheet({
         tabIndex={open ? 0 : -1}
         aria-label="Cerrar"
         onClick={onClose}
-        className={`absolute inset-0 bg-ink/45 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-ink/45 transition-opacity duration-300 ${
           open ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -53,20 +53,20 @@ export function BottomSheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`absolute inset-x-0 bottom-0 flex max-h-[90dvh] flex-col rounded-t-3xl bg-surface shadow-pop transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`absolute inset-x-0 bottom-0 flex max-h-[90dvh] flex-col rounded-t-lg bg-surface shadow-pop transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
       >
         <div className="shrink-0 pt-2.5">
-          <div className="mx-auto h-1.5 w-10 rounded-full bg-hairline" />
+          <div className="mx-auto h-1.5 w-10 rounded-sm bg-hairline" />
         </div>
         <div className="flex shrink-0 items-center justify-between px-5 py-3">
-          <h2 className="text-base font-semibold tracking-tight text-ink">{title}</h2>
+          <h2 className="font-sans text-base font-semibold tracking-tight text-ink">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="grid h-9 w-9 place-items-center rounded-full bg-hairline text-ink-soft transition active:scale-90"
+            className="grid h-9 w-9 place-items-center rounded-md bg-canvas text-ink-soft ring-1 ring-inset ring-hairline transition hover:text-ink active:scale-90"
           >
             <IconX className="h-5 w-5" />
           </button>

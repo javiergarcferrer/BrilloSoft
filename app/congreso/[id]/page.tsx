@@ -88,8 +88,8 @@ export default async function IniciativaPage({ params }: Props) {
         </h1>
 
         {ini.tituloModificado && (
-          <div className="mt-3 rounded-xl border-l-[3px] border-brand-500 bg-surface py-3 pl-4 pr-3 shadow-soft">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-700">
+          <div className="mt-3 rounded-lg border-l-[3px] border-brand-500 bg-surface py-3 pl-4 pr-3 ">
+            <p className="rotulo text-brand-700">
               Título modificado durante el trámite
             </p>
             <p className="mt-1 text-sm leading-relaxed text-ink-soft">
@@ -103,8 +103,8 @@ export default async function IniciativaPage({ params }: Props) {
         <section
           className={
             perencion.estado === "en-riesgo"
-              ? "mt-5 rounded-xl border border-alerta-600/20 bg-alerta-50 px-4 py-3"
-              : "mt-5 rounded-xl border border-hairline bg-surface px-4 py-3 shadow-soft"
+              ? "mt-5 rounded-lg border border-alerta-600/20 bg-alerta-50 px-4 py-3"
+              : "mt-5 rounded-lg border border-hairline bg-surface px-4 py-3 "
           }
         >
           <p
@@ -141,7 +141,7 @@ export default async function IniciativaPage({ params }: Props) {
         promulgadaComo={ini.numPromulgacion}
       />
 
-      <section className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-hairline bg-surface p-5 shadow-card sm:grid-cols-3">
+      <section className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg border border-hairline bg-surface p-5  sm:grid-cols-3">
         <Dato etiqueta="Tipo" valor={ini.tipo} />
         <Dato etiqueta="Cámara de origen" valor={ini.camaraOrigen} />
         <Dato etiqueta="Estado" valor={ini.estado} />
@@ -194,7 +194,7 @@ export default async function IniciativaPage({ params }: Props) {
                         aria-hidden
                         className={
                           doc.etapa.texto
-                            ? "mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500"
+                            ? "mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sello-600"
                             : "mt-1.5 h-2 w-2 shrink-0 rounded-full bg-hairline"
                         }
                       />
@@ -202,12 +202,12 @@ export default async function IniciativaPage({ params }: Props) {
                         <p className="text-sm font-medium text-ink">
                           {doc.etiqueta}
                           {doc.etapa.texto && (
-                            <span className="ml-2 rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700">
+                            <span className="ml-2 rounded bg-brand-50 px-1.5 py-0.5 rotulo text-brand-700">
                               texto
                             </span>
                           )}
                         </p>
-                        <p className="mt-0.5 text-xs tabular-nums text-ink-soft">
+                        <p className="font-mono mt-0.5 text-xs tabular-nums text-ink-soft">
                           {formatFecha(doc.cargado ?? undefined)}
                           {doc.extension && ` · ${doc.extension.toUpperCase()}`}
                         </p>
@@ -257,14 +257,14 @@ export default async function IniciativaPage({ params }: Props) {
                 {historicos.results.map((h, i) => (
                   <li key={h.id} className="flex gap-3 pb-4 last:pb-0">
                     <div className="flex flex-col items-center">
-                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-sello-600" />
                       {i < historicos.results.length - 1 && (
                         <span className="mt-1 w-px flex-1 bg-hairline" />
                       )}
                     </div>
                     <div className="-mt-0.5 min-w-0 flex-1">
                       <p className="text-sm font-medium text-ink">{h.estado ?? "—"}</p>
-                      <p className="mt-0.5 text-xs tabular-nums text-ink-soft">
+                      <p className="font-mono mt-0.5 text-xs tabular-nums text-ink-soft">
                         {formatFecha(h.inicio ?? undefined)}
                         {h.fin && h.fin !== h.inicio && (
                           <> → {formatFecha(h.fin)}</>
@@ -293,7 +293,7 @@ export default async function IniciativaPage({ params }: Props) {
                   <p className="text-sm font-medium text-ink">
                     {p.nombre}
                     {p.principal && (
-                      <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-brand-700">
+                      <span className="ml-2 rotulo text-brand-700">
                         principal
                       </span>
                     )}
@@ -323,10 +323,10 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+    <section className="overflow-hidden rounded-lg border border-hairline bg-surface ">
       <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-        <h2 className="text-sm font-semibold text-ink">{titulo}</h2>
-        {nota && <span className="text-xs tabular-nums text-ink-soft">{nota}</span>}
+        <h2 className="font-sans text-sm font-semibold text-ink">{titulo}</h2>
+        {nota && <span className="font-mono text-xs tabular-nums text-ink-soft">{nota}</span>}
       </div>
       {children}
     </section>

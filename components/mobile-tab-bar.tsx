@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SECCIONES, seccionDe } from "@/lib/secciones";
-import { IconChartBar, IconCheck, IconCoins, IconDoc, IconLayers, IconSparkles } from "./icons";
+import { IconChartBar, IconCheck, IconCoins, IconDoc, IconGrid, IconLayers } from "./icons";
 import { cn } from "@/lib/cn";
 import type { SeccionId } from "@/lib/secciones";
 
@@ -31,7 +31,7 @@ export default function MobileTabBar() {
     {
       href: "/",
       label: "Panorama",
-      Icon: IconSparkles,
+      Icon: IconGrid,
       activa: pathname === "/",
       barra: "bg-ink",
       texto: "text-ink",
@@ -48,7 +48,7 @@ export default function MobileTabBar() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-surface/92 backdrop-blur-lg lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-surface lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Navegación principal"
     >
@@ -68,12 +68,12 @@ export default function MobileTabBar() {
             <span
               aria-hidden
               className={cn(
-                "absolute top-0 h-0.5 w-8 rounded-full transition-opacity",
+                "absolute top-0 h-0.5 w-8 transition-opacity",
                 barra,
                 activa ? "opacity-100" : "opacity-0",
               )}
             />
-            <Icon className="h-[22px] w-[22px]" />
+            <Icon className="h-6 w-6" />
             {label}
           </Link>
         ))}

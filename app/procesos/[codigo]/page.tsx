@@ -114,7 +114,7 @@ export default async function ProcesoPage({
         </div>
       </div>
 
-      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+      <section className="rounded-lg bg-surface p-6 border border-hairline">
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset ${est.badge}`}
@@ -134,7 +134,7 @@ export default async function ProcesoPage({
           )}
         </div>
 
-        <h1 className="mt-3 text-2xl font-semibold leading-tight">{p.titulo}</h1>
+        <h1 className="mt-3 font-display text-3xl leading-tight">{p.titulo}</h1>
         <p className="mt-1 text-ink-soft">
           {p.unidad_compra}{" "}
           <Link
@@ -148,15 +148,15 @@ export default async function ProcesoPage({
 
         <div className="mt-4 flex flex-wrap items-center gap-6">
           <div>
-            <div className="text-xs uppercase tracking-wide text-ink-soft">
+            <div className="rotulo text-ink-soft">
               Monto estimado
             </div>
-            <div className="text-2xl font-bold text-ink">
+            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
               {formatMonto(p.monto_estimado, p.divisa)}
             </div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wide text-ink-soft">
+            <div className="rotulo text-ink-soft">
               Recibe ofertas hasta
             </div>
             <div
@@ -189,9 +189,9 @@ export default async function ProcesoPage({
         )}
       </section>
 
-      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+      <section className="rounded-lg bg-surface p-6 border border-hairline">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-semibold">Cómo participar</h2>
+          <h2 className="font-sans font-semibold">Cómo participar</h2>
           <Link href="/guia" className="text-xs font-medium text-brand-600 hover:underline">
             ¿Primera vez ofertando? Lee la guía completa →
           </Link>
@@ -273,8 +273,8 @@ export default async function ProcesoPage({
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
-          <h2 className="font-semibold">Cronograma</h2>
+        <section className="rounded-lg bg-surface p-6 border border-hairline">
+          <h2 className="font-sans font-semibold">Cronograma</h2>
           <ol className="mt-4">
             {fechas.map(([label, iso, destacar], i) => {
               const last = i === fechas.length - 1;
@@ -306,8 +306,8 @@ export default async function ProcesoPage({
           </ol>
         </section>
 
-        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
-          <h2 className="font-semibold">Información general</h2>
+        <section className="rounded-lg bg-surface p-6 border border-hairline">
+          <h2 className="font-sans font-semibold">Información general</h2>
           <dl className="mt-3 space-y-2 text-sm">
             {flags.map(([label, value]) => (
               <div
@@ -322,8 +322,8 @@ export default async function ProcesoPage({
         </section>
       </div>
 
-      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
-        <h2 className="font-semibold">
+      <section className="rounded-lg bg-surface p-6 border border-hairline">
+        <h2 className="font-sans font-semibold">
           Artículos solicitados{" "}
           <span className="font-normal text-ink-soft">({articulos.length})</span>
         </h2>
@@ -361,7 +361,7 @@ export default async function ProcesoPage({
                     <td className="py-2 pr-3 text-right">
                       {formatMonto(a.precio_unitario_estimado, p.divisa)}
                     </td>
-                    <td className="py-2 text-right font-medium">
+                    <td className="py-2 text-right font-mono font-medium tabular-nums">
                       {formatMonto(a.precio_total_estimado, p.divisa)}
                     </td>
                   </tr>
@@ -373,7 +373,7 @@ export default async function ProcesoPage({
                     <td colSpan={4} className="py-2 pr-3 text-right font-semibold">
                       Total estimado de artículos
                     </td>
-                    <td className="py-2 text-right font-bold">
+                    <td className="py-2 text-right font-mono font-semibold tabular-nums">
                       {formatMonto(totalArticulos, p.divisa)}
                     </td>
                   </tr>
@@ -385,8 +385,8 @@ export default async function ProcesoPage({
       </section>
 
       {contratos.length > 0 && (
-        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
-          <h2 className="font-semibold">
+        <section className="rounded-lg bg-surface p-6 border border-hairline">
+          <h2 className="font-sans font-semibold">
             Adjudicación — quién ganó{" "}
             <span className="font-normal text-ink-soft">({contratos.length})</span>
           </h2>
@@ -415,7 +415,7 @@ export default async function ProcesoPage({
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-bold">
+                  <span className="font-mono font-semibold tabular-nums">
                     {formatMonto(c.valor_contratado, c.divisa || p.divisa)}
                   </span>
                   {c.url_contrato && (
@@ -439,9 +439,9 @@ export default async function ProcesoPage({
 
       <section
         id="documentos"
-        className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline"
+        className="rounded-lg bg-surface p-6 border border-hairline"
       >
-        <h2 className="font-semibold">
+        <h2 className="font-sans font-semibold">
           Documentos del proceso{" "}
           <span className="font-normal text-ink-soft">({documentos.length})</span>
         </h2>
@@ -452,7 +452,7 @@ export default async function ProcesoPage({
         ) : (
           <>
             {pliego && (
-              <div className="mt-3 overflow-hidden rounded-xl border border-brand-200 bg-brand-50/40">
+              <div className="mt-3 overflow-hidden rounded-lg border border-brand-200 bg-brand-50/40">
                 <VisorDocumento
                   url={pliego.url_documento}
                   urlVisor={urlDeLectura(pliego.url_documento)}
@@ -541,7 +541,7 @@ function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) 
       >
         <span className="mt-0.5 shrink-0" aria-hidden>
           {clave ? (
-            <IconStar className="h-4 w-4 text-alerta-500" filled />
+            <IconStar className="h-4 w-4 text-brand-600" filled />
           ) : (
             <IconDoc className="h-4 w-4 text-ink-soft" />
           )}
@@ -558,7 +558,7 @@ function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) 
         target="_blank"
         rel="noopener noreferrer"
         title="Abrir en Compras Dominicanas"
-        className="absolute right-2 top-2 rounded p-1 text-ink-soft transition-colors hover:bg-white hover:text-brand-600"
+        className="absolute right-2 top-2 rounded p-1 text-ink-soft transition-colors hover:bg-canvas hover:text-brand-600"
       >
         <IconExternal className="h-3.5 w-3.5" />
         <span className="sr-only">Abrir en el origen</span>

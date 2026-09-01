@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
  * un solo sistema. Clases literales: Tailwind escanea el fuente.
  */
 const TONOS: Record<CondicionTono, { badge: string; dot: string }> = {
-  vigente: { badge: "bg-brand-50 text-brand-600 ring-brand-500/20", dot: "bg-brand-400" },
+  vigente: { badge: "bg-valido-50 text-valido-700 ring-valido-600/20", dot: "bg-valido-500" },
   aprobado: {
     badge: "bg-brand-50 text-brand-600 ring-brand-500/20",
     dot: "bg-brand-500",
@@ -30,7 +30,7 @@ export function CondicionBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 ring-inset",
+        "inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 ring-inset",
         TONOS[tono].badge,
         className,
       )}

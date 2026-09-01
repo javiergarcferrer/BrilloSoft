@@ -226,3 +226,13 @@ export const IconSliders = (p: P) => (
     <circle cx="13" cy="18" r="2" />
   </Svg>
 );
+
+/** Rejilla: la vista de conjunto. Describe el panorama sin decorar. */
+export const IconGrid = (p: P) => (
+  <Svg {...p}>
+    <rect x="3.5" y="3.5" width="7" height="7" rx="1" />
+    <rect x="13.5" y="3.5" width="7" height="7" rx="1" />
+    <rect x="3.5" y="13.5" width="7" height="7" rx="1" />
+    <rect x="13.5" y="13.5" width="7" height="7" rx="1" />
+  </Svg>
+);

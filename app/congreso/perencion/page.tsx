@@ -56,8 +56,8 @@ export default async function PerencionPage() {
       </Link>
 
       <header className="mb-6 mt-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-          Alerta de perención
+        <h1 className="font-display text-3xl text-ink sm:text-4xl">
+          ¿Qué se muere cuando cierra la legislatura?
         </h1>
         <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-soft">
           Cada legislatura ordinaria dura {DURACION_LEGISLATURA_DIAS} días. Las piezas
@@ -67,7 +67,7 @@ export default async function PerencionPage() {
       </header>
 
       {legislatura && diasParaCierre !== null && (
-        <section className="mb-6 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+        <section className="mb-6 rounded-lg border border-hairline bg-surface p-5 ">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-ink">
@@ -78,28 +78,28 @@ export default async function PerencionPage() {
                 {formatFecha(legislatura.cierre.toISOString().slice(0, 10))}
               </p>
             </div>
-            <p className="text-2xl font-bold tabular-nums text-ink">
+            <p className="font-mono text-2xl font-bold tabular-nums text-ink">
               {diasParaCierre}
               <span className="ml-1 text-sm font-medium text-ink-soft">
                 días restantes
               </span>
             </p>
           </div>
-          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-canvas">
+          <div className="mt-4 h-1.5 overflow-hidden rounded-sm border border-hairline bg-canvas">
             <div
-              className="h-full rounded-full bg-brand-500"
+              className="h-full bg-alerta-500"
               style={{ width: `${progreso}%` }}
             />
           </div>
         </section>
       )}
 
-      <section className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+      <section className="overflow-hidden rounded-lg border border-hairline bg-surface ">
         <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-          <h2 className="text-sm font-semibold text-ink">
+          <h2 className="font-sans text-sm font-semibold text-ink">
             Piezas en la ventana de aviso
           </h2>
-          <span className="text-xs tabular-nums text-ink-soft">{enRiesgo.length}</span>
+          <span className="font-mono text-xs tabular-nums text-ink-soft">{enRiesgo.length}</span>
         </div>
 
         {enRiesgo.length > 0 ? (

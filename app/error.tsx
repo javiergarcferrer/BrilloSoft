@@ -2,7 +2,7 @@
 
 export default function Error({ reset }: { error: Error; reset: () => void }) {
   return (
-    <div className="rounded-2xl bg-surface p-10 text-center shadow-soft ring-1 ring-hairline">
+    <div className="rounded-lg border border-hairline bg-surface p-10 text-center">
       <h1 className="text-lg font-semibold">La API de la DGCP no respondió</h1>
       <p className="mt-2 text-sm text-ink-soft">
         El portal de datos abiertos a veces tarda o se cae por momentos. Suele

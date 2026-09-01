@@ -219,7 +219,7 @@ export default function LectorPdf({ url, urlOrigen }: Props) {
         )}
         <canvas
           ref={lienzo}
-          className={estado === "listo" ? "mx-auto shadow-card" : "hidden"}
+          className={estado === "listo" ? "mx-auto border border-hairline" : "hidden"}
         />
       </div>
     </div>

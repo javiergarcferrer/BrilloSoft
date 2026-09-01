@@ -29,10 +29,10 @@ export default function SeguirButton({
       <button
         onClick={() => toggleSeguimiento(codigo)}
         aria-pressed={seguido}
-        className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition active:scale-95 ${
+        className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition active:scale-95 ${
           seguido
-            ? "bg-alerta-500 text-white"
-            : "bg-hairline text-ink ring-1 ring-inset ring-hairline"
+            ? "bg-brand-600 text-canvas"
+            : "border border-hairline bg-surface text-ink"
         }`}
       >
         <IconStar className="h-5 w-5" filled={seguido} />
@@ -47,7 +47,7 @@ export default function SeguirButton({
       aria-pressed={seguido}
       className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition active:scale-95 ${
         seguido
-          ? "border-alerta-100 bg-alerta-50 text-alerta-600"
+          ? "border-brand-200 bg-brand-50 text-brand-700"
           : "border-hairline hover:border-brand-500 hover:text-brand-600"
       }`}
     >

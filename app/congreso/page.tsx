@@ -43,7 +43,7 @@ export default async function CongresoPage({
   return (
     <div className="mx-auto max-w-4xl">
       <header className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+        <h1 className="font-display text-3xl text-ink sm:text-4xl">
           Cámara de Diputados
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
@@ -61,16 +61,16 @@ export default async function CongresoPage({
       {legislatura && diasParaCierre !== null && (
         <Link
           href="/congreso/perencion"
-          className="mb-5 flex items-center gap-3 rounded-xl border border-hairline bg-surface px-4 py-3 shadow-soft transition-shadow hover:shadow-card"
+          className="mb-5 flex items-center gap-3 rounded-lg border border-hairline bg-surface px-4 py-3  transition-colors hover:bg-canvas/60"
         >
-          <IconClock className="h-5 w-5 shrink-0 text-brand-600" />
+          <IconClock className="h-5 w-5 shrink-0 text-alerta-600" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-ink">
               {legislatura.nombre} {legislatura.anio}
             </p>
             <p className="text-xs text-ink-soft">
               Quedan{" "}
-              <span className="font-semibold tabular-nums text-ink">
+              <span className="font-mono font-semibold tabular-nums text-ink">
                 {diasParaCierre} días
               </span>{" "}
               antes de que las piezas pendientes se perimen.
@@ -83,7 +83,7 @@ export default async function CongresoPage({
       <BuscadorCongreso initial={q} />
 
       <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
-        <span className="tabular-nums">
+        <span className="font-mono tabular-nums">
           {`${respuesta.total.toLocaleString("es-DO")} ${
             respuesta.total === 1 ? "iniciativa" : "iniciativas"
           }`}
@@ -108,7 +108,7 @@ export default async function CongresoPage({
         )}
       </div>
 
-      <section className="mt-3 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+      <section className="mt-3 overflow-hidden rounded-lg border border-hairline bg-surface ">
         {iniciativas.length > 0 ? (
           <ul>
             {iniciativas.map((ini) => (
@@ -168,7 +168,7 @@ function Paginacion({
         <span />
       )}
 
-      <span className="text-xs tabular-nums text-ink-soft">
+      <span className="font-mono text-xs tabular-nums text-ink-soft">
         Página {pagina.toLocaleString("es-DO")} de {totalPaginas.toLocaleString("es-DO")}
       </span>
 

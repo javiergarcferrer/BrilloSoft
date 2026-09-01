@@ -328,11 +328,11 @@ export default function Buscador() {
       {/* Encabezado compacto — la búsqueda vive en la barra superior */}
       <div className="flex items-center justify-between gap-3 pt-1">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-ink sm:text-xl">
-            Oportunidades de compras públicas
+          <h1 className="font-display text-2xl leading-tight text-ink sm:text-3xl">
+            ¿Qué está comprando el Estado ahora mismo?
           </h1>
           <p className="mt-0.5 inline-flex items-center gap-1.5 text-xs text-ink-soft">
-            <span className="relative inline-block h-1.5 w-1.5 rounded-full bg-brand-500 text-brand-500">
+            <span className="relative inline-block h-1.5 w-1.5 rounded-md border border-brand-200 bg-brand-500 text-brand-500">
               <span className="live-dot" />
             </span>
             En vivo desde la API de datos abiertos de la DGCP
@@ -341,7 +341,7 @@ export default function Buscador() {
       </div>
 
       {/* Filtros — panel en escritorio */}
-      <section className="hidden rounded-2xl bg-surface p-5 shadow-soft ring-1 ring-hairline lg:block">
+      <section className="hidden rounded-lg bg-surface p-5 border border-hairline lg:block">
         <div className="flex items-center gap-2 text-sm font-semibold text-ink">
           <IconFilter className="h-4 w-4 text-brand-600" />
           Filtros
@@ -352,16 +352,16 @@ export default function Buscador() {
       </section>
 
       {/* Barra de control en móvil: filtros + conteo + chips activos */}
-      <div className="sticky top-[60px] z-30 -mx-4 border-b border-hairline bg-canvas/85 px-4 py-2.5 backdrop-blur lg:hidden">
+      <div className="sticky top-[60px] z-30 -mx-4 border-b border-hairline bg-canvas px-4 py-2.5 lg:hidden">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSheetOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-sm font-semibold shadow-soft transition active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3.5 py-2 text-sm font-semibold  transition active:scale-95"
           >
             <IconSliders className="h-4 w-4 text-brand-600" />
             Filtros
             {chips.length > 0 && (
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[11px] font-bold text-white">
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 font-mono text-[11px] font-semibold tabular-nums text-canvas">
                 {chips.length}
               </span>
             )}
@@ -378,7 +378,7 @@ export default function Buscador() {
               <button
                 key={c.key}
                 onClick={c.clear}
-                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/15 transition active:scale-95"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/15 transition active:scale-95"
               >
                 <span className="max-w-[8.5rem] truncate">{c.label}</span>
                 <IconX className="h-3 w-3 shrink-0" />
@@ -396,7 +396,7 @@ export default function Buscador() {
         footer={
           <button
             onClick={() => setSheetOpen(false)}
-            className="h-12 w-full rounded-xl bg-brand-600 text-sm font-semibold text-white transition active:scale-[0.99]"
+            className="h-12 w-full rounded-lg bg-brand-600 text-sm font-semibold text-white transition active:scale-[0.99]"
           >
             {data
               ? `Ver ${data.totalResults.toLocaleString("es-DO")} resultados`
@@ -417,7 +417,7 @@ export default function Buscador() {
               <button
                 key={c.key}
                 onClick={c.clear}
-                className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/15 transition hover:bg-brand-100 active:scale-95"
+                className="inline-flex items-center gap-1 rounded-md border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/15 transition hover:bg-brand-100 active:scale-95"
               >
                 {c.label}
                 <IconX className="h-3 w-3" />
@@ -432,7 +432,7 @@ export default function Buscador() {
                 setStartdate(hoyMenosDias(30));
                 setEnddate("");
               }}
-              className="ml-1 text-xs font-medium text-ink-soft transition hover:text-sello-600"
+              className="ml-1 text-xs font-medium text-ink-soft transition hover:text-brand-700"
             >
               Limpiar todo
             </button>
@@ -445,7 +445,7 @@ export default function Buscador() {
               Consultando la DGCP…
             </span>
           ) : error ? (
-            <span className="text-sello-600">⚠ {error}</span>
+            <span className="text-alerta-700">{error}</span>
           ) : data ? (
             <span>
               <strong className="text-ink">
@@ -507,13 +507,13 @@ export default function Buscador() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="shimmer h-44 rounded-2xl ring-1 ring-hairline"
+                className="shimmer h-44 rounded-lg border border-hairline"
               />
             ))}
           </div>
         ) : ordenados.length === 0 && !error ? (
-          <div className="rounded-2xl bg-surface p-12 text-center shadow-soft ring-1 ring-hairline">
-            <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-hairline text-ink-soft">
+          <div className="rounded-lg bg-surface p-12 text-center border border-hairline">
+            <span className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-hairline text-ink-soft">
               <IconSearch className="h-6 w-6" />
             </span>
             <p className="mt-3 font-semibold text-ink">Sin resultados con estos filtros</p>
@@ -532,7 +532,7 @@ export default function Buscador() {
               <div className="mt-5 text-center">
                 <button
                   onClick={() => setVisibles((v) => v + 24)}
-                  className="rounded-full border border-hairline bg-surface px-5 py-2.5 text-sm font-medium transition hover:border-brand-500 hover:text-brand-700"
+                  className="rounded-lg border border-hairline bg-surface px-5 py-2.5 text-sm font-medium transition hover:border-brand-500 hover:text-brand-700"
                 >
                   Mostrar más ({ordenados.length - visibles} restantes)
                 </button>

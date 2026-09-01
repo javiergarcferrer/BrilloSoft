@@ -60,7 +60,7 @@ export default async function ProveedorPage({
         Volver al buscador
       </Link>
 
-      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+      <section className="rounded-lg bg-surface p-6 border border-hairline">
         <div className="text-xs uppercase tracking-wide text-ink-soft">
           Proveedor del Estado · RPE {rpe}
         </div>
@@ -72,8 +72,8 @@ export default async function ProveedorPage({
               {total.toLocaleString("es-DO")}
             </div>
           </div>
-          <div className="rounded-lg bg-brand-500 px-4 py-3 text-white">
-            <div className="text-xs text-brand-100">
+          <div className="rounded-lg bg-ink px-4 py-3 text-canvas">
+            <div className="text-xs text-canvas/70">
               Monto total (últimos {contratos.length.toLocaleString("es-DO")})
             </div>
             <div className="mt-0.5 text-lg font-bold">{formatMonto(suma, "DOP")}</div>
@@ -94,13 +94,13 @@ export default async function ProveedorPage({
       </section>
 
       {historial.porAnio.length > 1 && (
-        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+        <section className="rounded-lg bg-surface p-6 border border-hairline">
           <h2 className="font-semibold">Contratos por año</h2>
           <ul className="mt-3 space-y-2.5 text-sm">
             {historial.porAnio.map((a) => (
               <li key={a.anio}>
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-medium tabular-nums">{a.anio}</span>
+                  <span className="font-mono font-medium tabular-nums">{a.anio}</span>
                   <span className="shrink-0 text-xs text-ink-soft">
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
@@ -118,7 +118,7 @@ export default async function ProveedorPage({
       )}
 
       <div className="grid gap-5 lg:grid-cols-5">
-        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline lg:col-span-2">
+        <section className="rounded-lg bg-surface p-6 border border-hairline lg:col-span-2">
           <h2 className="font-semibold">Sus principales clientes</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {topInstituciones.map(([inst, a]) => (
@@ -135,7 +135,7 @@ export default async function ProveedorPage({
           </ul>
         </section>
 
-        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline lg:col-span-3">
+        <section className="rounded-lg bg-surface p-6 border border-hairline lg:col-span-3">
           <h2 className="font-semibold">Contratos recientes</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {recientes.map((c, i) => (

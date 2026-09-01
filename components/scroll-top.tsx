@@ -21,7 +21,7 @@ export default function ScrollTop() {
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label="Volver arriba"
-      className="fixed right-4 z-40 grid h-11 w-11 place-items-center rounded-full bg-ink text-white shadow-pop transition hover:bg-ink active:scale-90 bottom-[calc(5.25rem+env(safe-area-inset-bottom))]"
+      className="fixed right-4 z-40 grid h-11 w-11 place-items-center rounded-lg bg-ink text-canvas shadow-card transition hover:bg-brand-700 active:scale-90 bottom-[calc(5.25rem+env(safe-area-inset-bottom))]"
     >
       <IconArrowUp className="h-5 w-5" />
     </button>

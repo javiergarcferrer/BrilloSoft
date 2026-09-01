@@ -27,8 +27,8 @@ export default function GlobalNav() {
         className={cn(
           base,
           pathname === "/"
-            ? "bg-white/12 text-white"
-            : "text-white/65 hover:bg-white/8 hover:text-white",
+            ? "bg-canvas/12 text-canvas"
+            : "text-canvas/65 hover:bg-canvas/10 hover:text-canvas",
         )}
       >
         Panorama
@@ -45,8 +45,8 @@ export default function GlobalNav() {
               base,
               "flex items-center gap-1.5",
               activa
-                ? "bg-white/12 text-white"
-                : "text-white/65 hover:bg-white/8 hover:text-white",
+                ? "bg-canvas/12 text-canvas"
+                : "text-canvas/65 hover:bg-canvas/10 hover:text-canvas",
             )}
           >
             <span
@@ -57,7 +57,10 @@ export default function GlobalNav() {
                 activa ? "opacity-100" : "opacity-40",
               )}
             />
-            {seccion.nombre}
+            <>
+                <span className="xl:hidden">{seccion.nombre}</span>
+                <span className="hidden xl:inline">{seccion.pregunta}</span>
+              </>
           </Link>
         );
       })}

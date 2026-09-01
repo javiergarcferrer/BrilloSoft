@@ -35,13 +35,13 @@ export default function BuscadorCongreso({ initial = "" }: { initial?: string })
           onChange={(e) => setValor(e.target.value)}
           placeholder="Buscar en el texto de las iniciativas — p. ej. “medio ambiente”"
           aria-label="Buscar iniciativas"
-          className="h-11 w-full rounded-xl border border-hairline bg-surface pl-9 pr-3 text-sm text-ink shadow-soft placeholder:text-ink-soft/70 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="h-11 w-full rounded-lg border border-hairline bg-surface pl-9 pr-3 text-sm text-ink placeholder:text-ink-soft/70 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         />
       </div>
       <button
         type="submit"
         disabled={pendiente}
-        className="h-11 shrink-0 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-95 disabled:opacity-60"
+        className="h-11 shrink-0 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-95 disabled:opacity-60"
       >
         {pendiente ? "Buscando…" : "Buscar"}
       </button>

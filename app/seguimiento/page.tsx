@@ -53,12 +53,12 @@ export default function SeguimientoPage() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl bg-surface p-5 shadow-soft ring-1 ring-hairline">
+      <section className="rounded-lg bg-surface p-5 border border-hairline">
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           <IconStar className="h-5 w-5 text-alerta-500" filled />
           Mi seguimiento
           {procesos.length > 0 && (
-            <span className="ml-1 rounded-full bg-alerta-50 px-2 py-0.5 text-xs font-semibold text-alerta-600">
+            <span className="ml-1 rounded-full bg-canvas px-2 py-0.5 text-xs font-semibold text-ink-soft">
               {procesos.length}
             </span>
           )}
@@ -72,17 +72,17 @@ export default function SeguimientoPage() {
       {cargando ? (
         <div className="grid gap-3 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="shimmer h-44 rounded-2xl ring-1 ring-hairline" />
+            <div key={i} className="shimmer h-44 rounded-lg border border-hairline" />
           ))}
         </div>
       ) : procesos.length === 0 ? (
-        <div className="rounded-2xl bg-surface p-12 text-center shadow-soft ring-1 ring-hairline">
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-alerta-50 text-alerta-500">
+        <div className="rounded-lg bg-surface p-12 text-center border border-hairline">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-lg border border-hairline bg-canvas text-ink-soft">
             <IconStar className="h-7 w-7" />
           </span>
           <p className="mt-4 font-semibold text-ink">Aún no sigues ningún proceso</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
-            Marca la estrella ☆ en cualquier tarjeta o ficha para guardarlo aquí y
+            Marca la estrella en cualquier tarjeta o ficha para guardarlo aquí y
             seguir su cierre.
           </p>
           <Link

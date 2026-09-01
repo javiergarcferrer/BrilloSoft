@@ -35,8 +35,8 @@ export default async function FuentesPage() {
       </Link>
 
       <header className="mb-6 mt-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-          Estado de las fuentes
+        <h1 className="font-display text-3xl text-ink sm:text-4xl">
+          ¿De dónde sale cada dato?
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
           Qué alimenta esta plataforma, qué no, y por qué. Sin maquillarlo: una
@@ -275,8 +275,8 @@ export default async function FuentesPage() {
         </Fuente>
       </div>
 
-      <section className="mt-8 rounded-2xl border border-hairline bg-surface p-5 shadow-card">
-        <h2 className="text-sm font-semibold text-ink">Límites de cobertura</h2>
+      <section className="mt-8 rounded-lg border border-hairline bg-surface p-5 ">
+        <h2 className="font-sans text-sm font-semibold text-ink">Límites de cobertura</h2>
         <ul className="mt-2.5 space-y-2 text-sm leading-relaxed text-ink-soft">
           <li>
             El listado de <strong>Diputados</strong> cubre el registro vigente. Las
@@ -310,7 +310,7 @@ export default async function FuentesPage() {
 }
 
 const ESTADOS = {
-  activa: "bg-brand-50 text-brand-600 ring-brand-500/20",
+  activa: "bg-valido-50 text-valido-700 ring-valido-500/20",
   bloqueada: "bg-sello-50 text-sello-700 ring-sello-600/20",
   descartada: "bg-hairline text-ink-soft ring-hairline",
   caida: "bg-alerta-50 text-alerta-600 ring-alerta-600/20",
@@ -328,11 +328,11 @@ function Fuente({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+    <section className="rounded-lg border border-hairline bg-surface p-5 ">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-base font-semibold text-ink">{nombre}</h2>
+        <h2 className="font-sans text-base font-semibold text-ink">{nombre}</h2>
         <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 ring-inset ${ESTADOS[estado]}`}
+          className={`inline-flex items-center rounded-full px-2 py-0.5 rotulo ring-1 ring-inset ${ESTADOS[estado]}`}
         >
           {etiqueta}
         </span>
@@ -346,7 +346,7 @@ function Metrica({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
     <div>
       <dt className="text-xs font-medium text-ink-soft">{etiqueta}</dt>
-      <dd className="mt-0.5 text-sm font-semibold tabular-nums text-ink">{valor}</dd>
+      <dd className="font-mono mt-0.5 text-sm font-semibold tabular-nums text-ink">{valor}</dd>
     </div>
   );
 }

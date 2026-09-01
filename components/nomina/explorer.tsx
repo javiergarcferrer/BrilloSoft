@@ -57,14 +57,14 @@ export function Explorer() {
 
   if (error) {
     return (
-      <p className="rounded-xl border border-hairline bg-surface p-6 text-sm text-ink-soft">
+      <p className="rounded-lg border border-hairline bg-surface p-6 text-sm text-ink-soft">
         {error}
       </p>
     );
   }
   if (!data) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-hairline bg-surface p-6 text-sm text-ink-soft">
+      <div className="flex items-center gap-3 rounded-lg border border-hairline bg-surface p-6 text-sm text-ink-soft">
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-100 border-t-brand-600" />
         Cargando la nómina consolidada…
       </div>
@@ -241,7 +241,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
   return (
     <div className="space-y-5">
       {/* ---------- filter bar ---------- */}
-      <div className="rounded-2xl border border-hairline bg-surface p-4 shadow-soft sm:p-5">
+      <div className="rounded-lg border border-hairline bg-surface p-4  sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <label className="relative flex-1">
             <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
@@ -430,7 +430,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
             <button
               type="button"
               onClick={exportCsv}
-              className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-card transition-colors hover:bg-brand-700"
+              className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white  transition-colors hover:bg-brand-700"
             >
               <IconDownload className="h-4 w-4" /> Exportar CSV
             </button>
@@ -485,12 +485,12 @@ function sortLabel(k: SortKey): string {
 
 function Kpi({ icon: Icon, label, value }: { icon: IconType; label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-hairline bg-surface p-3.5 shadow-soft">
+    <div className="rounded-lg border border-hairline bg-surface p-3.5 ">
       <div className="flex items-center gap-1.5 text-ink-soft">
         <Icon className="h-3.5 w-3.5" />
-        <span className="text-[11px] font-medium uppercase tracking-wide">{label}</span>
+        <span className="rotulo">{label}</span>
       </div>
-      <p className="mt-1.5 font-display text-xl font-semibold text-ink tabular-nums">{value}</p>
+      <p className="font-mono mt-1.5 font-display text-xl text-ink tabular-nums">{value}</p>
     </div>
   );
 }
@@ -507,10 +507,10 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-hairline bg-surface p-4 shadow-soft sm:p-5">
+    <section className="rounded-lg border border-hairline bg-surface p-4  sm:p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
+          <h2 className="font-display text-lg text-ink">{title}</h2>
           {subtitle && <p className="mt-0.5 text-sm text-ink-soft">{subtitle}</p>}
         </div>
         {action}
@@ -537,7 +537,7 @@ function TabBtn({
       onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-        active ? "bg-brand-600 text-white shadow-soft" : "text-ink-soft hover:text-ink",
+        active ? "bg-brand-600 text-white " : "text-ink-soft hover:text-ink",
       )}
     >
       <Icon className="h-4 w-4" />

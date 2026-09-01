@@ -45,15 +45,15 @@ const ESTADOS: [string, string][] = [
 export default function GuiaPage() {
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
-        <h1 className="text-2xl font-semibold">Guía rápida para ofertar al Estado</h1>
+      <section className="rounded-lg bg-surface p-6 border border-hairline">
+        <h1 className="font-display text-3xl">¿Cómo se le oferta al Estado?</h1>
         <p className="mt-2 text-sm text-ink-soft">
           Lo esencial para pasar de &quot;vi una licitación interesante&quot; a
           &quot;presenté mi oferta a tiempo&quot;, en cuatro pasos.
         </p>
       </section>
 
-      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+      <section className="rounded-lg bg-surface p-6 border border-hairline">
         <h2 className="font-semibold">1 · Regístrate una sola vez: el RPE</h2>
         <p className="mt-2 text-sm text-ink-soft">
           El <strong>Registro de Proveedores del Estado (RPE)</strong> es el requisito
@@ -86,7 +86,7 @@ export default function GuiaPage() {
         </p>
       </section>
 
-      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+      <section className="rounded-lg bg-surface p-6 border border-hairline">
         <h2 className="font-semibold">2 · Conoce las modalidades (y dónde empezar)</h2>
         <dl className="mt-3 space-y-2 text-sm">
           {MODALIDADES.map(([m, d]) => (
@@ -98,7 +98,7 @@ export default function GuiaPage() {
         </dl>
       </section>
 
-      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+      <section className="rounded-lg bg-surface p-6 border border-hairline">
         <h2 className="font-semibold">3 · Los documentos que casi siempre piden</h2>
         <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-ink-soft">
           <li>Constancia de inscripción en el RPE (vigente y en el rubro del proceso).</li>
@@ -123,7 +123,7 @@ export default function GuiaPage() {
         </p>
       </section>
 
-      <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+      <section className="rounded-lg bg-surface p-6 border border-hairline">
         <h2 className="font-semibold">4 · Qué significa cada estado</h2>
         <dl className="mt-3 space-y-2 text-sm">
           {ESTADOS.map(([e, d]) => (
@@ -135,7 +135,7 @@ export default function GuiaPage() {
         </dl>
       </section>
 
-      <section className="rounded-2xl bg-brand-50 p-6 ring-1 ring-brand-100">
+      <section className="rounded-lg bg-brand-50 p-6 border border-brand-100">
         <h2 className="font-semibold text-brand-900">Consejos que ganan procesos</h2>
         <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-brand-900/80">
           <li>
@@ -151,7 +151,7 @@ export default function GuiaPage() {
             publicado y tu oferta debe responder a la versión final.
           </li>
           <li>
-            Un proceso <strong>desierto</strong> casi siempre se republica: márcalo con ★
+            Un proceso <strong>desierto</strong> casi siempre se republica: márcalo con la estrella de seguimiento
             y prepárate para la segunda ronda.
           </li>
           <li>

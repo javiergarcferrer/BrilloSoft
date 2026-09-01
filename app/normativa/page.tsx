@@ -37,7 +37,7 @@ export default async function NormativaPage({
   return (
     <div className="mx-auto max-w-4xl">
       <header className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+        <h1 className="font-display text-3xl text-ink sm:text-4xl">
           Normativa del Poder Ejecutivo
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
@@ -80,7 +80,7 @@ export default async function NormativaPage({
             className={cn(
               "rounded-full px-3 py-1 font-mono text-xs tabular-nums ring-1 ring-inset transition-colors",
               anio === a
-                ? "bg-ink text-surface ring-ink"
+                ? "bg-brand-600 text-white ring-brand-600"
                 : "bg-surface text-ink-soft ring-hairline hover:text-ink",
             )}
           >
@@ -90,14 +90,14 @@ export default async function NormativaPage({
       </nav>
 
       <div className="mt-4 flex items-center justify-between gap-3 text-sm text-ink-soft">
-        <span className="tabular-nums">
+        <span className="font-mono tabular-nums">
           {docs.length > 0
             ? `${docs.length.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} en ${anio}`
             : ""}
         </span>
       </div>
 
-      <section className="mt-3 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+      <section className="mt-3 overflow-hidden rounded-lg border border-hairline bg-surface ">
         {docs.length > 0 ? (
           <ul className="divide-y divide-hairline">
             {docs.slice(0, 200).map((d, i) => (
@@ -150,7 +150,7 @@ function FilaDoc({ doc }: { doc: Documento }) {
           <span className="font-mono font-semibold tabular-nums text-brand-700">
             {doc.tipo} {doc.numero}
           </span>
-          {doc.fecha && <span className="tabular-nums text-ink-soft">{formatFecha(doc.fechaIso ?? undefined)}</span>}
+          {doc.fecha && <span className="font-mono tabular-nums text-ink-soft">{formatFecha(doc.fechaIso ?? undefined)}</span>}
           {doc.gaceta && <span className="text-ink-soft">Gaceta {doc.gaceta}</span>}
         </div>
         <p className="mt-1 text-sm leading-snug text-ink">

@@ -21,7 +21,7 @@ export default async function ContratosPage() {
 
   if (!r || r.escaneados === 0) {
     return (
-      <div className="mx-auto max-w-2xl rounded-2xl border border-hairline bg-surface px-5 py-14 text-center shadow-card">
+      <div className="mx-auto max-w-2xl rounded-lg border border-hairline bg-surface px-5 py-14 text-center ">
         <p className="text-sm font-medium text-ink">El registro de contratos no respondió</p>
         <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
           La API de contratos de la DGCP está caída o no devolvió datos. Vuelve
@@ -44,21 +44,17 @@ export default async function ContratosPage() {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-ink text-white">
+      <section className="relative overflow-hidden rounded-lg bg-ink text-white">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div
-          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl"
-          aria-hidden
-        />
         <div className="relative p-6 sm:p-8">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/85 ring-1 ring-inset ring-white/15">
-            <IconChartBar className="h-3.5 w-3.5" />
+          <div className="rotulo inline-flex items-start gap-2 text-white/70">
+            <span aria-hidden className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400" />
             Contratos adjudicados · se actualiza cada 30 min
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
-            Qué está contratando el Estado
+          <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
+            ¿Qué está contratando el Estado?
           </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-hairline">
+          <p className="mt-1.5 max-w-xl text-sm text-white/70">
             Sobre los {formatInt(r.escaneados)} contratos más recientes del
             registro de la DGCP
             {r.desde && r.hasta && (
@@ -74,13 +70,13 @@ export default async function ContratosPage() {
             {kpis.map((k) => (
               <div
                 key={k.etiqueta}
-                className={`rounded-xl p-4 ring-1 ${
+                className={`rounded-lg p-4 ring-1 ${
                   k.destacar ? "bg-brand-500/15 ring-brand-400/30" : "bg-white/5 ring-white/10"
                 }`}
               >
-                <div className="text-lg font-bold leading-tight sm:text-xl">{k.valor}</div>
+                <div className="font-mono text-lg font-semibold leading-tight tabular-nums sm:text-xl">{k.valor}</div>
                 <div
-                  className={`mt-0.5 text-xs ${k.destacar ? "text-brand-100" : "text-ink-soft"}`}
+                  className={`mt-0.5 text-xs ${k.destacar ? "text-brand-100" : "text-white/60"}`}
                 >
                   {k.etiqueta}
                 </div>
@@ -92,8 +88,8 @@ export default async function ContratosPage() {
 
       {/* Tendencia mensual */}
       {r.porMes.length > 1 && (
-        <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
-          <h2 className="font-semibold">Monto adjudicado por mes</h2>
+        <section className="rounded-lg bg-surface p-6 border border-hairline">
+          <h2 className="font-sans font-semibold">Monto adjudicado por mes</h2>
           <p className="mt-0.5 text-xs text-ink-soft">
             Dentro de la ventana escaneada; los meses de los extremos pueden estar
             incompletos.
@@ -107,9 +103,9 @@ export default async function ContratosPage() {
                     {formatInt(m.n)} · {formatMonto(m.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-hairline">
+                <div className="mt-1 h-2 rounded-sm bg-hairline">
                   <div
-                    className="bar-grow h-2 rounded-full bg-brand-500"
+                    className="bar-grow h-2 rounded-sm bg-brand-500"
                     style={{ width: `${Math.max(2, (m.monto / maxMes) * 100)}%` }}
                   />
                 </div>
@@ -135,9 +131,9 @@ export default async function ContratosPage() {
       </div>
 
       {/* Detalle reciente */}
-      <section className="overflow-hidden rounded-2xl bg-surface shadow-soft ring-1 ring-hairline">
+      <section className="overflow-hidden rounded-lg bg-surface border border-hairline">
         <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-          <h2 className="font-semibold">Adjudicaciones más recientes</h2>
+          <h2 className="font-sans font-semibold">Adjudicaciones más recientes</h2>
           <span className="text-xs text-ink-soft">{r.recientes.length}</span>
         </div>
         <ul className="divide-y divide-hairline">
@@ -147,7 +143,7 @@ export default async function ContratosPage() {
                 <span className="line-clamp-1 text-sm font-medium text-ink">
                   {c.descripcion || c.codigo_contrato}
                 </span>
-                <span className="shrink-0 text-sm font-semibold tabular-nums text-ink">
+                <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-ink">
                   {formatMonto(c.valor_contratado, c.divisa)}
                 </span>
               </div>
@@ -215,9 +211,9 @@ function RankingContratos({
 }) {
   const max = Math.max(1, ...items.map((a) => a.monto));
   return (
-    <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
+    <section className="rounded-lg bg-surface p-6 border border-hairline">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-semibold">{titulo}</h2>
+        <h2 className="font-sans font-semibold">{titulo}</h2>
         {nota && <span className="text-xs text-ink-soft">{nota}</span>}
       </div>
       <ul className="mt-3 space-y-2.5 text-sm">
@@ -238,9 +234,9 @@ function RankingContratos({
                   {a.n} · {formatMonto(a.monto, "DOP")}
                 </span>
               </div>
-              <div className="mt-1 h-2 rounded-full bg-hairline">
+              <div className="mt-1 h-2 rounded-sm bg-hairline">
                 <div
-                  className={`bar-grow h-2 rounded-full ${color}`}
+                  className={`bar-grow h-2 rounded-sm ${color}`}
                   style={{ width: `${Math.max(2, (a.monto / max) * 100)}%` }}
                 />
               </div>

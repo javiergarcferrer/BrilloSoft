@@ -14,12 +14,12 @@ export default function SeguridadPlataformaPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <header className="mb-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand-700">
+        <div className="flex items-center gap-2 rotulo text-brand-700">
           <IconShield className="h-4 w-4" />
           Seguridad y cumplimiento
         </div>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-          Cómo cuidamos los datos y a quién le rendimos cuentas
+        <h1 className="font-display mt-2 text-3xl text-ink sm:text-4xl">
+          ¿Cómo cuidamos los datos y a quién le rendimos cuentas?
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
           Socrático.do es una herramienta independiente y no oficial, pero se
@@ -100,9 +100,9 @@ export default function SeguridadPlataformaPage() {
 
       <Link
         href="/democracia/seguridad"
-        className="mt-6 flex items-center gap-4 rounded-2xl border border-hairline bg-surface px-5 py-4 shadow-soft transition-shadow hover:shadow-card"
+        className="mt-6 flex items-center gap-4 rounded-lg border border-hairline bg-surface px-5 py-4  transition-colors hover:bg-canvas/60"
       >
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
           <IconShield className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
@@ -138,8 +138,8 @@ function Marco({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-hairline bg-surface p-4 shadow-soft">
-      <div className="font-mono text-xs font-semibold text-brand-700">{norma}</div>
+    <div className="rounded-lg border border-hairline bg-surface p-4 ">
+      <div className="font-mono text-xs font-semibold text-ink">{norma}</div>
       <div className="mt-1.5 text-sm font-semibold text-ink">{titulo}</div>
       <p className="mt-1 text-xs leading-relaxed text-ink-soft">{children}</p>
     </div>
@@ -148,9 +148,9 @@ function Marco({
 
 function Medida({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-hairline bg-surface p-5 shadow-card">
-      <h2 className="flex items-start gap-2.5 text-base font-semibold text-ink">
-        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-500 text-white">
+    <section className="rounded-lg border border-hairline bg-surface p-5 ">
+      <h2 className="font-sans flex items-start gap-2.5 text-base font-semibold text-ink">
+        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-valido-600 text-white">
           <IconCheck className="h-3.5 w-3.5" />
         </span>
         {titulo}

@@ -64,16 +64,8 @@ export default async function Panorama() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-ink text-white">
+      <section className="relative overflow-hidden rounded-lg bg-ink text-white">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div
-          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl"
-          aria-hidden
-        />
-        <div
-          className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-brand-400/15 blur-3xl"
-          aria-hidden
-        />
         <div className="relative p-6 sm:p-9">
           <div className="rotulo inline-flex items-center gap-2 text-white/70">
             <span
@@ -96,14 +88,14 @@ export default async function Panorama() {
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Link
               href="/licitaciones"
-              className="inline-flex items-center gap-2 rounded-full bg-canvas px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-white active:scale-95"
+              className="inline-flex items-center gap-2 rounded-lg bg-canvas px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas active:scale-95"
             >
               <IconSearch className="h-4 w-4" />
               Buscar licitaciones
             </Link>
             <Link
               href="/congreso"
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/20 transition-colors hover:bg-white/15 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/20 transition-colors hover:bg-white/15 active:scale-95"
             >
               <IconLayers className="h-4 w-4" />
               Explorar el Congreso
@@ -215,10 +207,10 @@ export default async function Panorama() {
 
       {/* Indicadores macro del Estado */}
       {deuda && (
-        <section className="rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+        <section className="rounded-lg border border-hairline bg-surface p-5 ">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+              <h2 className="flex items-center gap-2 font-sans text-sm font-semibold text-ink">
                 <IconTrendingUp className="h-4 w-4 text-ink-soft" />
                 Deuda pública
               </h2>
@@ -280,7 +272,7 @@ export default async function Panorama() {
                     href={`/procesos/${encodeURIComponent(p.codigo_proceso)}`}
                     className="flex items-start gap-3 px-5 py-3 transition-colors hover:bg-canvas/60"
                   >
-                    <span className="mt-0.5 shrink-0 rounded-md bg-alerta-50 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-alerta-600 ring-1 ring-inset ring-alerta-600/20">
+                    <span className="mt-0.5 shrink-0 rounded-md bg-alerta-50 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-alerta-600 ring-1 ring-inset ring-alerta-600/20">
                       {dias === 0 ? "hoy" : `${dias} d`}
                     </span>
                     <span className="min-w-0 flex-1">
@@ -380,13 +372,13 @@ function Dominio({
   disponible: boolean;
 }) {
   return (
-    <article className="flex flex-col rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+    <article className="flex flex-col rounded-lg border border-hairline bg-surface p-5 ">
       <div className="flex items-start gap-3">
-        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${chip}`}>
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${chip}`}>
           <Icon className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0">
-          <h2 className="text-base font-semibold tracking-tight text-ink">{titulo}</h2>
+          <h2 className="font-sans text-base font-semibold tracking-tight text-ink">{titulo}</h2>
           <p className="mt-0.5 text-xs text-ink-soft">{fuente}</p>
         </div>
       </div>
@@ -399,8 +391,8 @@ function Dominio({
               <dd
                 className={
                   c.destacar
-                    ? "text-lg font-bold tabular-nums tracking-tight text-ink"
-                    : "text-sm font-semibold tabular-nums text-ink"
+                    ? "font-mono text-lg font-semibold tabular-nums tracking-tight text-ink"
+                    : "font-mono text-sm font-semibold tabular-nums text-ink"
                 }
               >
                 {c.valor}
@@ -440,9 +432,9 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+    <section className="overflow-hidden rounded-lg border border-hairline bg-surface ">
       <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+        <h2 className="flex items-center gap-2 font-sans text-sm font-semibold text-ink">
           <Icon className="h-4 w-4 text-ink-soft" />
           {titulo}
         </h2>
@@ -477,12 +469,12 @@ function IndicadorDeuda({
   destacar?: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-canvas/60 px-4 py-3 ring-1 ring-inset ring-hairline">
+    <div className="rounded-lg bg-canvas/60 px-4 py-3 border border-hairline">
       <div className="text-xs text-ink-soft">{etiqueta}</div>
       <div
         className={
           destacar
-            ? "mt-0.5 text-lg font-bold tabular-nums tracking-tight text-ink"
+            ? "mt-0.5 font-mono text-lg font-semibold tabular-nums tracking-tight text-ink"
             : "mt-0.5 text-base font-semibold tabular-nums text-ink"
         }
       >

@@ -14,8 +14,8 @@ export default function PreciosHistoricos({
 }) {
   if (subclases.length === 0) return null;
   return (
-    <section className="rounded-2xl bg-surface p-6 shadow-soft ring-1 ring-hairline">
-      <h2 className="font-semibold">Precios históricos de adjudicación</h2>
+    <section className="rounded-lg bg-surface p-6 border border-hairline">
+      <h2 className="font-sans font-semibold">Precios históricos de adjudicación</h2>
       <p className="mt-1 text-sm text-ink-soft">
         Lo que el Estado realmente pagó en contratos recientes por artículos de la misma
         categoría UNSPSC — úsalo como referencia antes de fijar tu precio.
@@ -75,7 +75,7 @@ function SubclaseStats({
           No se pudo consultar el histórico ahora mismo.
         </p>
       ) : !stats ? (
-        <div className="mt-3 h-12 animate-pulse rounded bg-hairline" />
+        <div className="mt-3 h-12 shimmer rounded-lg border border-hairline" />
       ) : stats.muestras === 0 ? (
         <p className="mt-2 text-sm text-ink-soft">
           Sin contratos recientes registrados en esta categoría.
@@ -85,21 +85,21 @@ function SubclaseStats({
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg bg-canvas px-2 py-2">
               <div className="text-xs text-ink-soft">Mínimo</div>
-              <div className="text-sm font-semibold">
+              <div className="font-mono text-sm font-semibold tabular-nums">
                 {formatMonto(stats.min, divisa)}
               </div>
             </div>
             <div className="rounded-lg bg-brand-50 px-2 py-2 ring-1 ring-brand-100">
-              <div className="text-xs text-brand-600">
+              <div className="text-xs text-ink-soft">
                 Mediana · {stats.muestras} contratos
               </div>
-              <div className="text-sm font-bold text-brand-700">
+              <div className="font-mono text-sm font-semibold tabular-nums text-ink">
                 {formatMonto(stats.mediana, divisa)}
               </div>
             </div>
             <div className="rounded-lg bg-canvas px-2 py-2">
               <div className="text-xs text-ink-soft">Máximo</div>
-              <div className="text-sm font-semibold">
+              <div className="font-mono text-sm font-semibold tabular-nums">
                 {formatMonto(stats.max, divisa)}
               </div>
             </div>
@@ -122,7 +122,7 @@ function SubclaseStats({
                     </span>
                     <Link
                       href={`/procesos/${encodeURIComponent(e.codigo_proceso)}`}
-                      className="text-brand-600 hover:underline"
+                      className="font-mono text-brand-700 hover:underline"
                     >
                       {e.codigo_proceso}
                     </Link>{" "}
@@ -131,7 +131,7 @@ function SubclaseStats({
                     </span>
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className="block font-semibold">
+                    <span className="block font-mono font-semibold tabular-nums">
                       {formatMonto(e.precio_unitario, divisa)}
                     </span>
                     <span className="text-ink-soft">

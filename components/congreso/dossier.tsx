@@ -73,16 +73,16 @@ export default async function Dossier({
   }
 
   return (
-    <section className="mt-5 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+    <section className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface ">
       <div className="flex items-center gap-2 border-b border-hairline px-5 py-3.5">
         <IconLayers className="h-4 w-4 text-brand-700" />
-        <h2 className="text-sm font-semibold text-ink">De qué se trata</h2>
+        <h2 className="font-sans text-sm font-semibold text-ink">De qué se trata</h2>
       </div>
 
       <div className="divide-y divide-hairline">
         {ley && (
-          <div className="bg-brand-50/60 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">
+          <div className="bg-valido-50 px-5 py-4">
+            <p className="rotulo text-valido-700">
               Ya es ley — texto vigente
             </p>
             <p className="mt-1.5 text-sm font-medium text-ink">
@@ -106,7 +106,7 @@ export default async function Dossier({
           <div className="px-5 py-4">
             {esto && (
               <>
-                <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+                <p className="rotulo text-ink-soft">
                   Qué es
                 </p>
                 <p className="mt-1.5 text-sm leading-relaxed text-ink">{esto}</p>
@@ -139,14 +139,14 @@ export default async function Dossier({
 
         {citas.length > 0 && (
           <div className="px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+            <p className="rotulo text-ink-soft">
               Qué toca del ordenamiento vigente
             </p>
             <ul className="mt-2.5 space-y-2.5">
               {citas.map(({ ref, norma }) => (
                 <li key={`${ref.tipo}-${ref.numero ?? "s/n"}`} className="flex gap-2.5">
                   <span
-                    className={`mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                    className={`rotulo mt-0.5 inline-flex h-fit shrink-0 self-start rounded-[3px] px-1.5 py-0.5 ${
                       ref.relacion === "deroga"
                         ? "bg-sello-50 text-sello-700"
                         : ref.relacion === "cita"
@@ -207,7 +207,7 @@ export default async function Dossier({
 
         {sigue && (
           <div className="px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+            <p className="rotulo text-ink-soft">
               En qué punto está
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-ink">{sigue}</p>

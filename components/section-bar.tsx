@@ -61,14 +61,14 @@ export default function SectionBar() {
                 >
                   {vista.label}
                   {vista.seguimiento && seguidos > 0 && (
-                    <span className="grid h-4 min-w-4 place-items-center rounded-full bg-brand-500 px-1 text-[9px] font-bold text-white">
+                    <span className="grid h-4 min-w-4 place-items-center rounded-full bg-brand-500 px-1 font-mono text-[10px] font-semibold tabular-nums text-canvas">
                       {seguidos}
                     </span>
                   )}
                   <span
                     aria-hidden
                     className={cn(
-                      "absolute inset-x-2 bottom-0 h-0.5 rounded-full transition-opacity",
+                      "absolute inset-x-2 bottom-0 h-0.5 transition-opacity",
                       seccion.hue.barra,
                       esActiva ? "opacity-100" : "opacity-0",
                     )}

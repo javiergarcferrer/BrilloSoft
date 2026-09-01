@@ -44,7 +44,7 @@ export default function Compartir({ titulo }: { titulo: string }) {
         onClick={copiar}
         className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium transition hover:border-brand-500 hover:text-brand-600 active:scale-95"
       >
-        {copiado ? <IconCheck className="h-3.5 w-3.5 text-brand-500" /> : null}
+        {copiado ? <IconCheck className="h-4 w-4 text-valido-600" /> : null}
         {copiado ? "Copiado" : "Copiar enlace"}
       </button>
     </span>
