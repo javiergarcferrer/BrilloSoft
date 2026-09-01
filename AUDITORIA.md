@@ -18,6 +18,11 @@ claves, lectura en vivo con caché.
 > es ancho: mapea el resto del Estado con menos profundidad por fuente, y
 > señala dónde hará falta una recon dedicada antes de integrar.
 
+> **Segunda pasada: 2026-09-01.** 43 hosts sondeados; corrige tres veredictos de
+> esta primera versión (SIGEF, DGII, DGCP) y cierra los «por mapear». Está al
+> final del documento, en **SEGUNDA PASADA**. Las filas de la tabla de abajo
+> marcadas **↓** quedan superadas por ella.
+
 ---
 
 ## 0. Resumen ejecutivo
@@ -48,26 +53,29 @@ de Cuentas) — ahí la vía es institucional, no técnica.
 
 | Eje | Fuente | Qué tiene | Vía | Estado |
 |---|---|---|---|---|
-| Macro | Banco Central | Inflación, IPC, tasas, sector real/externo | API oficial (swagger) | ⚠️ credenciales |
+| Macro | Banco Central | Inflación, IPC, tasas, sector real/externo | API con clave **+ archivos del CDN sin clave** | ⚠️→✅ ↓ §A.6 |
 | Macro | ONE / ANDA | Censos, encuestas, microdatos | — | ❌ WAF Cloudflare |
 | Fiscal | Crédito Público | Deuda SPNF mensual (saldo, evolución, desembolsos) | **XLSX URL predecible** | ✅ |
-| Fiscal | Transparencia Fiscal | Ejecución de ingresos/gastos/financiamiento, datos abiertos | WP abierto + descargas | ✅ mapear formatos |
+| Fiscal | **SIGEF (Hacienda)** | **Ejecución de gastos e ingresos, mensual, por institución** | **API JSON/CSV/XLSX sin clave** | ✅ ↓ §A.1 |
+| Fiscal | Transparencia Fiscal | La vitrina que construye las llamadas al SIGEF | WP abierto | ✅ ↓ §A.1 |
 | Fiscal | DIGEPRES | Presupuesto, ejecución | WP abierto, PDFs | ⚠️ PDF |
-| Fiscal | MapaInversiones | Inversión pública proyecto a proyecto | HTML server-rendered (+API interna) | ✅ mapear |
-| Fiscal | DGII | RNC, recaudación | — | ❌ 403; WS móvil retirado |
+| Fiscal | MapaInversiones | Inversión pública: proyecto ↔ contrato ↔ territorio | **15 CSV abiertos + búsqueda JSON** | ✅ ↓ §A.4 |
+| Fiscal | DGII | **Padrón de RNC (788,700 contribuyentes)** | **ZIP estático semanal** | ❌→✅ ↓ §A.2 |
 | Normativa | **Consultoría Jurídica** | **Leyes, decretos, reglamentos, resoluciones, Gaceta** | Consulta MVC (token+POST), PDF por GUID | ✅ |
 | Integridad | Contraloría | Nóminas aprobadas, informes | WP abierto | ✅ mapear |
 | Integridad | Cámara de Cuentas | Declaraciones juradas, auditorías | — | ❌ WAF (HTTP 470) |
-| Integridad | datos.gob.do | Catálogo CKAN | robots prohíbe `/api/` | ❌ marginal (2ª verificación) |
-| Electoral | JCE | Resultados por elección, estadísticas | Sitios DNN por comicio | ✅ mapear por elección |
+| Integridad | datos.gob.do | 1,206 datasets declarados; **159 responden a «nómina»** | Índice HTML paginado (su `/api/` sigue vetado) | ✅ ↓ §A.8 |
+| Electoral | JCE | Resultados por elección, estadísticas | Descargas tras CAPTCHA (Zenedge) | ✅→❌ ↓ §B.3 |
 | Judicial | Poder Judicial | Sentencias, estadísticas | `transparencia.` sí responde | ⚠️ TLS roto en `www.` |
 | Judicial | Tribunal Constitucional | Sentencias TC | Sin robots | ⚠️ sin mapear |
 | Social | TSS | Cotizantes, empleadores (mensual) | WP abierto | ✅ mapear |
 | Social | SIPEN | Fondos de pensiones | Cloudflare signals, `*` permitido | ⚠️ sin mapear |
 | Social | **PUT (DIGEIG)** | **Nómina estatal individual** + consulta de decretos | Power BI sin API utilizable | ⚠️ vía CSV por institución (§5.9) |
-| Admin. | SISMAP | Índices de gestión pública | SPA con API interna | ⚠️ mapear API |
+| Admin. | SISMAP + SISMAP Municipal | Gestión pública e institucional, y por ayuntamiento | **Tablas server-rendered** (no hay SPA) | ⚠️→✅ ↓ §A.7 |
 | Finanzas | Superintendencia de Bancos | Series del sistema financiero | `apis.sb.gob.do` vivo | ⚠️ clave |
-| Comercio | DGA (Aduanas) | Comercio exterior | Sin robots | ⚠️ sin mapear |
+| Comercio | DGA (Aduanas) | Comercio exterior | Sin robots; sin ruta estable hallada | ⚠️ ↓ §A.10 |
+| Compras | **DGCP (ya integrada)** | **+ ofertas, proveedores, catálogo y PACC** | Misma API abierta, endpoints sin usar | ✅ ↓ §A.3 |
+| Precios | **MICM** | **Precios de combustibles, semanales** | Portada + sitemap de avisos | ✅ ↓ §A.5 |
 
 ---
 
@@ -463,3 +471,384 @@ límites (como ya hace con las cuatro actuales).
    (Ley 200-04) — plazo largo, arrancar en paralelo.
 6. Verificar desde el egress de producción el TLS de `www.poderjudicial.gob.do`
    (el fallo puede ser específico del proxy de este entorno).
+
+---
+
+# SEGUNDA PASADA — 2026-09-01
+
+Auditoría de campo completa sobre las fuentes que la primera pasada dejó como
+«por mapear», más un barrido de ejes que no había tocado (energía, telecom,
+salud, seguridad, municipal, laboral, comercio exterior): **más de 60 hosts
+sondeados** con el mismo método — UA identificable, robots primero, sin volumen,
+sin evadir ningún bloqueo.
+
+> **Tres conclusiones de la primera pasada quedan corregidas**, y las tres iban
+> en la dirección de **subestimar** lo que el Estado publica: la ejecución
+> presupuestaria tiene API abierta (§A.1), el padrón de RNC de la DGII se
+> descarga sin clave (§A.2), y la API de compras que ya integramos tiene cuatro
+> endpoints que no estábamos usando (§A.3).
+
+## 0. Lo que cambia el veredicto
+
+| Fuente | Antes | Ahora | Por qué |
+|---|---|---|---|
+| **SIGEF / Hacienda** | no aparecía | ✅ **API JSON/CSV/XLSX sin clave** | §A.1 — ejecución de gastos e ingresos, mes a mes, institución por institución |
+| **DGII** | ❌ 403, WS retirado | ✅ **padrón RNC descargable** (⚠️ consulta web sigue vetada) | §A.2 — 26.6 MB, 788,700 contribuyentes, actualizado 29-ago-2026 |
+| **DGCP** | ✅ integrada (3 endpoints) | ✅ **+4 endpoints sin explotar** | §A.3 — ofertas, proveedores, catálogo, PACC |
+| **MapaInversiones** | ⚠️ «endpoints por extraer» | ✅ **15 CSV abiertos + búsqueda JSON** | §A.4 |
+| **BCRD** | ⚠️ credenciales; archivos «404» | ⚠️→✅ **el CDN sí sirve las series** | §A.6 — la ruta del histórico de tasa de cambio responde 200 |
+| **MICM** | no aparecía | ✅ precios de combustibles semanales | §A.5 |
+| **SISMAP** | ⚠️ «SPA con API interna» | ✅ **tablas server-rendered** (no hay SPA que romper) | §A.7 |
+| **datos.gob.do** | ⚠️ índice útil | ✅ 1,206 datasets; **74 de nómina** frente a 11 integradas | §A.8 |
+| **JCE** | ✅ «mapear por elección» | ❌ descargas tras CAPTCHA (Zenedge) | §B.3 |
+| **911, Migración, SIMV** | no aparecían | ❌ WAF | §B |
+| ONE · Cámara de Cuentas | ❌ | ❌ **sin cambios** | §B.1 |
+
+---
+
+## A. Hallazgos verificados
+
+### A.1 ⭐ API de datos abiertos del SIGEF — la columna vertebral fiscal
+
+El generador de «Datos abiertos» del Portal de Transparencia Fiscal (§3.1) no
+sirve archivos: **construye llamadas a una API pública del Ministerio de
+Hacienda**, hasta ahora no documentada en esta auditoría.
+
+```
+https://api-sigef.hacienda.gob.do/servicios/datosabiertos/portaltransparencia/
+  {tipo}/{archivo}/{año}/{mes}/{formato}?seccion={sección}&capitulo={institución}
+```
+
+- ✅ **Sin clave, sin sesión, sin token.** Spring Boot; 404 en JSON limpio para
+  rutas inexistentes (no hay la trampa del 200-que-no-existe del SIL).
+- ✅ Tres formatos por la misma ruta: `json`, `csv`, `xlsx`.
+- ✅ **Taxonomía verificada** (leída del formulario y probada contra el
+  servidor):
+
+  | tipo | archivos (`{archivo}`) |
+  |---|---|
+  | `ingresos` | `percibidosinstitucion`, `ftefinanc` |
+  | `gastos` | `institucion` (quién gasta), `concepto` (en qué), `finalidad` (para qué), `inversion` (dónde), `fuentefinanciamiento`, `organismofinanciador`, `transferencias`, `aplicacionesfinancieras` |
+  | `gastos` (institucional) | `institucionalconcepto`, `institucionalfinalidad` |
+
+- ✅ **Secciones**: `11111` administración central, `11112` descentralizadas y
+  autónomas no financieras, `11113` seguridad social.
+- ✅ **Capítulos**: los **99 códigos institucionales** del presupuesto, del
+  `0101` (Senado) al `5211` (TSS), incluyendo `0998`/`0999` (deuda pública y
+  obligaciones del Tesoro). Quedaron capturados en esta pasada.
+- ✅ **Respuestas reales comprobadas**:
+  - `gastos/institucion/2026/08/json?seccion=11111&capitulo=0206` → 41 KB,
+    ejecución del Ministerio de Educación por unidad ejecutora y mes, con
+    `PRESUPUESTO INICIAL`, `PRESUPUESTO VIGENTE`, `PREVENTIVO`, `COMPROMISO`,
+    `DEVENGADO`, `PAGADO`.
+  - `gastos/concepto/2026/08/json?...&capitulo=0207` → 862 KB, Salud Pública
+    por cuenta (`2.1.1.1.01 REMUNERACIONES`…).
+  - `ingresos/percibidosinstitucion/2026/08/json?...&capitulo=0205` → 51 KB.
+  - `gastos/institucion/2025/12/csv?...&capitulo=0206` → 28 KB.
+- ⚠️ **Latencia asimétrica y decisiva para el diseño**: el año corriente se
+  calcula en vivo (medidos **22 s**, **23 s** y **86 s** según el corte; una
+  consulta sin `capitulo` —sección entera— no respondió en 40 s), mientras un
+  año cerrado responde **en 0.4 s** (cacheado arriba). La
+  regla de los 25 s de `dgcpFetch` **no sirve aquí**: hay que ir a `unstable_cache`
+  con ventana diaria, consulta por institución (nunca sección completa), y
+  precalentar el mes vigente.
+- ⚠️ El `content-type` es `application/csv` incluso cuando el cuerpo es JSON:
+  validar por forma del cuerpo, no por cabecera.
+- ❌ `sigef.hacienda.gob.do` (la app SIGEF) responde 403 Cloudflare — pero es
+  irrelevante: la API vive en otro host y está abierta.
+
+**Qué habilita**: la pregunta que la plataforma todavía no puede responder —
+«¿en qué se gasta el dinero, institución por institución, mes a mes?» — con
+la trazabilidad completa del ciclo (vigente → comprometido → devengado →
+pagado). Es la pieza que convierte el panorama en tablero fiscal.
+
+### A.2 ⭐ DGII — el padrón de RNC sí se descarga
+
+La primera pasada declaró la DGII cerrada. Es cierto para la **consulta web**
+(`rnc.aspx` y el viejo `wsMovilDGII` devuelven la portada: 200 que no es la
+ruta), y su sección de estadísticas responde 403. Pero:
+
+- ✅ `https://dgii.gov.do/app/WebApps/Consultas/RNC/RNC_CONTRIBUYENTES.zip`
+  responde **200**, `application/x-zip-compressed`, **26,608,208 bytes**,
+  `last-modified: 29-ago-2026`, con `accept-ranges: bytes`.
+- ✅ Contiene `RNC_Contribuyentes_Actualizado_29_Ago_2026.csv` (115 MB), en
+  **cp850** —la misma herencia DOS que ya toleran las nóminas—, con columnas
+  `RNC, RAZÓN SOCIAL, ACTIVIDAD ECONÓMICA, FECHA DE INICIO OPERACIONES, ESTADO,
+  RÉGIMEN DE PAGO`.
+- ✅ **788,700 contribuyentes**: 395,737 activos, 309,059 suspendidos, 74,883
+  dados de baja, 7,490 en cese temporal, 1,256 anulados, 275 rechazados.
+- ❌ `DGII_RNC.zip` (el nombre antiguo) da 403. El robots de la DGII solo veta
+  rutas de SharePoint (`/_layouts/`, `/_vti_bin/`, `/_catalogs/`).
+
+**Qué habilita**: cruzar cada proveedor del Estado con su registro tributario —
+actividad económica declarada, estado, antigüedad. La señal clásica de riesgo
+(«RNC creado semanas antes de ganar el contrato») deja de ser inverificable.
+**Restricción de arquitectura**: 26 MB no se descargan por request. La vía
+compatible con la plataforma sin BD es una **instantánea derivada en build**
+(el patrón de `scripts/build-nomina.py`), reducida a los RNC que aparecen como
+proveedores en compras.
+
+### A.3 ⭐ DGCP — cuatro endpoints abiertos que no estamos usando
+
+Misma API que ya integra `lib/dgcp.ts`, mismo adaptador, **cero hosts nuevos**:
+
+| Endpoint | Contenido | Por qué importa |
+|---|---|---|
+| `/ofertas` | `id_oferta, codigo_proceso, rpe, razon_social, valor_oferta, estado_oferta, estado_evaluacion, tipo_oferta, fecha_entrega_oferta, fecha_evaluacion` | **Quién compitió, no solo quién ganó**: procesos de oferente único, parejas que siempre concursan juntas, ofertas descartadas |
+| `/proveedores` | `rpe, razon_social, tipo_documento, numero_documento (RNC), estado, tipo_persona, forma_juridica, fecha_creacion_empresa, fecha_registro_rpe, numero_registro_mercantil, es_mipyme, certificacion_micm, clasificacion_empresarial, provincia, municipio…` (35 campos) | Perfil real en `/proveedores/[rpe]`, hoy construido solo a partir de contratos. **Trae el RNC**: es la llave de unión con §A.2 sin depender de la DGII |
+| `/catalogo` | UNSPSC completo: segmento → familia → clase → subclase, con definición y sinónimos | Da nombre legible a las subclases que ya usa `getPreciosSubclase` |
+| `/pacc` | Planes anuales de compras por unidad, con período, versión, responsable y URL | **Lo que el Estado planea comprar** antes de publicarlo: señal anticipada |
+
+- ✅ Los cuatro responden 200 con el mismo sobre (`code/hasError/payload.content`)
+  que ya normaliza `dgcpFetch`.
+- ⚠️ `/proveedores` incluye teléfonos y correos de contacto comercial. Son
+  públicos por registro, pero mostrarlos en ficha convierte la plataforma en un
+  directorio de contactos: la postura correcta es **usar los campos
+  institucionales y no exponer los de contacto**.
+- ❌ No existen `/adjudicaciones`, `/articulos`, `/documentos`, `/sanciones` ni
+  swagger: el catálogo de endpoints se descubre probando.
+
+### A.4 MapaInversiones — 15 CSV abiertos, no solo gráficos
+
+- ✅ `/DatosAbiertos` publica **descarga directa, sin clave**, con diccionario
+  XLSX por dataset:
+  `DatosAbiertosProyectosDeInversion.csv` (4.0 MB),
+  `DatosAbiertosContratosXProyectosInv.csv` (6.8 MB),
+  `DatosAbiertosProcesosXProyectosInv.csv`,
+  `DatosAbiertosPresupuestoXProyInv.csv`,
+  `…XFuenteFinanciacion.csv`, `…XTerritorio.csv`,
+  `DatosabiertosPresupuestoHacienda.csv`,
+  y siete de compras de emergencia (procesos, contratos, ofertas, proveedores,
+  artículos, apropiación presupuestaria).
+- ✅ Campos comprobados en la cabecera real: los proyectos traen
+  `CodigoSNIP, EstadoProyecto, ValorDelProyecto, AvanceFinanciero, AvanceFisico,
+  EntidadEjecutora, Sector, FechaCorteFuente`; los contratos traen
+  `CodigoSnip, CodigoProceso, CodigoContrato, ValorContrato, CodigoProveedor,
+  Proveedor, UrlContrato` **con la URL al proceso en comprasdominicana**.
+- ✅ Búsqueda JSON abierta: `/BusquedaAsync/?SearchString=` devuelve proyectos
+  con su `url` de ficha; las fichas (`/projectprofile/{id}`) son
+  server-rendered (costo estimado, avance financiero, provincia, sector).
+
+**Qué habilita**: el eslabón que le falta a la vertical de compras —
+`SNIP → proyecto → proceso → contrato → proveedor → territorio`. `Proceso` ya
+tiene `es_snip`/`codigo_snip`: la unión es directa.
+
+### A.5 MICM — precios de combustibles, semanales
+
+- ✅ `micm.gob.do` con robots Yoast abierto (`Disallow:` vacío).
+- ✅ El tipo de contenido `post_combustibles` tiene sitemap propio con **613
+  avisos** —dos series semanales, combustibles líquidos y gas natural— al día
+  (`aviso-precios-combustibles-del-29-al-04-septiembre-2026`).
+- ✅ Los precios vigentes se leen de la portada: **Gasolina Premium 341.10,
+  Gasolina Regular 310.50, Gasoil Óptimo 293.10, Gasoil Regular 262.80**
+  (RD$/galón, semana verificada).
+- ⚠️ **Límite honesto**: el cuerpo del aviso semanal está **vacío en HTML**
+  (comprobado en dos semanas distintas y en el RSS del tipo de contenido) y su
+  `wp-json` está deshabilitado. Solo hay cuatro precios en portada; el aviso
+  completo (GLP, gas natural, kerosene, fuel oil) no es legible por máquina.
+  La fecha de vigencia se deriva del título del último aviso del sitemap.
+
+### A.6 BCRD — CORRECCIÓN: el CDN sí sirve las series
+
+La primera pasada dio por muertos los archivos estadísticos. No lo están:
+
+- ✅ `https://cdn.bancentral.gov.do/documents/estadisticas/mercado-cambiario/documents/TASA_DOLAR_REFERENCIA_MC.xls`
+  → **200, 915 KB**. El histórico de tasa de cambio de referencia está
+  disponible **sin credenciales**.
+- ✅ El patrón es `cdn.bancentral.gov.do/documents/estadisticas/{sección}/documents/{ARCHIVO}`,
+  con secciones `mercado-cambiario`, `precios`, `sector-real`, `sector-externo`,
+  `sector-fiscal`, `sector-monetario-y-financiero`, `sector-turismo`,
+  `mercado-de-trabajo`.
+- ⚠️ Los **nombres de archivo por sección** no se pueden enumerar: las páginas
+  (`/a/d/2534-precios`, `/a/d/2538-mercado-cambiario`) montan la lista por JS y
+  el HTML servido no la contiene; adivinar nombres falló (4 intentos, 404).
+  Enumerarlos exige un navegador — imposible en este entorno (§B.5) — o pedir
+  el índice al BCRD.
+- ⚠️ La API con credenciales (`api.bancentral.gov.do`) sigue igual: el dilema
+  de §8.3 se **reduce**, no desaparece — el tipo de cambio ya no la necesita.
+
+### A.7 SISMAP — no hay SPA: las tablas vienen servidas
+
+- ✅ `/GestionPublica/Ranking/RankingView` devuelve **181 organismos** en tabla
+  HTML servida — `Posición | Organismo | Sector Gobierno | Valoración` (1º
+  Autoridad Nacional de Asuntos Marítimos 97.40 %, 2º Ministerio de Energía y
+  Minas 93.97 %, 3º Ministerio de Turismo 93.47 %…).
+- ✅ **SISMAP Municipal** (`/Municipal`) da el mismo ranking para gobiernos
+  locales, con ficha por ayuntamiento (`/Municipal/ayuntamientos/{id}`) y
+  desglose gestión interna / servicios.
+- La primera pasada supuso una API interna que hay que extraer del bundle: no
+  hace falta. Es parseo de tabla, el patrón más barato de la casa.
+
+### A.8 datos.gob.do — dimensionado
+
+- ✅ El portal declara **1,206 conjuntos de datos**. Ojo: esa cifra **no varía
+  con la consulta** (idéntica en `/dataset` y en `/dataset?q=nomina`), así que
+  es el total del portal, no el del filtro — un contador que engaña si se lee
+  rápido.
+- ✅ La búsqueda HTML (`/dataset?q=`) sí es server-rendered y sí pagina (19–20
+  por página). Agotada la consulta `nomina` en 9 páginas: **159 conjuntos de
+  datos distintos**, frente a las **11 instituciones** que hoy alimentan
+  `/nomina`.
+- ✅ Cada ficha declara formato (CSV/XLS/ODS), periodicidad, última
+  actualización y la **URL de origen en el portal de la institución** — que es
+  lo que hace del portal un índice de enlaces directos y no un repositorio.
+- ⚠️ La paginación solo responde con `q`: `/dataset?page=61` devuelve cero
+  enlaces, coherente con el render en cliente que ya señalaba §4.4.
+- ✅ Organizaciones paginadas de 20 en 20, con ayuntamientos, ministerios y
+  descentralizadas. Su `/api/` sigue vetado por su propio robots (`Crawl-Delay: 10`,
+  respetado en esta pasada).
+
+**Ampliar `/nomina` más allá de las 11 instituciones actuales es hoy trabajo de
+manifiesto, no de ingeniería: el índice ya ofrece 159 candidatos.**
+
+### A.9 311 — lectura pública, y un hallazgo de seguridad que reportar
+
+- ✅ El Directus del 311 (`directus-dev.311.gob.do/items/statistics_documents`)
+  **responde sin autenticación**: catálogo de documentos estadísticos por año y
+  carpeta (`statistics_documents`, `statistics_folders`, `statistics_years`).
+  Valor moderado: son PDF, no series.
+- ⚠️ **Hallazgo de seguridad**: el bundle de cliente de `311.gob.do/estadisticas`
+  publica un **token de Directus en claro** junto a la configuración del portal.
+  No lo usamos ni lo registramos aquí. Corresponde reportarlo a la OGTIC por el
+  canal de divulgación responsable que el propio Estado publica; conviene
+  señalar también que el portal de producción consume un host llamado
+  `directus-**dev**`.
+
+### A.10 Verificados de menor calado (estado de campo)
+
+| Fuente | Estado | Nota |
+|---|---|---|
+| Transparencia Fiscal | ✅ | Su valor real es la API del SIGEF (§A.1); la página solo la construye |
+| Crédito Público · Consultoría · DGCP · SIL Diputados | ✅ | **Re-verificadas: las cuatro integraciones vivas responden 200 hoy** |
+| TSS | ⚠️ | WP abierto y `wp-json` activo, pero los boletines (Panorama Laboral, recaudo) no cuelgan archivos del HTML; requiere recon dedicada |
+| Contraloría | ⚠️ | WP vivo; las rutas de nómina probadas dan 404 y su `wp-json` no responde a búsqueda |
+| INDOTEL | ⚠️ | Estadísticas en PDF sueltos |
+| Poder Judicial (`transparencia.`) | ⚠️ | 200, robots abierto salvo `/reportePDF/`; sin datos estructurados en portada |
+| Tribunal Constitucional | ⚠️ | Sin robots; `/sentencias/` da 404 — la ruta real está por hallar |
+| Superintendencia de Bancos | ⚠️ | `apis.sb.gob.do` vivo (404 JSON en raíz), `/swagger` **403**: clave requerida |
+| Aduanas (DGA) | ⚠️ | `servicios.aduanas.gob.do/public` responde; estadísticas de comercio exterior sin ruta estable hallada |
+| Organismo Coordinador (energía) | ⚠️ | `apps.oc.org.do` sirve reportes ASPX de generación programada vs. real; el de hoy respondió «sin datos para la fecha» |
+| ProDominicana, MT, PGR, SNS, MINERD, SISALRIL | ⚠️ | Portales vivos; publicaciones en PDF, sin series legibles por máquina |
+| Observatorio de Servicios Públicos | ❌ | `observicios.gob.do/back/api/` exige autenticación (401/405) |
+
+---
+
+## B. Bloqueos confirmados
+
+### B.1 Sin cambios desde la primera pasada
+- ❌ **ONE / ANDA** — challenge Cloudflare al UA honesto (403). Su robots
+  **permite** `*`: el bloqueo es del WAF, no de la política.
+- ❌ **Cámara de Cuentas** — HTTP **470** en `www.` y en el ápex. Las
+  declaraciones juradas siguen fuera de alcance.
+
+### B.2 Nuevos bloqueos mapeados
+- ❌ **911** (`911.gob.do`) — HTTP 470, el mismo patrón de la Cámara de Cuentas.
+- ❌ **Migración** — challenge Cloudflare.
+- ❌ **SIMV** (valores) — challenge Cloudflare.
+- ❌ **SIPEN** — falla TLS: certificado con **clave demasiado débil** para el
+  cliente actual. Es configuración del servidor, no bloqueo.
+- ⚠️ **Ministerio de Trabajo** — `www.` es rechazado por la política de egreso
+  de este entorno; **`mt.gob.do` (sin `www`) sí responde**.
+
+### B.3 JCE — el retroceso
+- ✅ El sitio de resultados 2024 responde y lista los documentos por
+  `EntryId`.
+- ❌ **La descarga responde con un CAPTCHA de Zenedge** («¿Eres humano?») tras
+  media docena de peticiones. No se evadió y no se insistió. El archivo
+  electoral requiere vía institucional (Ley 200-04) o el repositorio impreso
+  (sus estadísticas se publican en Issuu, no en datos).
+
+### B.4 Nómina individual (Portal Único de Transparencia)
+Sin cambios: el tablero Power BI sigue sin vía servidor. Se confirmó además que
+el `wp-json` del Portal Único **no expone directorio de instituciones** (282
+rutas, todas de plugins): no hay atajo por ahí. La vía sigue siendo §A.8.
+
+### B.5 Límite del entorno, no de las fuentes
+El navegador headless (Chromium + Playwright, preinstalados) **no puede
+navegar**: toda petición muere en `ERR_CONNECTION_RESET` a través del proxy,
+incluso contra `example.com`. Todo lo que exija ejecutar JS —índice de archivos
+del BCRD, tableros Power BI, SPAs con API firmada— queda fuera de alcance
+**desde este entorno**, no necesariamente desde producción.
+
+---
+
+## C. Qué habilita esta pasada (capacidades, no fuentes)
+
+1. **«¿En qué gasta el Estado?»** — vertical de finanzas públicas con ejecución
+   mensual por institución, concepto y finalidad (§A.1), junto al indicador de
+   deuda que ya existe.
+2. **«¿Hubo competencia?»** — ofertas por proceso (§A.3): oferente único,
+   concurrencia repetida, ofertas descartadas.
+3. **«¿Quién es este proveedor?»** — perfil con RNC, forma jurídica, registro
+   mercantil, MIPYME, provincia (§A.3) y, cruzado con la DGII, antigüedad y
+   actividad declarada (§A.2).
+4. **«¿Qué va a comprar el Estado?»** — PACC (§A.3): señal anticipada, meses
+   antes de la licitación.
+5. **«¿La obra existe y avanza?»** — proyecto ↔ contrato ↔ territorio (§A.4).
+6. **«¿Cuánto cuesta la gasolina esta semana?»** — indicador semanal (§A.5).
+7. **«¿Qué tan bien gestiona esta institución / mi ayuntamiento?»** — SISMAP y
+   SISMAP Municipal (§A.7).
+8. **Nómina de 11 a ~74 instituciones** (§A.8).
+
+---
+
+## D. Plan de integración revisado
+
+Las fases 1 y 2 (deuda, normativa) siguen implementadas. Estas se ordenan por
+**valor ÷ esfuerzo**, y todas caben en la arquitectura sin BD:
+
+| Fase | Qué | Esfuerzo | Notas de arquitectura |
+|---|---|---|---|
+| **5** | **DGCP: `/ofertas`, `/proveedores`, `/catalogo`, `/pacc`** | **bajo** | Mismo host, mismo `dgcpFetch`, mismas ventanas de caché. Es la mejor relación valor/esfuerzo de toda la auditoría |
+| **6** | **SIGEF: `lib/fiscal.ts` + vertical de finanzas públicas** | medio | `unstable_cache` diario, consulta **por institución**, timeout ≥120 s, precalentar el mes vigente, degradar al mes cerrado anterior |
+| **7** | **MICM: indicador de combustibles** | bajo | Portada + título del último aviso; declarar que son 4 precios, no el aviso completo |
+| **8** | **MapaInversiones: obra pública** | medio | CSV grandes → instantánea en build (patrón nómina), unión por `codigo_snip` con procesos |
+| **9** | **RNC (DGII) en fichas de proveedor** | medio | Instantánea en build restringida a los RNC presentes en compras; nunca descarga en request |
+| **10** | **Nómina ampliada (159 candidatos) + SISMAP** | bajo | Añadir líneas al manifiesto de `scripts/build-nomina.py`; SISMAP es parseo de tabla |
+| **11** | BCRD (tipo de cambio) | bajo | Solo si el XLS del CDN se parsea sin dependencia pesada; el resto de series, tras pedir el índice |
+
+**Regla que impone la fase 6**: la plataforma necesita una segunda clase de
+adaptador — *fuente lenta, cacheada por día* — junto a la actual *fuente viva,
+cacheada por minutos*. `lib/senado.ts` ya abrió ese camino con `unstable_cache`;
+`lib/fiscal.ts` lo formaliza.
+
+---
+
+## E. Reglas nuevas que deja esta pasada
+
+1. **La vitrina no es la fuente.** Transparencia Fiscal no publica datos:
+   publica un formulario que llama a una API que nadie documenta. El hallazgo
+   más grande de esta auditoría estaba en el JavaScript de una página que la
+   primera pasada dio por «mapeada».
+2. **Un 403 en la puerta no cierra la casa.** La DGII bloquea su consulta web y
+   a la vez publica su padrón completo en un ZIP estático.
+3. **Antes de buscar una fuente nueva, agotar la que ya se integró.** Cuatro
+   endpoints útiles llevaban meses a un `GET` de distancia.
+4. **La latencia es parte del contrato.** Una API que tarda 90 s en el mes
+   corriente y 0.4 s en un año cerrado obliga a diseñar la caché antes que la
+   feature.
+5. **Nunca usar una credencial filtrada** (§A.9), aunque esté a la vista y
+   aunque el dato sea público: se reporta, no se aprovecha.
+6. **Publicar no es exponer.** Que un registro público traiga teléfonos y
+   correos no obliga a mostrarlos (§A.3).
+7. **Declarar la cobertura, siempre.** 4 precios de combustible no son «los
+   precios»; 11 nóminas no son «la nómina»; una muestra del SIL no es el SIL.
+8. **Desconfiar del contador ajeno.** datos.gob.do rotula «1,206 resultados
+   encontrados» busques lo que busques: la cifra real se obtiene paginando.
+
+---
+
+## F. Pendientes, en orden
+
+1. **Fase 5** (endpoints DGCP) — ejecutable ya, sin decisiones previas.
+2. **Fase 6** (SIGEF) — decidir la ventana de caché y el conjunto de
+   instituciones a precalentar en el panorama.
+3. Reportar a la OGTIC el token expuesto del 311 (§A.9).
+4. Pedir al BCRD el índice de archivos por sección (§A.6), o resolverlo desde
+   un entorno con navegador.
+5. Recon dedicada: TSS (boletines), Aduanas (comercio exterior), Tribunal
+   Constitucional (sentencias), Organismo Coordinador (generación diaria).
+6. Solicitudes institucionales, en paralelo y de plazo largo: ONE (lista
+   blanca), Cámara de Cuentas y 911 (Ley 200-04), JCE (archivo electoral).
+7. Verificar desde el egress de producción lo que este entorno no puede:
+   TLS de `www.poderjudicial.gob.do` y de SIPEN, y el navegador headless (§B.5).
