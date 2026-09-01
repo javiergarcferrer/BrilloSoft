@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getCountIniciativas, getPeriodos } from "@/lib/congreso";
 import { CUATRIENIOS, getCensoSenado } from "@/lib/senado";
+import { getDeuda } from "@/lib/deuda";
 import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { IconArrowLeft } from "@/components/icons";
@@ -15,11 +16,12 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function FuentesPage() {
-  const [censo, periodos, censoSenado, nomina] = await Promise.all([
+  const [censo, periodos, censoSenado, nomina, deuda] = await Promise.all([
     getCountIniciativas(),
     getPeriodos(),
     getCensoSenado(),
     getResumenNomina(),
+    getDeuda(),
   ]);
 
   return (
@@ -124,6 +126,35 @@ export default async function FuentesPage() {
               scripts/build-nomina.py
             </code>
             ).
+          </p>
+        </Fuente>
+
+        <Fuente
+          nombre="Crédito Público — deuda del SPNF"
+          estado={deuda !== null ? "activa" : "caida"}
+          etiqueta={deuda !== null ? "Conectada" : "Sin respuesta"}
+        >
+          <p>
+            Dirección General de Crédito Público del Ministerio de Hacienda.
+            Publica la evolución del saldo de la deuda del Sector Público No
+            Financiero como archivos XLSX mensuales con URL predecible; la
+            plataforma localiza el más reciente y lee el saldo sin descargar
+            nada al usuario.
+          </p>
+          {deuda && (
+            <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+              <Metrica
+                etiqueta="Deuda total"
+                valor={`US$${(deuda.saldoTotal / 1000).toFixed(1)}MM`}
+              />
+              <Metrica etiqueta="Saldo a" valor={deuda.periodo} />
+              <Metrica etiqueta="Formato" valor="XLSX mensual" />
+            </dl>
+          )}
+          <p className="mt-3 text-xs text-ink-soft">
+            Sin clave ni WAF. El saldo viene en millones de dólares; la
+            plataforma lo lee de la fila «Deuda Pública Total del SPNF» de la
+            hoja de saldo-evolución.
           </p>
         </Fuente>
 

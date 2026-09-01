@@ -9,6 +9,7 @@ import {
   resumirIniciativas,
 } from "@/lib/congreso";
 import { getCensoSenado } from "@/lib/senado";
+import { getDeuda } from "@/lib/deuda";
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { formatMonto, diasHasta } from "@/lib/format";
@@ -21,6 +22,7 @@ import {
   IconLayers,
   IconSearch,
   IconSparkles,
+  IconTrendingUp,
 } from "@/components/icons";
 
 export const revalidate = 1800;
@@ -34,7 +36,7 @@ function hace(dias: number): string {
 }
 
 export default async function Panorama() {
-  const [compras, censoCongreso, muestraCongreso, censoSenado, nomina] =
+  const [compras, censoCongreso, muestraCongreso, censoSenado, nomina, deuda] =
     await Promise.all([
       dgcpFetch<Proceso>("/procesos", { startdate: hace(30), limit: 1000 }, 1800).catch(
         () => null,
@@ -43,6 +45,7 @@ export default async function Panorama() {
       muestrearIniciativas(PAGINAS_CONGRESO),
       getCensoSenado(),
       getResumenNomina(),
+      getDeuda(),
     ]);
 
   /* --- compras públicas --- */
@@ -206,6 +209,50 @@ export default async function Panorama() {
           }
         />
       </section>
+
+      {/* Indicadores macro del Estado */}
+      {deuda && (
+        <section className="rounded-2xl border border-hairline bg-surface p-5 shadow-card">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+                <IconTrendingUp className="h-4 w-4 text-ink-soft" />
+                Deuda pública
+              </h2>
+              <p className="mt-0.5 text-xs text-ink-soft">
+                Sector Público No Financiero · saldo a {deuda.periodo}
+              </p>
+            </div>
+            <a
+              href="https://www.creditopublico.gob.do/inicio/estadisticas"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-brand-700 hover:underline"
+            >
+              Crédito Público ↗
+            </a>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            <IndicadorDeuda
+              etiqueta="Deuda total"
+              valor={`US$${(deuda.saldoTotal / 1000).toFixed(1)}MM`}
+              destacar
+            />
+            <IndicadorDeuda
+              etiqueta="Externa"
+              valor={`US$${(deuda.saldoExterna / 1000).toFixed(1)}MM`}
+            />
+            <IndicadorDeuda
+              etiqueta="Interna"
+              valor={`US$${(deuda.saldoInterna / 1000).toFixed(1)}MM`}
+            />
+          </div>
+          <p className="mt-3 text-xs text-ink-soft">
+            En miles de millones de dólares. Fuente: Dirección General de Crédito
+            Público del Ministerio de Hacienda.
+          </p>
+        </section>
+      )}
 
       {/* Señales que exigen atención */}
       <section className="grid gap-4 lg:grid-cols-2">
@@ -407,5 +454,30 @@ function Vacio({ texto }: { texto: string }) {
     <p className="px-5 py-10 text-center text-xs leading-relaxed text-ink-soft">
       {texto}
     </p>
+  );
+}
+
+function IndicadorDeuda({
+  etiqueta,
+  valor,
+  destacar,
+}: {
+  etiqueta: string;
+  valor: string;
+  destacar?: boolean;
+}) {
+  return (
+    <div className="rounded-xl bg-canvas/60 px-4 py-3 ring-1 ring-inset ring-hairline">
+      <div className="text-xs text-ink-soft">{etiqueta}</div>
+      <div
+        className={
+          destacar
+            ? "mt-0.5 text-lg font-bold tabular-nums tracking-tight text-ink"
+            : "mt-0.5 text-base font-semibold tabular-nums text-ink"
+        }
+      >
+        {valor}
+      </div>
+    </div>
   );
 }
