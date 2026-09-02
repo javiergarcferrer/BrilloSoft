@@ -37,7 +37,8 @@ fuera="$( { grep -rlE 'process\.env\.' app lib components --include=*.ts --inclu
 if [ -z "$fuera" ]; then ok "stateless surfaces: no env/DB outside /democracia"; else mal "env/DB reached a stateless surface"; printf '%s\n' "$fuera" | sed 's/^/       /'; fi
 
 # 4. Secrets anywhere tracked.
-sec="$(git grep -nE "$SECRETO_PATRONES" -- ':!package-lock.json' ':!.claude/hooks/*' 2>/dev/null | head -5)"
+sec="$( { git grep -nE "$SECRETO_VALORES" -- ':!package-lock.json' ':!.claude/hooks/*'; \
+          git grep -nE "$SECRETO_NOMBRES" -- ':!package-lock.json' ':!.claude/hooks/*' ':!supabase/*' ':!*.md'; } 2>/dev/null | head -5)"
 if [ -z "$sec" ]; then ok "no server keys in tracked files"; else mal "possible secret in tracked files"; printf '%s\n' "$sec" | sed 's/^/       /'; fi
 
 # 5. Documentation duties: a new lib adapter or route should be declared.

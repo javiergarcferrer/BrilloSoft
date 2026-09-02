@@ -1,0 +1,9 @@
+# Configuración mínima del CLI de Supabase para este repositorio.
+# El proyecto es `Transac` (PLAN-DEMOCRACIA.md §0); el resto de la
+# configuración vive en el panel y no se replica aquí.
+project_id = "amuyclnyjyhigeyhuufs"
+
+# La sesión del votante se verifica dentro de la función con `auth.getUser`,
+# que acepta las claves publicables nuevas; la puerta de enlace no.
+[functions.vincular-cuenta-unica]
+verify_jwt = false

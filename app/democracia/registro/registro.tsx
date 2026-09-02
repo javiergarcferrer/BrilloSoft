@@ -6,6 +6,7 @@ import { supabase, db } from "@/lib/supabase";
 import { cedulaValida, formatearCedula, limpiarCedula } from "@/lib/cedula";
 import { IconArrowLeft, IconCheck, IconShield } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { cuentaUnicaHabilitada, iniciarFlujo } from "@/app/democracia/cuenta-unica/cliente";
 
 /**
  * `cedula-pendiente` cubre el caso del **enlace**: quien pulsa el enlace del
@@ -29,15 +30,22 @@ export default function Registro() {
   const [codigo, setCodigo] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  /** De dónde viene la identidad del votante: cédula tecleada o Cuenta Única. */
+  const [origen, setOrigen] = useState<"declarada" | "cuenta_unica" | null>(null);
 
   // Si ya hay sesión con votante, saltar directo al estado final.
   useEffect(() => {
     (async () => {
       const { data } = await supabase().auth.getSession();
       if (!data.session) return;
-      const { data: votante } = await db().from("votantes").select("id").maybeSingle();
+      // `*` y no `id, origen`: hasta que se aplique la migración 20260902 la
+      // columna no existe, y pedirla por nombre haría fallar la consulta y
+      // mandaría a quien ya está registrado a teclear la cédula otra vez.
+      const { data: votante } = await db().from("votantes").select("*").maybeSingle();
       // Con sesión pero sin votante, el registro quedó a medias: falta la cédula.
       setPaso(votante ? "sesion" : "cedula-pendiente");
+      const v = votante as { origen?: "declarada" | "cuenta_unica" } | null;
+      setOrigen(v?.origen ?? null);
       if (data.session.user.email) setEmail(data.session.user.email);
     })();
   }, []);
@@ -169,6 +177,23 @@ export default function Registro() {
     setPaso("listo");
   }
 
+  /**
+   * Identidad v2: Cuenta Única verifica quién eres; Supabase sigue siendo la
+   * sesión. Por eso solo se ofrece con sesión abierta. La vuelta la atiende
+   * `/democracia/cuenta-unica/callback`.
+   */
+  async function irACuentaUnica() {
+    setError(null);
+    setCargando(true);
+    try {
+      const { data } = await supabase().auth.getSession();
+      window.location.assign(await iniciarFlujo(data.session?.user.id ?? ""));
+    } catch {
+      setCargando(false);
+      setError("No se pudo iniciar la verificación con Cuenta Única. Vuelve a intentarlo.");
+    }
+  }
+
   async function registrarConSesion(e: React.FormEvent) {
     e.preventDefault();
     if (!cedulaOk) return;
@@ -192,13 +217,24 @@ export default function Registro() {
             sobre cualquier iniciativa; tu voto es secreto y solo se publican los
             totales.
           </p>
+          {/* Solo cuando la vía existe: un déficit sin remedio no se enseña. */}
+          {cuentaUnicaHabilitada() && (
+            <p className="rotulo mt-3 text-ink-soft">
+              {origen === "cuenta_unica"
+                ? "Identidad verificada · Cuenta Única"
+                : "Registro por cédula y correo · sin verificar"}
+            </p>
+          )}
           <Link
             href="/congreso"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-brand-600"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
           >
             Ir a las iniciativas
           </Link>
         </div>
+        {cuentaUnicaHabilitada() && origen !== "cuenta_unica" && (
+          <CuentaUnica onClick={irACuentaUnica} cargando={cargando} error={error} />
+        )}
       </div>
     );
   }
@@ -255,6 +291,10 @@ export default function Registro() {
             {cargando ? "Enviando…" : "Enviar código"}
           </button>
         </form>
+      )}
+
+      {paso === "cedula-pendiente" && cuentaUnicaHabilitada() && (
+        <CuentaUnica onClick={irACuentaUnica} cargando={cargando} error={null} className="mb-4" />
       )}
 
       {paso === "cedula-pendiente" && (
@@ -352,6 +392,49 @@ export default function Registro() {
           nombre. Puedes borrar tu registro y tus votos cuando quieras.
         </p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * La vía verificada. Solo aparece cuando el cliente OAuth existe
+ * (`cuentaUnicaHabilitada`): un botón que no puede llevar a ningún sitio no
+ * se muestra apagado, se omite.
+ */
+function CuentaUnica({
+  onClick,
+  cargando,
+  error,
+  className,
+}: {
+  onClick: () => void;
+  cargando: boolean;
+  error: string | null;
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-lg border border-hairline bg-surface p-5", className)}>
+      <p className="rotulo text-ink-soft">Cuenta Única · OGTIC</p>
+      <h2 className="font-sans mt-1.5 text-sm font-semibold text-ink">
+        ¿Tienes Cuenta Única?
+      </h2>
+      <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+        Es la identidad digital ciudadana del Estado: ya comprobó tu cédula contra
+        el padrón y que eres tú. Al verificar, este sitio no guarda tu cédula ni
+        tu nombre: si Cuenta Única incluye la cédula, se convierte en el mismo
+        código irreversible que en el registro por correo; si no, guardamos el
+        código de tu identificador. Tu voto cuenta como identidad verificada. Te
+        lleva a cuentaunica.gob.do y vuelves aquí.
+      </p>
+      {error && <p className="mt-2 text-xs font-medium text-alerta-700">{error}</p>}
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={cargando}
+        className="mt-3 h-11 w-full rounded-lg border border-brand-500 bg-surface text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 active:scale-95 disabled:opacity-50"
+      >
+        {cargando ? "Abriendo Cuenta Única…" : "Verificar con Cuenta Única"}
+      </button>
     </div>
   );
 }

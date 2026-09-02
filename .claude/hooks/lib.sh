@@ -32,7 +32,21 @@ IDENTIDAD_PATRONES='bg-gradient-|from-[a-z]+-[0-9]+ (via|to)-|blur-(xl|2xl|3xl)|
 EMOJI_PATRON='[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}]'
 
 # Material that must never land in the app: server keys, private keys.
-SECRETO_PATRONES='service_role|sb_secret_|SUPABASE_SERVICE|-----BEGIN [A-Z ]*PRIVATE KEY|eyJhbGciOi'
+# Values are forbidden everywhere. Names (`service_role`, `SUPABASE_SERVICE…`)
+# are forbidden on every app surface; they are legitimate only on the database
+# side (`supabase/`: the GRANT to the role, the Edge Function that is the trust
+# boundary of PLAN-DEMOCRACIA.md §9.2) and in the documents that explain it.
+SECRETO_VALORES='sb_secret_|-----BEGIN [A-Z ]*PRIVATE KEY|eyJhbGciOi'
+SECRETO_NOMBRES='service_role|SUPABASE_SERVICE'
+SECRETO_PATRONES="$SECRETO_VALORES|$SECRETO_NOMBRES"
+
+# Files on the database side, where the service role is named by design.
+es_archivo_supabase() {
+  case "$1" in
+    supabase/*|*/supabase/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 sin_comentarios() {
   # Drop whole-line comments (// and JSDoc/*), keep everything else.

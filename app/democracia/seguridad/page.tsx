@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { IconArrowLeft, IconCheck, IconShield } from "@/components/icons";
+import { cuentaUnicaHabilitada } from "@/app/democracia/cuenta-unica/cliente";
 
 export const metadata: Metadata = {
   title: "Seguridad y privacidad",
@@ -75,6 +76,18 @@ export default function SeguridadPage() {
           implementado como una función de la base.
         </Medida>
 
+        {cuentaUnicaHabilitada() && (
+          <Medida titulo="Identidad verificada con Cuenta Única, sin ver tu cédula">
+            Si tienes Cuenta Única (la identidad digital ciudadana de la OGTIC),
+            puedes verificar tu registro con ella. Cuenta Única ya comprobó tu
+            cédula contra el padrón y que eres tú; este sitio recibe una
+            credencial firmada que se verifica <strong>dentro de Supabase, junto
+            a la base de datos</strong>, y guarda solo un código irreversible: de
+            la cédula si la credencial la incluye, y si no, del identificador.
+            Los totales dicen cuántos votos vienen de identidad verificada.
+          </Medida>
+        )}
+
         <Medida titulo="La aplicación no guarda secretos">
           El sitio solo lleva claves publicables, pensadas para viajar en el
           navegador; la protección real vive en la base de datos. El material
@@ -86,13 +99,14 @@ export default function SeguridadPage() {
       <section className="mt-8 rounded-lg border border-alerta-100/50 bg-alerta-50/60 p-5">
         <h2 className="font-sans text-sm font-semibold text-ink">Lo que este piloto todavía no hace</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-          Honestidad sobre los límites: hoy verificamos que la cédula sea{" "}
-          <strong>válida</strong> y que controles un correo, pero no que la cédula
-          sea <strong>tuya</strong> ni que estés habilitado en el padrón. Esa
-          verificación exige un acuerdo con la Junta Central Electoral, que no
-          expone un servicio público para ello. Este piloto —con su seguridad ya
-          construida— es precisamente el argumento para solicitar ese acceso y
-          convertir el ejercicio en un canal formal.
+          Honestidad sobre los límites: con el registro por correo verificamos que
+          la cédula sea <strong>válida</strong> y que controles un correo, pero no
+          que la cédula sea <strong>tuya</strong>. La vía para eso es Cuenta
+          Única, la identidad digital ciudadana de la OGTIC, que ya hace esa
+          comprobación contra el padrón.{" "}
+          {cuentaUnicaHabilitada()
+            ? "Está activa: cualquier votante puede verificar su registro con ella, y los totales distinguen cuántos votos vienen de identidad verificada."
+            : "La integración está construida y espera el cliente que emite la OGTIC; hasta entonces todos los registros cuentan como cédula declarada."}
         </p>
       </section>
 

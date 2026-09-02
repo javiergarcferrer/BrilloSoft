@@ -341,3 +341,65 @@ identidad verificada. UI: segundo camino en el registro y, en el widget,
 > Compromisos: minimización de datos (Ley 172-13), dossier público de
 > seguridad en `/democracia/seguridad`, marco no oficial visible en cada
 > pantalla, código auditable.
+
+### 9.5 Implementación (2026-09-02) — construida, inerte hasta que exista el cliente
+
+El dueño decidió construir antes de tener el `client_id`. Todo queda apagado
+mientras `NEXT_PUBLIC_CUENTA_UNICA_CLIENT_ID` esté vacío: la interfaz no
+ofrece la vía, la ruta de canje responde 503 y la Edge Function 503.
+
+| Pieza | Archivo | Qué hace |
+|---|---|---|
+| Cliente público | `app/democracia/cuenta-unica/cliente.ts` | Endpoints verificados (§9.1), `client_id` público, PKCE S256, `state` en `localStorage` (10 min, un solo uso); el `nonce` es el hash del id de sesión del votante |
+| Canje | `app/democracia/cuenta-unica/token/route.ts` | `POST {code, code_verifier, redirect_uri}` → token endpoint (auth `none`) → devuelve **solo** `id_token`. Transporte, no confianza |
+| Vuelta | `app/democracia/cuenta-unica/callback/` | Valida `state`, exige sesión de votante, canjea, invoca la Edge Function; cada fallo dice qué pasó |
+| Frontera de confianza | `supabase/functions/vincular-cuenta-unica/index.ts` | Verifica firma RS256 (JWKS), `iss`, `aud` = client, `exp` y edad ≤ 15 min; `getUser` con el JWT del votante y exige `nonce` = hash de su id (un ID token robado no sirve con otra sesión); llama al RPC con la clave de servicio |
+| Esquema | `supabase/migrations/20260902120000_democracia_cuenta_unica.sql` | USAGE del esquema al rol de servicio; cierra el oráculo de `hash_cedula` (v1 dejaba EXECUTE a PUBLIC); `votantes.origen` (`declarada`/`cuenta_unica`) y `verificado`; `hash_sujeto` (pepper + prefijo de espacio de nombres); RPC `vincular_identidad` concedido solo al rol de servicio; `agregados_publicos.verificados` |
+| UI | `registro.tsx`, `seguridad/page.tsx`, `voto-widget.tsx` | «Verificar con Cuenta Única» con sesión abierta; estado «Identidad verificada»; totales con «N con identidad verificada» |
+
+Decisiones tomadas al construir:
+- **La clave sigue siendo `cedula_hash`.** Si el ID token trae un claim
+  `cedula` (11 dígitos y Luhn), se hashea igual que en v1 y quien la declaró
+  bien conserva su fila; si no, se hashea `'cuenta_unica:' || sub`. Un `sub`
+  jamás colisiona con una cédula. Solo se lee `cedula`: qué claims llegan a
+  un tercero no está verificado (§9.1) y un `preferred_username` de once
+  dígitos podría no ser una cédula.
+- **Colisión con una cédula declarada.** Si la cédula que Cuenta Única
+  confirma ya la tecleó otra cuenta sin verificar, el RPC devuelve
+  `cedula_declarada_en_uso` y no desplaza a nadie. **Decisión pendiente del
+  dueño:** si una identidad verificada debe desplazar a la declaración sin
+  verificar (borrando esa fila y sus votos). Hoy gana quien llegó primero,
+  y la persona verificada recibe la explicación exacta.
+- **La ruta de canje no tiene límite de tasa.** Solo acepta la
+  `redirect_uri` de su propio origen, pero es un relé abierto hacia el
+  endpoint de token de Cuenta Única; Hydra rechaza códigos inválidos y el
+  coste es una petición. Si se abusa, el límite va en Vercel (WAF), no en
+  memoria de una función.
+- **Sin cliente no hay botón apagado**: la vía se omite. Un control que no
+  puede llevar a ningún sitio no se enseña deshabilitado.
+- La ruta de canje solo acepta la `redirect_uri` de su propio origen
+  (`/democracia/cuenta-unica/callback`, HTTPS o localhost) y devuelve el
+  código de error de OAuth, nunca el cuerpo del emisor.
+- `supabase/config.toml` fija `verify_jwt = false` para la función (la sesión
+  se verifica dentro) y el `project_id` de `Transac`, para que el despliegue
+  no dependa de recordar una bandera.
+- `tsconfig.json` excluye `supabase/functions` (Deno) del typecheck de Next.
+
+Pasos del dueño, en orden (ninguno lo hace una sesión):
+1. Solicitar el cliente a la OGTIC (§9.4) con `redirect_uris`
+   `https://brillo-soft.vercel.app/democracia/cuenta-unica/callback` y
+   `https://socratico.do/democracia/cuenta-unica/callback`.
+2. Aplicar la migración `20260902120000` al proyecto `Transac`.
+3. Desplegar la función: `supabase functions deploy vincular-cuenta-unica`
+   (con `supabase link` hecho; `config.toml` ya desactiva la verificación de
+   JWT en la puerta de enlace porque la sesión se verifica dentro).
+4. Fijar el secreto de función `CUENTA_UNICA_CLIENT_ID` (panel → Edge
+   Functions → Secrets) con el UUID que emita la OGTIC.
+5. Fijar en Vercel `NEXT_PUBLIC_CUENTA_UNICA_CLIENT_ID` con el mismo UUID y
+   redesplegar. Ese es el interruptor: al existir, la vía aparece.
+6. Probar de punta a punta con una Cuenta Única real y anotar aquí qué
+   claims llegaron (resuelve el ⚠️ de §9.1); si la cédula viaja bajo otro
+   nombre, ampliar `cedulaDe` en la función. Comprobaciones útiles en SQL:
+   `select has_schema_privilege('service_role','democracia','usage');` y
+   `select has_function_privilege('anon','democracia.hash_cedula(text)','execute');`
+   (debe ser `false`).

@@ -22,9 +22,12 @@ esac
 
 [ -z "$nuevo" ] && exit 0
 
-# 1. Secrets.
-if printf '%s' "$nuevo" | grep -qE "$SECRETO_PATRONES"; then
+# 1. Secrets. Values never; names only on the database side and in docs.
+if printf '%s' "$nuevo" | grep -qE "$SECRETO_VALORES"; then
   negar "looks like a server key or private key. Sensitive material lives inside Postgres, never in the app (PLAN-DEMOCRACIA.md §4)."
+fi
+if ! es_archivo_supabase "$rel" && [ "${rel##*.}" != "md" ] && printf '%s' "$nuevo" | grep -qE "$SECRETO_NOMBRES"; then
+  negar "the service role is named only inside supabase/ (grants, the Edge Function trust boundary — PLAN-DEMOCRACIA.md §9.2), never on an app surface."
 fi
 
 # 2. Statelessness outside /democracia.

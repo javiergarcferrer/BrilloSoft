@@ -38,6 +38,8 @@ export interface Agregado {
   a_favor: number;
   en_contra: number;
   total: number;
+  /** Votos de votantes con identidad verificada por Cuenta Única (PLAN §9). */
+  verificados: number;
 }
 
 /** Referencia estable de una iniciativa para votar. */
@@ -49,7 +51,7 @@ export function refIniciativa(camara: Camara, id: string | number, cuatrienio?: 
 export async function getAgregado(camara: Camara, ref: string): Promise<Agregado | null> {
   const filtro = `camara=eq.${camara}&ref=eq.${encodeURIComponent(ref)}`;
   const rows = await rest<Agregado[]>(`agregados_publicos?${filtro}&select=*`, 30);
-  return rows?.[0] ?? { camara, ref, a_favor: 0, en_contra: 0, total: 0 };
+  return rows?.[0] ?? { camara, ref, a_favor: 0, en_contra: 0, total: 0, verificados: 0 };
 }
 
 export interface RankingItem extends Agregado {

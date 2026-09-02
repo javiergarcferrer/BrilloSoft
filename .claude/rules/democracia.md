@@ -22,10 +22,17 @@ pilot**; every surface says so.
   literal fallbacks). No service-role key, no server secret, ever, anywhere.
   The cédula-hash pepper lives in `democracia.secretos`, readable only by the
   `SECURITY DEFINER` RPCs.
-- Identity v2 is Cuenta Única (PLAN §9): a public PKCE client, the ID token
-  verified inside a Supabase Edge Function, the subject hashed with the
-  pepper. Do not build it until the owner has the OGTIC `client_id`; never
-  store the `sub` or the cédula in clear, even when the claim arrives.
+- Identity v2 is Cuenta Única (PLAN §9, built): `app/democracia/cuenta-unica/`
+  is a public PKCE client with no secret; the ID token is verified only in
+  `supabase/functions/vincular-cuenta-unica` (Deno, excluded from tsc), which
+  alone may call `democracia.vincular_identidad` (service role). The token
+  route is transport, not trust: never verify or decode claims in Next. Never
+  store the `sub` or the cédula in clear. The whole path stays hidden while
+  `NEXT_PUBLIC_CUENTA_UNICA_CLIENT_ID` is empty; do not show it disabled.
+- The secret scan forbids key *values* everywhere and the service-role *name*
+  on every app surface; `supabase/` (the GRANT, the Edge Function) and the
+  docs may name it. That scope is deliberate (`.claude/hooks/lib.sh`); do not
+  widen it further.
 - The Supabase client (`lib/supabase.ts`) is imported only by democracia
   modules. Other verticals may render `components/democracia/*` and call
   `lib/democracia.ts` helpers (the congress fichas embed the vote widget);

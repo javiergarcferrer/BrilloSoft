@@ -164,6 +164,12 @@ export default function VotoWidget({
             <span className="font-medium text-brand-600">{pctFavor}% a favor</span>
             <span className="font-medium text-sello-600">{100 - pctFavor}% en contra</span>
           </div>
+          {/* Cuántos de esos votos vienen de una identidad verificada por Cuenta Única. */}
+          {(agg.verificados ?? 0) > 0 && (
+            <p className="font-mono mt-1 text-xs tabular-nums text-ink-soft">
+              {agg.verificados.toLocaleString("es-DO")} con identidad verificada (Cuenta Única)
+            </p>
+          )}
         </div>
       )}
 

@@ -12,6 +12,7 @@ declara.
 | Compras públicas | `/licitaciones` | [API de datos abiertos de la DGCP](https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html) |
 | Congreso Nacional | `/congreso` | SIL de la Cámara de Diputados |
 | Nómina estatal | `/nomina` | Nómina de empleados fijos 2023–2026 |
+| Democracia | `/democracia` | Piloto de voto ciudadano (Supabase, schema aislado) con identidad verificable por Cuenta Única (OGTIC), prevista: construida y a la espera del cliente OAuth2 |
 
 `/` es el **panorama**: indicadores de los tres dominios y las señales que
 exigen atención ahora — procesos que cierran esta semana e iniciativas por

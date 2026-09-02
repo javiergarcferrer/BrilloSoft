@@ -16,7 +16,7 @@ a public source:
 | Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (token + POST) | `lib/normativa.ts` |
 | Nómina estatal | `/nomina` | Static payroll snapshot (11 institutions) | `lib/nomina.ts`, `lib/nomina-server.ts` |
 | Deuda pública | card on `/` | Crédito Público XLSX (+ committed snapshot) | `lib/deuda.ts` |
-| Democracia | `/democracia` | Supabase, schema `democracia` (the one exception) | `lib/democracia.ts`, `lib/supabase.ts` |
+| Democracia | `/democracia` | Supabase, schema `democracia` (the one exception) + Cuenta Única OIDC for verified identity | `lib/democracia.ts`, `lib/supabase.ts`, `app/democracia/cuenta-unica/` |
 
 `lib/secciones.ts` is the single source of truth for verticals and navigation.
 
@@ -34,9 +34,12 @@ audit-driven additions like deuda and normativa). Those stay stateless.
 **The one documented exception is the `/democracia` vertical** (citizen voting
 on legislation), which by nature needs persistence and auth. It uses Supabase
 (project `Transac`) confined to a `democracia` schema, and the app carries only
-**publishable** keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
-— the sensitive material (the cédula-hash pepper) lives inside Postgres, never
-in the app env. See `PLAN-DEMOCRACIA.md`. Do not let this exception leak into
+**publishable** keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+and `NEXT_PUBLIC_CUENTA_UNICA_CLIENT_ID`, the public OAuth client id for
+Cuenta Única identity verification, empty until OGTIC issues it) — the
+sensitive material (the cédula-hash pepper, the ID-token verification, the
+service role) lives inside Postgres and a Supabase Edge Function, never in
+the app env. See `PLAN-DEMOCRACIA.md` (§9 for Cuenta Única). Do not let this exception leak into
 the stateless surfaces: no other vertical reads or writes the DB.
 
 ## Documents that govern a session
@@ -104,11 +107,22 @@ against every rule above).
   `{{ .Token }}`. Registration works without it (link paste path); fixing it
   is a panel action.
 - **Cuenta Única OAuth2 client** (PLAN-DEMOCRACIA §9, AUDITORIA §A.11):
-  identity v2 for `/democracia` is verified and designed (public PKCE client,
-  verification inside a Supabase Edge Function, subject hashed with the
-  pepper), but Cuenta Única has no dynamic client registration: the
-  `client_id` comes from OGTIC by request, then a migration and an Edge
-  Function deploy. Nothing is built until the client exists.
+  identity v2 for `/democracia` is **built and inert** (public PKCE client,
+  verification inside the Edge Function `vincular-cuenta-unica`, subject
+  hashed with the pepper). Cuenta Única has no dynamic client registration:
+  the owner requests the `client_id` from OGTIC, applies migration
+  `20260902120000`, deploys the function, and sets the id in Vercel and as a
+  function secret (PLAN §9.5). Until then the UI does not offer the path.
+- **Secret-scan scope** (`.claude/hooks/lib.sh`): the session that built
+  Cuenta Única scoped the scan so key *values* are forbidden everywhere and
+  the service-role *name* only on app surfaces, because the migration's GRANT
+  and the Edge Function must name it. The reviewer flagged that a session
+  changed the gate it had to pass. Ratify, or revert those three hook hunks
+  and accept a red gate on `supabase/`.
+- **Verified identity vs. declared cédula** (PLAN-DEMOCRACIA §9.5): when a
+  Cuenta Única login confirms a cédula someone else typed unverified, the RPC
+  refuses with `cedula_declarada_en_uso` and displaces nobody. Decide whether
+  verification should win (deleting the unverified row and its votes).
 - **Institutional requests**: ONE whitelist, Cámara de Cuentas and 911 under
   Ley 200-04, JCE electoral archive, BCRD file index, report of the exposed
   311 token and the Cuenta Única client request to OGTIC (AUDITORIA §A.9,
