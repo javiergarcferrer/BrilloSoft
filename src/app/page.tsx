@@ -1,21 +1,13 @@
-import { Hero } from "@/components/sections/hero";
-import { Services } from "@/components/sections/services";
-import { Process } from "@/components/sections/process";
-import { Ecolab } from "@/components/sections/ecolab";
-import { Nosotros } from "@/components/sections/nosotros";
-import { Clients } from "@/components/sections/clients";
-import { Contacto } from "@/components/sections/contacto";
+import { SITE } from "@/lib/site";
 
 export default function HomePage() {
   return (
-    <>
-      <Hero />
-      <Services />
-      <Process />
-      <Ecolab />
-      <Nosotros />
-      <Clients />
-      <Contacto />
-    </>
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 px-6 text-center">
+      <h1 className="text-5xl font-semibold tracking-tight text-brand-700">
+        {SITE.name}
+      </h1>
+      <p className="text-lg text-ink-soft">{SITE.tagline}</p>
+      <p className="text-sm text-ink-soft">{SITE.domain}</p>
+    </main>
   );
 }

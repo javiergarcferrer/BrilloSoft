@@ -1,73 +1,35 @@
 @import "tailwindcss";
 
 /*
-  Vista Verde — design system
-  --------------------------------------------------------------------------
-  Elegant, premium palette: a warm cream canvas with forest / sage greens and
-  a restrained gold accent — chosen to signal careful, high-end treatment of
-  delicate materials (upholstery, fine wood, curtains, carpets).
-
-  Tailwind v4: design tokens live in @theme so utilities are generated
-  (e.g. bg-brand-600, text-ink, font-display, shadow-card). Keep class strings
-  literal in components so Tailwind's scanner can see them.
+  Socrático — design tokens
+  Tailwind v4: tokens live in @theme so utilities are generated
+  (e.g. bg-brand-600, text-ink). Keep class strings literal in components.
 */
-
 @theme {
-  /* Typography — wired to the next/font CSS variables set on <html> */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --font-display: var(--font-fraunces), ui-serif, Georgia, "Times New Roman",
-    serif;
 
-  /* Brand — forest / sage green */
-  --color-brand-50: #f0f6f1;
-  --color-brand-100: #dbe9de;
-  --color-brand-200: #b9d4c1;
-  --color-brand-300: #8eba9c;
-  --color-brand-400: #5f9874;
-  --color-brand-500: #3f7b57;
-  --color-brand-600: #2f6144;
-  --color-brand-700: #274e38;
-  --color-brand-800: #213f2f;
-  --color-brand-900: #1c3428;
-  --color-brand-950: #0e1d15;
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+  --color-brand-950: #1e1b4b;
 
-  /* Warm neutrals — cream paper surfaces */
-  --color-canvas: #f6f4ec;
+  --color-canvas: #fafafa;
   --color-surface: #ffffff;
-  --color-surface-soft: #faf8f1;
-  --color-ink: #1b2a20;
-  --color-ink-soft: #586a5f;
-  --color-hairline: #e7e2d4;
-
-  /* Restrained gold accent (used sparingly for "premium" details) */
-  --color-gold-100: #f4e9cf;
-  --color-gold-400: #cda85f;
-  --color-gold-500: #b88a45;
-
-  /* Radii */
-  --radius-xs: 0.375rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
-  --radius-3xl: 2rem;
-
-  /* Soft, warm-tinted shadows */
-  --shadow-soft: 0 1px 2px 0 rgb(27 42 32 / 0.04),
-    0 1px 3px 0 rgb(27 42 32 / 0.06);
-  --shadow-card: 0 1px 2px rgb(27 42 32 / 0.04),
-    0 8px 24px -8px rgb(27 42 32 / 0.12);
-  --shadow-pop: 0 12px 40px -8px rgb(27 42 32 / 0.22),
-    0 4px 12px -4px rgb(27 42 32 / 0.12);
+  --color-ink: #111827;
+  --color-ink-soft: #6b7280;
+  --color-hairline: #e5e7eb;
 }
 
 @layer base {
   html {
-    scroll-behavior: smooth;
-    /* offset anchor targets for the sticky header */
-    scroll-padding-top: 5.5rem;
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
   }
@@ -80,76 +42,9 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Display serif for headings; can be overridden with `font-sans` */
-  h1,
-  h2,
-  h3 {
-    font-family: var(--font-display);
-    letter-spacing: -0.015em;
-  }
-
-  ::selection {
-    background-color: color-mix(in oklab, var(--color-brand-500) 24%, white);
-    color: var(--color-brand-950);
-  }
-
   :focus-visible {
     outline: 2px solid var(--color-brand-500);
     outline-offset: 2px;
     border-radius: 6px;
-  }
-
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: #c7cfc9 transparent;
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/* Motion + decorative utilities                                       */
-/* ------------------------------------------------------------------ */
-@keyframes vv-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.vv-marquee {
-  animation: vv-marquee 38s linear infinite;
-}
-
-@keyframes vv-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.vv-float {
-  animation: vv-float 7s ease-in-out infinite;
-}
-
-/* Subtle paper grain to warm up the cream surfaces */
-.vv-grain {
-  background-image: radial-gradient(
-    rgb(27 42 32 / 0.035) 1px,
-    transparent 1px
-  );
-  background-size: 4px 4px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  .vv-marquee,
-  .vv-float {
-    animation: none;
   }
 }
