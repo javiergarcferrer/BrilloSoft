@@ -1,4 +1,4 @@
--- Identidad v2 — Cuenta Única (PLAN-DEMOCRACIA.md §9). Re-ejecutable.
+-- Identidad v2 — Cuenta Única (docs/PLAN-DEMOCRACIA.md §9). Re-ejecutable.
 --
 -- Un votante puede quedar «declarado» (cédula tecleada, v1) o «verificado»
 -- por Cuenta Única (OGTIC). La vinculación la hace SOLO la Edge Function

@@ -6,7 +6,7 @@
  *
  * El origen es la **API interna** del portal SIL Ciudadano
  * (`https://www.diputadosrd.gob.do/sil/api`), no una API pública documentada.
- * El reconocimiento está en `RECON.md`; las tres reglas que impone:
+ * El reconocimiento está en `docs/RECON.md`; las tres reglas que impone:
  *
  *  1. **Un `200` no significa que la ruta exista.** IIS enruta lo desconocido
  *     bajo `/sil/` al catch-all de la SPA y devuelve HTML con estado 200. Hay
@@ -213,7 +213,7 @@ export async function getPeriodos(): Promise<SilPeriodo[]> {
  *
  * El bundle del SIL trae una URL hardcodeada distinta de la que devuelve este
  * endpoint, así que hay que preguntarla y no fijarla. El host que responde es
- * on-premise en RD y rechaza conexiones desde fuera del país (RECON.md §2.9).
+ * on-premise en RD y rechaza conexiones desde fuera del país (docs/RECON.md §2.9).
  */
 export async function getRutaDocumento(): Promise<string | null> {
   return silFetchSafe<string>("comun/GetRutaDocumento/", 86400);

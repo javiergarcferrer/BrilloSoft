@@ -8,7 +8,7 @@ export LC_ALL=C.UTF-8
 
 ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 
-# Files whose UI classes are checked against IDENTIDAD.md.
+# Files whose UI classes are checked against docs/IDENTIDAD.md.
 es_archivo_ui() {
   case "$1" in
     */app/*.tsx|*/components/*.tsx|*/app/*.css|app/*.tsx|components/*.tsx|app/*.css) return 0 ;;
@@ -17,7 +17,7 @@ es_archivo_ui() {
 }
 
 # Files that legitimately touch Supabase / env vars (the /democracia
-# exception, PLAN-DEMOCRACIA.md). Everything else is stateless by contract.
+# exception, docs/PLAN-DEMOCRACIA.md). Everything else is stateless by contract.
 es_archivo_democracia() {
   case "$1" in
     *lib/supabase.ts|*lib/supabase-config.ts|*lib/democracia.ts|*lib/cedula.ts) return 0 ;;
@@ -26,7 +26,7 @@ es_archivo_democracia() {
   esac
 }
 
-# Prohibitions from IDENTIDAD.md, as grep -E patterns. Comment lines are
+# Prohibitions from docs/IDENTIDAD.md, as grep -E patterns. Comment lines are
 # stripped before matching so a code comment can name the sin it avoids.
 IDENTIDAD_PATRONES='bg-gradient-|from-[a-z]+-[0-9]+ (via|to)-|blur-(xl|2xl|3xl)|rounded-(2xl|3xl)|(^|[^-a-z])shadow-(sm|md|lg|xl|2xl)([^-a-z]|$)'
 EMOJI_PATRON='[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}]'
@@ -35,7 +35,7 @@ EMOJI_PATRON='[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}]'
 # Values are forbidden everywhere. Names (`service_role`, `SUPABASE_SERVICE…`)
 # are forbidden on every app surface; they are legitimate only on the database
 # side (`supabase/`: the GRANT to the role, the Edge Function that is the trust
-# boundary of PLAN-DEMOCRACIA.md §9.2) and in the documents that explain it.
+# boundary of docs/PLAN-DEMOCRACIA.md §9.2) and in the documents that explain it.
 SECRETO_VALORES='sb_secret_|-----BEGIN [A-Z ]*PRIVATE KEY|eyJhbGciOi'
 SECRETO_NOMBRES='service_role|SUPABASE_SERVICE'
 SECRETO_PATRONES="$SECRETO_VALORES|$SECRETO_NOMBRES"

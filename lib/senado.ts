@@ -5,7 +5,7 @@
  * plugin de seguridad, y su SIL (`sil.senadord.gob.do`) es un gestor documental
  * ASP.NET WebForms («FileMaster») cuyo modo **consultante** es la interfaz de
  * consulta ciudadana que la propia web oficial enlaza. Esta capa lee ese modo
- * consultante y nada más. El reconocimiento completo está en `RECON.md` §12.
+ * consultante y nada más. El reconocimiento completo está en `docs/RECON.md` §12.
  *
  * Reglas que impone el origen, en paridad con `lib/congreso.ts`:
  *

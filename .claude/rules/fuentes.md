@@ -6,7 +6,7 @@ paths:
 ---
 # Contract for every state-source adapter (`lib/*.ts`)
 
-Condensed from AUDITORIA.md §6/§9 and RECON.md §2.1/§2.10/§12.1. The full
+Condensed from docs/AUDITORIA.md §6/§9 and docs/RECON.md §2.1/§2.10/§12.1. The full
 verified mechanics per source live there; this is what every adapter obeys.
 
 ## Reading a source
@@ -21,7 +21,7 @@ verified mechanics per source live there; this is what every adapter obeys.
   subscription endpoint. Never copy telemetry keys the portals leak (RECON §2.10).
 - **Never evade a WAF, challenge, 403, 470, or robots rule.** Do not rotate
   User-Agent or IP, do not spoof a browser. A blocked source is unblocked
-  institutionally (whitelist, Ley 200-04); write that down in AUDITORIA.md
+  institutionally (whitelist, Ley 200-04); write that down in docs/AUDITORIA.md
   and `/fuentes`, then stop.
 - **Stateless.** No database, no `process.env`, no API keys in any adapter.
   A source that needs credentials (BCRD, Superintendencia de Bancos) is an
@@ -38,7 +38,7 @@ verified mechanics per source live there; this is what every adapter obeys.
   when the origin rejects cloud egress. A value served from a snapshot says so
   in the UI (`desdeInstantanea`) with its generation date.
 
-## Two adapter classes (AUDITORIA.md §D)
+## Two adapter classes (docs/AUDITORIA.md §D)
 - **Live source, cached by minutes** (`lib/dgcp.ts`, `lib/congreso.ts`):
   fetch `revalidate`, the request path is fast, the page waits for it.
 - **Slow source, cached by day** (`lib/senado.ts`, `lib/normativa.ts`):
@@ -56,7 +56,7 @@ verified mechanics per source live there; this is what every adapter obeys.
   **build-time snapshots** via `scripts/build-*.py` restricted to what the
   platform shows, never fetched in a request.
 
-## Lessons the second audit pass made rules (AUDITORIA.md §E)
+## Lessons the second audit pass made rules (docs/AUDITORIA.md §E)
 1. The showcase is not the source: read the JavaScript that builds the calls.
 2. A 403 at the door does not close the house: look for the static download.
 3. Before a new source, exhaust the one already integrated (DGCP had four

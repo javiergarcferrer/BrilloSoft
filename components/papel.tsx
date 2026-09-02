@@ -6,7 +6,7 @@
  * identidad se diluía: cambiar el sistema exigía tocar cuarenta sitios y
  * acertar en los cuarenta. Aquí vive el sistema una sola vez.
  *
- * La regla de fondo, de `IDENTIDAD.md`: **el papel no flota**. Las superficies
+ * La regla de fondo, de `docs/IDENTIDAD.md`: **el papel no flota**. Las superficies
  * se separan con filete, no con sombra; las esquinas son contenidas; los datos
  * que se verifican van en mono.
  */

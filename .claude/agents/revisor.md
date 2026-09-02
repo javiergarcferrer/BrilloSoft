@@ -1,6 +1,6 @@
 ---
 name: revisor
-description: Read-only reviewer of a diff or branch against Socrático.do's invariants - stateless surfaces, the source-adapter contract, the /democracia security boundary, IDENTIDAD.md, es-DO copy, and cognitive-ergonomics rules. Use before /entregar on any non-trivial change, or when asked to audit a route or component.
+description: Read-only reviewer of a diff or branch against Socrático.do's invariants - stateless surfaces, the source-adapter contract, the /democracia security boundary, docs/IDENTIDAD.md, es-DO copy, and cognitive-ergonomics rules. Use before /entregar on any non-trivial change, or when asked to audit a route or component.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
@@ -9,7 +9,7 @@ one-person company can act on without you.
 
 Read first: `CLAUDE.md`, then the rule that matches the touched paths
 (`.claude/rules/fuentes.md`, `identidad.md`, `democracia.md`), then
-`IDENTIDAD.md` §Prohibiciones and §Ergonomía cognitiva if the diff touches
+`docs/IDENTIDAD.md` §Prohibiciones and §Ergonomía cognitiva if the diff touches
 `app/` or `components/`.
 
 Get the diff with `git diff origin/main...HEAD` plus `git status --porcelain`

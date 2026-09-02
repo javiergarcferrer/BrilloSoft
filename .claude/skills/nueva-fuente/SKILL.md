@@ -14,14 +14,14 @@ One sentence, as a question («¿Cuánto debe el Estado?»). If the source
 answers no citizen question, stop and say so.
 
 ## R — recon (verify, never assume)
-Check `AUDITORIA.md` first: most sources already have a status and a
+Check `docs/AUDITORIA.md` first: most sources already have a status and a
 verified path, and its **SEGUNDA PASADA** (§A–§F) supersedes rows marked ↓ in
 the first table. §D ranks the next integrations by value ÷ effort (DGCP's
 unused endpoints first, then SIGEF, MICM, MapaInversiones, RNC, nómina
 ampliada, BCRD). Before a new host, exhaust the ones already integrated. If the mechanics are not yet ✅, run the `recon` agent
 (`.claude/agents/recon.md`) or do it by hand with the same hygiene:
 `robots.txt` first, identifiable User-Agent, 2–6 requests, GET only, no
-challenge evasion. Write the findings into `AUDITORIA.md` (or `RECON.md`
+challenge evasion. Write the findings into `docs/AUDITORIA.md` (or `docs/RECON.md`
 for Congress) with ✅/⚠️/❌ and the exact URLs, response shapes, and
 content-types you saw.
 

@@ -1,90 +1,104 @@
 # Socrático.do
 
-Plataforma de inteligencia sobre el Estado dominicano: **qué compra, qué legisla
-y a quién paga**. El nombre es el método: preguntarle al Estado con sus propios
-datos, y dejar que las respuestas se lean enteras. Reúne fuentes oficiales en un
-solo lugar, leídas en vivo y cacheadas — sin base de datos intermedia, sin
-credenciales, salvo la vertical de voto ciudadano, que las necesita y las
-declara.
+Plataforma de inteligencia sobre el Estado dominicano: **qué compra, qué
+legisla y a quién paga**. Reúne fuentes oficiales en un solo lugar, leídas en
+vivo y cacheadas, sin base de datos intermedia. La única vertical con
+persistencia es el piloto de voto ciudadano, que la necesita y la declara.
 
-| Dominio | Ruta | Fuente |
-|---|---|---|
-| Compras públicas | `/licitaciones` | [API de datos abiertos de la DGCP](https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html) |
-| Congreso Nacional | `/congreso` | SIL de la Cámara de Diputados |
-| Nómina estatal | `/nomina` | Nómina de empleados fijos 2023–2026 |
-| Democracia | `/democracia` | Piloto de voto ciudadano (Supabase, schema aislado) con identidad verificable por Cuenta Única (OGTIC), prevista: construida y a la espera del cliente OAuth2 |
+Herramienta independiente y no oficial. Producción:
+https://brillo-soft.vercel.app
 
-`/` es el **panorama**: indicadores de los tres dominios y las señales que
-exigen atención ahora — procesos que cierran esta semana e iniciativas por
-perimir. `/fuentes` documenta con qué cobertura cuenta cada fuente y cuáles
-están bloqueadas; el reconocimiento técnico completo está en `RECON.md`.
+## Verticales
 
-Herramienta independiente y no oficial.
+| Vertical | Rutas | Fuente | Capa de datos |
+|---|---|---|---|
+| Panorama | `/` | Todas las de abajo | `app/page.tsx` |
+| Licitaciones | `/licitaciones`, `/procesos/[codigo]`, `/proveedores/[rpe]`, `/estadisticas`, `/contratos`, `/planes`, `/seguimiento`, `/guia` | [API de datos abiertos de la DGCP](https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html) | `lib/dgcp.ts` |
+| Finanzas | `/finanzas`, `/finanzas/[capitulo]` | API de datos abiertos del SIGEF (Hacienda), en instantánea | `lib/fiscal.ts`, `lib/capitulos.ts`, `public/data/fiscal.json` |
+| Congreso | `/congreso`, `/congreso/[id]`, `/congreso/perencion`, `/congreso/senado`, `/congreso/senado/[cuatrienio]/[id]` | SIL de Diputados (API JSON interna) y consultante del Senado (HTML) | `lib/congreso.ts`, `lib/senado.ts`, `lib/legislacion.ts` |
+| Normativa | `/normativa`, `/normativa/[tipo]/[numero]` | Consultoría Jurídica del Poder Ejecutivo | `lib/normativa.ts` |
+| Nómina | `/nomina` | Nóminas de transparencia (Ley 200-04), consolidadas en una foto transversal | `lib/nomina.ts`, `lib/nomina-server.ts`, `public/data/nomina.json` |
+| Democracia | `/democracia`, `/democracia/registro`, `/democracia/seguridad`, `/democracia/cuenta-unica/*` | Supabase (esquema `democracia`); identidad verificada por Cuenta Única (OGTIC), construida y a la espera del cliente OAuth2 | `lib/democracia.ts`, `lib/supabase.ts`, `app/democracia/cuenta-unica/` |
 
-## Congreso
+Transversales: `/fuentes` declara qué alimenta la plataforma, qué está
+bloqueado y con qué límites de cobertura; `/seguridad` documenta la postura de
+seguridad y cumplimiento. El indicador de deuda pública del panorama sale de
+Crédito Público (`lib/deuda.ts`), con instantánea local de respaldo en
+`public/data/deuda.json`.
 
-- Búsqueda por texto sobre las iniciativas, con la consulta en la URL.
-- Ficha por iniciativa: trámites, proponentes con partido y provincia, y la
-  cadena documental marcando qué versiones traen articulado.
-- Separa el título reformulado durante el trámite, que el SIL guarda dentro de
-  la misma descripción.
-- **Alerta de perención**: cada legislatura ordinaria dura 150 días (abren el 27
-  de febrero y el 16 de agosto) y las piezas pendientes al cierre se perimen; la
-  vista avisa con 30 días de anticipación.
+## Qué hace cada vertical
 
-## Compras públicas
+**Licitaciones.** Buscador en vivo con texto insensible a acentos y filtros
+(estado, modalidad, institución, fechas, MIPYMES) que viven en la URL. Detalle
+por proceso con cronograma, artículos, pliego legible en la página, precios
+históricos de adjudicación por subclase UNSPSC, quién ofertó y quién ganó.
+Ficha del proveedor con su historial y su registro RPE. Planes anuales de
+compras (PACC) del año en curso. Seguimiento en el navegador, exportación CSV
+y RSS por búsqueda (`/api/feed`).
 
+**Finanzas.** Ejecución del presupuesto por institución y mes (vigente,
+comprometido, devengado, pagado). El SIGEF tarda demasiado para leerse en
+vivo, así que se sirve una instantánea generada con `scripts/build-fiscal.py`
+y la interfaz declara la fecha de corte.
 
-**Encontrar**
+**Congreso.** Iniciativas de Diputados y expedientes del Senado, con ficha,
+trámites, proponentes y documentos. Dossier que explica cada pieza en llano y
+resuelve las normas que cita contra la Consultoría. Alerta de perención: cada
+legislatura ordinaria dura 150 días y las piezas pendientes al cierre se
+archivan.
 
-- Buscador en vivo con búsqueda por palabra clave insensible a acentos y
-  mayúsculas (título, descripción, institución, código).
-- Filtros: estado, modalidad, institución (autocompletado sobre las ~705
-  unidades de compra activas), rango de fechas y dirigidos a MIPYMES; presets de
-  un toque (Abiertas ahora, Cierran pronto, Mayor monto, Para MIPYMES).
-- Los filtros viven en la URL: cualquier búsqueda se puede compartir o guardar.
-- Panel `/estadisticas`: panorama del mercado de los últimos 30 días.
+**Normativa.** Decretos, leyes, reglamentos y resoluciones del Ejecutivo, con
+el texto oficial legible en la página.
 
-**Decidir**
+**Nómina.** Plazas, áreas, cargos y sueldos brutos del último mes publicado por
+cada institución cubierta, sin nombres ni datos personales. Se regenera con
+`scripts/build-nomina.py`.
 
-- Detalle por proceso: cronograma, monto, artículos con precios estimados y
-  total, documentos con el pliego/fichas destacados como "Empieza por aquí".
-- **Precios históricos de adjudicación** por subclase UNSPSC (mín/mediana/máx
-  realmente contratados + ejemplos enlazados) para cotizar con datos.
-- **Adjudicación — quién ganó**: proveedor, RPE, monto y enlace al contrato.
-
-**Proceder**
-
-- Checklist "Cómo participar" según el estado del proceso (pliego → RPE →
-  preparar oferta → presentar a tiempo), con enlaces a la DGCP y al Portal
-  Transaccional.
-- `/guia`: guía completa para nuevos proveedores (RPE, modalidades, documentos
-  habituales, glosario de estados, consejos).
-
-**Seguir**
-
-- Seguimiento ★ (localStorage) con la vista `/seguimiento` ordenada por cierre.
-- Exportar resultados a CSV.
-- **RSS por búsqueda** (`/api/feed?q=…`): suscríbete a una palabra clave desde
-  cualquier lector RSS/Zapier/Slack y entérate de los procesos nuevos.
-- Compartir cualquier proceso por WhatsApp o copiar enlace.
+**Democracia.** Voto ciudadano a favor o en contra sobre iniciativas reales,
+con registro por cédula. Solo se publican totales. La verificación de
+identidad con Cuenta Única está construida pero inactiva hasta que OGTIC
+emita el `client_id`.
 
 ## Stack
 
-- Next.js 15 (App Router) + React 19 + TypeScript + Tailwind CSS 4.
-- Sin base de datos ni variables de entorno: las rutas API hacen proxy a la DGCP
-  con caché (5 min listados, 1 h precios, 24 h instituciones), timeout de 25 s y
-  un reintento.
-- La búsqueda por texto escanea hasta 6,000 registros del rango de fechas y
-  filtra en el servidor.
+- Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4.
+- Sin base de datos ni secretos en las superficies de inteligencia: cada capa
+  de datos lee en vivo con `fetch` y caché por `revalidate`, timeout y un
+  reintento. Las rutas `app/api/*` son proxies delgados sobre `lib/*`.
+- Democracia usa Supabase con claves **publicables** únicamente
+  (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y el
+  `NEXT_PUBLIC_CUENTA_UNICA_CLIENT_ID` público); el material sensible vive
+  dentro de Postgres y de una Edge Function. Migraciones y funciones en
+  `supabase/`.
+- Los PDF oficiales se leen con pdf.js sobre un canvas a través de
+  `/api/documento`, que solo repite bytes de los hosts del Estado listados en
+  `lib/documentos.ts`.
+
+## Estructura
+
+```
+app/          rutas (App Router) y rutas API
+components/   piezas de interfaz compartidas
+lib/          capas de datos, formato y arquitectura de información
+public/data/  instantáneas generadas (nómina, deuda, fiscal)
+scripts/      generadores de instantáneas (Python)
+supabase/     migraciones y Edge Function del esquema democracia
+docs/         reconocimiento de fuentes, identidad visual y plan de Democracia
+.claude/      arnés de sesiones: reglas, hooks (la compuerta), skills y agentes
+```
+
+Guía para trabajar en el código: `CLAUDE.md`. Identidad visual:
+`docs/IDENTIDAD.md`. Reconocimiento de fuentes: `docs/RECON.md` (Congreso) y
+`docs/AUDITORIA.md` (resto del Estado). Plan de la vertical con base de datos:
+`docs/PLAN-DEMOCRACIA.md`.
 
 ## Desarrollo
 
 ```bash
-npm install
-npm run dev
+npm ci
+npm run dev        # http://localhost:3000
+npm run build      # compila y ejecuta el typecheck
+./.claude/hooks/verificar.sh --completo   # la compuerta: typecheck, identidad, secretos, build
 ```
 
-## Despliegue
-
-Pensada para Vercel: push a `main` y se despliega sola. Producción: https://brillo-soft.vercel.app
+No hay suite de pruebas ni ESLint. Despliega en Vercel con cada push a `main`.

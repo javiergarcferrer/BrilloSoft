@@ -1,5 +1,5 @@
 // Edge Function `vincular-cuenta-unica` — la frontera de confianza de la
-// identidad v2 (PLAN-DEMOCRACIA.md §9.2). Corre dentro de Supabase, como el
+// identidad v2 (docs/PLAN-DEMOCRACIA.md §9.2). Corre dentro de Supabase, como el
 // pepper: aquí viven la verificación criptográfica del ID token de Cuenta
 // Única y la clave de servicio, que jamás pasan por Vercel ni por el navegador.
 //
@@ -10,7 +10,7 @@
 // otra sesión.
 // Salida: el JSON de `democracia.vincular_identidad`, o { ok:false, error }.
 //
-// Despliegue y configuración: acciones del dueño, en PLAN-DEMOCRACIA.md §9.5
+// Despliegue y configuración: acciones del dueño, en docs/PLAN-DEMOCRACIA.md §9.5
 // (la función se despliega sin verificación de JWT en la puerta de enlace,
 // porque la sesión se comprueba aquí con `auth.getUser`, que acepta las claves
 // publicables nuevas; y necesita el secreto de función CUENTA_UNICA_CLIENT_ID.

@@ -20,7 +20,7 @@ Then:
    the hooks to make it pass; if a check is wrong, say so in the final
    message with the evidence and leave it red.
 3. **Statelessness or secret failures** are architectural: stop, re-read
-   CLAUDE.md §"What this is" and PLAN-DEMOCRACIA.md §2, and undo the leak.
+   CLAUDE.md §"What this is" and docs/PLAN-DEMOCRACIA.md §2, and undo the leak.
 4. **Identity failures**: use the primitive in `components/papel.tsx`
    instead of the class; read `.claude/rules/identidad.md`.
 5. **Build failures on Next 15**: a `node:` import reached a client bundle

@@ -1,7 +1,7 @@
 /**
  * El vocabulario del Estado, traducido en el punto de uso.
  *
- * `IDENTIDAD.md` obliga a explicar «perimió» antes de usarlo. Un glosario
+ * `docs/IDENTIDAD.md` obliga a explicar «perimió» antes de usarlo. Un glosario
  * aparte no cumple eso: nadie abre un glosario. La traducción tiene que estar
  * pegada a la palabra, la primera vez que aparece y todas las demás.
  *

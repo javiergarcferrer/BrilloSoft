@@ -13,7 +13,7 @@ Before committing, update whatever the next session would otherwise have to
 rediscover:
 - A new or changed source → `app/fuentes/page.tsx` (coverage, limits,
   blocks) and the data-layer note in `CLAUDE.md`; verified mechanics and
-  quirks → `RECON.md` (Congress) or `AUDITORIA.md` (everything else), with
+  quirks → `docs/RECON.md` (Congress) or `docs/AUDITORIA.md` (everything else), with
   the ✅/⚠️/❌ convention.
 - A new route or vertical → `lib/secciones.ts`, `README.md` feature list,
   `CLAUDE.md` pages table.

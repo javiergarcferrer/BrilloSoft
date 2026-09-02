@@ -10,7 +10,7 @@ paths:
 ---
 # `/democracia` — the one stateful vertical
 
-PLAN-DEMOCRACIA.md governs; read §2 (architecture), §3 (schema), §4 (security)
+docs/PLAN-DEMOCRACIA.md governs; read §2 (architecture), §3 (schema), §4 (security)
 before changing anything here. This is an **independent, unofficial citizen
 pilot**; every surface says so.
 
@@ -54,7 +54,7 @@ pilot**; every surface says so.
   prepare the SQL and the exact panel steps, report, do not apply.
 - Test RLS from both roles before claiming a change is safe.
 
-## UI order (IDENTIDAD.md §4)
+## UI order (docs/IDENTIDAD.md §4)
 Understand → read the text → vote. The vote widget goes after the document,
 its buttons are disabled with the reason shown **above** the control when the
 visitor cannot vote, and the aggregate appears only after the visitor has

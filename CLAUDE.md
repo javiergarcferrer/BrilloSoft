@@ -39,7 +39,7 @@ and `NEXT_PUBLIC_CUENTA_UNICA_CLIENT_ID`, the public OAuth client id for
 Cuenta Única identity verification, empty until OGTIC issues it) — the
 sensitive material (the cédula-hash pepper, the ID-token verification, the
 service role) lives inside Postgres and a Supabase Edge Function, never in
-the app env. See `PLAN-DEMOCRACIA.md` (§9 for Cuenta Única). Do not let this exception leak into
+the app env. See `docs/PLAN-DEMOCRACIA.md` (§9 for Cuenta Única). Do not let this exception leak into
 the stateless surfaces: no other vertical reads or writes the DB.
 
 ## Documents that govern a session
@@ -52,10 +52,10 @@ and condense the relevant document; they never replace it.
 | Document | Owns | Open it when |
 |---|---|---|
 | `CLAUDE.md` | Architecture, invariants, commands, session protocol | Always (automatic) |
-| `IDENTIDAD.md` | Visual system, voice, cognitive ergonomics. «If the UI contradicts it, the UI is wrong.» | Any change under `app/` or `components/` |
-| `RECON.md` | Congress sources: verified mechanics of the SIL, the Senate consultante, document chains, field quirks, hygiene | Touching `lib/congreso.ts`, `lib/senado.ts`, `lib/legislacion.ts`, the fichas |
-| `AUDITORIA.md` | Every other state source: status ✅/⚠️/❌, access families, architecture rules (§9, §E), integration plan (§D), blocks and their institutional unblock | Adding or changing a source; planning what to build next |
-| `PLAN-DEMOCRACIA.md` | The database exception: schema, RLS, RPCs, security measures, what is out of v1 | Touching `democracia`, `supabase*`, `cedula`, `supabase/migrations` |
+| `docs/IDENTIDAD.md` | Visual system, voice, cognitive ergonomics. «If the UI contradicts it, the UI is wrong.» | Any change under `app/` or `components/` |
+| `docs/RECON.md` | Congress sources: verified mechanics of the SIL, the Senate consultante, document chains, field quirks, hygiene | Touching `lib/congreso.ts`, `lib/senado.ts`, `lib/legislacion.ts`, the fichas |
+| `docs/AUDITORIA.md` | Every other state source: status ✅/⚠️/❌, access families, architecture rules (§9, §E), integration plan (§D), blocks and their institutional unblock | Adding or changing a source; planning what to build next |
+| `docs/PLAN-DEMOCRACIA.md` | The database exception: schema, RLS, RPCs, security measures, what is out of v1 | Touching `democracia`, `supabase*`, `cedula`, `supabase/migrations` |
 | `README.md` | Public description and feature list | Keep true when routes, features or stack change |
 | `.claude/` | The harness: hooks (gate, guards), rules, skills, agents | Changing how sessions work; never to weaken a check |
 
@@ -181,7 +181,7 @@ Owns all DGCP types (`Proceso`, `Articulo`, `Documento`, `Contrato`,
 Cache windows by data type: listings 5 min, precios 1 h, unidades 24 h.
 
 Four more endpoints of the same API, added after the second source audit
-(`AUDITORIA.md` §A.3) — same wrapper, same cache discipline:
+(`docs/AUDITORIA.md` §A.3) — same wrapper, same cache discipline:
 - `getCompetencia(codigo)` — **`/ofertas`**: who bid on a process, not just who
   won. `proceso` filters upstream, so a process's bidders are the record, not a
   sample. Caveat the UI must keep stating: `estado_evaluacion` arrives empty
@@ -197,7 +197,7 @@ Four more endpoints of the same API, added after the second source audit
 
 ### Fiscal data layer — `lib/fiscal.ts` + `lib/capitulos.ts`
 Budget execution per institution (vigente → comprometido → devengado → pagado),
-month by month, from the **SIGEF open-data API** (`AUDITORIA.md` §A.1). Three
+month by month, from the **SIGEF open-data API** (`docs/AUDITORIA.md` §A.1). Three
 things make it unlike the other layers:
 1. **It reads a snapshot, not the network.** The API computes the running year
    live: ~97 s for a whole institutional section, 20–90 s for one institution —
@@ -240,14 +240,14 @@ pages per render is not viable. Views that use a sample must say so.
 Field quirks worth keeping: `condicion` and `estado` are two coexisting
 taxonomies; `numero` (`06225-2024-2028-CD`) is a **citation**, not a stable id,
 because it carries the registration period; the reformulated title is buried
-inside `descripcion` behind a `TÍTULO MODIFICADO:` marker. See `RECON.md` for
+inside `descripcion` behind a `TÍTULO MODIFICADO:` marker. See `docs/RECON.md` for
 the full reconnaissance.
 
 ### Senado data layer — `lib/senado.ts`
 The Senate has no JSON API: its WordPress REST API is locked (401) and the
 corpus lives in the **public "consultante" mode** of its FileMaster at
 `sil.senadord.gob.do` (ASP.NET WebForms, HTML scraping). Rules enforced there,
-documented in `RECON.md` §12:
+documented in `docs/RECON.md` §12:
 1. **Session per collection** — each cuatrienio (`C2002-2006`…`C2024-2028`) is
    a separate DB selected by `consultante.aspx`, which sets the ASP.NET session
    cookie; every cold read is a 2-request chain. Any redirect = failure

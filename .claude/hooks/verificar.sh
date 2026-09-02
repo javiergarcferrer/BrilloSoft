@@ -24,7 +24,7 @@ if [ -d node_modules/typescript ]; then
   fi
 fi
 
-# 2. Identity (IDENTIDAD.md prohibitions) across the UI tree.
+# 2. Identity (docs/IDENTIDAD.md prohibitions) across the UI tree.
 hallazgos="$( { grep -rnE "$IDENTIDAD_PATRONES" app components --include=*.tsx --include=*.css 2>/dev/null; \
                 grep -rnP "$EMOJI_PATRON" app components --include=*.tsx 2>/dev/null; } \
               | grep -vE ':[0-9]+:[[:space:]]*(//|/?\*)' | head -10)"

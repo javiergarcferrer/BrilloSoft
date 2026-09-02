@@ -5,7 +5,7 @@ paths:
 ---
 # «El Contrasello» — what the UI may and may not do
 
-IDENTIDAD.md is the source of truth: if the interface contradicts it, the
+docs/IDENTIDAD.md is the source of truth: if the interface contradicts it, the
 interface is wrong. Read it in full before any visual work. The rules below
 are enforced by `.claude/hooks/guard-edit.sh` and `verificar.sh`.
 
@@ -40,7 +40,7 @@ registers the finding instead of fixing it.
   A 14 px panel title is sans bold, not serif.
 - The dot is always seal red (`.punto-sello`). No exception.
 
-## Voice and cognitive ergonomics (IDENTIDAD.md §Ergonomía)
+## Voice and cognitive ergonomics (docs/IDENTIDAD.md §Ergonomía)
 - Headlines are questions; data answers; the reader concludes.
 - Cite the source and date next to every figure, or do not show the figure.
   What the source denies is declared denied. Snapshots and samples say so

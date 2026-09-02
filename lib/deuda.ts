@@ -7,7 +7,7 @@
  * predecible; esta capa localiza el más reciente y lee el saldo sin
  * dependencias: un XLSX es un ZIP de XML, y solo necesitamos tres celdas.
  *
- * Reconocimiento en AUDITORIA.md §3.3 y PLAN-DEMOCRACIA.md §1.
+ * Reconocimiento en docs/AUDITORIA.md §3.3 y docs/PLAN-DEMOCRACIA.md §1.
  */
 
 // Módulo SOLO de servidor (usa node:zlib y node:fs): no importarlo desde
@@ -107,7 +107,7 @@ function texto(xml: string, re: RegExp): string[] {
 /**
  * Lee la fila «Deuda Pública Total del …» de la hoja de saldo-evolución.
  * La columna B trae la etiqueta y la C el saldo; las dos filas siguientes son
- * Externa e Interna (AUDITORIA.md §3.3).
+ * Externa e Interna (docs/AUDITORIA.md §3.3).
  */
 function parsearSaldo(
   archivos: ArchivoZip[],

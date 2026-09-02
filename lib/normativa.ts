@@ -5,7 +5,7 @@
  * caché. La Consultoría Jurídica del Poder Ejecutivo expone la consulta pública
  * de leyes, decretos, reglamentos, resoluciones y Gaceta Oficial. No hay API:
  * es una app ASP.NET MVC con token antiforgery, misma familia que el
- * consultante del Senado. Reglas verificadas (AUDITORIA.md §4.1, spike QRSPI):
+ * consultante del Senado. Reglas verificadas (docs/AUDITORIA.md §4.1, spike QRSPI):
  *
  *  1. **Token + POST.** `GET /consulta/` entrega `__RequestVerificationToken`;
  *     la búsqueda es `POST /Consulta/Home/Search` con ese token y una sesión.

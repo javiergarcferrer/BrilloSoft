@@ -7,7 +7,7 @@
  * `estado_proceso` de la DGCP.
  *
  * Los tonos **no** son una paleta decorativa: son los cuatro oficios de color
- * de `IDENTIDAD.md` («un color = un significado»). Antes había siete colores
+ * de `docs/IDENTIDAD.md` («un color = un significado»). Antes había siete colores
  * crudos de Tailwind compitiendo entre sí; ahora un estado solo puede ser una
  * de estas cosas, y el nombre del tono lo dice.
  */

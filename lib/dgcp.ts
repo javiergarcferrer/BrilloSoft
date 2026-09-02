@@ -563,7 +563,7 @@ export async function getHistorialProveedor(rpe: string): Promise<HistorialProve
  * registros) responde a `proceso`, igual que `/contratos`, así que la
  * competencia de un proceso concreto **no es una muestra**: es el registro.
  *
- * Advertencia de campo (AUDITORIA.md §A.3): `estado_evaluacion` viene
+ * Advertencia de campo (docs/AUDITORIA.md §A.3): `estado_evaluacion` viene
  * mayoritariamente en «Pendiente» o vacío incluso en procesos ya adjudicados.
  * Esta capa expone quién ofertó y por cuánto; **quién ganó lo dicen los
  * contratos**, no la evaluación.
@@ -672,7 +672,7 @@ export async function getCompetencia(codigoProceso: string): Promise<Competencia
  * nombre del contacto comercial. **Este tipo los omite a propósito**: son
  * públicos por registro, pero replicarlos convertiría la plataforma en un
  * directorio de contactos, que no es lo que hace falta para vigilar al Estado
- * (AUDITORIA.md §A.3). Lo que sí importa es la identidad institucional: quién
+ * (docs/AUDITORIA.md §A.3). Lo que sí importa es la identidad institucional: quién
  * es, desde cuándo existe y en qué condición está inscrito.
  */
 export interface ProveedorRegistro {
