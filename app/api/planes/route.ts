@@ -17,7 +17,10 @@ export async function GET(req: NextRequest) {
       periodo: periodo ? Number(periodo) : undefined,
       unidad_compra: unidad ?? undefined,
     });
-    return NextResponse.json({ planes });
+    return NextResponse.json(
+      { planes },
+      { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } },
+    );
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Error consultando la API de la DGCP" },

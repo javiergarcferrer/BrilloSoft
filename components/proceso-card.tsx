@@ -26,7 +26,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
   const href = `/procesos/${encodeURIComponent(p.codigo_proceso)}`;
 
   return (
-    <article className="group flex flex-col rounded-lg bg-surface p-4 border border-hairline transition-all duration-300 hover:ring-brand-500/30">
+    <article className="cv-auto group flex flex-col rounded-lg bg-surface p-4 border border-hairline transition-all duration-300 hover:ring-brand-500/30">
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span

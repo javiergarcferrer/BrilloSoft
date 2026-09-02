@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense, cache } from "react";
 import { notFound } from "next/navigation";
 import { getCompetencia, getProceso, normalize, type Documento } from "@/lib/dgcp";
 import { pesoDocumento, urlDeLectura } from "@/lib/documentos";
@@ -10,6 +11,7 @@ import Compartir from "@/components/compartir";
 import SeguirButton from "@/components/seguir-button";
 import AccionesProceso from "@/components/acciones-proceso";
 import { IconArrowLeft, IconDoc, IconExternal, IconStar } from "@/components/icons";
+import { Esqueleto } from "@/components/esqueleto";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -17,6 +19,12 @@ const DOC_CLAVE =
 function esDocClave(d: Documento): boolean {
   return DOC_CLAVE.test(normalize(`${d.tipo_documento} ${d.nombre_documento}`));
 }
+
+/**
+ * `generateMetadata` y la página piden el mismo proceso en el mismo render:
+ * `cache` lo deja en una sola tanda de peticiones a la DGCP.
+ */
+const cargarProceso = cache((codigo: string) => getProceso(codigo));
 
 export async function generateMetadata({
   params,
@@ -26,7 +34,7 @@ export async function generateMetadata({
   const { codigo } = await params;
   const limpio = decodeURIComponent(codigo);
   try {
-    const { proceso: p } = await getProceso(limpio);
+    const { proceso: p } = await cargarProceso(limpio);
     if (p) {
       return {
         title: p.titulo || limpio,
@@ -47,7 +55,7 @@ export default async function ProcesoPage({
   const { codigo } = await params;
   const decodificado = decodeURIComponent(codigo);
   const [{ proceso: p, articulos, documentos, contratos }, competencia] =
-    await Promise.all([getProceso(decodificado), getCompetencia(decodificado)]);
+    await Promise.all([cargarProceso(decodificado), getCompetencia(decodificado)]);
   if (!p) notFound();
 
   const subclasesUnicas = Array.from(
@@ -71,7 +79,6 @@ export default async function ProcesoPage({
   // El pliego manda: es el documento que dice qué se compra y con qué reglas.
   // Se lee aquí mismo; el resto se abre desde su tarjeta.
   const pliego = docsClave[0] ?? documentos[0] ?? null;
-  const pesoPliego = pliego ? await pesoDocumento(pliego.url_documento) : null;
   const totalArticulos = articulos.reduce(
     (s, a) => s + (a.precio_total_estimado || 0),
     0
@@ -138,7 +145,7 @@ export default async function ProcesoPage({
         <p className="mt-1 text-ink-soft">
           {p.unidad_compra}{" "}
           <Link
-            href={`/?uc=${p.codigo_unidad_compra}`}
+            href={`/licitaciones?uc=${p.codigo_unidad_compra}`}
             className="text-sm font-medium text-brand-600 hover:underline"
           >
             · ver todos sus procesos →
@@ -529,14 +536,9 @@ export default async function ProcesoPage({
           <>
             {pliego && (
               <div className="mt-3 overflow-hidden rounded-lg border border-brand-200 bg-brand-50/40">
-                <VisorDocumento
-                  url={pliego.url_documento}
-                  urlVisor={urlDeLectura(pliego.url_documento)}
-                  nombre={pliego.nombre_documento}
-                  tipo={pesoPliego?.tipo ?? "application/pdf"}
-                  bytes={pesoPliego?.bytes ?? null}
-                  origen="Compras Dominicanas"
-                />
+                <Suspense fallback={<Esqueleto className="m-3 h-24 border-brand-200/60" />}>
+                  <Pliego doc={pliego} />
+                </Suspense>
               </div>
             )}
 
@@ -572,6 +574,25 @@ export default async function ProcesoPage({
 
       <AccionesProceso codigo={p.codigo_proceso} titulo={p.titulo} url={p.url} />
     </div>
+  );
+}
+
+/**
+ * El visor del pliego declara su peso con un HEAD al origen. Ese viaje era
+ * el último eslabón de una cadena secuencial que retenía toda la ficha; ahora
+ * se transmite aparte y la página no lo espera.
+ */
+async function Pliego({ doc }: { doc: Documento }) {
+  const peso = await pesoDocumento(doc.url_documento);
+  return (
+    <VisorDocumento
+      url={doc.url_documento}
+      urlVisor={urlDeLectura(doc.url_documento)}
+      nombre={doc.nombre_documento}
+      tipo={peso?.tipo ?? "application/pdf"}
+      bytes={peso?.bytes ?? null}
+      origen="Compras Dominicanas"
+    />
   );
 }
 

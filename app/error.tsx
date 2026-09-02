@@ -3,10 +3,10 @@
 export default function Error({ reset }: { error: Error; reset: () => void }) {
   return (
     <div className="rounded-lg border border-hairline bg-surface p-10 text-center">
-      <h1 className="text-lg font-semibold">La API de la DGCP no respondió</h1>
+      <h1 className="text-lg font-semibold">La fuente no respondió</h1>
       <p className="mt-2 text-sm text-ink-soft">
-        El portal de datos abiertos a veces tarda o se cae por momentos. Suele
-        resolverse en segundos.
+        Los sistemas del Estado a veces tardan o se caen por momentos. Suele
+        resolverse en segundos; los filtros y la dirección siguen intactos.
       </p>
       <button
         onClick={reset}

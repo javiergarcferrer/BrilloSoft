@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import {
   IconBuilding,
@@ -63,10 +63,18 @@ export function Explorer() {
     );
   }
   if (!data) {
+    // La silueta del explorador —barra de filtros y seis indicadores— en
+    // lugar de un rótulo suelto: el contenido cae en su sitio sin mover nada.
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-hairline bg-surface p-6 text-sm text-ink-soft">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-100 border-t-brand-600" />
-        Cargando la nómina consolidada…
+      <div role="status" aria-busy="true" className="space-y-5">
+        <span className="sr-only">Cargando la nómina consolidada…</span>
+        <div className="shimmer h-20 rounded-lg border border-hairline bg-surface" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="shimmer h-24 rounded-lg border border-hairline bg-surface" />
+          ))}
+        </div>
+        <div className="shimmer h-72 rounded-lg border border-hairline bg-surface" />
       </div>
     );
   }
@@ -110,14 +118,19 @@ function ExplorerReady({ data }: { data: NominaData }) {
     };
   }, [query, areaNorm, cargoNorm, instNorm]);
 
-  const min = salMin ? Number(salMin) : null;
-  const max = salMax ? Number(salMax) : null;
+  // Los controles responden al toque; el barrido de miles de filas va detrás,
+  // en una prioridad menor, y el teclado nunca se queda esperando al filtro.
+  const instFiltro = useDeferredValue(instId);
+  const salMinFiltro = useDeferredValue(salMin);
+  const salMaxFiltro = useDeferredValue(salMax);
+  const min = salMinFiltro ? Number(salMinFiltro) : null;
+  const max = salMaxFiltro ? Number(salMaxFiltro) : null;
 
   // ---- core filter
   const filtered = useMemo(() => {
     const out: Row[] = [];
     for (const r of data.rows) {
-      if (instId != null && r[COL.INST] !== instId) continue;
+      if (instFiltro != null && r[COL.INST] !== instFiltro) continue;
       const s = r[COL.SUELDO];
       if (min != null && s < min) continue;
       if (max != null && s > max) continue;
@@ -130,7 +143,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
       out.push(r);
     }
     return out;
-  }, [data.rows, instId, min, max, areaMatch, cargoMatch, instMatch]);
+  }, [data.rows, instFiltro, min, max, areaMatch, cargoMatch, instMatch]);
 
   // ---- KPIs
   const kpis = useMemo(() => {

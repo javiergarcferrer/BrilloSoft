@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense, cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { queEsNorma, resolverNorma, tipoDeRuta } from "@/lib/normativa";
@@ -7,6 +8,7 @@ import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
 import VisorDocumento from "@/components/visor-documento";
 import { IconArrowLeft } from "@/components/icons";
+import { Esqueleto } from "@/components/esqueleto";
 
 export const revalidate = 86400;
 
@@ -14,11 +16,16 @@ interface Props {
   params: Promise<{ tipo: string; numero: string }>;
 }
 
+/** Una consulta a la Consultoría por render, compartida con `generateMetadata`. */
+const cargarNorma = cache((tipo: Parameters<typeof resolverNorma>[0], numero: string) =>
+  resolverNorma(tipo, numero),
+);
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tipo: slug, numero } = await params;
   const tipo = tipoDeRuta(slug);
   if (!tipo) return { title: "Norma no encontrada" };
-  const norma = await resolverNorma(tipo, numero);
+  const norma = await cargarNorma(tipo, numero);
   return {
     title: `${tipo} ${numero}`,
     description: norma?.titulo
@@ -40,10 +47,9 @@ export default async function NormaPage({ params }: Props) {
   const tipo = tipoDeRuta(slug);
   if (!tipo || !/^\d{1,4}-\d{2,4}$/.test(numero)) notFound();
 
-  const norma = await resolverNorma(tipo, numero);
+  const norma = await cargarNorma(tipo, numero);
   if (!norma) notFound();
 
-  const peso = norma.url ? await pesoDocumento(norma.url) : null;
   const explicacion = queEsNorma(tipo);
 
   return (
@@ -87,14 +93,9 @@ export default async function NormaPage({ params }: Props) {
           <h2 className="font-sans text-sm font-semibold text-ink">El texto</h2>
         </div>
         {norma.url ? (
-          <VisorDocumento
-            url={norma.url}
-            urlVisor={urlDeLectura(norma.url)}
-            nombre={`${tipo} ${norma.numero} — texto oficial`}
-            tipo={peso?.tipo ?? "application/pdf"}
-            bytes={peso?.bytes ?? null}
-            origen="la Consultoría Jurídica"
-          />
+          <Suspense fallback={<Esqueleto className="m-5 h-24" />}>
+            <TextoNorma url={norma.url} nombre={`${tipo} ${norma.numero} — texto oficial`} />
+          </Suspense>
         ) : (
           <p className="px-5 py-6 text-sm text-ink-soft">
             La Consultoría lista esta norma pero no expone su archivo.
@@ -112,5 +113,23 @@ export default async function NormaPage({ params }: Props) {
         .
       </p>
     </div>
+  );
+}
+
+/**
+ * El peso del PDF sale de un HEAD a la Consultoría. La ficha ya no lo espera:
+ * se transmite en cuanto responde, y si no responde el visor sale sin peso.
+ */
+async function TextoNorma({ url, nombre }: { url: string; nombre: string }) {
+  const peso = await pesoDocumento(url);
+  return (
+    <VisorDocumento
+      url={url}
+      urlVisor={urlDeLectura(url)}
+      nombre={nombre}
+      tipo={peso?.tipo ?? "application/pdf"}
+      bytes={peso?.bytes ?? null}
+      origen="la Consultoría Jurídica"
+    />
   );
 }

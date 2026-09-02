@@ -10,7 +10,9 @@ export async function GET(req: NextRequest) {
   }
   try {
     const stats = await getPreciosSubclase(subclase);
-    return NextResponse.json(stats);
+    return NextResponse.json(stats, {
+      headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" },
+    });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Error consultando la API de la DGCP" },

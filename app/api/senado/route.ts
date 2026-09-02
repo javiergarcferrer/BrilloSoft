@@ -31,5 +31,7 @@ export async function GET(request: Request) {
       { status: 502 },
     );
   }
-  return NextResponse.json(listado);
+  return NextResponse.json(listado, {
+    headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=3600" },
+  });
 }

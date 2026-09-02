@@ -41,9 +41,15 @@ export const MONTH_ABBR = [
   "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
 ];
 
-/** Fetch the encoded dataset from /public. */
+/**
+ * Fetch the encoded dataset from /public.
+ *
+ * Sin `force-cache`: la respuesta lleva `Cache-Control` (next.config.ts) con
+ * una hora de frescura y renovación en segundo plano, así que el navegador
+ * la reutiliza sin quedarse con una instantánea vieja tras un despliegue.
+ */
 export async function loadNomina(): Promise<NominaData> {
-  const res = await fetch("/data/nomina.json", { cache: "force-cache" });
+  const res = await fetch("/data/nomina.json");
   if (!res.ok) throw new Error(`No se pudo cargar la nómina (${res.status})`);
   return res.json();
 }

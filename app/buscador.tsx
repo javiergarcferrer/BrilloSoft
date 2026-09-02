@@ -558,8 +558,15 @@ export default function Buscador() {
           )}
         </div>
 
-        {loading ? (
-          <div className="grid gap-3 md:grid-cols-2">
+        {/*
+          Mientras llega la página siguiente o un filtro nuevo, los resultados
+          anteriores se quedan a la vista, atenuados: cambiar la rejilla por
+          un esqueleto en cada clic hacía saltar la página y perder el sitio.
+          El esqueleto solo aparece cuando aún no hay nada que mostrar.
+        */}
+        {loading && ordenados.length === 0 && !error ? (
+          <div className="grid gap-3 md:grid-cols-2" role="status" aria-busy="true">
+            <span className="sr-only">Consultando la DGCP…</span>
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
@@ -602,7 +609,13 @@ export default function Buscador() {
           </div>
         ) : (
           <>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div
+              aria-busy={loading}
+              className={cn(
+                "grid gap-3 transition-opacity duration-200 md:grid-cols-2",
+                loading && "pointer-events-none opacity-50",
+              )}
+            >
               {listaVisible.map((p) => (
                 <ProcesoCard key={p.codigo_proceso} p={p} />
               ))}

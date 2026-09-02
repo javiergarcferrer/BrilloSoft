@@ -340,6 +340,40 @@ native `storage` event — subscribe with `onSeguimientoCambio`.
 `formatMonto` (Intl es-DO currency), `formatFecha` (fixed `America/Santo_Domingo`
 timezone — keep dates deterministic), `diasHasta`.
 
+## Perceived performance — streaming and responsiveness
+The sources are slow and outside our control, so the contract is that the
+**page never waits for the slowest one**:
+- **Every route has a `loading.tsx`** (`app/loading.tsx` is the generic
+  silhouette; listings and fichas have their own) composed from
+  `components/esqueleto.tsx`, with the content's heights and grids so nothing
+  jumps when data lands. Navigation paints at once; content streams.
+- **One `Suspense` per slow source.** The panorama renders the hero and
+  structure immediately and each domain card / panel awaits only its own
+  source. Listings (`/congreso`, `/congreso/senado`, `/normativa`) render
+  header + search first and stream the rows. Fichas stream the dossier
+  (Consultoría lookups), the Senate document chain and the `HEAD` for a PDF's
+  weight after the ficha itself. Historical prices on `/procesos/[codigo]` are
+  server components streamed per subclass, not client fetches after hydration.
+- **`cache()` from React** wraps any read shared by `generateMetadata` and the
+  page (`cargarProceso`, `cargarIniciativa`, `fichaPorClave`, `cargarNorma`)
+  and by sibling sections (`procesosRecientes` on `/`), so a render issues one
+  upstream request per datum. Anything the page can compute without the
+  network (legislature dates, counts of a sample) stays outside the boundary.
+- **Client lists keep the previous results on screen** while the next page
+  loads (`aria-busy` + dimmed), never a skeleton swap; the skeleton is only
+  for the first paint. `/licitaciones` renders a real silhouette as the
+  `useSearchParams` fallback, never `null`.
+- **Long lists paint lazily** with `.cv-auto` (`content-visibility: auto`;
+  set `--cv-alto` to the row's height) on rows of procesos, iniciativas,
+  expedientes, normas, capítulos and planes.
+- **The edge caches the JSON routes**: every `app/api/*` success response
+  carries `Cache-Control: public, s-maxage=<its lib window>,
+  stale-while-revalidate`, matching the `revalidate` of the `lib/*` call it
+  wraps. `public/data/*.json` snapshots carry one hour + SWR from
+  `next.config.ts`, and `/nomina` `preload()`s its snapshot from the HTML.
+- `next.config.ts` sets `experimental.staleTimes` (30 s dynamic / 5 min
+  static) so returning to a visited listing does not wait for the SIL again.
+
 ## Identity — «El Contrasello»
 The visual system lives in `app/globals.css` (`@theme` tokens) and is not
 decoration: it is the vernacular of the Dominican official document turned to

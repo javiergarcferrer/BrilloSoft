@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const unidades = await getUnidadesCompra();
     return NextResponse.json(unidades, {
-      headers: { "Cache-Control": "public, max-age=3600" },
+      headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400" },
     });
   } catch (e) {
     return NextResponse.json(

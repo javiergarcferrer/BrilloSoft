@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense, cache } from "react";
 import { notFound } from "next/navigation";
 import { CondicionBadge } from "@/components/iniciativa-card";
 import {
@@ -15,17 +16,23 @@ import Dossier from "@/components/congreso/dossier";
 import VisorDocumento from "@/components/visor-documento";
 import { urlDeLectura } from "@/lib/documentos";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
+import { Esqueleto } from "@/components/esqueleto";
 
 export const revalidate = 3600;
 
 type Props = { params: Promise<{ cuatrienio: string; id: string }> };
 
-async function cargarFicha(params: Props["params"]) {
-  const { cuatrienio: etiqueta, id: idParam } = await params;
+/** Una lectura del consultante por render, compartida con `generateMetadata`. */
+const fichaPorClave = cache(async (etiqueta: string, idParam: string) => {
   const cuatrienio = cuatrienioPorEtiqueta(etiqueta);
   const id = Number(idParam);
   if (!cuatrienio || !Number.isFinite(id) || id <= 0) return null;
   return getFichaSenado(cuatrienio.etiqueta, id);
+});
+
+async function cargarFicha(params: Props["params"]) {
+  const { cuatrienio: etiqueta, id: idParam } = await params;
+  return fichaPorClave(etiqueta, idParam);
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -42,18 +49,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
   if (!ficha) notFound();
 
   const ref = refIniciativa("senado", ficha.id, ficha.cuatrienio);
-  const [agregado, documentos] = await Promise.all([
-    getAgregado("senado", ref),
-    getDocumentosSenado(ficha.cuatrienio, ficha.id),
-  ]);
-
-  // Solo se resuelve el archivo de la pieza principal: cada resolución son tres
-  // peticiones al consultante y el resto de la documentación queda enlazada
-  // desde el propio origen.
-  const principal = documentoPrincipal(documentos);
-  const archivo = principal
-    ? await getArchivoSenado(ficha.cuatrienio, ficha.id, principal.item, principal.bd)
-    : null;
+  const agregado = await getAgregado("senado", ref);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -113,85 +109,32 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         solo entonces el voto. Nadie debería opinar sobre una pieza que la
         interfaz no le dejó entender.
       */}
-      <Dossier
-        titulo={ficha.titulo}
-        tituloModificado={ficha.tituloModificado}
-        tipo={ficha.tipo}
-        condicion={
-          ficha.promulgada
-            ? "Promulgada"
-            : ficha.perimida
-              ? "Perimida"
-              : (ficha.estadoActual ?? ficha.condicion)
-        }
-        materia={ficha.materia}
-        proponente={ficha.proponentes[0] ?? ficha.poderOrigen}
-        promulgadaComo={ficha.numPromulgacion}
-      />
+      <Suspense fallback={<Esqueleto className="mt-5 h-40" />}>
+        <Dossier
+          titulo={ficha.titulo}
+          tituloModificado={ficha.tituloModificado}
+          tipo={ficha.tipo}
+          condicion={
+            ficha.promulgada
+              ? "Promulgada"
+              : ficha.perimida
+                ? "Perimida"
+                : (ficha.estadoActual ?? ficha.condicion)
+          }
+          materia={ficha.materia}
+          proponente={ficha.proponentes[0] ?? ficha.poderOrigen}
+          promulgadaComo={ficha.numPromulgacion}
+        />
+      </Suspense>
 
-      <section className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface ">
-        <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-          <h2 className="font-sans text-sm font-semibold text-ink">El documento</h2>
-          {documentos.length > 1 && (
-            <span className="font-mono text-xs tabular-nums text-ink-soft">
-              {documentos.length} piezas
-            </span>
-          )}
-        </div>
-
-        {archivo && principal ? (
-          <VisorDocumento
-            url={archivo.url}
-            urlVisor={urlDeLectura(archivo.url)}
-            nombre={principal.nombre || "Documento del expediente"}
-            tipo={archivo.tipo}
-            bytes={archivo.bytes}
-            origen="el SIL del Senado"
-            escaneo
-          />
-        ) : documentos.length > 0 ? (
-          <p className="px-5 py-6 text-sm leading-relaxed text-ink-soft">
-            El expediente tiene {documentos.length}{" "}
-            {documentos.length === 1 ? "documento" : "documentos"}, pero el
-            consultante no entregó el archivo en este momento. Vuelve a
-            intentarlo o ábrelo desde el SIL del Senado.
-          </p>
-        ) : (
-          <p className="px-5 py-6 text-sm leading-relaxed text-ink-soft">
-            El Senado todavía no ha subido el texto de esta pieza. Aparece aquí
-            en cuanto lo publique.
-          </p>
-        )}
-
-        {documentos.length > 1 && (
-          <ul className="divide-y divide-hairline border-t border-hairline">
-            {documentos
-              .filter((d) => d.item !== principal?.item)
-              .map((d) => (
-                <li key={d.item} className="flex items-start gap-3 px-5 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-ink">{d.nombre}</p>
-                    <p className="mt-0.5 text-xs text-ink-soft">{d.seccion}</p>
-                  </div>
-                  {/*
-                    Se resuelve al hacer clic: resolver los ocho documentos de
-                    un expediente veterano al pintar la página serían dos
-                    docenas de peticiones al consultante.
-                  */}
-                  <a
-                    href={`/api/senado/documento?c=${encodeURIComponent(ficha.cuatrienio)}&e=${ficha.id}&item=${d.item}&bd=${d.bd}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
-                  >
-                    Abrir
-                    <IconExternal className="h-3.5 w-3.5" />
-                  </a>
-                </li>
-              ))}
-          </ul>
-        )}
-      </section>
+      {/*
+        La documentación son hasta cuatro peticiones más al consultante
+        (listado + la cadena de tres del archivo principal). Antes la ficha
+        entera esperaba a esa cadena; ahora se transmite cuando llega.
+      */}
+      <Suspense fallback={<DocumentoEsqueleto />}>
+        <SeccionDocumento cuatrienio={ficha.cuatrienio} id={ficha.id} />
+      </Suspense>
 
       {agregado && (
         <div className="mt-5">
@@ -374,5 +317,100 @@ function Dato({
       </dd>
       {nota && <p className="mt-0.5 text-[11px] text-ink-soft">{nota}</p>}
     </div>
+  );
+}
+
+function DocumentoEsqueleto() {
+  return (
+    <section
+      aria-busy="true"
+      className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface "
+    >
+      <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
+        <h2 className="font-sans text-sm font-semibold text-ink">El documento</h2>
+      </div>
+      <div className="px-5 py-4">
+        <div className="shimmer h-14 rounded-lg border border-hairline bg-canvas" />
+        <p className="mt-2 text-xs text-ink-soft">Localizando el archivo en el SIL del Senado…</p>
+      </div>
+    </section>
+  );
+}
+
+async function SeccionDocumento({ cuatrienio, id }: { cuatrienio: string; id: number }) {
+  const documentos = await getDocumentosSenado(cuatrienio, id);
+
+  // Solo se resuelve el archivo de la pieza principal: cada resolución son tres
+  // peticiones al consultante y el resto de la documentación queda enlazada
+  // desde el propio origen.
+  const principal = documentoPrincipal(documentos);
+  const archivo = principal
+    ? await getArchivoSenado(cuatrienio, id, principal.item, principal.bd)
+    : null;
+
+  return (
+    <section className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface ">
+      <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
+        <h2 className="font-sans text-sm font-semibold text-ink">El documento</h2>
+        {documentos.length > 1 && (
+          <span className="font-mono text-xs tabular-nums text-ink-soft">
+            {documentos.length} piezas
+          </span>
+        )}
+      </div>
+
+      {archivo && principal ? (
+        <VisorDocumento
+          url={archivo.url}
+          urlVisor={urlDeLectura(archivo.url)}
+          nombre={principal.nombre || "Documento del expediente"}
+          tipo={archivo.tipo}
+          bytes={archivo.bytes}
+          origen="el SIL del Senado"
+          escaneo
+        />
+      ) : documentos.length > 0 ? (
+        <p className="px-5 py-6 text-sm leading-relaxed text-ink-soft">
+          El expediente tiene {documentos.length}{" "}
+          {documentos.length === 1 ? "documento" : "documentos"}, pero el
+          consultante no entregó el archivo en este momento. Vuelve a
+          intentarlo o ábrelo desde el SIL del Senado.
+        </p>
+      ) : (
+        <p className="px-5 py-6 text-sm leading-relaxed text-ink-soft">
+          El Senado todavía no ha subido el texto de esta pieza. Aparece aquí
+          en cuanto lo publique.
+        </p>
+      )}
+
+      {documentos.length > 1 && (
+        <ul className="divide-y divide-hairline border-t border-hairline">
+          {documentos
+            .filter((d) => d.item !== principal?.item)
+            .map((d) => (
+              <li key={d.item} className="flex items-start gap-3 px-5 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-ink">{d.nombre}</p>
+                  <p className="mt-0.5 text-xs text-ink-soft">{d.seccion}</p>
+                </div>
+                {/*
+                  Se resuelve al hacer clic: resolver los ocho documentos de
+                  un expediente veterano al pintar la página serían dos
+                  docenas de peticiones al consultante.
+                */}
+                <a
+                  href={`/api/senado/documento?c=${encodeURIComponent(cuatrienio)}&e=${id}&item=${d.item}&bd=${d.bd}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+                >
+                  Abrir
+                  <IconExternal className="h-3.5 w-3.5" />
+                </a>
+              </li>
+            ))}
+        </ul>
+      )}
+    </section>
   );
 }

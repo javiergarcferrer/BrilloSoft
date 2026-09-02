@@ -1,5 +1,35 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {};
+/*
+  Rendimiento percibido, no solo medido.
+
+  · `staleTimes`: el router del cliente reutiliza durante 30 s la respuesta
+    de una ruta dinámica ya visitada (volver de una ficha al listado no
+    vuelve a esperar al SIL) y 5 min la de una estática. Es la caché de
+    navegación, no la de datos: cada dato sigue con su propia ventana.
+  · Las instantáneas de `public/data` (nómina, fiscal, deuda) solo cambian
+    con un despliegue: el navegador las guarda una hora y las renueva en
+    segundo plano una vez pasada.
+  · Sin cabecera `x-powered-by`: no aporta nada y pesa en cada respuesta.
+*/
+const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  experimental: {
+    staleTimes: { dynamic: 30, static: 300 },
+  },
+  async headers() {
+    return [
+      {
+        source: "/data/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, stale-while-revalidate=86400",
+          },
+        ],
+      },
+    ];
+  },
+};
 
 export default nextConfig;

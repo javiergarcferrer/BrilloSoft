@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { CondicionBadge } from "@/components/iniciativa-card";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/lib/senado";
 import { formatFecha } from "@/lib/format";
 import { IconSearch } from "@/components/icons";
+import { EsqueletoFilas } from "@/components/esqueleto";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = {
@@ -30,10 +32,6 @@ export default async function SenadoPage({
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
   const cuatrienio = cuatrienioPorEtiqueta(params.c) ?? CUATRIENIO_VIGENTE;
-
-  const listado = q
-    ? await buscarExpedientesSenado(cuatrienio.etiqueta, q)
-    : await listarRecientesSenado(cuatrienio.etiqueta);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -108,6 +106,27 @@ export default async function SenadoPage({
         })}
       </nav>
 
+      {/*
+        El consultante del Senado es la fuente más lenta de la plataforma
+        (sesión por colección, dos peticiones por lectura fría). El listado
+        espera dentro de su propio Suspense: cabecera, buscador y cuatrienios
+        llegan al instante y las filas caen cuando el origen contesta.
+      */}
+      <Suspense fallback={<ListadoEsqueleto q={q} etiqueta={cuatrienio.etiqueta} />}>
+        <ListadoSenado q={q} etiqueta={cuatrienio.etiqueta} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ListadoSenado({ q, etiqueta }: { q: string; etiqueta: string }) {
+  const cuatrienio = cuatrienioPorEtiqueta(etiqueta) ?? CUATRIENIO_VIGENTE;
+  const listado = q
+    ? await buscarExpedientesSenado(cuatrienio.etiqueta, q)
+    : await listarRecientesSenado(cuatrienio.etiqueta);
+
+  return (
+    <>
       {listado ? (
         <>
           <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
@@ -162,6 +181,19 @@ export default async function SenadoPage({
           </p>
         </section>
       )}
+    </>
+  );
+}
+
+function ListadoEsqueleto({ q, etiqueta }: { q: string; etiqueta: string }) {
+  return (
+    <div role="status" aria-busy="true">
+      <p className="mt-4 text-sm text-ink-soft">
+        {q
+          ? `Buscando “${q}” en la colección ${etiqueta}…`
+          : `Consultando la colección ${etiqueta} del Senado…`}
+      </p>
+      <EsqueletoFilas n={10} className="mt-3" />
     </div>
   );
 }
@@ -169,7 +201,7 @@ export default async function SenadoPage({
 /** Fila densa, hermana visual de la de Diputados. */
 function ExpedienteRow({ exp }: { exp: ExpedienteSenado }) {
   return (
-    <li className="group border-b border-hairline last:border-0">
+    <li className="cv-auto group border-b border-hairline last:border-0">
       <Link
         href={`/congreso/senado/${exp.cuatrienio}/${exp.id}`}
         className="block px-4 py-3.5 transition-colors hover:bg-canvas/60 sm:px-5"

@@ -251,6 +251,18 @@
   animation: lr-bar 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/*
+  Listas largas: el navegador no compone ni pinta las filas fuera de la
+  pantalla hasta que se acercan. Con doscientas normas o cien instituciones en
+  una página, es la diferencia entre un desplazamiento fluido y uno a tirones
+  en un teléfono. `--cv-alto` es la altura estimada de la fila, para que la
+  barra de desplazamiento no baile.
+*/
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--cv-alto, 7rem);
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

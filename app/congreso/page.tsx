@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import IniciativaCard from "@/components/iniciativa-card";
 import BuscadorCongreso from "./buscador-congreso";
+import { EsqueletoFilas } from "@/components/esqueleto";
 import {
   listIniciativas,
   normalizarIniciativa,
@@ -19,6 +21,13 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
+/*
+  La página se pinta en dos tiempos. La cabecera, la alerta de legislatura y
+  el buscador no dependen de nadie y llegan con la primera respuesta; el
+  listado espera al SIL dentro de su propio `Suspense` y cae en su hueco al
+  contestar. Quien busca ve al instante que la búsqueda se está haciendo, en
+  lugar de una pantalla congelada mientras el SIL tarda.
+*/
 export default async function CongresoPage({
   searchParams,
 }: {
@@ -29,14 +38,6 @@ export default async function CongresoPage({
   const grupo = params.grupo?.trim() ?? "";
   const page = Math.max(1, Number(params.page ?? "1") || 1);
 
-  const respuesta = await listIniciativas(page, q);
-  let iniciativas = respuesta.results.map(normalizarIniciativa);
-
-  // El endpoint filtrado del SIL devuelve 400 en todas las combinaciones
-  // probadas, así que el corte por tema se hace aquí.
-  if (grupo) iniciativas = iniciativas.filter((i) => i.grupo === grupo);
-
-  const totalPaginas = Math.max(1, Math.ceil(respuesta.total / SIL_PAGE_SIZE));
   const legislatura = legislaturaVigente();
   const diasParaCierre = legislatura ? diffDias(new Date(), legislatura.cierre) : null;
 
@@ -82,6 +83,33 @@ export default async function CongresoPage({
 
       <BuscadorCongreso initial={q} />
 
+      <Suspense fallback={<ListaEsqueleto q={q} />}>
+        <ListaIniciativas q={q} grupo={grupo} page={page} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ListaIniciativas({
+  q,
+  grupo,
+  page,
+}: {
+  q: string;
+  grupo: string;
+  page: number;
+}) {
+  const respuesta = await listIniciativas(page, q);
+  let iniciativas = respuesta.results.map(normalizarIniciativa);
+
+  // El endpoint filtrado del SIL devuelve 400 en todas las combinaciones
+  // probadas, así que el corte por tema se hace aquí.
+  if (grupo) iniciativas = iniciativas.filter((i) => i.grupo === grupo);
+
+  const totalPaginas = Math.max(1, Math.ceil(respuesta.total / SIL_PAGE_SIZE));
+
+  return (
+    <>
       <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
         <span className="font-mono tabular-nums">
           {`${respuesta.total.toLocaleString("es-DO")} ${
@@ -130,6 +158,17 @@ export default async function CongresoPage({
       {respuesta.total > 0 && (
         <Paginacion pagina={page} totalPaginas={totalPaginas} q={q} grupo={grupo} />
       )}
+    </>
+  );
+}
+
+function ListaEsqueleto({ q }: { q: string }) {
+  return (
+    <div role="status" aria-busy="true">
+      <p className="mt-4 text-sm text-ink-soft">
+        {q ? `Buscando “${q}” en el SIL…` : "Consultando el SIL de la Cámara…"}
+      </p>
+      <EsqueletoFilas n={SIL_PAGE_SIZE} className="mt-3" />
     </div>
   );
 }

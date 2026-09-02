@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { preload } from "react-dom";
 import { IconLayers } from "@/components/icons";
 import { Explorer } from "@/components/nomina/explorer";
 
@@ -10,6 +11,15 @@ export const metadata: Metadata = {
 };
 
 export default function NominaPage() {
+  /*
+    El explorador es un componente cliente que pide la instantánea al
+    hidratar: HTML → JavaScript → hidratación → fetch → render, cuatro pasos
+    en fila. La pista de precarga viaja en el HTML y el navegador empieza a
+    bajar el JSON en paralelo con el JavaScript; cuando el explorador lo pide,
+    ya está en caché. `anonymous` casa con el modo del `fetch()` del cliente.
+  */
+  preload("/data/nomina.json", { as: "fetch", crossOrigin: "anonymous" });
+
   return (
     <div className="space-y-6">
       <header>

@@ -46,7 +46,7 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
   const enRiesgo = perencion?.estado === "en-riesgo";
 
   return (
-    <li className="group border-b border-hairline last:border-0">
+    <li className="cv-auto group border-b border-hairline last:border-0">
       <Link
         href={`/congreso/${iniciativa.id}`}
         className="block px-4 py-3.5 transition-colors hover:bg-canvas/60 sm:px-5"

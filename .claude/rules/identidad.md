@@ -24,7 +24,10 @@ are enforced by `.claude/hooks/guard-edit.sh` and `verificar.sh`.
 disclosure; the button says how many, never "ver más"), `lib/cifras.ts`
 (a number with its anchor and scope; never invent a comparison, no `+∞ %`,
 percentage deltas in points), `lib/glosario.ts` (jargon translated at the
-point of use). If a primitive is missing, add it there; do not reimplement
+point of use), `components/esqueleto.tsx` (the silhouette a page shows while
+a source answers: every `loading.tsx` and `Suspense` fallback composes it,
+same heights and grids as the content so nothing jumps). If a primitive is
+missing, add it there; do not reimplement
 the idea in one page. Legal moves are three: use the primitive, add the
 token, or extract the sibling. Adding an exception or relaxing a matcher
 registers the finding instead of fixing it.

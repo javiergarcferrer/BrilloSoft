@@ -112,7 +112,7 @@ export default async function PlanesPage() {
           {visibles.map((p) => (
             <li
               key={p.uid}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-hairline px-4 py-3 text-sm"
+              className="cv-auto [--cv-alto:4rem] flex flex-wrap items-center justify-between gap-3 rounded-lg border border-hairline px-4 py-3 text-sm"
             >
               <div className="min-w-0">
                 <div className="font-medium">{p.unidadCompra}</div>

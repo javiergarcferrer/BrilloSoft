@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import {
   RUTA_POR_TIPO,
@@ -11,6 +12,7 @@ import { formatFecha } from "@/lib/format";
 import { IconExternal, IconDoc } from "@/components/icons";
 import { desdeMayusculas } from "@/lib/congreso";
 import { cn } from "@/lib/cn";
+import { EsqueletoFilas } from "@/components/esqueleto";
 
 export const metadata: Metadata = {
   title: "Normativa del Ejecutivo",
@@ -31,8 +33,6 @@ export default async function NormativaPage({
   const params = await searchParams;
   const tipo = (params.tipo && params.tipo in TIPOS_NORMATIVA ? params.tipo : "3") as TipoNormativa;
   const anio = ANIOS.includes(Number(params.anio)) ? Number(params.anio) : ANIO_ACTUAL;
-
-  const docs = await buscarNormativa(tipo, anio);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -89,6 +89,32 @@ export default async function NormativaPage({
         ))}
       </nav>
 
+      {/*
+        La Consultoría responde por año y tipo, y no siempre rápido. Los
+        filtros llegan al instante; el listado cae en su hueco al contestar.
+      */}
+      <Suspense fallback={<ListaEsqueleto tipo={tipo} anio={anio} />}>
+        <ListaNormativa tipo={tipo} anio={anio} />
+      </Suspense>
+
+      <p className="mt-4 text-xs leading-relaxed text-ink-soft">
+        Fuente: Consultoría Jurídica del Poder Ejecutivo. La consulta se acota por
+        año porque el origen no pagina. «Leer» abre el texto íntegro dentro de la
+        plataforma, servido desde el sitio oficial.{" "}
+        <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
+          Estado de las fuentes
+        </Link>
+        .
+      </p>
+    </div>
+  );
+}
+
+async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: number }) {
+  const docs = await buscarNormativa(tipo, anio);
+
+  return (
+    <>
       <div className="mt-4 flex items-center justify-between gap-3 text-sm text-ink-soft">
         <span className="font-mono tabular-nums">
           {docs.length > 0
@@ -120,16 +146,17 @@ export default async function NormativaPage({
           Se muestran los 200 más recientes de {docs.length.toLocaleString("es-DO")}.
         </p>
       )}
+    </>
+  );
+}
 
-      <p className="mt-4 text-xs leading-relaxed text-ink-soft">
-        Fuente: Consultoría Jurídica del Poder Ejecutivo. La consulta se acota por
-        año porque el origen no pagina. «Leer» abre el texto íntegro dentro de la
-        plataforma, servido desde el sitio oficial.{" "}
-        <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
-          Estado de las fuentes
-        </Link>
-        .
+function ListaEsqueleto({ tipo, anio }: { tipo: TipoNormativa; anio: number }) {
+  return (
+    <div role="status" aria-busy="true">
+      <p className="mt-4 text-sm text-ink-soft">
+        Consultando {TIPOS_NORMATIVA[tipo].toLowerCase()} de {anio} en la Consultoría…
       </p>
+      <EsqueletoFilas n={10} className="mt-3" />
     </div>
   );
 }
@@ -143,7 +170,7 @@ function FilaDoc({ doc }: { doc: Documento }) {
       : null;
 
   return (
-    <li className="flex items-start gap-3 px-4 py-3.5 sm:px-5">
+    <li className="cv-auto flex items-start gap-3 px-4 py-3.5 sm:px-5">
       <IconDoc className="mt-0.5 h-4 w-4 shrink-0 text-ink-soft" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">

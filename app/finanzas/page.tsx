@@ -160,7 +160,7 @@ export default async function FinanzasPage() {
         </p>
         <ul className="mt-4 space-y-2">
           {fiscal.instituciones.map((i) => (
-            <li key={i.codigo}>
+            <li key={i.codigo} className="cv-auto [--cv-alto:5.5rem]">
               <Link
                 href={`/finanzas/${i.codigo}`}
                 className="block rounded-lg border border-hairline px-4 py-3 transition hover:border-v-finanzas"

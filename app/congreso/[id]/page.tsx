@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense, cache } from "react";
 import { notFound } from "next/navigation";
 import { CondicionBadge } from "@/components/iniciativa-card";
 import {
@@ -19,14 +20,18 @@ import VotoWidget from "@/components/democracia/voto-widget";
 import Dossier from "@/components/congreso/dossier";
 import Plegable from "@/components/plegable";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
+import { Esqueleto } from "@/components/esqueleto";
 
 export const revalidate = 300;
 
 type Props = { params: Promise<{ id: string }> };
 
+/** Una sola lectura del SIL por render, compartida con `generateMetadata`. */
+const cargarIniciativa = cache((id: number) => getIniciativa(id));
+
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
-  const raw = await getIniciativa(Number(id));
+  const raw = await cargarIniciativa(Number(id));
   if (!raw) return { title: "Iniciativa no encontrada" };
   const ini = normalizarIniciativa(raw);
   return {
@@ -40,16 +45,20 @@ export default async function IniciativaPage({ params }: Props) {
   const id = Number(idParam);
   if (!Number.isFinite(id)) notFound();
 
-  const raw = await getIniciativa(id);
+  const raw = await cargarIniciativa(id);
   if (!raw) notFound();
 
   const ini = normalizarIniciativa(raw);
+  const ref = refIniciativa("diputados", ini.id);
 
-  const [historicos, proponentes, documentos, rutaBase] = await Promise.all([
+  // Todo lo que depende solo del id sale en una tanda, el agregado de votos
+  // incluido: antes esperaba en fila detrás de los cuatro del SIL.
+  const [historicos, proponentes, documentos, rutaBase, agregado] = await Promise.all([
     getHistoricos(id),
     getProponentes(id),
     getDocumentos(id),
     getRutaDocumento(),
+    getAgregado("diputados", ref),
   ]);
 
   const docs = documentos.results
@@ -61,9 +70,6 @@ export default async function IniciativaPage({ params }: Props) {
     proponentes.results[0]?.nombreCompleto ??
     null;
   const perencion = ini.viva ? evaluarPerencion(ini.legislatura) : null;
-
-  const ref = refIniciativa("diputados", ini.id);
-  const agregado = await getAgregado("diputados", ref);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -133,14 +139,20 @@ export default async function IniciativaPage({ params }: Props) {
         punto del trámite está. El SIL no publica sinopsis, así que se explica
         desde el propio enunciado oficial.
       */}
-      <Dossier
-        titulo={ini.titulo}
-        tipo={ini.tipo}
-        condicion={ini.condicion ?? ini.estado}
-        materia={ini.grupo ?? ini.materia}
-        proponente={proponentePrincipal}
-        promulgadaComo={ini.numPromulgacion}
-      />
+      {/*
+        El dossier resuelve hasta cinco normas contra la Consultoría. Se
+        transmite en su propio Suspense: la ficha se lee mientras llega.
+      */}
+      <Suspense fallback={<Esqueleto className="mt-5 h-40" />}>
+        <Dossier
+          titulo={ini.titulo}
+          tipo={ini.tipo}
+          condicion={ini.condicion ?? ini.estado}
+          materia={ini.grupo ?? ini.materia}
+          proponente={proponentePrincipal}
+          promulgadaComo={ini.numPromulgacion}
+        />
+      </Suspense>
 
 
 
