@@ -5,13 +5,13 @@ import { PROCESS } from "@/lib/site";
 
 export function Process() {
   return (
-    <section id="proceso" className="scroll-mt-24 bg-surface-soft py-20 sm:py-28">
+    <section id="proceso" className="vv-lazy-section scroll-mt-24 bg-surface-soft py-20 sm:py-28">
       <Container>
         <Reveal className="mx-auto max-w-2xl text-center">
           <span className="text-sm font-semibold tracking-wide text-brand-600 uppercase">
             Nuestro proceso
           </span>
-          <h2 className="mt-3 text-3xl font-semibold text-balance text-ink sm:text-4xl lg:text-5xl">
+          <h2 className="mt-3 text-display-lg font-semibold text-balance text-ink">
             Tu espacio impecable en tres pasos
           </h2>
           <p className="mt-4 text-lg text-ink-soft">

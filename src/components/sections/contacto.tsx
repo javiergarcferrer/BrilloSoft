@@ -44,16 +44,16 @@ const methods: Method[] = [
 
 export function Contacto() {
   return (
-    <section id="contacto" className="scroll-mt-24 pb-24 sm:pb-28">
+    <section id="contacto" className="vv-lazy-section scroll-mt-24 pb-24 sm:pb-28">
       <Container>
         <Reveal>
           <div className="relative overflow-hidden rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white px-6 py-14 text-center shadow-card sm:px-12 sm:py-20">
             <div
               aria-hidden
-              className="absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl"
+              className="vv-glow absolute -top-20 left-1/2 h-96 w-96 -translate-x-1/2 [--vv-glow:var(--color-brand-200)] [--vv-glow-alpha:45%]"
             />
             <div className="relative mx-auto max-w-2xl">
-              <h2 className="text-3xl font-semibold text-balance text-ink sm:text-4xl lg:text-5xl">
+              <h2 className="text-display-lg font-semibold text-balance text-ink">
                 ¿Listo para cuidar tu espacio?
               </h2>
               <p className="mt-4 text-lg text-pretty text-ink-soft">
@@ -95,7 +95,7 @@ export function Contacto() {
                   </>
                 );
                 const base =
-                  "flex items-center gap-3 rounded-2xl border border-hairline bg-white/70 px-4 py-3.5 backdrop-blur transition-colors";
+                  "flex items-center gap-3 rounded-2xl border border-hairline bg-white/80 px-4 py-3.5 transition-colors";
                 return m.href ? (
                   <a
                     key={m.label}

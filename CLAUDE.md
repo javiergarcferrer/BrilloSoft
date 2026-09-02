@@ -16,7 +16,9 @@ CTAs are WhatsApp / email / Instagram links.
 
 ## Architecture
 
-- Next.js 16 App Router, React 19, Tailwind v4, framer-motion, lucide-react.
+- Next.js 16 App Router (Cache Components on), React 19, Tailwind v4,
+  lucide-react. No animation library: scroll reveals are CSS + one shared
+  IntersectionObserver.
 - `src/lib/site.ts` — **single source of truth** for copy, contact details,
   services, process steps, clients, stats. Edit content here.
 - `src/app/layout.tsx` — fonts (Fraunces display + Inter sans via `next/font`),
@@ -25,7 +27,8 @@ CTAs are WhatsApp / email / Instagram links.
 - `src/components/sections/*` — Hero, Services, Process, Ecolab, Nosotros,
   Clients, Contacto. Server Components that wrap content in `<Reveal>`.
 - `src/components/reveal.tsx` and `site-header.tsx` — the only Client
-  Components (framer-motion / interactivity).
+  Components. `<Reveal eager>` for above-the-fold content (animates from first
+  paint, no hydration wait); plain `<Reveal>` below the fold.
 - `src/components/ui/*` — primitives (Button, Container, Logo, icon map).
 - SEO files: `app/sitemap.ts`, `app/robots.ts`, `app/opengraph-image.tsx`,
   `app/icon.svg`.
@@ -35,6 +38,12 @@ CTAs are WhatsApp / email / Instagram links.
 - Tailwind v4 with tokens in `globals.css` `@theme` (forest/sage `brand` scale +
   cream surfaces). **Keep class strings literal** so Tailwind's scanner emits
   them — no dynamic class construction.
-- Copy is Spanish (es-DO). Display serif headings, sans body.
+- Copy is Spanish (es-DO). Display serif headings, sans body. Headings use
+  the fluid `text-display-xl` / `text-display-lg` / `text-lead` tokens.
+- Below-the-fold `<section>`s carry `vv-lazy-section` (content-visibility).
+  Decorative glows use `.vv-glow` (radial gradient), never `blur-3xl`.
+- Non-deterministic values (e.g. the footer year) go in a `"use cache"`
+  function with `cacheLife`; `new Date()` in a plain Server Component breaks
+  the static prerender under Cache Components.
 - lucide-react 1.x dropped brand icons, so Instagram uses a local SVG glyph
   (`components/ui/instagram-glyph.tsx`).

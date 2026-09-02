@@ -11,8 +11,12 @@ const inter = Inter({
   display: "swap",
 });
 
+// Every display use is semibold, so ship the single 600 instance instead of
+// the full variable file (≈36 KB → ≈half) and let the browser skip a
+// synthesised-bold pass.
 const fraunces = Fraunces({
   subsets: ["latin"],
+  weight: "600",
   variable: "--font-fraunces",
   display: "swap",
 });
@@ -59,6 +63,7 @@ export const viewport: Viewport = {
   themeColor: "#2f6144",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

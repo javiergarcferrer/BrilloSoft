@@ -13,13 +13,13 @@ const values = [
 
 export function Nosotros() {
   return (
-    <section id="nosotros" className="scroll-mt-24 py-20 sm:py-28">
+    <section id="nosotros" className="vv-lazy-section scroll-mt-24 py-20 sm:py-28">
       <Container className="grid items-center gap-14 lg:grid-cols-2">
         <Reveal>
           <span className="text-sm font-semibold tracking-wide text-brand-600 uppercase">
             Nosotros
           </span>
-          <h2 className="mt-3 text-3xl font-semibold text-balance text-ink sm:text-4xl lg:text-5xl">
+          <h2 className="mt-3 text-display-lg font-semibold text-balance text-ink">
             Un equipo que cuida cada detalle
           </h2>
           <p className="mt-5 text-lg text-pretty text-ink-soft">

@@ -22,12 +22,12 @@ const points = [
 
 export function Ecolab() {
   return (
-    <section className="py-20 sm:py-28">
+    <section className="vv-lazy-section py-20 sm:py-28">
       <Container>
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-950 px-6 py-14 text-white sm:px-12 sm:py-20">
           <div
             aria-hidden
-            className="absolute -top-16 -right-10 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl"
+            className="vv-glow absolute -top-16 -right-10 h-96 w-96 [--vv-glow:var(--color-brand-400)] [--vv-glow-alpha:28%]"
           />
           <Leaf
             aria-hidden
@@ -40,7 +40,7 @@ export function Ecolab() {
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-brand-100">
                 <Sparkles className="h-4 w-4" /> Aliados de Ecolab
               </span>
-              <h2 className="mt-5 text-3xl font-semibold text-balance sm:text-4xl lg:text-5xl">
+              <h2 className="mt-5 text-display-lg font-semibold text-balance">
                 Elegir Ecolab es elegir excelencia
               </h2>
               <p className="mt-4 text-lg text-pretty text-brand-100">

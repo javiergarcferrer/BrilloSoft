@@ -19,18 +19,24 @@ export function SiteHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Lock body scroll while the mobile menu is open.
+  // Lock body scroll while the mobile menu is open; Escape closes it.
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
     };
   }, [open]);
 
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-all duration-300",
+        "fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top)] transition-[background-color,border-color] duration-300",
         scrolled || open
           ? "border-b border-hairline bg-canvas/85 backdrop-blur-md"
           : "border-b border-transparent bg-transparent",
@@ -79,8 +85,9 @@ export function SiteHeader() {
         </button>
       </Container>
 
-      {/* Mobile menu */}
+      {/* Mobile menu — `inert` keeps the collapsed links out of the tab order */}
       <div
+        inert={!open}
         className={cn(
           "overflow-hidden border-t bg-canvas/95 backdrop-blur-md transition-[max-height] duration-300 md:hidden",
           open ? "max-h-96 border-hairline" : "max-h-0 border-transparent",

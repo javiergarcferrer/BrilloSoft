@@ -1,12 +1,22 @@
+import { cacheLife } from "next/cache";
 import { Mail, MessageCircle, MapPin } from "lucide-react";
 import { Container } from "./ui/container";
 import { Logo } from "./ui/logo";
 import { InstagramGlyph } from "./ui/instagram-glyph";
 import { NAV_LINKS, SITE, whatsappUrl } from "@/lib/site";
 
-export function SiteFooter() {
-  const year = new Date().getFullYear();
+/**
+ * The copyright year is the one value on the site that is not deterministic.
+ * Caching it with a daily lifetime keeps the page a static shell (Cache
+ * Components) while guaranteeing it rolls over without a redeploy.
+ */
+async function CurrentYear() {
+  "use cache";
+  cacheLife("days");
+  return new Date().getFullYear();
+}
 
+export function SiteFooter() {
   return (
     <footer className="relative overflow-hidden bg-brand-950 text-brand-100">
       {/* Decorative layered peaks rising along the top edge */}
@@ -118,7 +128,7 @@ export function SiteFooter() {
       <div className="border-t border-white/10">
         <Container className="flex flex-col items-center justify-between gap-3 py-6 text-sm text-brand-200 sm:flex-row">
           <p>
-            © {year} {SITE.name}. Todos los derechos reservados.
+            © <CurrentYear /> {SITE.name}. Todos los derechos reservados.
           </p>
           <p>Hecho con cuidado en República Dominicana.</p>
         </Container>

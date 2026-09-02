@@ -9,7 +9,7 @@ export function Clients() {
   return (
     <section
       id="clientes"
-      className="scroll-mt-24 border-y border-hairline bg-surface-soft py-16 sm:py-20"
+      className="vv-lazy-section scroll-mt-24 border-y border-hairline bg-surface-soft py-16 sm:py-20"
     >
       <Container>
         <Reveal className="text-center">

@@ -19,6 +19,15 @@
   --font-display: var(--font-fraunces), ui-serif, Georgia, "Times New Roman",
     serif;
 
+  /* Fluid display sizes — one clamp() instead of per-breakpoint jumps, so
+     headings scale continuously from a 360px phone to a wide desktop. */
+  --text-display-xl: clamp(2.75rem, 1.6rem + 5.2vw, 4.75rem);
+  --text-display-xl--line-height: 1.05;
+  --text-display-lg: clamp(2rem, 1.35rem + 2.6vw, 3rem);
+  --text-display-lg--line-height: 1.12;
+  --text-lead: clamp(1.0625rem, 0.95rem + 0.5vw, 1.25rem);
+  --text-lead--line-height: 1.55;
+
   /* Brand — forest / sage green */
   --color-brand-50: #f0f6f1;
   --color-brand-100: #dbe9de;
@@ -102,6 +111,84 @@
   * {
     scrollbar-width: thin;
     scrollbar-color: #c7cfc9 transparent;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Layout utilities                                                    */
+/* ------------------------------------------------------------------ */
+
+/* Horizontal padding that never dips under a phone's safe-area insets. */
+@utility px-safe-5 {
+  padding-left: max(--spacing(5), env(safe-area-inset-left));
+  padding-right: max(--spacing(5), env(safe-area-inset-right));
+}
+@utility px-safe-8 {
+  padding-left: max(--spacing(8), env(safe-area-inset-left));
+  padding-right: max(--spacing(8), env(safe-area-inset-right));
+}
+
+/*
+  Below-the-fold sections skip layout/paint until they approach the viewport.
+  `contain-intrinsic-size: auto <h>` keeps the scrollbar honest before first
+  render and remembers the real height afterwards. Anchor navigation
+  (#proceso, #contacto…) still works: the browser renders a targeted section.
+*/
+.vv-lazy-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
+}
+@media print {
+  .vv-lazy-section {
+    content-visibility: visible;
+  }
+}
+
+/*
+  Soft radial glow. Replaces `filter: blur(64px)` blobs, which force the GPU
+  to re-blur a large layer on every scroll frame on mobile; a gradient is
+  painted once.
+*/
+.vv-glow {
+  --vv-glow: var(--color-brand-200);
+  --vv-glow-alpha: 50%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--vv-glow) var(--vv-glow-alpha), transparent),
+    transparent
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Scroll reveal (see components/reveal.tsx)                           */
+/* ------------------------------------------------------------------ */
+@keyframes vv-rise {
+  from {
+    opacity: 0;
+    translate: 0 22px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Plays as soon as the element is marked in view. Eager (above-the-fold)
+     elements are server-rendered with data-in, so this runs from first paint
+     without waiting for hydration. */
+  [data-reveal][data-in] {
+    animation: vv-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--reveal-delay, 0s);
+  }
+
+  /* Only hide not-yet-revealed content when scripting is available to reveal
+     it; crawlers, reader modes and no-JS browsers get everything visible. */
+  @media (scripting: enabled) {
+    [data-reveal]:not([data-in]) {
+      opacity: 0;
+    }
   }
 }
 

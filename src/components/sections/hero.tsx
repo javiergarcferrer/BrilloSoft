@@ -20,11 +20,11 @@ export function Hero() {
       />
       <div
         aria-hidden
-        className="absolute -top-32 -right-24 -z-10 h-96 w-96 rounded-full bg-brand-200/50 blur-3xl"
+        className="vv-glow absolute -top-32 -right-24 -z-10 h-[32rem] w-[32rem] [--vv-glow:var(--color-brand-200)] [--vv-glow-alpha:55%]"
       />
       <div
         aria-hidden
-        className="absolute top-40 -left-24 -z-10 h-80 w-80 rounded-full bg-brand-300/30 blur-3xl"
+        className="vv-glow absolute top-40 -left-24 -z-10 h-[28rem] w-[28rem] [--vv-glow:var(--color-brand-300)] [--vv-glow-alpha:35%]"
       />
       <div aria-hidden className="vv-grain absolute inset-0 -z-10 opacity-60" />
       <Leaf
@@ -34,29 +34,29 @@ export function Hero() {
       />
 
       <Container className="flex flex-col items-center pt-32 pb-20 text-center sm:pt-40 sm:pb-28">
-        <Reveal>
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand-600/15 bg-white/70 px-4 py-1.5 text-sm font-medium text-brand-700 backdrop-blur">
+        <Reveal eager>
+          <span className="inline-flex items-center gap-2 rounded-full border border-brand-600/15 bg-white/80 px-4 py-1.5 text-sm font-medium text-brand-700">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-500 opacity-60" />
+              <span className="absolute inline-flex h-full w-full motion-safe:animate-ping rounded-full bg-brand-500 opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
             </span>
             Limpieza y mantenimiento profesional
           </span>
         </Reveal>
 
-        <Reveal delay={0.06}>
-          <h1 className="mt-6 max-w-4xl text-5xl leading-[1.05] font-semibold text-balance text-ink sm:text-6xl lg:text-7xl">
+        <Reveal eager delay={0.06}>
+          <h1 className="mt-6 max-w-4xl text-display-xl font-semibold text-balance text-ink">
             {SITE.tagline}
           </h1>
         </Reveal>
 
-        <Reveal delay={0.12}>
-          <p className="mt-6 max-w-2xl text-lg text-pretty text-ink-soft sm:text-xl">
+        <Reveal eager delay={0.12}>
+          <p className="mt-6 max-w-2xl text-lead text-pretty text-ink-soft">
             {SITE.intro}
           </p>
         </Reveal>
 
-        <Reveal delay={0.18}>
+        <Reveal eager delay={0.18}>
           <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
             <Button
               href={whatsappUrl()}
@@ -73,7 +73,7 @@ export function Hero() {
           </div>
         </Reveal>
 
-        <Reveal delay={0.24}>
+        <Reveal eager delay={0.24}>
           <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
             {badges.map((b) => (
               <span
