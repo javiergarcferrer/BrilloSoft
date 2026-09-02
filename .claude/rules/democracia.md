@@ -22,6 +22,10 @@ pilot**; every surface says so.
   literal fallbacks). No service-role key, no server secret, ever, anywhere.
   The cédula-hash pepper lives in `democracia.secretos`, readable only by the
   `SECURITY DEFINER` RPCs.
+- Identity v2 is Cuenta Única (PLAN §9): a public PKCE client, the ID token
+  verified inside a Supabase Edge Function, the subject hashed with the
+  pepper. Do not build it until the owner has the OGTIC `client_id`; never
+  store the `sub` or the cédula in clear, even when the claim arrives.
 - The Supabase client (`lib/supabase.ts`) is imported only by democracia
   modules. Other verticals may render `components/democracia/*` and call
   `lib/democracia.ts` helpers (the congress fichas embed the vote widget);

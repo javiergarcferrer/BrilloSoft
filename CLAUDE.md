@@ -103,9 +103,16 @@ against every rule above).
   domain not in the redirect allowlist, Magic Link template should send
   `{{ .Token }}`. Registration works without it (link paste path); fixing it
   is a panel action.
+- **Cuenta Única OAuth2 client** (PLAN-DEMOCRACIA §9, AUDITORIA §A.11):
+  identity v2 for `/democracia` is verified and designed (public PKCE client,
+  verification inside a Supabase Edge Function, subject hashed with the
+  pepper), but Cuenta Única has no dynamic client registration: the
+  `client_id` comes from OGTIC by request, then a migration and an Edge
+  Function deploy. Nothing is built until the client exists.
 - **Institutional requests**: ONE whitelist, Cámara de Cuentas and 911 under
   Ley 200-04, JCE electoral archive, BCRD file index, report of the exposed
-  311 token to OGTIC (AUDITORIA §A.9, §F).
+  311 token and the Cuenta Única client request to OGTIC (AUDITORIA §A.9,
+  §A.11, §F).
 
 Resolved, so nobody reopens them: XLSX parsing is done without a dependency
 (`lib/deuda.ts` reads the ZIP directly); the Senate is read through its public

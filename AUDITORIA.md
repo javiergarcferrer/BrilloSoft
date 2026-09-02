@@ -743,6 +743,30 @@ manifiesto, no de ingeniería: el índice ya ofrece 159 candidatos.**
 
 ---
 
+### A.11 Cuenta Única (OGTIC) — ⚠️ identidad ciudadana por OIDC, cliente por solicitud (añadido 2026-09-02)
+
+No es una fuente de datos: es la **identidad digital ciudadana** del Estado, y
+resuelve lo que §B.3 y PLAN-DEMOCRACIA §6 daban por cerrado (probar que
+detrás de un voto hay una persona real y única) sin tocar el padrón.
+
+- ✅ `https://auth.cuentaunica.gob.do/.well-known/openid-configuration` es un
+  Ory Hydra público: `authorization`/`token`/`userinfo`/`jwks` (2 claves RSA
+  RS256), PKCE `S256`, `token_endpoint_auth_methods` con `none` (cliente
+  público sin secreto), scopes `openid`/`offline`, `claims_supported: [sub]`,
+  `subject_types: public`. `robots.txt` → 404.
+- ❌ Sin `registration_endpoint`: el `client_id` lo emite la OGTIC a mano.
+  **Bloqueo institucional, no técnico.** Solicitud redactada en
+  PLAN-DEMOCRACIA §9.4.
+- ⚠️ Los claims que recibe un tercero (¿viaja la cédula en `userinfo`?) no se
+  pueden verificar sin cliente; el registro público
+  (`github.com/ogticrd/cuenta-unica-registry`) sugiere `preferred_username`.
+- ⚠️ El flujo VID devuelve solo `state`, sin aserción firmada: la identidad
+  la da el token OIDC, VID solo añade prueba de vida.
+- ❌ Supabase Auth no acepta emisores OIDC genéricos → Cuenta Única se acopla
+  encima de la sesión, verificado en una Edge Function (PLAN §9.2).
+
+Diseño, invariantes y pasos del dueño: PLAN-DEMOCRACIA §9.
+
 ## B. Bloqueos confirmados
 
 ### B.1 Sin cambios desde la primera pasada
@@ -873,3 +897,6 @@ corte honesto es el último mes con devengado real, no el último mes con filas.
    blanca), Cámara de Cuentas y 911 (Ley 200-04), JCE (archivo electoral).
 7. Verificar desde el egress de producción lo que este entorno no puede:
    TLS de `www.poderjudicial.gob.do` y de SIPEN, y el navegador headless (§B.5).
+8. **Solicitar a la OGTIC el cliente OAuth2 de Cuenta Única** (§A.11,
+   PLAN-DEMOCRACIA §9.4). Cabe en el mismo oficio que el reporte del token
+   del 311 (§A.9).

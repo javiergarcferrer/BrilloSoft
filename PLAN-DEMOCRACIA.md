@@ -21,6 +21,7 @@ abajo.
 |---|---|
 | Persistencia | **Supabase**, proyecto existente `Transac` (`amuyclnyjyhigeyhuufs`) |
 | Identidad v1 | **Cédula válida (Luhn) + OTP a email**; un voto por cédula |
+| Identidad v2 | **Cuenta Única (OGTIC)** como verificación encima de la sesión; recon hecha, bloqueada por el cliente OAuth2 (§9) |
 | Ubicación | **Vertical `/democracia`** dentro de Socrático.do |
 
 Esto **rompe deliberadamente** las dos reglas fundacionales de la plataforma
@@ -180,6 +181,8 @@ trabajo futuro con el gobierno.
   API pública y la DGII responde 403. Es exactamente la clase de integración que
   este piloto **justifica solicitar**: un dossier de seguridad ya construido +
   un piloto funcionando es el argumento para pedir acceso al padrón.
+  **Actualización 2026-09-02:** la vía no es el padrón sino **Cuenta Única**,
+  que ya lo consulta por nosotros; ver §9.
 - Firma digital / cédula electrónica, verificación biométrica, apelación de
   votos, delegación temática.
 
@@ -211,3 +214,130 @@ Pedido junto a Democracia; se integran con el patrón de siempre (lib + vista):
 
 Estas dos **no tocan la BD** ni la excepción de secretos: siguen siendo lectura
 en vivo con caché.
+
+---
+
+## 9. Identidad v2 — Cuenta Única (recon 2026-09-02)
+
+**Q.** ¿Puede el voto probar que detrás hay un ciudadano real y único, sin
+que Socrático vea jamás la cédula? Sí: con **Cuenta Única**, la identidad
+digital ciudadana de la OGTIC. Su registro ya exige cédula contra el padrón de
+la JCE, prueba de vida (Rekognition) con cotejo contra la foto de la cédula y
+correo verificado, y admite **una cuenta por cédula**. Es exactamente la
+verificación que §6 daba por imposible sin acuerdo — y existe como servicio,
+con código público: `github.com/ogticrd/cuenta-unica-registry` (MIT, Next.js
+16, Ory Kratos + Hydra).
+
+### 9.1 Recon verificada (User-Agent identificable, solo GET, 2 peticiones al emisor)
+
+- ✅ **`https://auth.cuentaunica.gob.do/.well-known/openid-configuration`**
+  responde: es Ory Hydra. `authorization_endpoint` `/oauth2/auth`,
+  `token_endpoint` `/oauth2/token`, `userinfo_endpoint` `/userinfo`,
+  `jwks_uri` `/.well-known/jwks.json` (2 claves RSA, RS256), `revocation` y
+  `end_session`. PKCE **`S256`**; `token_endpoint_auth_methods_supported`
+  incluye **`none`** → un cliente público sin secreto es válido. Scopes:
+  `openid`, `offline`, `offline_access`. `subject_types_supported: public` →
+  el `sub` es estable entre clientes. `require_request_uri_registration:
+  true`. **No hay `registration_endpoint`**: el `client_id` lo emite la OGTIC
+  a mano, no hay alta dinámica.
+- ✅ `cuentaunica.gob.do` (portal, Next.js) y `mi.cuentaunica.gob.do/ui/login`
+  (UI de Kratos) responden. `/robots.txt` → 404 en ambos hosts: sin
+  restricción declarada.
+- ⚠️ **Qué claims recibe un tercero** no se puede verificar sin cliente. El
+  discovery declara solo `sub`. El código del registro obtiene la cédula de
+  `traits.cedula`/`username` por la API *admin* de Kratos (no disponible a
+  terceros) y cae a `preferred_username` en `/userinfo`: sugiere que la
+  cédula puede viajar, no lo prueba. Se pregunta en la solicitud (§9.4).
+- ⚠️ **Flujo VID** (`docs/vid-flow.md` del registro): el socio redirige a
+  `/{lang}/vid?client_id&redirect_uri&access_token&state`, Cuenta Única
+  repite la prueba de vida contra la foto de la JCE y devuelve al
+  `redirect_uri?state=…`. **La vuelta no trae aserción firmada alguna** —
+  solo el `state`. La prueba de identidad del socio es el token OIDC que ya
+  tenía; VID añade «está vivo ahora», no identidad. Para el piloto sobra: el
+  alta de la cuenta ya exigió prueba de vida.
+- ⚠️ **Recuperación de cuenta** (`deleteIdentityByCedula` en el registro):
+  recuperar borra la identidad y crea otra, así que **el `sub` cambia**. Si
+  la clave de unicidad fuera `sub`, quien recupere su cuenta podría
+  registrarse dos veces. Si la cédula viaja en el token, la clave sigue
+  siendo `cedula_hash` y el problema no existe; si no, se acepta el límite y
+  se declara en `/democracia/seguridad`.
+- ❌ **Supabase Auth no acepta emisores OIDC genéricos.** Su «third-party
+  auth» cubre solo Clerk, Firebase, Auth0, Cognito y WorkOS; el proveedor
+  Keycloak exige cliente *confidencial* con `client_secret`, lo que rompería
+  «sin secreto en el app». Conclusión: Cuenta Única **no sustituye** la sesión
+  de Supabase; **se acopla encima** como verificación.
+- ⚠️ `socratico.do` aún no resuelve en DNS (ENOTFOUND el 2026-09-02). La
+  `redirect_uri` a registrar debe incluir `brillo-soft.vercel.app` hasta que
+  el dominio apunte.
+
+### 9.2 Arquitectura propuesta — respeta §2 y §4 íntegros
+
+```
+Navegador (cliente público PKCE S256, sin secreto)
+  1. Sesión Supabase por OTP de correo (v1, sin cambios).
+  2. /democracia/registro → «Verificar con Cuenta Única»
+     → auth.cuentaunica.gob.do/oauth2/auth
+       (client_id público, redirect_uri registrada, code_challenge, nonce)
+  3. Callback → /oauth2/token (auth `none`) → id_token RS256.
+  4. supabase.functions.invoke('vincular-cuenta-unica', { id_token })
+     con la sesión del votante.
+
+Edge Function (vive dentro de Supabase, como el pepper)
+  Verifica firma contra el JWKS, `iss`, `aud` = client_id, `exp`, `nonce`.
+  sujeto = claim de cédula si existe; si no, `sub`.
+  Llama democracia.vincular_identidad(uid, sujeto, origen)  [SECURITY DEFINER]
+    → HMAC(sujeto, pepper) → votantes.sujeto_hash UNIQUE, origen = 'cuenta_unica'
+```
+
+Invariantes que se mantienen:
+- **El app sigue con claves publicables.** Un `client_id` de OAuth es público
+  por diseño; va con fallback literal como la `anon key`. Ni `client_secret`
+  (no hace falta: auth `none`) ni clave de servicio en Vercel.
+- **La verificación criptográfica y la clave de servicio viven en Supabase**,
+  no en el app — el mismo principio que el pepper.
+- **Minimización mejora:** si solo llega `sub`, Socrático **nunca ve la
+  cédula**. Se guarda únicamente el HMAC con pepper del sujeto, jamás el
+  `sub` ni la cédula en claro.
+- RLS intacto; una persona = un voto por unicidad del hash.
+
+Esquema (borrador; **no es migración** hasta que exista el cliente):
+`votantes.origen text not null default 'declarada' check (origen in
+('declarada','cuenta_unica'))`; `cedula_hash` pasa a llamarse
+`sujeto_hash` (o se añade la columna); `agregados_publicos` suma
+`verificados` para que la vista pueda decir cuántos votos vienen de
+identidad verificada. UI: segundo camino en el registro y, en el widget,
+«voto con identidad verificada» — sin escudo, sin sello, marco no oficial.
+
+### 9.3 Qué hace falta del dueño, en orden
+
+1. **Solicitar a la OGTIC un cliente OAuth2** para Socrático.do (§9.4). Sin
+   él no se construye nada: no hay alta dinámica de clientes.
+2. Aplicar la migración y desplegar la Edge Function (acciones de panel/CLI,
+   fuera del alcance de una sesión).
+3. Registrar las `redirect_uri` en el cliente:
+   `https://socratico.do/democracia/cuenta-unica/callback` y la equivalente
+   en `brillo-soft.vercel.app` mientras el dominio no resuelva.
+
+### 9.4 Borrador de solicitud a la OGTIC
+
+> **Asunto:** Solicitud de cliente OAuth2 (OpenID Connect) de Cuenta Única
+> para Socrático.do
+>
+> Socrático.do es una herramienta ciudadana independiente y no oficial que
+> lee en vivo fuentes públicas del Estado (DGCP, SIGEF, Congreso, Consultoría
+> Jurídica, Crédito Público) y corre un piloto de opinión ciudadana sobre las
+> iniciativas legislativas. Queremos que cada voto provenga de una persona
+> real y única **sin almacenar cédulas**: solo un HMAC del sujeto que entrega
+> Cuenta Única.
+>
+> Solicitamos un cliente **público** (PKCE `S256`,
+> `token_endpoint_auth_method: none`), `grant_types: authorization_code`,
+> `response_types: code`, scope `openid`, con estas `redirect_uris`: […].
+>
+> Preguntas: (1) qué claims entrega el ID token o `/userinfo` a clientes
+> externos (¿`preferred_username` es la cédula?); (2) si el `sub` se conserva
+> tras una recuperación de cuenta.
+>
+> Compromisos: minimización de datos (Ley 172-13), dossier público de
+> seguridad en `/democracia/seguridad`, marco no oficial visible en cada
+> pantalla, código auditable.
