@@ -93,6 +93,7 @@ export const SECCIONES: Seccion[] = [
       { href: "/licitaciones", label: "Buscar" },
       { href: "/estadisticas", label: "Mercado" },
       { href: "/contratos", label: "Contratado" },
+      { href: "/proveedores", label: "Proveedores" },
       { href: "/planes", label: "Planes" },
       { href: "/seguimiento", label: "Seguimiento", seguimiento: true },
       { href: "/guia", label: "Guía" },

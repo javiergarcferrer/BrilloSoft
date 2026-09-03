@@ -398,9 +398,15 @@ function fechaValida(iso: string | null | undefined): string | null {
   const f = (iso ?? "").slice(0, 10);
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(f);
   if (!m) return null;
+  const anio = Number(m[1]);
   const mes = Number(m[2]);
   const dia = Number(m[3]);
   if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
+  // El año también viene corrupto (`2202-…`), y uno solo estira la ventana
+  // temporal a siglos: la nota «en los últimos N días» pasaría a decir 64,000.
+  // El registro no tiene contrataciones anteriores a los noventa ni puede
+  // fechar una adjudicación más allá del año que viene.
+  if (anio < 1990 || anio > new Date().getFullYear() + 1) return null;
   return f;
 }
 
@@ -416,15 +422,30 @@ function acumular(mapa: Map<string, AgregadoContrato>, clave: string, monto: num
  * Muestra agregada de los contratos adjudicados más recientes. `paginas`
  * controla la profundidad (cada una son 1000 contratos, ~8 días).
  */
-export async function muestrearContratos(
-  paginas = MAX_CONTRATOS_PAGES,
-): Promise<ResumenContratos> {
+interface VentanaContratos {
+  contratos: Contrato[];
+  /** Censo que declara la API para todo el registro. */
+  totalRegistro: number;
+  /** true si el registro es mayor que lo escaneado (siempre, en la práctica). */
+  truncado: boolean;
+}
+
+/**
+ * Las `paginas` más recientes del registro de contratos, de 1000 en 1000.
+ *
+ * Es el barrido que comparten el histórico (`muestrearContratos`) y el mercado
+ * por proveedor (`muestrearProveedores`): mismas URLs, misma ventana de caché,
+ * así que la segunda vista no vuelve a pagar el viaje a la DGCP. Que ambas
+ * pidan el mismo número de páginas no es cosmético — es lo que hace que
+ * compartan el caché de `fetch`.
+ */
+async function paginasDeContratos(paginas: number): Promise<VentanaContratos> {
   const first = await dgcpFetch<Contrato>("/contratos", { page: 1, limit: 1000 }, 1800);
   const totalRegistro = first.totalResults ?? first.payload.content.length;
   const upstreamPages = first.pages ?? 1;
   const aEscanear = Math.min(upstreamPages, Math.max(1, paginas));
 
-  let todos = first.payload.content;
+  let contratos = first.payload.content;
   if (aEscanear > 1) {
     const rest = await Promise.all(
       Array.from({ length: aEscanear - 1 }, (_, i) =>
@@ -433,8 +454,20 @@ export async function muestrearContratos(
         ),
       ),
     );
-    for (const r of rest) if (r) todos = todos.concat(r.payload.content);
+    for (const r of rest) if (r) contratos = contratos.concat(r.payload.content);
   }
+
+  return { contratos, totalRegistro, truncado: upstreamPages > aEscanear };
+}
+
+export async function muestrearContratos(
+  paginas = MAX_CONTRATOS_PAGES,
+): Promise<ResumenContratos> {
+  const {
+    contratos: todos,
+    totalRegistro,
+    truncado,
+  } = await paginasDeContratos(paginas);
 
   const adjudicatarios = new Map<string, AgregadoContrato>();
   const instituciones = new Map<string, AgregadoContrato>();
@@ -492,7 +525,7 @@ export async function muestrearContratos(
   return {
     escaneados: todos.length,
     totalRegistro,
-    truncado: upstreamPages > aEscanear,
+    truncado,
     desde,
     hasta,
     montoTotal,
@@ -502,6 +535,121 @@ export async function muestrearContratos(
     porMes,
     porEstado: [...estados.values()].sort((a, b) => b.n - a.n),
     recientes,
+  };
+}
+
+/* ----------------------------------------- el mercado, visto por proveedor */
+
+export interface ProveedorEnMercado {
+  rpe: string;
+  razonSocial: string;
+  /** Adjudicaciones vigentes con monto dentro de la ventana. */
+  contratos: number;
+  monto: number;
+  /** Instituciones distintas que le adjudicaron en la ventana. */
+  instituciones: number;
+  /** Su adjudicación más reciente dentro de la ventana. */
+  ultima: string | null;
+}
+
+export interface MercadoProveedores {
+  /** Contratos realmente recorridos upstream. */
+  escaneados: number;
+  /** Censo de contratos que declara la API (todo el registro, no la muestra). */
+  totalRegistro: number;
+  truncado: boolean;
+  /** Ventana temporal cubierta por la muestra. */
+  desde: string | null;
+  hasta: string | null;
+  /** Suma de las adjudicaciones vigentes de la ventana. */
+  montoTotal: number;
+  /** Los proveedores de la ventana, de mayor a menor monto. */
+  proveedores: ProveedorEnMercado[];
+}
+
+/**
+ * Quién le vende al Estado ahora mismo, agregado **por RPE** sobre la misma
+ * ventana de contratos que alimenta `/contratos`.
+ *
+ * Por qué por RPE y no por razón social, como hace `muestrearContratos`: ahí
+ * el nombre es la etiqueta que se lee; aquí el proveedor es una entidad con
+ * ficha propia, y su identidad es el RPE —el registro escribe el mismo nombre
+ * de varias formas y la API responde por número—. Un contrato sin RPE queda
+ * fuera: no hay ficha a la que enlazar.
+ *
+ * Es una **muestra**, nunca el censo. El Registro de Proveedores del Estado
+ * tiene ~128 mil inscritos; esta ventana solo ve a los que ganaron algo en las
+ * últimas semanas, que es una pregunta distinta y más útil.
+ */
+export async function muestrearProveedores(
+  paginas = MAX_CONTRATOS_PAGES,
+): Promise<MercadoProveedores> {
+  const { contratos, totalRegistro, truncado } = await paginasDeContratos(paginas);
+
+  interface Acumulado {
+    rpe: string;
+    razonSocial: string;
+    contratos: number;
+    monto: number;
+    instituciones: Set<string>;
+    ultima: string | null;
+  }
+  const porRpe = new Map<string, Acumulado>();
+
+  let montoTotal = 0;
+  let desde: string | null = null;
+  let hasta: string | null = null;
+
+  for (const c of contratos) {
+    const fecha = fechaValida(c.fecha_adjudicacion);
+    if (fecha) {
+      if (!desde || fecha < desde) desde = fecha;
+      if (!hasta || fecha > hasta) hasta = fecha;
+    }
+
+    // Mismo criterio que el histórico: solo adjudicaciones en firme y con
+    // monto entran en el dinero. Canceladas y rescindidas no inflan a nadie.
+    const monto = c.valor_contratado || 0;
+    if (!ESTADOS_VIGENTES.has(c.estado_contrato) || monto <= 0) continue;
+
+    const rpe = String(c.rpe ?? "").trim();
+    if (!rpe) continue;
+
+    montoTotal += monto;
+    const a: Acumulado = porRpe.get(rpe) ?? {
+      rpe,
+      razonSocial: c.razon_social || `Proveedor RPE ${rpe}`,
+      contratos: 0,
+      monto: 0,
+      instituciones: new Set<string>(),
+      ultima: null,
+    };
+    a.contratos += 1;
+    a.monto += monto;
+    if (c.unidad_compra) a.instituciones.add(c.unidad_compra);
+    if (fecha && (!a.ultima || fecha > a.ultima)) a.ultima = fecha;
+    porRpe.set(rpe, a);
+  }
+
+  const proveedores = [...porRpe.values()]
+    .map((a) => ({
+      rpe: a.rpe,
+      razonSocial: a.razonSocial,
+      contratos: a.contratos,
+      monto: a.monto,
+      instituciones: a.instituciones.size,
+      ultima: a.ultima,
+    }))
+    .sort((x, y) => y.monto - x.monto);
+
+  return {
+    escaneados: contratos.length,
+    totalRegistro,
+    truncado,
+    desde,
+    hasta,
+    montoTotal,
+    proveedores,
   };
 }
 
@@ -729,18 +877,8 @@ function fechaRegistro(iso: string | null | undefined): string | null {
   return fechaValida(iso) ? iso!.slice(0, 10) : null;
 }
 
-/**
- * Ficha de registro de un proveedor. `rpe` filtra de verdad en la API, así que
- * es una consulta directa. Degrada a `null` si el proveedor no está en el
- * registro (o si la API falla): la página del proveedor sigue funcionando con
- * su historial de contratos.
- */
-export async function getProveedorRegistro(rpe: string): Promise<ProveedorRegistro | null> {
-  const data = await dgcpFetch<ProveedorRaw>("/proveedores", { rpe, limit: 5 }, 86400).catch(
-    () => null
-  );
-  const p = data?.payload.content.find((x) => String(x.rpe) === String(rpe));
-  if (!p) return null;
+/** Del sobre crudo del registro a la ficha institucional que sí mostramos. */
+function mapearProveedor(p: ProveedorRaw): ProveedorRegistro {
   return {
     rpe: String(p.rpe),
     razonSocial: p.razon_social,
@@ -759,6 +897,250 @@ export async function getProveedorRegistro(rpe: string): Promise<ProveedorRegist
     provee: p.provee || null,
     provincia: p.provincia || null,
     municipio: p.municipio || null,
+  };
+}
+
+/*
+  Las dos consultas al registro existen en dos versiones a propósito.
+
+  Las internas **propagan el fallo**; las exportadas lo tragan en `null`. La
+  distinción no es estilística: para la ficha de un proveedor da igual —la
+  página vive de su historial de contratos y el registro solo la enriquece—,
+  pero para el buscador es la diferencia entre «no está inscrito» y «el
+  registro no contestó». Afirmar lo primero cuando pasa lo segundo es decir una
+  falsedad sobre un registro del Estado, y justo en el camino que la interfaz
+  vende como el autoritativo.
+*/
+
+async function fichaPorRpe(rpe: string): Promise<ProveedorRegistro | null> {
+  const data = await dgcpFetch<ProveedorRaw>("/proveedores", { rpe, limit: 5 }, 86400);
+  const p = data.payload.content.find((x) => String(x.rpe) === String(rpe));
+  return p ? mapearProveedor(p) : null;
+}
+
+/**
+ * Ficha por número de documento — el RNC de una empresa o la cédula de una
+ * persona física. `numero_documento` es, junto a `rpe`, el **único** otro
+ * filtro que la API honra (docs/AUDITORIA.md §A.12), y es exacto: no admite
+ * prefijos.
+ *
+ * Por eso se normaliza lo que teclea el usuario. Un RNC se escribe con guiones
+ * («1-01-87008-7»), y una cédula —que el registro guarda a 11 dígitos con sus
+ * ceros a la izquierda— suele copiarse sin ellos. Solo en ese caso, entre 8 y
+ * 10 dígitos, se gasta una segunda consulta rellenando con ceros; para un
+ * número corto, que es antes un RPE que un documento, no se gasta.
+ */
+async function fichaPorDocumento(documento: string): Promise<ProveedorRegistro | null> {
+  const doc = documento.replace(/\D/g, "");
+  if (!doc || doc.length > 11) return null;
+
+  const consultar = async (numero: string) => {
+    const data = await dgcpFetch<ProveedorRaw>(
+      "/proveedores",
+      { numero_documento: numero, limit: 5 },
+      86400,
+    );
+    const p = data.payload.content.find(
+      (x) => String(x.numero_documento ?? "") === numero,
+    );
+    return p ? mapearProveedor(p) : null;
+  };
+
+  const directo = await consultar(doc);
+  if (directo || doc.length < 8 || doc.length >= 11) return directo;
+  return consultar(doc.padStart(11, "0"));
+}
+
+/**
+ * Ficha de registro de un proveedor. `rpe` filtra de verdad en la API, así que
+ * es una consulta directa. Degrada a `null` si el proveedor no está en el
+ * registro (o si la API falla): la página del proveedor sigue funcionando con
+ * su historial de contratos.
+ */
+export async function getProveedorRegistro(rpe: string): Promise<ProveedorRegistro | null> {
+  return fichaPorRpe(rpe).catch(() => null);
+}
+
+/** Como `fichaPorDocumento`, degradando a `null` cuando el registro falla. */
+export async function getProveedorPorDocumento(
+  documento: string,
+): Promise<ProveedorRegistro | null> {
+  return fichaPorDocumento(documento).catch(() => null);
+}
+
+/**
+ * Cuántos proveedores hay inscritos en el RPE. Es un **censo** declarado por
+ * el origen —a diferencia de casi todo lo que se lee de `/contratos`—, así que
+ * sí puede ser el denominador de algo. Una sola consulta de un registro.
+ */
+export async function contarProveedoresRegistrados(): Promise<number | null> {
+  const data = await dgcpFetch<ProveedorRaw>("/proveedores", { limit: 1 }, 86400).catch(
+    () => null,
+  );
+  return data?.totalResults ?? null;
+}
+
+/**
+ * Fichas de registro de varios proveedores, en oleadas de `lote` para no abrir
+ * una docena de conexiones a la vez contra la DGCP (misma disciplina de
+ * concurrencia conservadora que el resto de la casa). Cada consulta se cachea
+ * 24 h, así que a partir del primer render el enriquecimiento sale gratis.
+ */
+export async function registrosDeProveedores(
+  rpes: string[],
+  lote = 4,
+): Promise<Map<string, ProveedorRegistro>> {
+  const fichas = new Map<string, ProveedorRegistro>();
+  for (let i = 0; i < rpes.length; i += lote) {
+    const tanda = await Promise.all(
+      rpes.slice(i, i + lote).map((rpe) => getProveedorRegistro(rpe).catch(() => null)),
+    );
+    for (const f of tanda) if (f) fichas.set(f.rpe, f);
+  }
+  return fichas;
+}
+
+/* --------------------------------------------- buscar a un proveedor */
+
+/** Por cuál de los dos caminos se resolvió la consulta. */
+export type ViaProveedor = "rpe" | "documento" | "nombre";
+
+export interface ResultadoProveedores {
+  /** Lo que se buscó, ya recortado. */
+  consulta: string;
+  via: ViaProveedor;
+  /** Coincidencia exacta en el registro completo (solo por RPE o documento). */
+  registro: ProveedorRegistro | null;
+  /** Su posición en la ventana de contratos, si aparece en ella. */
+  enVentana: ProveedorEnMercado | null;
+  /** Coincidencias por nombre **dentro de la ventana**, de mayor a menor monto. */
+  coincidencias: ProveedorEnMercado[];
+  /** Cuántas había antes de recortar la lista. */
+  totalCoincidencias: number;
+  /** Base declarada de la búsqueda por nombre. */
+  contratosEscaneados: number;
+  contratosEnRegistro: number;
+  proveedoresEnVentana: number;
+  desde: string | null;
+  hasta: string | null;
+  /** El registro de proveedores no contestó: distinto de «no está inscrito». */
+  registroCaido: boolean;
+  /** La ventana de contratos no contestó: distinto de «no hay coincidencias». */
+  ventanaCaida: boolean;
+  /** No se buscó por nombre porque la consulta era demasiado corta. */
+  consultaCorta: boolean;
+}
+
+/** Cuántas coincidencias por nombre se devuelven como máximo. */
+const MAX_COINCIDENCIAS = 60;
+
+/** Por debajo de esto, buscar por nombre devuelve media plataforma. */
+const MIN_LETRAS_NOMBRE = 3;
+
+/**
+ * Buscar un proveedor. Los dos caminos que ofrece esta función no son
+ * equivalentes, y la interfaz está obligada a decir cuál usó:
+ *
+ *  - **RPE o documento (RNC/cédula)** — exacto y sobre el **registro completo**
+ *    (~128 mil inscritos). `rpe` y `numero_documento` son los dos únicos
+ *    filtros que la API honra.
+ *  - **Nombre** — la API no busca por razón social, y el registro **no se
+ *    puede barrer**: hay páginas que devuelven 500 de forma permanente
+ *    (docs/AUDITORIA.md §A.12). Así que un nombre solo se puede buscar dentro
+ *    de la ventana de contratos recientes: quien no haya ganado nada
+ *    últimamente no aparece, y `contratosEscaneados` obliga a declararlo.
+ *
+ * `mercadoPendiente` deja que la página pase el barrido que ya está leyendo,
+ * para no recorrer y agregar seis mil contratos dos veces en el mismo render.
+ */
+export async function buscarProveedores(
+  q: string,
+  mercadoPendiente?: Promise<MercadoProveedores | null>,
+): Promise<ResultadoProveedores> {
+  const consulta = q.trim();
+  const soloDigitos = consulta.replace(/\D/g, "");
+  // «1-01-87008-7», «101 87008 7» y «101870087» son el mismo RNC. Un texto con
+  // letras nunca es un número de documento, por mucho dígito que lleve.
+  const esNumero =
+    soloDigitos.length > 0 &&
+    soloDigitos.length <= 11 &&
+    /^[\d\s.-]+$/.test(consulta);
+
+  // Un RNC tiene 9 dígitos y una cédula 11: a esa longitud la consulta es antes
+  // un documento que un RPE. Con menos dígitos, al revés. La corazonada decide
+  // el **orden**, no el ganador: se consulta la probable y solo si falla la
+  // otra, que es una petición al registro en vez de dos.
+  const pareceDocumento = soloDigitos.length === 9 || soloDigitos.length === 11;
+
+  const buscarEnRegistro = async (): Promise<{
+    registro: ProveedorRegistro | null;
+    via: ViaProveedor;
+    caido: boolean;
+  }> => {
+    const intentos: { via: ViaProveedor; leer: () => Promise<ProveedorRegistro | null> }[] =
+      pareceDocumento
+        ? [
+            { via: "documento", leer: () => fichaPorDocumento(soloDigitos) },
+            { via: "rpe", leer: () => fichaPorRpe(soloDigitos) },
+          ]
+        : [
+            { via: "rpe", leer: () => fichaPorRpe(soloDigitos) },
+            { via: "documento", leer: () => fichaPorDocumento(soloDigitos) },
+          ];
+
+    let algunaRespondio = false;
+    for (const intento of intentos) {
+      try {
+        const registro = await intento.leer();
+        algunaRespondio = true;
+        // La vía que devuelve la ficha es la que se declara: nada de deducirla
+        // comparando números, que se equivoca con un RPE tecleado con ceros.
+        if (registro) return { registro, via: intento.via, caido: false };
+      } catch {
+        // Se prueba la otra vía; si ninguna responde, el registro está caído.
+      }
+    }
+    return {
+      registro: null,
+      via: intentos[0].via,
+      caido: !algunaRespondio,
+    };
+  };
+
+  const [enRegistro, mercado] = await Promise.all([
+    esNumero
+      ? buscarEnRegistro()
+      : Promise.resolve({ registro: null, via: "nombre" as ViaProveedor, caido: false }),
+    mercadoPendiente ?? muestrearProveedores().catch(() => null),
+  ]);
+
+  const via: ViaProveedor = esNumero ? enRegistro.via : "nombre";
+  const proveedores = mercado?.proveedores ?? [];
+  const clave = enRegistro.registro?.rpe ?? (esNumero ? soloDigitos : null);
+  const enVentana = clave ? (proveedores.find((p) => p.rpe === clave) ?? null) : null;
+
+  const aguja = normalize(consulta);
+  const consultaCorta = !esNumero && aguja.length < MIN_LETRAS_NOMBRE;
+  const todas =
+    !esNumero && !consultaCorta
+      ? proveedores.filter((p) => normalize(p.razonSocial).includes(aguja))
+      : [];
+
+  return {
+    consulta,
+    via,
+    registro: enRegistro.registro,
+    enVentana,
+    coincidencias: todas.slice(0, MAX_COINCIDENCIAS),
+    totalCoincidencias: todas.length,
+    contratosEscaneados: mercado?.escaneados ?? 0,
+    contratosEnRegistro: mercado?.totalRegistro ?? 0,
+    proveedoresEnVentana: proveedores.length,
+    desde: mercado?.desde ?? null,
+    hasta: mercado?.hasta ?? null,
+    registroCaido: enRegistro.caido,
+    ventanaCaida: mercado === null,
+    consultaCorta,
   };
 }
 

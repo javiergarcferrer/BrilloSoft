@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getCountIniciativas, getPeriodos } from "@/lib/congreso";
+import { contarProveedoresRegistrados } from "@/lib/dgcp";
 import { CUATRIENIOS, getCensoSenado } from "@/lib/senado";
 import { getDeuda } from "@/lib/deuda";
 import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
@@ -17,14 +18,16 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function FuentesPage() {
-  const [censo, periodos, censoSenado, nomina, deuda, fiscal] = await Promise.all([
-    getCountIniciativas(),
-    getPeriodos(),
-    getCensoSenado(),
-    getResumenNomina(),
-    getDeuda(),
-    getResumenFiscal(),
-  ]);
+  const [censo, periodos, censoSenado, nomina, deuda, fiscal, proveedores] =
+    await Promise.all([
+      getCountIniciativas(),
+      getPeriodos(),
+      getCensoSenado(),
+      getResumenNomina(),
+      getDeuda(),
+      getResumenFiscal(),
+      contarProveedoresRegistrados(),
+    ]);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -70,16 +73,37 @@ export default async function FuentesPage() {
             de constitución de cada empresa—, el <strong>catálogo UNSPSC</strong>{" "}
             y los <strong>planes anuales de compra</strong> de cada institución.
           </p>
+          <p className="mt-2">
+            El registro de proveedores tiene su propio índice en{" "}
+            <Link
+              href="/proveedores"
+              className="font-medium text-brand-700 hover:underline"
+            >
+              ¿Quién le vende al Estado?
+            </Link>
+            , con dos caminos que no son equivalentes y que la página distingue:
+            por <strong>RNC, cédula o número de RPE</strong> se consulta el
+            registro completo
+            {proveedores !== null && <> —{formatInt(proveedores)} inscritos—</>},
+            mientras que{" "}
+            <strong>por nombre</strong> solo se puede buscar entre quienes
+            ganaron contratos en las últimas semanas.
+          </p>
           <p className="mt-2 text-xs text-ink-soft">
             Las búsquedas por texto escanean hasta 6 páginas de 1000 registros
             dentro del rango de fechas; cuando el barrido no cubre todo, la
-            interfaz lo advierte en vez de fingir un resultado completo. Dos
+            interfaz lo advierte en vez de fingir un resultado completo. Cuatro
             límites del origen que la interfaz declara donde tocan: el estado de
             evaluación de las ofertas llega casi siempre vacío —quién ganó lo
-            dicen los contratos— y el filtro de período de los planes no
-            funciona, así que el año se filtra aquí. Del registro de proveedores
-            omitimos a propósito teléfonos y correos: esto vigila al Estado, no
-            es un directorio comercial.
+            dicen los contratos—; el filtro de período de los planes no
+            funciona, así que el año se filtra aquí; el registro de contratos no
+            admite filtro por fecha, así que los rankings describen una ventana
+            reciente y no todo el histórico; y el registro de proveedores no se
+            puede buscar por razón social ni recorrer entero —hay páginas que
+            devuelven error de forma permanente—, por lo que la búsqueda por
+            nombre se hace sobre esa misma ventana y lo dice junto al resultado.
+            Del registro de proveedores omitimos además a propósito teléfonos y
+            correos: esto vigila al Estado, no es un directorio comercial.
           </p>
         </Fuente>
 

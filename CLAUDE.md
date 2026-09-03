@@ -191,6 +191,24 @@ Four more endpoints of the same API, added after the second source audit
   the registry's phone/e-mail/contact fields: public by registry, but this is a
   watchdog, not a business directory.
 - `getSubclase(subclase)` — **`/catalogo`**: plain-language UNSPSC names.
+The supplier register is a **lookup, not a listing** (`docs/AUDITORIA.md` §A.12):
+127,896 inscribed, ordered by `rpe` ascending, and only `rpe` and
+`numero_documento` (9-digit RNC / 11-digit cédula, exact) actually filter —
+`estado`/`provincia`/`region` are recognised names that 500 on every value, and
+`razon_social`/`nombre`/`q` are silently ignored. Worse, **it cannot be swept**:
+some pages return a permanent 500. So the layer offers:
+- `getProveedorPorDocumento(doc)` — by RNC or cédula, digits normalised and
+  retried zero-padded to 11 (the register stores cédulas that way).
+- `contarProveedoresRegistrados()` — the census, the one figure here that may
+  be a denominator.
+- `registrosDeProveedores(rpes)` — registry cards in waves of 4.
+- `muestrearProveedores()` — who is actually winning, aggregated **by RPE**
+  over the same recent-contracts window `muestrearContratos` scans (both go
+  through `paginasDeContratos`, so they share the fetch cache — keep the page
+  count equal or the sharing breaks). It is a **sample**, never the census.
+- `buscarProveedores(q)` — resolves a query by RPE, by document or by name; the
+  name path can only search the window, and `ResultadoProveedores` carries the
+  base (`contratosEscaneados`, `desde`/`hasta`) so the UI must declare it.
 - `listPacc({periodo})` — **`/pacc`**: each unit's annual purchasing plan, the
   earliest signal the State publishes. Its `periodo` filter is ignored
   upstream, so the year is filtered server-side.
@@ -218,8 +236,10 @@ preserving the acronyms in parentheses.
 ### API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return
 `502` on upstream failure: `procesos` (search/list), `precios?subclase=`
-(validates `subclase` against a digit regex), `unidades`, and `feed` (renders an
-**RSS 2.0** feed of the last 30 days for a saved search — the alerting mechanism).
+(validates `subclase` against a digit regex), `unidades`, `proveedores?q=`
+(the supplier lookup/market, same 30-min window as the page) and `feed` (renders
+an **RSS 2.0** feed of the last 30 days for a saved search — the alerting
+mechanism).
 **The pattern for any new data capability: add a function in `lib/dgcp.ts`, then
 a force-dynamic route here that wraps it.**
 
@@ -323,6 +343,13 @@ sources impose:
   `"Proceso publicado"`).
 - `/procesos/[codigo]` → server detail page, with `precios.tsx` (client),
   `loading.tsx`, `not-found.tsx`.
+- `/proveedores` → «¿Quién le vende al Estado?»: the supplier index. Search
+  lives in the **URL** (`?q=`) and the page states which of the two very
+  different paths answered it — exact (RPE/RNC/cédula, over the whole register)
+  or by name (only over the recent-contracts window). Below it, who wins most
+  money and who wins most contracts, plus the registry cards of the ten biggest,
+  streamed in their own `Suspense` because that panel costs one lookup per
+  supplier.
 - `/proveedores/[rpe]` → supplier profile: contract history plus the RPE
   registry card (RNC, legal form, incorporation date, MIPYME status).
 - `/planes` → annual purchasing plans (PACC) for the current year.

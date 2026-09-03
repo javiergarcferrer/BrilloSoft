@@ -35,7 +35,14 @@ export default function TopSearch() {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-  const spq = sp.get("q") ?? "";
+  /*
+    Solo el `?q=` del buscador es suyo. Otras vistas de la vertical usan el
+    mismo nombre de parámetro para su propia búsqueda —`/proveedores?q=` busca
+    en el registro de proveedores—, y reflejarlo aquí pondría el término de una
+    búsqueda bajo la etiqueta «Buscar licitaciones…»: exactamente la trampa
+    cognitiva que este campo dice evitar. Fuera del buscador arranca vacío.
+  */
+  const spq = pathname === BUSCADOR ? (sp.get("q") ?? "") : "";
 
   const [text, setText] = useState(spq);
   const [open, setOpen] = useState(false);

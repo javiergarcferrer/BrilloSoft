@@ -13,7 +13,7 @@ https://brillo-soft.vercel.app
 | Vertical | Rutas | Fuente | Capa de datos |
 |---|---|---|---|
 | Panorama | `/` | Todas las de abajo | `app/page.tsx` |
-| Licitaciones | `/licitaciones`, `/procesos/[codigo]`, `/proveedores/[rpe]`, `/estadisticas`, `/contratos`, `/planes`, `/seguimiento`, `/guia` | [API de datos abiertos de la DGCP](https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html) | `lib/dgcp.ts` |
+| Licitaciones | `/licitaciones`, `/procesos/[codigo]`, `/proveedores`, `/proveedores/[rpe]`, `/estadisticas`, `/contratos`, `/planes`, `/seguimiento`, `/guia` | [API de datos abiertos de la DGCP](https://datosabiertos.dgcp.gob.do/api-dgcp/docs/index.html) | `lib/dgcp.ts` |
 | Finanzas | `/finanzas`, `/finanzas/[capitulo]` | API de datos abiertos del SIGEF (Hacienda), en instantánea | `lib/fiscal.ts`, `lib/capitulos.ts`, `public/data/fiscal.json` |
 | Congreso | `/congreso`, `/congreso/[id]`, `/congreso/perencion`, `/congreso/senado`, `/congreso/senado/[cuatrienio]/[id]` | SIL de Diputados (API JSON interna) y consultante del Senado (HTML) | `lib/congreso.ts`, `lib/senado.ts`, `lib/legislacion.ts` |
 | Normativa | `/normativa`, `/normativa/[tipo]/[numero]` | Consultoría Jurídica del Poder Ejecutivo | `lib/normativa.ts` |
@@ -32,9 +32,13 @@ Crédito Público (`lib/deuda.ts`), con instantánea local de respaldo en
 (estado, modalidad, institución, fechas, MIPYMES) que viven en la URL. Detalle
 por proceso con cronograma, artículos, pliego legible en la página, precios
 históricos de adjudicación por subclase UNSPSC, quién ofertó y quién ganó.
-Ficha del proveedor con su historial y su registro RPE. Planes anuales de
-compras (PACC) del año en curso. Seguimiento en el navegador, exportación CSV
-y RSS por búsqueda (`/api/feed`).
+Índice de proveedores del Estado: quién más se adjudica y quién más contratos
+gana en la ventana reciente, con la ficha de registro de los mayores, y
+búsqueda por RNC, cédula o número de RPE contra el registro completo —la
+búsqueda por nombre solo alcanza esa ventana, y la página lo dice—. Ficha del
+proveedor con su historial y su registro RPE. Planes anuales de compras (PACC)
+del año en curso. Seguimiento en el navegador, exportación CSV y RSS por
+búsqueda (`/api/feed`).
 
 **Finanzas.** Ejecución del presupuesto por institución y mes (vigente,
 comprometido, devengado, pagado). El SIGEF tarda demasiado para leerse en

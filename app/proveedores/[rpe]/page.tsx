@@ -73,11 +73,11 @@ export default async function ProveedorPage({
   return (
     <div className="space-y-5">
       <Link
-        href="/licitaciones"
+        href="/proveedores"
         className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
       >
         <IconArrowLeft className="h-4 w-4" />
-        Volver al buscador
+        Proveedores del Estado
       </Link>
 
       <section className="rounded-lg bg-surface p-6 border border-hairline">

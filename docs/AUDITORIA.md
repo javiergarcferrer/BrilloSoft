@@ -605,7 +605,7 @@ Misma API que ya integra `lib/dgcp.ts`, mismo adaptador, **cero hosts nuevos**:
 | Endpoint | Contenido | Por qué importa |
 |---|---|---|
 | `/ofertas` | `id_oferta, codigo_proceso, rpe, razon_social, valor_oferta, estado_oferta, estado_evaluacion, tipo_oferta, fecha_entrega_oferta, fecha_evaluacion` | **Quién compitió, no solo quién ganó**: procesos de oferente único, parejas que siempre concursan juntas, ofertas descartadas |
-| `/proveedores` | `rpe, razon_social, tipo_documento, numero_documento (RNC), estado, tipo_persona, forma_juridica, fecha_creacion_empresa, fecha_registro_rpe, numero_registro_mercantil, es_mipyme, certificacion_micm, clasificacion_empresarial, provincia, municipio…` (35 campos) | Perfil real en `/proveedores/[rpe]`, hoy construido solo a partir de contratos. **Trae el RNC**: es la llave de unión con §A.2 sin depender de la DGII |
+| `/proveedores` | `rpe, razon_social, tipo_documento, numero_documento (RNC), estado, tipo_persona, forma_juridica, fecha_creacion_empresa, fecha_registro_rpe, numero_registro_mercantil, es_mipyme, certificacion_micm, clasificacion_empresarial, provincia, municipio…` (35 campos) | Perfil real en `/proveedores/[rpe]`, hoy construido solo a partir de contratos. **Trae el RNC**: es la llave de unión con §A.2 sin depender de la DGII. Mecánica de campo verificada en **§A.12** |
 | `/catalogo` | UNSPSC completo: segmento → familia → clase → subclase, con definición y sinónimos | Da nombre legible a las subclases que ya usa `getPreciosSubclase` |
 | `/pacc` | Planes anuales de compras por unidad, con período, versión, responsable y URL | **Lo que el Estado planea comprar** antes de publicarlo: señal anticipada |
 
@@ -766,6 +766,49 @@ detrás de un voto hay una persona real y única) sin tocar el padrón.
   encima de la sesión, verificado en una Edge Function (PLAN §9.2).
 
 Diseño, invariantes y pasos del dueño: PLAN-DEMOCRACIA §9.
+
+### A.12 DGCP `/proveedores` — el registro se consulta, no se recorre (añadido 2026-09-03)
+
+Reconocimiento hecho al construir el índice `/proveedores`. Comprobado contra
+el servidor con el UA identificable, GET y pocas peticiones:
+
+- ✅ **Censo**: **127,896 proveedores inscritos** (`totalResults` con
+  `limit=1`). Es un censo que declara el origen: sí puede ser denominador.
+- ✅ **Orden**: por `rpe` **ascendente**. La página 1 son las inscripciones más
+  antiguas (`rpe` 1…1070), no las recientes. El `rpe` no es contiguo.
+- ✅ **Filtros que la API honra**: `rpe` y `numero_documento` —RNC de 9 dígitos
+  o cédula de 11—. Ambos **exactos**: un prefijo (`10187`) devuelve 0. Ambos
+  responden en 1–4 s. El registro guarda las cédulas rellenadas con ceros a la
+  izquierda (`00200083343`), así que la consulta prueba también esa forma.
+- ⚠️ `estado`, `provincia` y `region` son nombres que el servidor **reconoce**
+  pero devuelven **500 con cualquier valor probado** (`Activo`, `ACTIVO`,
+  `activo`, `Inactivo`, `1`, `SANTIAGO`, `01`, `OZAMA`). Inservibles: no hay
+  forma de listar «los proveedores activos de Santiago».
+- ❌ **No hay búsqueda por razón social**: `razon_social`, `proveedor`,
+  `nombre`, `q`, `rnc`, `documento`, `mipyme`, `provee`, `clasificacion` y
+  `forma_juridica` se **ignoran en silencio** (devuelven el registro entero con
+  `totalResults` intacto). El silencio es lo peligroso: parece que filtró.
+- ❌ **El registro no se puede recorrer entero.** Hay páginas que devuelven
+  **500 de forma permanente**, reproducido dos veces cada una: con `limit=200`
+  las páginas 11 y 12 (registros 2001–2400) y **toda la cola** (639–640); con
+  `limit=1000` la página 3; con `limit=50` la cola entera (2553–2558). No es un
+  límite de profundidad —la página 300 de 640 responde bien—: son registros que
+  rompen la serialización del origen. Y `limit=1000` tarda 10–50 s por página:
+  128 páginas no son lectura en vivo ni con caché diario.
+
+**Consecuencia de diseño, ya aplicada en `/proveedores`** (`lib/dgcp.ts`:
+`buscarProveedores`, `muestrearProveedores`, `getProveedorPorDocumento`):
+
+1. La búsqueda **exacta** (RPE, RNC, cédula) va contra el **registro completo**
+   y es la vía que hay que ofrecer primero.
+2. La búsqueda **por nombre** no puede ir contra el registro, así que va contra
+   la **ventana de contratos recientes agregada por RPE** — la misma muestra que
+   alimenta `/contratos`, con la que comparte caché— y la interfaz declara esa
+   base junto al resultado.
+3. **No se construye instantánea del padrón de proveedores.** Un barrido con
+   huecos permanentes no da un censo fiable, y un censo a medias mentiría peor
+   que la ausencia. Si algún día hiciera falta el padrón completo, la vía es el
+   RNC de la DGII (§A.2), no este endpoint.
 
 ## B. Bloqueos confirmados
 
