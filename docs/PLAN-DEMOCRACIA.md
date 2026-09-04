@@ -213,8 +213,28 @@ vuelta buena del enlace se consume sola.
 
 Lo que sigue siendo acción de panel (no de código): poner el dominio de
 producción como Site URL, añadirlo a la lista de redirecciones y meter
-`{{ .Token }}` en la plantilla de Magic Link para que el correo traiga los seis
-dígitos. Con eso, dos de los cinco caminos dejan de hacer falta.
+`{{ .Token }}` en las plantillas de correo para que traigan los seis dígitos.
+Con eso, dos de los cinco caminos dejan de hacer falta.
+
+**Las plantillas están escritas**, en la identidad de la plataforma y sin
+enlace —solo el código—, listas para pegar en el panel:
+`supabase/templates/magic-link.html` y `supabase/templates/confirm-signup.html`.
+Son **dos** porque GoTrue usa una u otra según el caso: comprobado en los logs
+de Auth del proyecto, una petición de quien ya existe sale como
+`mail_type: magic_link`; un correo nuevo entra por el alta y sale con la
+plantilla de confirmación. Cambiar solo una deja al primer registro de cada
+persona con el comportamiento viejo.
+
+Sin enlace a propósito: el enlace se gasta al pulsarlo, y los escáneres de
+correo corporativos lo pulsan solos antes que el destinatario. Seis dígitos no
+se gastan por accidente. Si algún día el Site URL apunta a producción y se
+quiere el enlace de vuelta, es una línea:
+`<a href="{{ .ConfirmationURL }}">Entrar directamente</a>`.
+
+⚠️ **El remitente sigue siendo el SMTP por defecto de Supabase**
+(`noreply@mail.app.supabase.io`, medido en los logs), que Supabase limita a
+unos pocos correos por hora y declara no apto para producción. Antes de abrir
+el piloto hay que poner SMTP propio en el panel — es otra acción del dueño.
 
 ---
 
