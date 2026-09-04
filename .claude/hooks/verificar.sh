@@ -58,11 +58,32 @@ if printf '%s\n' "$nuevos" | grep -qE '^lib/[a-z-]+\.ts$'; then
   else ok "new adapter is declared in /fuentes or CLAUDE.md"; fi
 fi
 
+# 5b. The harness's own claims (ceiling, paths, rule ownership, frontmatter).
+if arn="$("$(dirname "$0")/harness.sh" "$ROOT" 2>&1)" && [ -z "$arn" ]; then
+  ok "harness: CLAUDE.md within budget, paths resolve, rules own a page, frontmatter valid"
+else
+  mal "harness drift"; printf '%s\n' "$arn" | sed 's/^/       /'
+fi
+
 # 6. Build (completo only).
 LOG="${TMPDIR:-/tmp}/socratico-build.log"
 if [ "$modo" = "--completo" ]; then
   if timeout 600 npm run build >"$LOG" 2>&1; then ok "npm run build"; rm -f "$LOG"
   else mal "npm run build (see $LOG)"; tail -30 "$LOG" | sed 's/^/       /'; fi
+fi
+
+# 7. The stamp. `main` deploys to production on every push, so the gate has to
+# sit IN FRONT of the push — CI behind it cannot un-ship a red. A full green on
+# a clean tree stamps HEAD's sha in .git/harness-gate; guard-bash.sh refuses a
+# push to main without a stamp that matches. A rebase or a new commit voids it
+# on purpose: the pre-rebase green never counts for the tree being pushed.
+if [ "$fallos" -eq 0 ] && [ "$modo" = "--completo" ]; then
+  if [ -z "$(git status --porcelain 2>/dev/null)" ]; then
+    git rev-parse HEAD > "$(git rev-parse --git-dir)/harness-gate" 2>/dev/null \
+      && ok "stamped $(git rev-parse --short HEAD) — push to main allowed"
+  else
+    ok "not stamped: working tree dirty (commit, then re-run to earn the push)"
+  fi
 fi
 
 if [ "$fallos" -eq 0 ]; then echo "RESULT: clean"; exit 0; else echo "RESULT: $fallos failure(s)"; exit 1; fi

@@ -11,16 +11,18 @@ main unverified, and nothing stays in a container: the session is ephemeral.
 ## 1. Documentation is memory
 Before committing, update whatever the next session would otherwise have to
 rediscover:
-- A new or changed source → `app/fuentes/page.tsx` (coverage, limits,
-  blocks) and the data-layer note in `CLAUDE.md`; verified mechanics and
-  quirks → `docs/RECON.md` (Congress) or `docs/AUDITORIA.md` (everything else), with
-  the ✅/⚠️/❌ convention.
-- A new route or vertical → `lib/secciones.ts`, `README.md` feature list,
-  `CLAUDE.md` pages table.
+Cada cosa tiene una página dueña — `docs/HARNESS.md` §4 dice cuál:
+- A new or changed source → `app/fuentes/page.tsx` (coverage, limits, blocks)
+  and the data-layer note in `docs/ARQUITECTURA.md`; verified mechanics and
+  quirks → `docs/RECON.md` (Congress) or `docs/AUDITORIA.md` (everything else),
+  with the ✅/⚠️/❌ convention.
+- A new route or vertical → `lib/secciones.ts`, `README.md` feature list, the
+  domain table in `CLAUDE.md`.
 - A new invariant or a rule you had to learn the hard way → the matching
   `.claude/rules/*.md`, one line, with the file that proves it.
-- A decision the owner must make → `CLAUDE.md` §"Open decisions", not a
-  question in chat.
+- A decision the owner must make → `docs/DECISIONES.md`, dated, not a question
+  in chat.
+- Anything that changes how a session is shaped → `docs/HARNESS.md`.
 
 ## 2. Gate
 ```bash
@@ -37,13 +39,22 @@ Red means not delivered. Fix, re-run.
   them). Keep the attribution trailers the session harness requires.
 - One commit per coherent change; do not bundle unrelated fixes.
 
-## 4. Push
+## 4. Push — el gate va sobre el árbol que se empuja
 ```bash
 git fetch origin main
-git rebase origin/main        # other sessions push to main too
-./.claude/hooks/verificar.sh --rapido
+git rebase origin/main                      # other sessions push to main too
+./.claude/hooks/verificar.sh --completo     # sobre el árbol YA rebasado
 git push -u origin main
 ```
+El paso 2 verificó el árbol de antes del rebase; el que se despliega es este.
+Por eso el gate completo se repite aquí y no basta con `--rapido`: `main`
+despliega a producción en cada push y nada detrás puede des-publicar un rojo.
+
+No es una recomendación. En verde y con el árbol limpio, `verificar.sh
+--completo` estampa el sha de HEAD en `.git/harness-gate`, y `guard-bash.sh`
+rechaza el push si falta la estampa, es de otro commit o el árbol se movió. Un
+rebase o un commit nuevo la anulan a propósito.
+
 On a network failure retry with backoff (2 s, 4 s, 8 s, 16 s). Never force,
 never a different branch. If the rebase conflicts, resolve keeping both
 behaviors and re-run the full gate before pushing.

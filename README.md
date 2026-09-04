@@ -87,14 +87,16 @@ lib/          capas de datos, formato y arquitectura de información
 public/data/  instantáneas generadas (nómina, deuda, fiscal)
 scripts/      generadores de instantáneas (Python)
 supabase/     migraciones y Edge Function del esquema democracia
-docs/         reconocimiento de fuentes, identidad visual y plan de Democracia
+docs/         arquitectura, identidad, fuentes, Democracia, decisiones y harness
 .claude/      arnés de sesiones: reglas, hooks (la compuerta), skills y agentes
 ```
 
-Guía para trabajar en el código: `CLAUDE.md`. Identidad visual:
+Guía para trabajar en el código: `CLAUDE.md`, que enruta cada pregunta a su
+página. Arquitectura y primitivas: `docs/ARQUITECTURA.md`. Identidad visual:
 `docs/IDENTIDAD.md`. Reconocimiento de fuentes: `docs/RECON.md` (Congreso) y
 `docs/AUDITORIA.md` (resto del Estado). Plan de la vertical con base de datos:
-`docs/PLAN-DEMOCRACIA.md`.
+`docs/PLAN-DEMOCRACIA.md`. Decisiones abiertas y cerradas: `docs/DECISIONES.md`.
+Qué archivos moldean una sesión de Claude: `docs/HARNESS.md`.
 
 ## Desarrollo
 
