@@ -44,8 +44,11 @@ Red means not delivered. Fix, re-run.
 git fetch origin main
 git rebase origin/main                      # other sessions push to main too
 ./.claude/hooks/verificar.sh --completo     # sobre el árbol YA rebasado
-git push -u origin main
+git push origin HEAD:main
 ```
+`HEAD:main`, no `-u origin main`: una sesión trabaja en la rama `claude/*` que
+el harness le asigna, así que no hay una rama `main` local que empujar y la
+otra forma falla con «src refspec main does not match any».
 El paso 2 verificó el árbol de antes del rebase; el que se despliega es este.
 Por eso el gate completo se repite aquí y no basta con `--rapido`: `main`
 despliega a producción en cada push y nada detrás puede des-publicar un rojo.
