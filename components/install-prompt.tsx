@@ -18,6 +18,22 @@ export default function InstallPrompt() {
   const [evt, setEvt] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
 
+  /*
+    Mientras la oferta está en pantalla, la esquina inferior derecha es suya:
+    el botón de «volver arriba» vive exactamente ahí y quedaba tapado debajo
+    (z-40 contra z-60). Se marca en el `html` y `globals.css` aparta el botón;
+    al descartar, vuelve. Son dos afordancias flotantes en el mismo sitio, y
+    solo una puede estar a la vez.
+  */
+  useEffect(() => {
+    const raiz = document.documentElement;
+    if (show) raiz.dataset.ofertaInstalar = "1";
+    else delete raiz.dataset.ofertaInstalar;
+    return () => {
+      delete raiz.dataset.ofertaInstalar;
+    };
+  }, [show]);
+
   useEffect(() => {
     if (localStorage.getItem(KEY)) return;
     const handler = (e: Event) => {
@@ -47,9 +63,21 @@ export default function InstallPrompt() {
     dismiss();
   };
 
+  /*
+    El desplazamiento inferior existe para librar la tab bar móvil (4.5rem más
+    el área segura, la misma que el `body` se reserva de relleno). En escritorio
+    esa barra es `lg:hidden`, y la regla se quedaba a medias: se sobrescribía la
+    posición horizontal (`lg:inset-x-auto lg:right-4`) pero no la vertical, así
+    que el aviso seguía flotando 84 px por encima del borde para esquivar algo
+    que no está — y se plantaba encima de las cifras de deuda del panorama en
+    vez de quedarse en su esquina. `lg:bottom-4` lo empareja con `lg:right-4`:
+    en escritorio es una esquina, no una banda a media altura.
+  */
   return (
     <div
-      className="fixed inset-x-3 z-[60] rounded-lg border border-hairline bg-surface p-3.5 shadow-card bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:inset-x-auto lg:right-4 lg:max-w-sm"
+      role="complementary"
+      aria-label="Instalar la aplicación"
+      className="fixed inset-x-3 z-[60] rounded-lg border border-hairline bg-surface p-3.5 shadow-card bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:inset-x-auto lg:bottom-4 lg:right-4 lg:max-w-sm"
     >
       <div className="flex items-center gap-3">
         <SelloCompacto className="h-11 w-11 shrink-0" />

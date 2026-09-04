@@ -263,6 +263,17 @@
   contain-intrinsic-size: auto var(--cv-alto, 7rem);
 }
 
+/*
+  Dos afordancias flotantes comparten la esquina inferior derecha: el aviso de
+  instalación y el botón de «volver arriba». El aviso va en z-60 y el botón en
+  z-40, así que el botón quedaba oculto debajo en vez de apartarse. Mientras la
+  oferta está en pantalla —una vez por visitante, y se descarta para siempre—
+  la esquina es suya y el botón se retira.
+*/
+[data-oferta-instalar] .boton-subir {
+  display: none;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
