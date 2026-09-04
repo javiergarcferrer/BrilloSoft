@@ -58,7 +58,7 @@ export default function SeguimientoPage() {
           <IconStar className="h-5 w-5 text-alerta-500" filled />
           Mi seguimiento
           {procesos.length > 0 && (
-            <span className="ml-1 rounded-full bg-canvas px-2 py-0.5 text-xs font-semibold text-ink-soft">
+            <span className="ml-1 rounded-md bg-canvas px-2 py-0.5 text-xs font-semibold text-ink-soft">
               {procesos.length}
             </span>
           )}
@@ -87,7 +87,7 @@ export default function SeguimientoPage() {
           </p>
           <Link
             href="/licitaciones"
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 active:scale-95"
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-brand-700 active:scale-95"
           >
             <IconSearch className="h-4 w-4" />
             Ir al buscador

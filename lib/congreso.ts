@@ -16,6 +16,8 @@
  *  3. **User-Agent identificable**, y ritmo conservador.
  */
 
+import type { Tono } from "@/lib/estados";
+
 const BASE = "https://www.diputadosrd.gob.do/sil/api";
 
 const USER_AGENT =
@@ -304,16 +306,33 @@ export function separarTitulo(descripcion: string): {
   return { titulo: titulo || descripcion, tituloModificado: modificado || null };
 }
 
-export type CondicionTono = "vigente" | "aprobado" | "perimido" | "neutro";
+/**
+ * El tono de una condición procesal es el mismo lenguaje de color que el de un
+ * proceso de compras: `lib/estados.ts` lo define una sola vez para toda la
+ * plataforma y aquí solo se **traduce** el vocabulario de la cámara.
+ *
+ * El reparto importa, y antes estaba invertido. Una pieza *promulgada* llegó
+ * al final de su trámite: es `cumplido`, el verde de archivo que la identidad
+ * reserva justo para eso —y que este módulo le daba a una pieza recién
+ * depositada—. Una pieza *depositada o en comisión* sigue abierta a que
+ * alguien haga algo —leerla, opinarla, empujarla—: es `accionable`, igual que
+ * una licitación que aún admite ofertas. Una pieza *perimida* se cayó sin
+ * llegar a nada: el sello.
+ *
+ * Rechazada y retirada se quedan en `contexto` a propósito: también murieron,
+ * pero el sello se gasta si marca a todos los muertos, y la perención es la
+ * única de las tres que la plataforma vigila (`/congreso/perencion`).
+ */
+export type CondicionTono = Tono;
 
 /** Agrupa la condición del SIL en el tono semántico que usa la UI. */
 export function tonoDeCondicion(condicion: string | null | undefined): CondicionTono {
   const c = (condicion ?? "").toUpperCase();
-  if (c.includes("PERIMID")) return "perimido";
-  if (c.includes("APROBAD") || c.includes("PROMULGAD")) return "aprobado";
-  if (c.includes("RECHAZAD") || c.includes("RETIRAD")) return "neutro";
-  if (c.includes("VIGENTE") || c.includes("DEPOSITAD")) return "vigente";
-  return "neutro";
+  if (c.includes("PERIMID")) return "anulado";
+  if (c.includes("APROBAD") || c.includes("PROMULGAD")) return "cumplido";
+  if (c.includes("RECHAZAD") || c.includes("RETIRAD")) return "contexto";
+  if (c.includes("VIGENTE") || c.includes("DEPOSITAD")) return "accionable";
+  return "contexto";
 }
 
 export interface Iniciativa {
@@ -360,7 +379,7 @@ export function normalizarIniciativa(raw: SilIniciativa): Iniciativa {
     condicion,
     estado: limpiarTexto(raw.estado) || null,
     tono,
-    viva: tono === "vigente",
+    viva: tono === "accionable",
     legislatura: limpiarTexto(raw.legislatura) || null,
     periodoRegistro: limpiarTexto(raw.periodoRegistro) || null,
     fechaDeposito: raw.fechaDeposito,
@@ -596,9 +615,9 @@ export function resumirIniciativas(iniciativas: Iniciativa[]): ResumenLegislativ
   const grupos = new Map<string, number>();
 
   for (const ini of iniciativas) {
-    if (ini.tono === "vigente") vivas++;
-    else if (ini.tono === "aprobado") aprobadas++;
-    else if (ini.tono === "perimido") perimidas++;
+    if (ini.tono === "accionable") vivas++;
+    else if (ini.tono === "cumplido") aprobadas++;
+    else if (ini.tono === "anulado") perimidas++;
     else otras++;
 
     if (ini.viva && evaluarPerencion(ini.legislatura).estado === "en-riesgo") {

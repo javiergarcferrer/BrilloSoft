@@ -11,10 +11,10 @@ import {
   listarRecientesSenado,
   type ExpedienteSenado,
 } from "@/lib/senado";
-import { formatFecha } from "@/lib/format";
 import { IconSearch } from "@/components/icons";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import { cn } from "@/lib/cn";
+import Antiguedad from "@/components/antiguedad";
 
 export const metadata: Metadata = {
   title: "Senado",
@@ -70,7 +70,7 @@ export default async function SenadoPage({
         )}
         <button
           type="submit"
-          className="h-11 shrink-0 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-95"
+          className="h-11 shrink-0 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700 active:scale-95"
         >
           Buscar
         </button>
@@ -94,9 +94,9 @@ export default async function SenadoPage({
               href={`/congreso/senado${qs ? `?${qs}` : ""}`}
               aria-current={activa ? "page" : undefined}
               className={cn(
-                "rounded-full px-3 py-1 font-mono text-xs tabular-nums ring-1 ring-inset transition-colors",
+                "rounded-md px-3 py-1 font-mono text-xs tabular-nums ring-1 ring-inset transition-colors",
                 activa
-                  ? "bg-brand-600 font-semibold text-white ring-brand-600"
+                  ? "bg-brand-600 font-semibold text-canvas ring-brand-600"
                   : "bg-surface text-ink-soft ring-hairline hover:text-ink",
               )}
             >
@@ -224,7 +224,7 @@ function ExpedienteRow({ exp }: { exp: ExpedienteSenado }) {
               <span aria-hidden className="text-hairline">
                 ·
               </span>
-              <span className="font-mono tabular-nums">Creada {formatFecha(exp.fechaCreacion)}</span>
+              <Antiguedad iso={exp.fechaCreacion} prefijo="Creada" />
             </>
           )}
         </div>

@@ -123,7 +123,7 @@ async function ListaIniciativas({
           ) : null}
         </span>
         {grupo && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-0.5 text-xs font-medium text-ink ring-1 ring-inset ring-hairline">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-surface px-2.5 py-0.5 text-xs font-medium text-ink ring-1 ring-inset ring-hairline">
             {grupo}
             <Link
               href={`/congreso${q ? `?q=${encodeURIComponent(q)}` : ""}`}

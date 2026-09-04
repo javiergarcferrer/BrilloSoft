@@ -1,15 +1,22 @@
 /**
- * Vocabulario visual de los estados de un proceso de la DGCP y de la urgencia
- * del plazo de cierre.
+ * El lenguaje de color del estado — **de toda la plataforma**, no solo de la
+ * DGCP.
  *
- * Centralizado para que la tarjeta, la cabecera del detalle y cualquier vista
- * futura hablen el mismo idioma. Las etiquetas siguen los valores de
- * `estado_proceso` de la DGCP.
+ * Los tonos no son una paleta decorativa: son los oficios de color de
+ * `docs/IDENTIDAD.md` («un color = un significado, en toda la plataforma»), y
+ * por eso se nombran por **lo que significan** y nunca por el estado concreto
+ * de una fuente. Un estado del origen se traduce a uno de estos cinco; los
+ * nombres del Estado no entran aquí.
  *
- * Los tonos **no** son una paleta decorativa: son los cuatro oficios de color
- * de `docs/IDENTIDAD.md` («un color = un significado»). Antes había siete colores
- * crudos de Tailwind compitiendo entre sí; ahora un estado solo puede ser una
- * de estas cosas, y el nombre del tono lo dice.
+ * Esta regla se había roto en silencio. `components/iniciativa-card.tsx`
+ * mantenía una segunda tabla —que en su comentario decía estar «alineada con
+ * lib/estados.ts»— con los dos colores que más pesan invertidos respecto a
+ * esta: el verde de archivo, que aquí significa *ya se cumplió*, marcaba en el
+ * Congreso una pieza recién **depositada**, y el azul de la firma, que en toda
+ * la plataforma significa *se puede actuar*, marcaba una ley ya **promulgada**.
+ * A dos clics de distancia el mismo verde decía «terminado» y «acaba de
+ * empezar», y un listado del Senado entero en verde se leía como un archivo
+ * cerrado. Ahora la tabla vive una sola vez y las dos cámaras la importan.
  */
 
 export interface Tone {
@@ -19,37 +26,44 @@ export interface Tone {
   dot: string;
 }
 
-const TONES = {
-  /** Se puede actuar: aún admite ofertas. La firma. */
+/**
+ * Los cinco oficios. Clases literales: el escáner de Tailwind lee el fuente.
+ */
+export const TONOS = {
+  /** Sigue abierto a que alguien haga algo: admite ofertas, admite trámite. La firma. */
   accionable: {
     badge: "bg-brand-50 text-brand-700 ring-brand-600/20",
     dot: "bg-brand-500",
   },
-  /** Está en curso o ya pasó: informa, no pide nada. Grafito. */
+  /** Informa y no pide nada: en curso, ya pasó, o el origen no lo dice. Grafito. */
   contexto: {
     badge: "bg-canvas text-ink-soft ring-hairline",
     dot: "bg-ink-soft",
   },
-  /** Ya se cumplió: adjudicado y celebrado. Verde de archivo. */
+  /** Llegó al final de su trámite: adjudicado, promulgado. Verde de archivo. */
   cumplido: {
     badge: "bg-valido-50 text-valido-700 ring-valido-600/20",
     dot: "bg-valido-500",
   },
-  /** Corre un plazo. Ocre de anotación al margen. */
+  /** Corre un plazo y todavía se puede perder. Ocre de anotación al margen. */
   aviso: {
     badge: "bg-alerta-50 text-alerta-700 ring-alerta-600/20",
     dot: "bg-alerta-500",
   },
-  /** Se cayó: desierto o cancelado. El sello. */
+  /** Se cayó sin llegar a nada: desierto, cancelado, perimido. El sello. */
   anulado: {
     badge: "bg-sello-50 text-sello-700 ring-sello-600/20",
     dot: "bg-sello-600",
   },
 } satisfies Record<string, Tone>;
 
-type ToneName = keyof typeof TONES;
+/**
+ * El nombre de un oficio de color. Es el tipo que cruza la plataforma: una
+ * fuente traduce su vocabulario a esto y la interfaz solo conoce esto.
+ */
+export type Tono = keyof typeof TONOS;
 
-const ESTADO_TONE: Record<string, ToneName> = {
+const ESTADO_TONO: Record<string, Tono> = {
   "Proceso publicado": "accionable",
   "Sobres estan abriendose": "contexto",
   "Sobres abiertos o aperturados": "contexto",
@@ -65,8 +79,8 @@ export interface EstadoMeta extends Tone {
 }
 
 export function estadoMeta(estado: string): EstadoMeta {
-  const tone = TONES[ESTADO_TONE[estado] ?? "contexto"];
-  return { ...tone, label: estado || "—", abierto: estado === "Proceso publicado" };
+  const tono = TONOS[ESTADO_TONO[estado] ?? "contexto"];
+  return { ...tono, label: estado || "—", abierto: estado === "Proceso publicado" };
 }
 
 export interface CierreMeta extends Tone {
@@ -83,9 +97,9 @@ export interface CierreMeta extends Tone {
  */
 export function cierreMeta(dias: number | null): CierreMeta | null {
   if (dias === null) return null;
-  if (dias < 0) return { ...TONES.contexto, texto: "Recepción cerrada", urgente: false };
-  if (dias === 0) return { ...TONES.aviso, texto: "Cierra hoy", urgente: true };
-  if (dias === 1) return { ...TONES.aviso, texto: "Cierra mañana", urgente: true };
-  if (dias <= 7) return { ...TONES.aviso, texto: `Cierra en ${dias} días`, urgente: true };
-  return { ...TONES.contexto, texto: `Cierra en ${dias} días`, urgente: false };
+  if (dias < 0) return { ...TONOS.contexto, texto: "Recepción cerrada", urgente: false };
+  if (dias === 0) return { ...TONOS.aviso, texto: "Cierra hoy", urgente: true };
+  if (dias === 1) return { ...TONOS.aviso, texto: "Cierra mañana", urgente: true };
+  if (dias <= 7) return { ...TONOS.aviso, texto: `Cierra en ${dias} días`, urgente: true };
+  return { ...TONOS.contexto, texto: `Cierra en ${dias} días`, urgente: false };
 }

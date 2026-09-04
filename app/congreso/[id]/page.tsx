@@ -87,7 +87,7 @@ export default async function IniciativaPage({ params }: Props) {
             {ini.numero?.completo ?? `#${ini.id}`}
           </span>
           <CondicionBadge tono={ini.tono}>{ini.condicion ?? "—"}</CondicionBadge>
-          {ini.promulgada && <CondicionBadge tono="aprobado">Promulgada</CondicionBadge>}
+          {ini.promulgada && <CondicionBadge tono="cumplido">Promulgada</CondicionBadge>}
         </div>
 
         <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
-import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
+import { diasHasta, formatMonto } from "@/lib/format";
 import { cierreMeta, estadoMeta } from "@/lib/estados";
 import {
   getSeguimiento,
@@ -11,6 +11,7 @@ import {
   toggleSeguimiento,
 } from "@/lib/seguimiento";
 import { IconArrowRight, IconBuilding, IconStar } from "./icons";
+import Antiguedad from "@/components/antiguedad";
 
 export default function ProcesoCard({ p }: { p: Proceso }) {
   const [seguido, setSeguido] = useState(false);
@@ -26,7 +27,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
   const href = `/procesos/${encodeURIComponent(p.codigo_proceso)}`;
 
   return (
-    <article className="cv-auto group flex flex-col rounded-lg bg-surface p-4 border border-hairline transition-all duration-300 hover:ring-brand-500/30">
+    <article className="cv-auto group flex flex-col rounded-lg border border-hairline bg-surface p-4 transition-colors hover:border-brand-300">
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span
@@ -76,9 +77,11 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
           <div className="font-mono text-base font-semibold tabular-nums text-ink">
             {formatMonto(p.monto_estimado, p.divisa)}
           </div>
-          <div className="mt-0.5 truncate text-xs text-ink-soft">
-            Publicado {formatFecha(p.fecha_publicacion)}
-          </div>
+          <Antiguedad
+            iso={p.fecha_publicacion}
+            prefijo="Publicado"
+            className="mt-0.5 block truncate text-xs text-ink-soft"
+          />
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           {cierre && (

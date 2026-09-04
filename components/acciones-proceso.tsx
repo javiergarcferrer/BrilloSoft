@@ -52,7 +52,7 @@ export default function AccionesProceso({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-12 flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-600 text-sm font-semibold text-white transition active:scale-95"
+            className="flex h-12 flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-600 text-sm font-semibold text-canvas transition active:scale-95"
           >
             Ofertar
             <IconExternal className="h-4 w-4" />

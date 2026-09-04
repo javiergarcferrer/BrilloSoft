@@ -82,7 +82,7 @@ export default function VisorDocumento({
             type="button"
             onClick={() => setAbierto((v) => !v)}
             aria-expanded={abierto}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-700"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-canvas transition-colors hover:bg-brand-700"
           >
             {abierto ? "Ocultar el documento" : "Leer el documento aquí"}
           </button>

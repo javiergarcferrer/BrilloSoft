@@ -34,7 +34,15 @@ export const revalidate = 1800;
 /** Páginas del SIL que alimentan el panorama (10 iniciativas por página). */
 const PAGINAS_CONGRESO = 10;
 
-function hace(dias: number): string {
+/**
+ * La fecha ISO de hace N días, para acotar una consulta al origen.
+ *
+ * No confundir con `hace()` de `lib/format.ts`, que hace lo contrario: recibe
+ * una fecha y devuelve «hace 4 meses» para que lo lea una persona. Este toma
+ * un número de días y devuelve `2026-08-05` para que lo lea la DGCP. Se
+ * llamaba igual que aquella y la tapaba dentro de este archivo.
+ */
+function fechaHaceDias(dias: number): string {
   const d = new Date(Date.now() - dias * 86400000);
   return d.toISOString().slice(0, 10);
 }
@@ -46,7 +54,7 @@ function hace(dias: number): string {
  * memorización de `fetch`.
  */
 const procesosRecientes = cache(() =>
-  dgcpFetch<Proceso>("/procesos", { startdate: hace(30), limit: 1000 }, 1800).catch(
+  dgcpFetch<Proceso>("/procesos", { startdate: fechaHaceDias(30), limit: 1000 }, 1800).catch(
     () => null,
   ),
 );
@@ -67,10 +75,10 @@ export default function Panorama() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg bg-ink text-white">
+      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
         <div className="relative p-6 sm:p-9">
-          <div className="rotulo inline-flex items-center gap-2 text-white/70">
+          <div className="rotulo inline-flex items-center gap-2 text-canvas/70">
             <span
               aria-hidden
               className="mt-[0.45em] h-1.5 w-1.5 shrink-0 self-start rounded-full bg-sello-400"
@@ -81,7 +89,7 @@ export default function Panorama() {
           <h1 className="mt-4 max-w-3xl font-display text-4xl leading-[1.08] sm:text-5xl">
             ¿Qué compra, qué legisla y a quién le paga el Estado?
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-canvas/70 sm:text-base">
             Fuentes oficiales leídas en vivo y puestas en un mismo lugar: compras
             públicas, Congreso Nacional, normativa del Ejecutivo, nómina estatal y
             deuda pública. Sin intermediarios y sin copiar los datos a ningún lado
@@ -91,14 +99,14 @@ export default function Panorama() {
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Link
               href="/licitaciones"
-              className="inline-flex items-center gap-2 rounded-lg bg-canvas px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas active:scale-95"
+              className="inline-flex items-center gap-2 rounded-lg bg-canvas px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-surface active:scale-95"
             >
               <IconSearch className="h-4 w-4" />
               Buscar licitaciones
             </Link>
             <Link
               href="/congreso"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/20 transition-colors hover:bg-white/15 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-lg border border-canvas/20 bg-canvas/10 px-5 py-2.5 text-sm font-semibold text-canvas ring-1 ring-inset ring-canvas/20 transition-colors hover:bg-canvas/15 active:scale-95"
             >
               <IconLayers className="h-4 w-4" />
               Explorar el Congreso

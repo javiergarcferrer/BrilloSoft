@@ -41,7 +41,7 @@ export default function BuscadorCongreso({ initial = "" }: { initial?: string })
       <button
         type="submit"
         disabled={pendiente}
-        className="h-11 shrink-0 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-95 disabled:opacity-60"
+        className="h-11 shrink-0 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700 active:scale-95 disabled:opacity-60"
       >
         {pendiente ? "Buscando…" : "Buscar"}
       </button>

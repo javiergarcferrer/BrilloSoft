@@ -12,7 +12,15 @@ export const metadata = {
     "Panorama de los procesos de compras públicas de los últimos 30 días en República Dominicana.",
 };
 
-function hace(dias: number): string {
+/**
+ * La fecha ISO de hace N días, para acotar una consulta al origen.
+ *
+ * No confundir con `hace()` de `lib/format.ts`, que hace lo contrario: recibe
+ * una fecha y devuelve «hace 4 meses» para que lo lea una persona. Este toma
+ * un número de días y devuelve `2026-08-05` para que lo lea la DGCP. Se
+ * llamaba igual que aquella y la tapaba dentro de este archivo.
+ */
+function fechaHaceDias(dias: number): string {
   return new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
 }
 
@@ -36,7 +44,7 @@ function agrupar(lista: Proceso[], clave: (p: Proceso) => string): [string, Agre
 export default async function EstadisticasPage() {
   const data = await dgcpFetch<Proceso>(
     "/procesos",
-    { startdate: hace(30), limit: 1000 },
+    { startdate: fechaHaceDias(30), limit: 1000 },
     1800
   );
   const lista = data.payload.content;
@@ -93,17 +101,17 @@ export default async function EstadisticasPage() {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg bg-ink text-white">
+      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
         <div className="relative p-6 sm:p-8">
-          <div className="rotulo inline-flex items-start gap-2 text-white/70">
+          <div className="rotulo inline-flex items-start gap-2 text-canvas/70">
             <span aria-hidden className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400" />
             Últimos 30 días · se actualiza cada 30 min
           </div>
           <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
             ¿Quién compra, cuánto y por qué vía?
           </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-white/70">
+          <p className="mt-1.5 max-w-xl text-sm text-canvas/70">
             Basado en los {lista.length.toLocaleString("es-DO")} procesos más recientes
             {total > lista.length
               ? ` de ${total.toLocaleString("es-DO")} publicados en el período`
@@ -118,18 +126,18 @@ export default async function EstadisticasPage() {
                 className={`rounded-lg p-4 ring-1 ${
                   k.destacar
                     ? "bg-brand-500/15 ring-brand-400/30"
-                    : "bg-white/5 ring-white/10"
+                    : "bg-canvas/5 ring-canvas/10"
                 }`}
               >
                 <div className="font-mono text-lg font-semibold leading-tight tabular-nums sm:text-xl">
                 {k.valor}
               </div>
               {k.base && (
-                <div className="rotulo mt-1 text-white/50">{k.base}</div>
+                <div className="rotulo mt-1 text-canvas/50">{k.base}</div>
               )}
                 <div
                   className={`mt-0.5 text-xs ${
-                    k.destacar ? "text-brand-100" : "text-white/60"
+                    k.destacar ? "text-brand-100" : "text-canvas/60"
                   }`}
                 >
                   {k.etiqueta}
@@ -140,7 +148,7 @@ export default async function EstadisticasPage() {
 
           {/* Distribución por estado */}
           <div className="mt-6">
-            <div className="flex h-3 overflow-hidden rounded-sm ring-1 ring-white/10">
+            <div className="flex h-3 overflow-hidden rounded-sm ring-1 ring-canvas/10">
               {porEstado.map(([e, a]) => (
                 <div
                   key={e}
@@ -152,10 +160,10 @@ export default async function EstadisticasPage() {
             </div>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
               {porEstado.map(([e, a]) => (
-                <span key={e} className="inline-flex items-center gap-1.5 text-xs text-white/70">
+                <span key={e} className="inline-flex items-center gap-1.5 text-xs text-canvas/70">
                   <span className={`h-2 w-2 rounded-full ${estadoMeta(e).dot}`} />
                   {e}
-                  <span className="font-semibold text-white">{a.n}</span>
+                  <span className="font-semibold text-canvas">{a.n}</span>
                 </span>
               ))}
             </div>
@@ -216,7 +224,7 @@ export default async function EstadisticasPage() {
         </span>
         <Link
           href="/licitaciones"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600 active:scale-95"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-brand-600 active:scale-95"
         >
           Ir al buscador
           <IconArrowRight className="h-4 w-4" />

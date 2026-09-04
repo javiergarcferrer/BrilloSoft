@@ -67,7 +67,7 @@ export default function GuiaPage() {
             href="https://www.dgcp.gob.do/servicios/registro-de-proveedores/"
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg bg-brand-500 px-3 py-1.5 font-medium text-white hover:bg-brand-600"
+            className="rounded-lg bg-brand-500 px-3 py-1.5 font-medium text-canvas hover:bg-brand-600"
           >
             Inscribirse en el RPE (DGCP) ↗
           </a>
@@ -161,7 +161,7 @@ export default function GuiaPage() {
         </ul>
         <Link
           href="/licitaciones"
-          className="mt-4 inline-block rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+          className="mt-4 inline-block rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-canvas hover:bg-brand-600"
         >
           Buscar oportunidades abiertas →
         </Link>

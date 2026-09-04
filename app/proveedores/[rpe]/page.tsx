@@ -190,17 +190,17 @@ export default async function ProveedorPage({
             registro.certificacionMicm) && (
             <ul className="mt-4 flex flex-wrap gap-2 text-xs">
               {registro.esMipyme && (
-                <li className="rounded-full bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
+                <li className="rounded-md bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
                   MIPYME
                 </li>
               )}
               {registro.certificacionMicm && (
-                <li className="rounded-full bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
+                <li className="rounded-md bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
                   Certificación MICM
                 </li>
               )}
               {registro.productorNacional && (
-                <li className="rounded-full bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
+                <li className="rounded-md bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
                   Productor nacional
                 </li>
               )}
@@ -245,9 +245,9 @@ export default async function ProveedorPage({
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-hairline">
+                <div className="mt-1 h-2 rounded-sm bg-hairline">
                   <div
-                    className="bar-grow h-2 rounded-full bg-brand-500"
+                    className="bar-grow h-2 rounded-sm bg-brand-500"
                     style={{ width: `${Math.max(2, (a.monto / maxAnio) * 100)}%` }}
                   />
                 </div>

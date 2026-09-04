@@ -414,7 +414,7 @@ function Fuente({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-sans text-base font-semibold text-ink">{nombre}</h2>
         <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 rotulo ring-1 ring-inset ${ESTADOS[estado]}`}
+          className={`inline-flex items-center rounded-[3px] px-2 py-0.5 rotulo ring-1 ring-inset ${ESTADOS[estado]}`}
         >
           {etiqueta}
         </span>

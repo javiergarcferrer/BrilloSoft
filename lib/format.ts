@@ -38,6 +38,14 @@ export function diasHasta(iso: string | undefined): number | null {
   return Math.floor((d.getTime() - Date.now()) / 86400000);
 }
 
+/** El día calendario dominicano de un instante, como `2026-09-04`. */
+const DIA_RD = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Santo_Domingo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 /**
  * Antigüedad en lenguaje llano: «hace 4 meses», «ayer», «hoy».
  *
@@ -45,13 +53,41 @@ export function diasHasta(iso: string | undefined): number | null {
  * iniciativas, ese cálculo se repite veinte veces y nadie lo hace: se deja de
  * comparar. El dato que responde «¿esto está vivo o parado?» no puede costar
  * una resta.
+ *
+ * Se cuenta en **días de calendario dominicano**, la misma regla que
+ * `formatFecha`: «ayer» significa la fecha de ayer en Santo Domingo, no «entre
+ * 24 y 48 horas atrás». Antes se restaban milisegundos contra un ancla
+ * arbitraria al mediodía UTC, y eso rompía dos veces al día: entre las 00:00 y
+ * las 12:00 UTC —cuando en el país todavía es la tarde o la noche anterior—
+ * una pieza depositada *hoy* salía como fecha futura y la interfaz caía a la
+ * fecha absoluta; y la frontera entre «hoy» y «ayer» se movía a las 8 de la
+ * mañana local en vez de a medianoche.
  */
 export function hace(valor: string | null | undefined): string | null {
   if (!valor) return null;
-  const d = new Date(valor.length <= 10 ? `${valor}T12:00:00Z` : valor);
-  if (Number.isNaN(d.getTime())) return null;
 
-  const dias = Math.floor((Date.now() - d.getTime()) / 86_400_000);
+  /*
+    Un valor sin hora es una fecha de calendario declarada por la fuente y se
+    compara tal cual; uno con instante real se lleva primero al día que era en
+    el país. Misma distinción que hace `formatFecha`.
+  */
+  const soloFecha = /^\d{4}-\d{2}-\d{2}$/.test(valor);
+  let dia: string;
+  if (soloFecha) {
+    dia = valor;
+  } else {
+    const d = new Date(valor);
+    if (Number.isNaN(d.getTime())) return null;
+    dia = DIA_RD.format(d);
+  }
+
+  const hoy = DIA_RD.format(Date.now());
+  const aMedianocheUTC = (iso: string) => Date.parse(`${iso}T00:00:00Z`);
+  const desde = aMedianocheUTC(dia);
+  const hasta = aMedianocheUTC(hoy);
+  if (Number.isNaN(desde) || Number.isNaN(hasta)) return null;
+
+  const dias = Math.round((hasta - desde) / 86_400_000);
   if (dias < 0) return null;
   if (dias === 0) return "hoy";
   if (dias === 1) return "ayer";

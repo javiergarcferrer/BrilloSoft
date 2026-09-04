@@ -4,6 +4,7 @@ import { muestrearContratos, type AgregadoContrato } from "@/lib/dgcp";
 import { formatMonto, formatFecha } from "@/lib/format";
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import { IconArrowRight, IconChartBar } from "@/components/icons";
+import Antiguedad from "@/components/antiguedad";
 
 export const metadata: Metadata = {
   title: "Histórico de contrataciones",
@@ -44,10 +45,10 @@ export default async function ContratosPage() {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg bg-ink text-white">
+      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
         <div className="relative p-6 sm:p-8">
-          <div className="rotulo inline-flex items-start gap-2 text-white/70">
+          <div className="rotulo inline-flex items-start gap-2 text-canvas/70">
             <span aria-hidden className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400" />
             Contratos adjudicados · se actualiza cada 30 min
           </div>
@@ -60,7 +61,7 @@ export default async function ContratosPage() {
           <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
             ¿Qué está contratando el Estado?
           </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-white/70">
+          <p className="mt-1.5 max-w-xl text-sm text-canvas/70">
             Sobre los {formatInt(r.escaneados)} contratos más recientes del
             registro de la DGCP
             {r.desde && r.hasta && (
@@ -77,12 +78,12 @@ export default async function ContratosPage() {
               <div
                 key={k.etiqueta}
                 className={`rounded-lg p-4 ring-1 ${
-                  k.destacar ? "bg-brand-500/15 ring-brand-400/30" : "bg-white/5 ring-white/10"
+                  k.destacar ? "bg-brand-500/15 ring-brand-400/30" : "bg-canvas/5 ring-canvas/10"
                 }`}
               >
                 <div className="font-mono text-lg font-semibold leading-tight tabular-nums sm:text-xl">{k.valor}</div>
                 <div
-                  className={`mt-0.5 text-xs ${k.destacar ? "text-brand-100" : "text-white/60"}`}
+                  className={`mt-0.5 text-xs ${k.destacar ? "text-brand-100" : "text-canvas/60"}`}
                 >
                   {k.etiqueta}
                 </div>
@@ -164,7 +165,7 @@ export default async function ContratosPage() {
                 <Sep />
                 <span className="line-clamp-1">{c.unidad_compra}</span>
                 <Sep />
-                <span className="tabular-nums">{formatFecha(c.fecha_adjudicacion)}</span>
+                <Antiguedad iso={c.fecha_adjudicacion} prefijo="Adjudicado" />
                 <Sep />
                 <Link
                   href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}

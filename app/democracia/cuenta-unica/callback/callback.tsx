@@ -138,7 +138,7 @@ export default function Callback() {
 
       {estado.fase === "listo" && (
         <div className="rounded-lg border border-brand-200/60 bg-brand-50/70 p-6 text-center">
-          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-brand-500 text-white">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-brand-500 text-canvas">
             <IconCheck className="h-6 w-6" />
           </span>
           <h2 className="font-sans mt-3 text-lg font-semibold text-ink">
@@ -151,7 +151,7 @@ export default function Callback() {
           </p>
           <Link
             href="/congreso"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700"
           >
             Ir a las iniciativas
           </Link>

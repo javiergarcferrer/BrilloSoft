@@ -128,7 +128,7 @@ function Medida({ titulo, children }: { titulo: string; children: React.ReactNod
   return (
     <section className="rounded-lg border border-hairline bg-surface p-5 ">
       <h2 className="font-sans flex items-start gap-2.5 text-base font-semibold text-ink">
-        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-valido-600 text-white">
+        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-valido-600 text-canvas">
           <IconCheck className="h-3.5 w-3.5" />
         </span>
         {titulo}

@@ -80,6 +80,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
              vistas. Responde «¿dónde estoy y qué hay aquí?».
           El contenido nunca carga con tareas de orientación.
         */}
+        {/*
+          Saltar al contenido. Antes de esta línea, llegar al primer resultado
+          con el teclado costaba recorrer la marca, el buscador del header, seis
+          enlaces del nav global y las pestañas de la barra de sección —en cada
+          página—. El enlace es invisible hasta que recibe el foco, que es
+          exactamente cuando sirve.
+        */}
+        <a
+          href="#contenido"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-canvas"
+        >
+          Saltar al contenido
+        </a>
+
         <header
           className="sticky top-0 z-50 bg-ink text-canvas"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -104,7 +118,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <SectionBar />
 
-        <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+        <main id="contenido" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6">
+          {children}
+        </main>
 
         <MobileTabBar />
         <ScrollTop />

@@ -296,7 +296,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
               value={salMin}
               onChange={(e) => setSalMin(e.target.value)}
               placeholder="Sueldo mín."
-              className="h-11 w-28 rounded-full border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400"
+              className="h-11 w-28 rounded-lg border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400"
             />
             <span className="text-ink-soft">–</span>
             <input
@@ -305,7 +305,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
               value={salMax}
               onChange={(e) => setSalMax(e.target.value)}
               placeholder="máx."
-              className="h-11 w-24 rounded-full border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400"
+              className="h-11 w-24 rounded-lg border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400"
             />
           </div>
 
@@ -390,7 +390,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
                     onClick={() => setMetric(m)}
                     className={cn(
                       "rounded-md px-2.5 py-1 transition-colors",
-                      metric === m ? "bg-brand-600 text-white" : "text-ink-soft hover:text-ink",
+                      metric === m ? "bg-brand-600 text-canvas" : "text-ink-soft hover:text-ink",
                     )}
                   >
                     {lbl}
@@ -458,7 +458,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
             <button
               type="button"
               onClick={exportCsv}
-              className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white  transition-colors hover:bg-brand-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-canvas  transition-colors hover:bg-brand-700"
             >
               <IconDownload className="h-4 w-4" /> Exportar CSV
             </button>
@@ -583,8 +583,8 @@ function TabBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-        active ? "bg-brand-600 text-white " : "text-ink-soft hover:text-ink",
+        "inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
+        active ? "bg-brand-600 text-canvas " : "text-ink-soft hover:text-ink",
       )}
     >
       <Icon className="h-4 w-4" />

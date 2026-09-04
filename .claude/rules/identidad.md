@@ -14,14 +14,28 @@ are enforced by `.claude/hooks/guard-edit.sh` and `verificar.sh`.
 2. No glass shadows. Surfaces separate with the hairline (`border-hairline`).
    `shadow-card`/`shadow-soft` only for what truly floats: menus, sheets, the FAB.
 3. `rounded-lg` (8 px) is the maximum on surfaces; `rounded-full` only for
-   dots, seals, avatars. Never `rounded-2xl`/`rounded-3xl`.
+   dots, seals, avatars. Never `rounded-2xl`/`rounded-3xl`. `rounded-full`
+   with real horizontal padding (`px-2`+) is a pill — a badge or button
+   dressed as an app: badges `rounded-md`, buttons `rounded-lg`, meters
+   `rounded-sm`. A `px-1` counter bubble stays round.
 4. No emoji, no decorative icons. Stroke icons (16/20/24) from `components/icons.tsx`.
 5. No coat of arms, no flag. Independent, not official.
+6. No screen white. On ink and on a saturated fill the text is `canvas`, never
+   `white` — the `Accion` primitive already decided this.
+7. No mute controls: a `hover:` whose value repeats what the element already
+   has changes nothing, and a ring colour with no ring width never paints.
 
 ## Use the primitives, not hand-rolled markup
 `components/papel.tsx` (Hoja, and the paper vocabulary), `components/marca.tsx`
 (Sello, SelloCompacto, Logotipo), `components/plegable.tsx` (progressive
-disclosure; the button says how many, never "ver más"), `lib/cifras.ts`
+disclosure; the button says how many, never "ver más"),
+`components/antiguedad.tsx` (a date in a **listing row** is «hace 2 meses» in a
+real `<time>`, with the exact date in `title`; the absolute date belongs on the
+ficha), `lib/estados.ts` (the ONE colour table for state, keyed by meaning —
+`accionable`/`contexto`/`cumplido`/`aviso`/`anulado`; a source translates into
+it and never keeps its own table: that is exactly how congreso ended up
+painting «depositada» in the green that means «already fulfilled»),
+`lib/cifras.ts`
 (a number with its anchor and scope; never invent a comparison, no `+∞ %`,
 percentage deltas in points), `lib/glosario.ts` (jargon translated at the
 point of use), `components/esqueleto.tsx` (the silhouette a page shows while
@@ -57,4 +71,9 @@ registers the finding instead of fixing it.
 - Mobile first: the citizen consults on a phone between two other things.
   Tables collapse to two lines per row at 390 px; nothing depends on hover.
 - All copy in Spanish (es-DO). Dates through `formatFecha` (fixed
-  `America/Santo_Domingo`), amounts through `formatMonto`, age through `hace()`.
+  `America/Santo_Domingo`), amounts through `formatMonto`, age through
+  `<Antiguedad>` in listing rows and `hace()` elsewhere — both count Dominican
+  calendar days.
+- Every page is reachable by keyboard without tabbing the chrome: the skip link
+  in `app/layout.tsx` targets `#contenido`. A count that changes without a
+  navigation lives in an `aria-live="polite"` region.

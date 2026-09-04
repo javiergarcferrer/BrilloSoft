@@ -29,6 +29,14 @@ bien compuesto.
 4. **Sin emoji** y sin iconos decorativos. Los iconos son de trazo, 16/20/24.
 5. **Sin escudo ni bandera.** Somos independientes; parecer oficial sería
    mentir.
+6. **Sin blanco de pantalla.** Sobre tinta y sobre relleno saturado el texto es
+   `canvas` —papel, cálido—, nunca `white`. La primitiva `Accion` ya lo había
+   decidido; el árbol había derivado a 71 usos de blanco contra 19 de papel.
+7. **Nada de píldoras.** `rounded-full` con relleno horizontal real (`px-2` o
+   más) es una marca o un botón vestidos de app. Un sello no tiene esquinas
+   redondas: la marca va `rounded-md`, el botón `rounded-lg`, la barra de
+   progreso `rounded-sm`. El punto, el sello, el avatar y la burbuja de conteo
+   (`px-1`) se quedan redondos.
 
 ## Color — papel, tinta, sello, firma
 
@@ -142,7 +150,17 @@ registro, muestra e instantánea.
   magnitud en la cifra más grande del sitio.
 - **La antigüedad se calcula aquí, no en la cabeza del lector.** Una fecha
   absoluta obliga a restar; en una lista de veinte, nadie resta y se deja de
-  comparar. `hace()` en `lib/format.ts`.
+  comparar. `hace()` en `lib/format.ts`, y **siempre a través de
+  `components/antiguedad.tsx`**: la regla existía y se cumplía solo en las
+  fichas —donde hay una fecha y sobra espacio para pensarla—, mientras las
+  filas de listado, que son justo donde se compara, imprimían «Creada 3 sept
+  2026» veinte veces seguidas. Nada se pierde: la fecha exacta viaja en el
+  `title` y en el `dateTime` de un `<time>` de verdad.
+
+  Se cuenta en **días de calendario dominicano**, la misma regla de
+  `formatFecha`: «ayer» es la fecha de ayer en Santo Domingo, no «entre 24 y 48
+  horas atrás». Con el ancla anterior al mediodía UTC, una pieza depositada hoy
+  salía como fecha futura durante media mañana de cada día.
 
 ### 4. El orden de los bloques es el orden en que se entiende
 
@@ -175,7 +193,21 @@ segunda dice qué pasó, qué sigue en pie y ofrece la única acción útil.
 - **Barra de sección y tab bar móvil** — sustantivos cortos. Ahí ya sabe dónde
   está y necesita reconocer, no leer.
 - **Un color = un significado**, en toda la plataforma. Nunca se usa un color
-  porque «queda bien».
+  porque «queda bien». La tabla vive **una sola vez**, en `lib/estados.ts`, y
+  sus tonos se nombran por lo que significan —`accionable`, `contexto`,
+  `cumplido`, `aviso`, `anulado`—, nunca por el estado concreto de una fuente:
+  cada fuente **traduce** su vocabulario a esos cinco.
+
+  Que estuviera centralizada no bastó. `iniciativa-card.tsx` mantenía una
+  segunda tabla, con un comentario que la declaraba «alineada con
+  lib/estados.ts», y estaba **invertida** en los dos colores que más pesan: el
+  verde de archivo —*ya se cumplió*— marcaba una pieza recién **depositada**, y
+  el azul de la firma —*se puede actuar*— marcaba una ley ya **promulgada**. A
+  dos clics de distancia el mismo verde decía «terminado» y «acaba de
+  empezar», y un listado del Senado entero en verde se leía como un archivo
+  cerrado. La lección no es «centralizar»: es que **un comentario que afirma
+  una alineación no la produce**, y que una segunda tabla es la forma concreta
+  en que esta regla se rompe.
 
 ### 8. Cómo se sostiene esto
 
@@ -188,5 +220,16 @@ hermano. Y la causa raíz de que esta identidad se diluyera dos veces está
 diagnosticada en la misma doctrina: **donde existe una primitiva compartida la
 adopción es alta; donde no existe, la idea se reimplementa en cada sitio.** Por
 eso el sistema vive en `components/papel.tsx`, `components/marca.tsx`,
-`components/plegable.tsx`, `lib/cifras.ts` y `lib/glosario.ts`, y no en
-cuarenta archivos que hay que acertar uno por uno.
+`components/plegable.tsx`, `components/antiguedad.tsx`, `lib/estados.ts`,
+`lib/cifras.ts` y `lib/glosario.ts`, y no en cuarenta archivos que hay que
+acertar uno por uno.
+
+Y porque una regla que solo vive en un documento se vuelve a diluir, tres
+clases de infracción que esta pasada encontró a mano las busca ahora el gate
+(`.claude/hooks/lib.sh` y `.claude/hooks/sin-efecto.py`): el blanco de
+pantalla, la píldora, y el **control mudo** —un `hover:` cuyo valor repite el
+que el elemento ya tiene, o un color de anillo sin ancho de anillo, de modo que
+el anillo no se pinta nunca—. El tercero no es cuestión de estilo: el control
+*parece* interactivo y no responde, que es «un control apagado explica por qué»
+fallando en silencio. Uno de los tres era la llamada a la acción principal del
+panorama.

@@ -10,7 +10,7 @@ export default function NotFound() {
       </p>
       <Link
         href="/licitaciones"
-        className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 active:scale-95"
+        className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-brand-700 active:scale-95"
       >
         <IconArrowLeft className="h-4 w-4" />
         Volver al buscador

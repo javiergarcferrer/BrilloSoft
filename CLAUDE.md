@@ -418,6 +418,11 @@ most; `sello` is scarce by definition (the mark, «Deroga», the compras
 vertical). If red is everywhere it stops meaning anything. `alerta-*` (ochre)
 is a margin note, `valido-*` (archive green) is what is already fulfilled, and
 `--color-v-*` are the per-vertical hues, used only for orientation.
+**The state-colour table lives once, in `lib/estados.ts`**, keyed by meaning
+(`accionable`, `contexto`, `cumplido`, `aviso`, `anulado`); every source
+translates its own vocabulary into those five and keeps no table of its own —
+congreso kept one, inverted, and painted «depositada» in the green that means
+«already fulfilled».
 Three faces, three jobs: Instrument Serif asks (h1/h2, `font-display`), Public
 Sans explains (body/UI), IBM Plex Mono registers (amounts, codes, dossiers —
 also the `.rotulo` small-caps epigraph). The mark is the contrasello: a «¿»

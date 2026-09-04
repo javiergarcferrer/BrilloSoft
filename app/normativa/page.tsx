@@ -8,11 +8,11 @@ import {
   type Documento,
   type TipoNormativa,
 } from "@/lib/normativa";
-import { formatFecha } from "@/lib/format";
 import { IconExternal, IconDoc } from "@/components/icons";
 import { desdeMayusculas } from "@/lib/congreso";
 import { cn } from "@/lib/cn";
 import { EsqueletoFilas } from "@/components/esqueleto";
+import Antiguedad from "@/components/antiguedad";
 
 export const metadata: Metadata = {
   title: "Normativa del Ejecutivo",
@@ -59,9 +59,9 @@ export default async function NormativaPage({
             href={`/normativa?tipo=${code}${anio !== ANIO_ACTUAL ? `&anio=${anio}` : ""}`}
             aria-current={tipo === code ? "page" : undefined}
             className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium ring-1 ring-inset transition-colors",
+              "rounded-md px-3.5 py-1.5 text-sm font-medium ring-1 ring-inset transition-colors",
               tipo === code
-                ? "bg-brand-600 text-white ring-brand-600"
+                ? "bg-brand-600 text-canvas ring-brand-600"
                 : "bg-surface text-ink-soft ring-hairline hover:text-ink",
             )}
           >
@@ -78,9 +78,9 @@ export default async function NormativaPage({
             href={`/normativa?tipo=${tipo}${a !== ANIO_ACTUAL ? `&anio=${a}` : ""}`}
             aria-current={anio === a ? "page" : undefined}
             className={cn(
-              "rounded-full px-3 py-1 font-mono text-xs tabular-nums ring-1 ring-inset transition-colors",
+              "rounded-md px-3 py-1 font-mono text-xs tabular-nums ring-1 ring-inset transition-colors",
               anio === a
-                ? "bg-brand-600 text-white ring-brand-600"
+                ? "bg-brand-600 text-canvas ring-brand-600"
                 : "bg-surface text-ink-soft ring-hairline hover:text-ink",
             )}
           >
@@ -177,7 +177,9 @@ function FilaDoc({ doc }: { doc: Documento }) {
           <span className="font-mono font-semibold tabular-nums text-brand-700">
             {doc.tipo} {doc.numero}
           </span>
-          {doc.fecha && <span className="font-mono tabular-nums text-ink-soft">{formatFecha(doc.fechaIso ?? undefined)}</span>}
+          {doc.fechaIso && (
+            <Antiguedad iso={doc.fechaIso} className="text-ink-soft" />
+          )}
           {doc.gaceta && <span className="text-ink-soft">Gaceta {doc.gaceta}</span>}
         </div>
         <p className="mt-1 text-sm leading-snug text-ink">

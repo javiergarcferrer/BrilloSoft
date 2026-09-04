@@ -442,7 +442,7 @@ export default function Buscador() {
         footer={
           <button
             onClick={() => setSheetOpen(false)}
-            className="h-12 w-full rounded-lg bg-brand-600 text-sm font-semibold text-white transition active:scale-[0.99]"
+            className="h-12 w-full rounded-lg bg-brand-600 text-sm font-semibold text-canvas transition active:scale-[0.99]"
           >
             {data
               ? `Ver ${data.totalResults.toLocaleString("es-DO")} resultados`
@@ -494,7 +494,18 @@ export default function Buscador() {
             </button>
           </div>
         )}
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-ink-soft">
+        {/*
+          El conteo cambia sin recargar la página: sin `aria-live` un lector de
+          pantalla no se entera de que la búsqueda terminó ni de cuántos
+          resultados hay. `polite` espera a que el usuario deje de teclear;
+          `atomic` lee la frase entera («384 procesos») y no solo el número que
+          cambió.
+        */}
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-ink-soft"
+        >
           {loading ? (
             <span className="inline-flex items-center gap-2">
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand-500/30 border-t-brand-600" />
@@ -592,7 +603,7 @@ export default function Buscador() {
             <button
               type="button"
               onClick={() => fetchData()}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700"
             >
               Reintentar
             </button>

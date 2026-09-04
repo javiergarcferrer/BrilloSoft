@@ -143,16 +143,16 @@ export default async function InstitucionFiscalPage({
                       {formatPesos(m.devengado)}
                     </span>
                   </div>
-                  <div className="mt-1 h-2.5 rounded-full bg-hairline">
+                  <div className="mt-1 h-2.5 rounded-sm bg-hairline">
                     <div
-                      className="bar-grow relative h-2.5 rounded-full bg-v-finanzas"
+                      className="bar-grow relative h-2.5 rounded-sm bg-v-finanzas"
                       style={{
                         width: `${Math.max(1, (m.devengado / maxMes) * 100)}%`,
                       }}
                     >
                       <span
                         aria-hidden
-                        className="absolute inset-y-0 left-0 rounded-full bg-ink/25"
+                        className="absolute inset-y-0 left-0 rounded-sm bg-ink/25"
                         style={{
                           width: `${
                             m.devengado > 0
@@ -188,9 +188,9 @@ export default async function InstitucionFiscalPage({
                       {formatPesos(u.devengado)}
                     </span>
                   </div>
-                  <div className="mt-1 h-2 rounded-full bg-hairline">
+                  <div className="mt-1 h-2 rounded-sm bg-hairline">
                     <div
-                      className="bar-grow h-2 rounded-full bg-v-finanzas"
+                      className="bar-grow h-2 rounded-sm bg-v-finanzas"
                       style={{
                         width: `${Math.max(2, (u.devengado / maxUnidad) * 100)}%`,
                       }}

@@ -156,7 +156,7 @@ export default function VotoWidget({
       */}
       {total > 0 && miVoto !== null && (
         <div className="mt-4">
-          <div className="flex h-2.5 overflow-hidden rounded-full ring-1 ring-inset ring-hairline">
+          <div className="flex h-2.5 overflow-hidden rounded-sm ring-1 ring-inset ring-hairline">
             <div className="bg-brand-500" style={{ width: `${pctFavor}%` }} />
             <div className="flex-1 bg-ink-soft/30" />
           </div>
@@ -252,7 +252,7 @@ function BotonVoto({
       aria-pressed={activo}
       className={cn(
         "flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors active:scale-95 disabled:opacity-60",
-        activo && favor && "border-brand-500 bg-brand-500 text-white",
+        activo && favor && "border-brand-500 bg-brand-500 text-canvas",
         activo && !favor && "border-ink bg-ink text-canvas",
         !activo && favor && "border-hairline bg-surface text-brand-600 hover:border-brand-400 hover:bg-brand-50",
         !activo && !favor && "border-hairline bg-surface text-ink hover:border-ink hover:bg-canvas",

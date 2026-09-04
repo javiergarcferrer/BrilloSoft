@@ -256,18 +256,23 @@ export function legislaturaDeNumero(numero: NumeroSenado | null): string | null 
   return `${numero.anio}-${numero.tipoLegislatura}`;
 }
 
-/** Tono visual del estado procesal del Senado, alineado con el de Diputados. */
+/**
+ * Tono visual del estado procesal del Senado. Traduce al mismo lenguaje de
+ * color que Diputados y que compras — `lib/estados.ts`, una sola tabla —, con
+ * el mismo reparto: depositada y en trámite siguen abiertas a que alguien haga
+ * algo, promulgada ya llegó al final, perimida se cayó.
+ */
 export function tonoDeEstadoSenado(estado: string | null | undefined): CondicionTono {
   const e = limpiar(estado)
     .toUpperCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  if (!e) return "neutro";
-  if (e.includes("PERIMID")) return "perimido";
+  if (!e) return "contexto";
+  if (e.includes("PERIMID")) return "anulado";
   if (e.includes("APROBAD") || e.includes("PROMULGAD") || e.includes("DESPACHADA")) {
-    return "aprobado";
+    return "cumplido";
   }
-  if (e.includes("RECHAZ") || e.includes("RETIR") || e.includes("DESECHA")) return "neutro";
+  if (e.includes("RECHAZ") || e.includes("RETIR") || e.includes("DESECHA")) return "contexto";
   if (
     e.includes("DEPOSITADA") ||
     e.includes("AGENDA") ||
@@ -279,9 +284,9 @@ export function tonoDeEstadoSenado(estado: string | null | undefined): Condicion
     e.includes("URGENCIA") ||
     e.includes("PLAZO")
   ) {
-    return "vigente";
+    return "accionable";
   }
-  return "neutro";
+  return "contexto";
 }
 
 export interface ExpedienteSenado {

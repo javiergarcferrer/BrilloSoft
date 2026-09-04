@@ -30,6 +30,15 @@ hallazgos="$( { grep -rnE "$IDENTIDAD_PATRONES" app components --include=*.tsx -
               | grep -vE ':[0-9]+:[[:space:]]*(//|/?\*)' | head -10)"
 if [ -z "$hallazgos" ]; then ok "identity: no gradients/blur/glass shadows/rounded-2xl+/emoji"; else mal "identity violations"; printf '%s\n' "$hallazgos" | sed 's/^/       /'; fi
 
+# 2b. Controls that promise a response and give none (see sin-efecto.py).
+if command -v python3 >/dev/null 2>&1; then
+  if muertos="$(python3 "$(dirname "$0")/sin-efecto.py" "$ROOT" 2>/dev/null)" && [ -z "$muertos" ]; then
+    ok "hover: every hover changes something"
+  else
+    mal "hover without effect"; printf '%s\n' "$muertos" | sed 's/^/       /'
+  fi
+fi
+
 # 3. Statelessness: env vars and Supabase confined to /democracia.
 fuera="$( { grep -rlE 'process\.env\.' app lib components --include=*.ts --include=*.tsx 2>/dev/null; \
             grep -rlE '@supabase/supabase-js|@/lib/supabase["'"'"']' app lib components --include=*.ts --include=*.tsx 2>/dev/null; } \

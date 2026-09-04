@@ -19,17 +19,17 @@ export default async function DemocraciaPage() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg bg-ink text-white">
+      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
         <div className="relative p-6 sm:p-9">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/85 ring-1 ring-inset ring-white/15">
+          <div className="inline-flex items-center gap-2 rounded-md bg-canvas/10 px-3 py-1 text-xs font-medium text-canvas/85 ring-1 ring-inset ring-canvas/15">
             <IconSparkles className="h-3.5 w-3.5" />
             Piloto ciudadano · independiente y no oficial
           </div>
           <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
             ¿Qué opinas de lo que se legisla?
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-canvas/70 sm:text-base">
             Vota a favor o en contra de las iniciativas reales que se discuten en
             la Cámara de Diputados y el Senado, y mira cómo opina la ciudadanía. Un
             registro por cédula para que cada voto cuente una vez; tu voto es
@@ -38,13 +38,13 @@ export default async function DemocraciaPage() {
           <div className="mt-6 flex flex-wrap gap-2.5">
             <Link
               href="/democracia/registro"
-              className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700 active:scale-95"
             >
               Regístrate para votar
             </Link>
             <Link
               href="/congreso"
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/20 transition-colors hover:bg-white/15 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-lg bg-canvas/10 px-5 py-2.5 text-sm font-semibold text-canvas ring-1 ring-inset ring-canvas/20 transition-colors hover:bg-canvas/15 active:scale-95"
             >
               Ver iniciativas
             </Link>
@@ -159,7 +159,7 @@ function FilaRanking({ item }: { item: RankingItem }) {
           <span className="font-mono font-semibold tabular-nums text-brand-700">
             {item.numero ?? `${item.camara}·${item.ref}`}
           </span>
-          <span className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-soft ring-1 ring-inset ring-hairline">
+          <span className="rounded-md bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-soft ring-1 ring-inset ring-hairline">
             {item.camara === "senado" ? "Senado" : "Diputados"}
           </span>
           {item.grupo && <span className="text-ink-soft">{item.grupo}</span>}
@@ -168,7 +168,7 @@ function FilaRanking({ item }: { item: RankingItem }) {
           {item.titulo ?? "(iniciativa)"}
         </p>
         <div className="mt-2 flex items-center gap-3">
-          <div className="flex h-2 flex-1 overflow-hidden rounded-full ring-1 ring-inset ring-hairline">
+          <div className="flex h-2 flex-1 overflow-hidden rounded-sm ring-1 ring-inset ring-hairline">
             <div className="bg-brand-500" style={{ width: `${pct}%` }} />
             <div className="flex-1 bg-ink-soft/30" />
           </div>

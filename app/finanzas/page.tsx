@@ -47,10 +47,10 @@ export default async function FinanzasPage() {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-lg bg-ink text-white">
+      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
         <div className="relative p-6 sm:p-8">
-          <div className="rotulo inline-flex items-start gap-2 text-white/70">
+          <div className="rotulo inline-flex items-start gap-2 text-canvas/70">
             <span
               aria-hidden
               className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400"
@@ -60,11 +60,11 @@ export default async function FinanzasPage() {
           <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
             ¿En qué gasta el Estado?
           </h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-white/70">
+          <p className="mt-1.5 max-w-2xl text-sm text-canvas/70">
             El presupuesto no se ejecuta de golpe: se aprueba, se modifica, se
             compromete, se devenga y se paga. Estas son las cifras de cada
             institución en {fiscal.anio}, con el gasto{" "}
-            <span className="font-medium text-white">devengado</span> —lo que el
+            <span className="font-medium text-canvas">devengado</span> —lo que el
             Estado ya se obligó a pagar— como medida.
           </p>
           <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -73,11 +73,11 @@ export default async function FinanzasPage() {
                 key={k.etiqueta}
                 className={
                   k.destacar
-                    ? "rounded-lg bg-white/10 px-4 py-3"
-                    : "rounded-lg bg-white/5 px-4 py-3"
+                    ? "rounded-lg bg-canvas/10 px-4 py-3"
+                    : "rounded-lg bg-canvas/5 px-4 py-3"
                 }
               >
-                <dt className="text-xs text-white/60">{k.etiqueta}</dt>
+                <dt className="text-xs text-canvas/60">{k.etiqueta}</dt>
                 <dd className="mt-0.5 font-mono text-lg font-bold tabular-nums">
                   {k.valor}
                 </dd>
@@ -104,9 +104,9 @@ export default async function FinanzasPage() {
                     {formatPesos(m.devengado)}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-hairline">
+                <div className="mt-1 h-2 rounded-sm bg-hairline">
                   <div
-                    className="bar-grow h-2 rounded-full bg-v-finanzas"
+                    className="bar-grow h-2 rounded-sm bg-v-finanzas"
                     style={{ width: `${Math.max(2, (m.devengado / maxMes) * 100)}%` }}
                   />
                 </div>
@@ -171,9 +171,9 @@ export default async function FinanzasPage() {
                     {formatPesos(i.devengado)}
                   </span>
                 </div>
-                <div className="mt-1.5 h-2 rounded-full bg-hairline">
+                <div className="mt-1.5 h-2 rounded-sm bg-hairline">
                   <div
-                    className="bar-grow h-2 rounded-full bg-v-finanzas"
+                    className="bar-grow h-2 rounded-sm bg-v-finanzas"
                     style={{
                       width: `${Math.max(1, (i.devengado / maxDevengado) * 100)}%`,
                     }}

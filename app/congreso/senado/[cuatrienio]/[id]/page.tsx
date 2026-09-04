@@ -69,8 +69,8 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
           <CondicionBadge tono={ficha.tono}>
             {ficha.estadoActual ?? ficha.condicion ?? "—"}
           </CondicionBadge>
-          {ficha.promulgada && <CondicionBadge tono="aprobado">Promulgada</CondicionBadge>}
-          {ficha.perimida && <CondicionBadge tono="perimido">Perimida</CondicionBadge>}
+          {ficha.promulgada && <CondicionBadge tono="cumplido">Promulgada</CondicionBadge>}
+          {ficha.perimida && <CondicionBadge tono="anulado">Perimida</CondicionBadge>}
         </div>
 
         <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">

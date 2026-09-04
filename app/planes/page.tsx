@@ -3,6 +3,7 @@ import { listPacc } from "@/lib/dgcp";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { IconExternal } from "@/components/icons";
+import Antiguedad from "@/components/antiguedad";
 
 export const metadata: Metadata = {
   title: "Planes anuales de compras",
@@ -59,10 +60,10 @@ export default async function PlanesPage() {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-lg bg-ink text-white">
+      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
         <div className="absolute inset-0 app-grid-dark" aria-hidden />
         <div className="relative p-6 sm:p-8">
-          <div className="rotulo inline-flex items-start gap-2 text-white/70">
+          <div className="rotulo inline-flex items-start gap-2 text-canvas/70">
             <span
               aria-hidden
               className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400"
@@ -72,7 +73,7 @@ export default async function PlanesPage() {
           <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
             ¿Qué planea comprar el Estado?
           </h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-white/70">
+          <p className="mt-1.5 max-w-2xl text-sm text-canvas/70">
             Antes de que exista una licitación, cada institución declara lo que
             piensa comprar en el año. Ese documento es el PACC, y se puede leer
             hoy: es la señal más temprana que publica el Estado sobre su propio
@@ -84,11 +85,11 @@ export default async function PlanesPage() {
                 key={k.etiqueta}
                 className={
                   k.destacar
-                    ? "rounded-lg bg-white/10 px-4 py-3"
-                    : "rounded-lg bg-white/5 px-4 py-3"
+                    ? "rounded-lg bg-canvas/10 px-4 py-3"
+                    : "rounded-lg bg-canvas/5 px-4 py-3"
                 }
               >
-                <dt className="text-xs text-white/60">{k.etiqueta}</dt>
+                <dt className="text-xs text-canvas/60">{k.etiqueta}</dt>
                 <dd className="mt-0.5 font-mono text-lg font-bold tabular-nums">
                   {k.valor}
                 </dd>
@@ -117,9 +118,11 @@ export default async function PlanesPage() {
               <div className="min-w-0">
                 <div className="font-medium">{p.unidadCompra}</div>
                 <div className="text-xs text-ink-soft">
-                  {p.fechaPublicacion
-                    ? `Publicado ${formatFecha(p.fechaPublicacion)}`
-                    : "Sin fecha de publicación"}
+                  {p.fechaPublicacion ? (
+                    <Antiguedad iso={p.fechaPublicacion} prefijo="Publicado" />
+                  ) : (
+                    "Sin fecha de publicación"
+                  )}
                   {Number(p.version) > 0 && (
                     <> · versión {p.version}</>
                   )}

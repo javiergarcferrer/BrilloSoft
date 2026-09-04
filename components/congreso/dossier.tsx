@@ -95,7 +95,7 @@ export default async function Dossier({
             </p>
             <Link
               href={`/normativa/ley/${ley.numero}`}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-700"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-canvas transition-colors hover:bg-brand-700"
             >
               Leer el texto de la ley →
             </Link>

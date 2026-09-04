@@ -1,23 +1,16 @@
 import Link from "next/link";
 import { evaluarPerencion, type CondicionTono, type Iniciativa } from "@/lib/congreso";
-import { formatFecha } from "@/lib/format";
+import { TONOS } from "@/lib/estados";
 import { cn } from "@/lib/cn";
+import Antiguedad from "@/components/antiguedad";
 
 /**
- * Lenguaje de color de la condición procesal, alineado con `lib/estados.ts`
- * (el vocabulario visual de licitaciones) para que la plataforma se lea como
- * un solo sistema. Clases literales: Tailwind escanea el fuente.
+ * La marca de estado de una pieza legislativa.
+ *
+ * Este archivo tenía su propia tabla de colores y un comentario que la decía
+ * «alineada con lib/estados.ts». No lo estaba: invertía los dos tonos que más
+ * pesan. Ahora no hay tabla aquí — solo el componente que la pinta.
  */
-const TONOS: Record<CondicionTono, { badge: string; dot: string }> = {
-  vigente: { badge: "bg-valido-50 text-valido-700 ring-valido-600/20", dot: "bg-valido-500" },
-  aprobado: {
-    badge: "bg-brand-50 text-brand-600 ring-brand-500/20",
-    dot: "bg-brand-500",
-  },
-  perimido: { badge: "bg-sello-50 text-sello-700 ring-sello-600/20", dot: "bg-sello-500" },
-  neutro: { badge: "bg-hairline text-ink-soft ring-hairline", dot: "bg-ink-soft" },
-};
-
 export function CondicionBadge({
   tono,
   children,
@@ -61,11 +54,11 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
           </CondicionBadge>
 
           {iniciativa.promulgada && (
-            <CondicionBadge tono="aprobado">Promulgada</CondicionBadge>
+            <CondicionBadge tono="cumplido">Promulgada</CondicionBadge>
           )}
 
           {enRiesgo && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-alerta-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-alerta-600 ring-1 ring-inset ring-alerta-600/20">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-alerta-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-alerta-600 ring-1 ring-inset ring-alerta-600/20">
               Perime en {perencion.diasRestantes} d
             </span>
           )}
@@ -86,9 +79,7 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
           {iniciativa.fechaDeposito && (
             <>
               <Sep />
-              <span className="tabular-nums">
-                Depositada {formatFecha(iniciativa.fechaDeposito)}
-              </span>
+              <Antiguedad iso={iniciativa.fechaDeposito} prefijo="Depositada" />
             </>
           )}
           {iniciativa.legislatura && (

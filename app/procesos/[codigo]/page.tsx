@@ -124,17 +124,17 @@ export default async function ProcesoPage({
       <section className="rounded-lg bg-surface p-6 border border-hairline">
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ring-1 ring-inset ${est.badge}`}
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 ring-1 ring-inset ${est.badge}`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${est.dot}`} />
             {est.label}
           </span>
-          <span className="rounded-full bg-hairline px-2.5 py-1 text-ink-soft">
+          <span className="rounded-md bg-hairline px-2.5 py-1 text-ink-soft">
             {p.modalidad}
           </span>
           {cierreBadge && (
             <span
-              className={`rounded-full px-2.5 py-1 ring-1 ring-inset ${cierreBadge.badge}`}
+              className={`rounded-md px-2.5 py-1 ring-1 ring-inset ${cierreBadge.badge}`}
             >
               {cierreBadge.texto}
             </span>
@@ -181,7 +181,7 @@ export default async function ProcesoPage({
               href={p.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-canvas transition hover:bg-brand-600"
             >
               Ver en el Portal Transaccional
               <IconExternal className="h-4 w-4" />
@@ -290,7 +290,7 @@ export default async function ProcesoPage({
                   <div className="flex flex-col items-center">
                     <span
                       className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ring-4 ring-surface ${
-                        destacar ? "bg-alerta-500 text-white" : "bg-hairline text-ink-soft"
+                        destacar ? "bg-alerta-500 text-canvas" : "bg-hairline text-ink-soft"
                       }`}
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -607,7 +607,7 @@ function Paso({
 }) {
   return (
     <li className="flex gap-3">
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-canvas">
         {n}
       </span>
       <div className="text-sm">
