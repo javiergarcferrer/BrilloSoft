@@ -231,6 +231,15 @@ se gastan por accidente. Si algún día el Site URL apunta a producción y se
 quiere el enlace de vuelta, es una línea:
 `<a href="{{ .ConfirmationURL }}">Entrar directamente</a>`.
 
+El panel no es la única vía: `scripts/aplicar-auth-supabase.sh` hace las cuatro
+cosas de una (Site URL, lista de redirecciones y las dos plantillas con su
+asunto) contra `PATCH /v1/projects/{ref}/config/auth` de la Management API, y
+verifica la respuesta. Sigue siendo **acción del dueño**: pide un token
+personal `sbp_…`, que manda sobre todos los proyectos de la cuenta y no se
+guarda en ningún sitio. El MCP de Supabase **no** sirve para esto —expone
+lectura, SQL, migraciones y funciones, pero ninguna escritura de configuración
+de Auth—, así que o el panel o este script.
+
 ⚠️ **El remitente sigue siendo el SMTP por defecto de Supabase**
 (`noreply@mail.app.supabase.io`, medido en los logs), que Supabase limita a
 unos pocos correos por hora y declara no apto para producción. Antes de abrir
