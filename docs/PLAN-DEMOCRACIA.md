@@ -172,6 +172,50 @@ trabajo futuro con el gobierno.
   en vivo y, si hay sesión, el voto propio; si no, invita a registrarse.
 - Nueva sección en `lib/secciones.ts` (matiz propio) → nav, barra, tab bar, pie.
 
+### 5.1 La vuelta del OTP — medido contra el proyecto (2026-09-04)
+
+El correo de verificación puede volver de **tres formas distintas**, y el
+registro tiene que aceptar las tres mientras el Site URL del proyecto siga en
+`http://localhost:3000` (decisión abierta del dueño). Lo comprobado, con
+`User-Agent` identificable y sin tocar el panel:
+
+| Prueba | Resultado |
+|---|---|
+| `GET /auth/v1/verify?token=…&type=magiclink&redirect_to=https://brillo-soft.vercel.app/democracia/registro` | `303 → http://localhost:3000#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired` |
+| `POST /auth/v1/otp?redirect_to=https://brillo-soft.vercel.app/democracia/registro` (usuario inexistente, `create_user:false`) | `422 otp_disabled` — o sea, **pasó** la validación de redirección |
+| `GET /auth/v1/settings` | `email:true`, `disable_signup:false`, `mailer_autoconfirm:true` |
+
+Tres conclusiones, y las tres están en el código:
+
+1. ✅ **GoTrue no rechaza una redirección fuera de la lista: la sustituye por el
+   Site URL.** Por eso `signInWithOtp` **sí** manda `emailRedirectTo` al propio
+   origen: hoy no cambia nada —el enlace aterriza igual en el Site URL— y el día
+   que el dominio entre en la lista de redirecciones, el enlace vuelve a
+   `/democracia/registro` y el registro se completa **solo**, sin pegar nada.
+2. ✅ **La respuesta viaja siempre en el fragmento** (`#`), no en la query, y el
+   flujo es implícito: en el éxito trae `access_token` + `refresh_token`, no un
+   `code`.
+3. ⚠️ **Pulsar el enlace gasta el token.** Quien lo pulsa desde el móvil llega a
+   una página que no carga y, si vuelve a la pestaña del registro y pega la
+   dirección del correo, ya no vale: el `token` está consumido. **Pero la barra
+   de direcciones donde quedó varado trae la sesión hecha.** Ése es el camino
+   que faltaba y el que rescata el caso real.
+
+`leerEntrada()` en `app/democracia/registro/registro.tsx` reconoce, por eso,
+cinco formas: los seis dígitos (`{{ .Token }}`), el enlace sin pulsar
+(`token`/`token_hash`, con su `type`), la barra de direcciones tras pulsarlo
+(`#access_token`+`refresh_token` → `setSession`), un `?code=` por si el proyecto
+pasa a PKCE, y el fragmento de error (`error_code=otp_expired`), que se traduce
+en vez de decir «código inválido». Los parámetros se leen tanto de la query como
+del fragmento, se acepta el correo pegado entero y se deshacen las entidades
+`&amp;` del HTML. La misma función corre **al cargar la página**, así que una
+vuelta buena del enlace se consume sola.
+
+Lo que sigue siendo acción de panel (no de código): poner el dominio de
+producción como Site URL, añadirlo a la lista de redirecciones y meter
+`{{ .Token }}` en la plantilla de Magic Link para que el correo traiga los seis
+dígitos. Con eso, dos de los cinco caminos dejan de hacer falta.
+
 ---
 
 ## 6. Fuera del v1 (va al pitch, no al código)

@@ -104,8 +104,14 @@ against every rule above).
   (PLAN-DEMOCRACIA §1): the pilot shares the `Transac` Auth pool.
 - **Supabase Auth panel**: Site URL still `http://localhost:3000`, production
   domain not in the redirect allowlist, Magic Link template should send
-  `{{ .Token }}`. Registration works without it (link paste path); fixing it
-  is a panel action.
+  `{{ .Token }}`. Fixing it is a panel action; registration works without it.
+  Measured 2026-09-04 (PLAN-DEMOCRACIA §5.1): GoTrue does **not** reject a
+  non-allowlisted `redirect_to`, it substitutes the Site URL, and the answer
+  always comes back in the URL **fragment** — so the OTP request now asks to
+  return to `/democracia/registro` and self-heals the day the domain is
+  allowlisted, and the registration form accepts all five return shapes,
+  including the address bar the visitor is stranded on after tapping the link
+  (which carries the session even though the link's token is already spent).
 - **Cuenta Única OAuth2 client** (PLAN-DEMOCRACIA §9, AUDITORIA §A.11):
   identity v2 for `/democracia` is **built and inert** (public PKCE client,
   verification inside the Edge Function `vincular-cuenta-unica`, subject

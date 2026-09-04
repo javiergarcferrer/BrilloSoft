@@ -23,6 +23,105 @@ type Paso =
   | "listo"
   | "sesion";
 
+/**
+ * Lo que el visitante puede pegar en el campo de verificación. Son cinco cosas
+ * distintas y **ninguna es opcional**, porque el proyecto de Supabase todavía
+ * tiene el Site URL en `http://localhost:3000` (decisión abierta del dueño):
+ *
+ * - `codigo`  — los seis dígitos, si la plantilla lleva `{{ .Token }}`.
+ * - `enlace`  — la dirección del correo *sin pulsar*: lleva `token`/`token_hash`.
+ * - `sesion`  — la barra de direcciones **después** de pulsar el enlace. GoTrue
+ *   ya gastó el token y devolvió la sesión hecha en el fragmento
+ *   (`#access_token=…&refresh_token=…`). El token del correo ya no sirve, pero
+ *   esto sí: es la sesión misma. Éste es el caso real de quien pulsa desde el
+ *   móvil y acaba en una página que no carga.
+ * - `canje`   — `?code=…` del flujo PKCE, por si el proyecto se cambia a él.
+ * - `fallo`   — `#error_code=otp_expired&…`: el enlace ya se usó o venció.
+ *   Decirlo con precisión evita mandar a nadie a mirar una bandeja vacía.
+ *
+ * Verificado contra el proyecto el 2026-09-04:
+ * `GET /auth/v1/verify?token=…&redirect_to=https://brillo-soft.vercel.app/…`
+ * responde `303` a `http://localhost:3000#error=access_denied&
+ * error_code=otp_expired&…` — o sea: GoTrue **no rechaza** una redirección
+ * fuera de la lista, la sustituye por el Site URL, y el resultado siempre
+ * viaja en el **fragmento**.
+ */
+type Entrada =
+  | { via: "codigo"; token: string }
+  | { via: "enlace"; hash: string; clase: string | null }
+  | { via: "sesion"; access: string; refresh: string }
+  | { via: "canje"; code: string }
+  | { via: "fallo"; codigo: string; descripcion: string };
+
+/** Tipos de token que acepta `verifyOtp` con `token_hash`. */
+const CLASES_ENLACE = [
+  "email",
+  "magiclink",
+  "signup",
+  "recovery",
+  "invite",
+  "email_change",
+] as const;
+
+/**
+ * Todos los parámetros de un pegado, vengan en la query o en el fragmento y
+ * traiga o no el correo entero alrededor. Gana la primera aparición: la query
+ * real manda sobre lo que venga detrás de un `redirect_to` sin codificar.
+ */
+function parametrosDe(bruto: string): URLSearchParams {
+  const texto = bruto.trim().replace(/&amp;/gi, "&");
+  const url = /https?:\/\/\S+/.exec(texto)?.[0] ?? texto;
+  const params = new URLSearchParams();
+  for (const trozo of url.split(/[?#]/).slice(1)) {
+    for (const [clave, valor] of new URLSearchParams(trozo)) {
+      if (!params.has(clave)) params.set(clave, valor);
+    }
+  }
+  return params;
+}
+
+function leerEntrada(bruto: string): Entrada | null {
+  const limpio = bruto.trim();
+  if (!limpio) return null;
+
+  const digitos = limpio.replace(/\D/g, "");
+  if (digitos.length === 6 && !/[a-z]/i.test(limpio)) {
+    return { via: "codigo", token: digitos };
+  }
+
+  const p = parametrosDe(limpio);
+
+  const codigoError = p.get("error_code") ?? p.get("error");
+  if (codigoError) {
+    return { via: "fallo", codigo: codigoError, descripcion: p.get("error_description") ?? "" };
+  }
+
+  const access = p.get("access_token");
+  const refresh = p.get("refresh_token");
+  if (access && refresh) return { via: "sesion", access, refresh };
+
+  const code = p.get("code");
+  if (code) return { via: "canje", code };
+
+  const hash = p.get("token_hash") ?? p.get("token");
+  if (hash) return { via: "enlace", hash, clase: p.get("type") };
+
+  // Un token pegado a secas, sin la dirección alrededor.
+  if (/^[A-Za-z0-9_-]{20,}$/.test(limpio)) return { via: "enlace", hash: limpio, clase: null };
+
+  return null;
+}
+
+function mensajeDeFallo(codigo: string, descripcion: string): string {
+  if (codigo === "otp_expired") {
+    return "Ese enlace ya se usó o venció: valen una sola vez y por unos minutos. Pide un correo nuevo y, en vez de pulsarlo, copia su dirección y pégala aquí.";
+  }
+  if (codigo === "access_denied") {
+    return "El servidor rechazó ese enlace. Pide un correo nuevo y pega su dirección aquí sin pulsarlo.";
+  }
+  return `El enlace no sirvió${descripcion ? `: ${descripcion}` : ""}. Pide un correo nuevo.`;
+}
+
 export default function Registro() {
   const [paso, setPaso] = useState<Paso>("datos");
   const [cedula, setCedula] = useState("");
@@ -33,11 +132,71 @@ export default function Registro() {
   /** De dónde viene la identidad del votante: cédula tecleada o Cuenta Única. */
   const [origen, setOrigen] = useState<"declarada" | "cuenta_unica" | null>(null);
 
-  // Si ya hay sesión con votante, saltar directo al estado final.
+  /**
+   * Abre sesión con lo que sea que haya llegado. Devuelve el mensaje del fallo,
+   * o `null` si quedó sesión. Es el mismo camino para lo pegado a mano y para
+   * lo que traiga la URL al cargar la página.
+   */
+  async function abrirSesion(entrada: Entrada): Promise<string | null> {
+    const auth = supabase().auth;
+
+    if (entrada.via === "fallo") return mensajeDeFallo(entrada.codigo, entrada.descripcion);
+
+    if (entrada.via === "codigo") {
+      const { error: err } = await auth.verifyOtp({ email, token: entrada.token, type: "email" });
+      return err ? "El código no es válido o ya venció. Pide uno nuevo." : null;
+    }
+
+    if (entrada.via === "sesion") {
+      const { error: err } = await auth.setSession({
+        access_token: entrada.access,
+        refresh_token: entrada.refresh,
+      });
+      return err
+        ? "Esa dirección ya no sirve: la sesión que traía venció o se usó en otro navegador. Pide un correo nuevo."
+        : null;
+    }
+
+    if (entrada.via === "canje") {
+      const { error: err } = await auth.exchangeCodeForSession(entrada.code);
+      return err
+        ? "Ese enlace hay que abrirlo en el mismo navegador donde pediste el código. Pide uno nuevo desde aquí."
+        : null;
+    }
+
+    // Enlace: el `type` de la dirección manda, pero si falta o miente se prueban
+    // los demás. Un tipo equivocado no gasta el token, solo no encaja.
+    const declarada = CLASES_ENLACE.find((c) => c === entrada.clase);
+    const orden = declarada
+      ? [declarada, ...CLASES_ENLACE.filter((c) => c !== declarada)]
+      : [...CLASES_ENLACE];
+    for (const type of orden) {
+      const { error: err } = await auth.verifyOtp({ token_hash: entrada.hash, type });
+      if (!err) return null;
+    }
+    return "Ese enlace ya se usó o venció. Pide un correo nuevo y pega su dirección sin pulsarla.";
+  }
+
+  // Si ya hay sesión con votante, saltar directo al estado final. Y si la URL
+  // trae la respuesta del enlace, consumirla antes de nada.
   useEffect(() => {
+    // Leído antes de tocar el cliente: supabase-js limpia el fragmento en
+    // cuanto se inicializa, así que después ya no estaría.
+    const llegada = leerEntrada(window.location.href);
     (async () => {
-      const { data } = await supabase().auth.getSession();
-      if (!data.session) return;
+      // `getSession()` espera a la inicialización, que es la que consume el
+      // fragmento cuando trae una sesión válida.
+      let sesion = (await supabase().auth.getSession()).data.session;
+      if (llegada) {
+        if (!sesion) {
+          const fallo = await abrirSesion(llegada);
+          if (fallo) setError(fallo);
+          sesion = (await supabase().auth.getSession()).data.session;
+        }
+        // Que un recargado no reintente un token ya gastado.
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+      if (!sesion) return;
       // `*` y no `id, origen`: hasta que se aplique la migración 20260902 la
       // columna no existe, y pedirla por nombre haría fallar la consulta y
       // mandaría a quien ya está registrado a teclear la cédula otra vez.
@@ -46,8 +205,10 @@ export default function Registro() {
       setPaso(votante ? "sesion" : "cedula-pendiente");
       const v = votante as { origen?: "declarada" | "cuenta_unica" } | null;
       setOrigen(v?.origen ?? null);
-      if (data.session.user.email) setEmail(data.session.user.email);
+      if (sesion.user.email) setEmail(sesion.user.email);
     })();
+    // Solo al montar: es el rescate de la vuelta del correo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const cedulaOk = cedulaValida(cedula);
@@ -83,15 +244,21 @@ export default function Registro() {
     setError(null);
     setCargando(true);
     /*
-      Sin `emailRedirectTo`: el dominio de producción no está en la lista de
-      redirecciones permitidas del proyecto, así que pedirlo no aporta nada
-      —el enlace acaba en el Site URL igual— y algunos despliegues de GoTrue
-      rechazan la petición entera por una redirección no permitida. La vía del
-      enlace ya funciona pegándolo en el campo de verificación.
+      Se pide la vuelta a esta misma página aunque hoy no esté en la lista de
+      redirecciones del proyecto. Comprobado el 2026-09-04 contra este GoTrue:
+      `POST /auth/v1/otp?redirect_to=https://brillo-soft.vercel.app/…` pasa la
+      validación (falla después, por política de altas), y `/auth/v1/verify` con
+      esa misma redirección responde 303 al Site URL. Es decir: pedirla no
+      rompe nada hoy —el enlace sigue aterrizando en el Site URL— y el día que
+      el dominio entre en la lista, el enlace vuelve aquí y el registro se
+      completa solo, sin pegar nada.
     */
     const { error: err } = await supabase().auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/democracia/registro`,
+      },
     });
     setCargando(false);
     if (err) {
@@ -104,51 +271,24 @@ export default function Registro() {
     setPaso("codigo");
   }
 
-  /**
-   * El correo puede traer dos cosas y las dos sirven.
-   *
-   * Supabase decide qué manda según su plantilla: si lleva `{{ .Token }}`
-   * envía seis dígitos; si lleva `{{ .ConfirmationURL }}`, un enlace. Pero ese
-   * enlace **contiene el mismo token** en su parámetro `token`, así que pegarlo
-   * verifica igual de bien que teclear el código —y sin depender de que la
-   * redirección del enlace esté permitida, que es un ajuste aparte del
-   * proyecto—. Aquí se acepta cualquiera de las dos formas.
-   */
-  function leerEntrada(bruto: string): { token: string } | { hash: string } | null {
-    const limpio = bruto.trim();
-    const digitos = limpio.replace(/\D/g, "");
-    if (/^\d{6}$/.test(limpio) || (digitos.length === 6 && !/[a-z]/i.test(limpio))) {
-      return { token: digitos };
-    }
-    // Un enlace de verificación: el token viaja como `token` o `token_hash`.
-    const m = /[?&](?:token_hash|token)=([^&\s]+)/.exec(limpio);
-    if (m) return { hash: decodeURIComponent(m[1]) };
-    return null;
-  }
-
   async function verificar(e: React.FormEvent) {
     e.preventDefault();
     const entrada = leerEntrada(codigo);
-    if (!entrada) return;
-    setError(null);
-    setCargando(true);
-
-    const errOtp =
-      "token" in entrada
-        ? (await supabase().auth.verifyOtp({ email, token: entrada.token, type: "email" })).error
-        : ((await supabase().auth.verifyOtp({ token_hash: entrada.hash, type: "email" })).error &&
-           (await supabase().auth.verifyOtp({ token_hash: entrada.hash, type: "magiclink" })).error);
-
-    if (errOtp) {
-      setCargando(false);
+    if (!entrada) {
+      // El callejón sin salida era un botón apagado sin explicación.
       setError(
-        "token" in entrada
-          ? "Código inválido o vencido. Pide uno nuevo."
-          : "Ese enlace ya se usó o venció. Pide un correo nuevo.",
+        "Eso no parece ni un código de seis dígitos ni una dirección de verificación. Pega la dirección completa, la que empieza por «http».",
       );
       return;
     }
-
+    setError(null);
+    setCargando(true);
+    const fallo = await abrirSesion(entrada);
+    setCargando(false);
+    if (fallo) {
+      setError(fallo);
+      return;
+    }
     await completarRegistro("codigo");
   }
 
@@ -319,8 +459,8 @@ export default function Registro() {
             <input
               id="cedula-pendiente"
               inputMode="numeric"
-              value={cedula}
-              onChange={(e) => setCedula(formatearCedula(e.target.value))}
+              value={formatearCedula(cedula)}
+              onChange={(e) => setCedula(limpiarCedula(e.target.value).slice(0, 11))}
               placeholder="000-0000000-0"
               className="mt-1.5 h-11 w-full rounded-lg border border-hairline bg-canvas px-3 font-mono text-sm tabular-nums text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
             />
@@ -353,8 +493,17 @@ export default function Registro() {
             <li className="flex gap-2">
               <span aria-hidden className="mt-[0.45em] h-1 w-1 shrink-0 rounded-full bg-sello-600" />
               <span>
-                Si trae un <strong className="font-medium text-ink">enlace</strong>, mantén
-                pulsado, copia la dirección y pégala aquí. Sirve igual.
+                Si trae un <strong className="font-medium text-ink">enlace</strong>, no lo
+                pulses: mantén pulsado (o clic derecho), «Copiar dirección», y pégala aquí.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden className="mt-[0.45em] h-1 w-1 shrink-0 rounded-full bg-sello-600" />
+              <span>
+                <strong className="font-medium text-ink">¿Ya lo pulsaste</strong> y quedaste
+                en una página que no carga (<span className="font-mono">localhost:3000</span>)?
+                Copia la dirección de la barra del navegador y pégala aquí: esa
+                dirección ya trae tu sesión y sirve igual.
               </span>
             </li>
           </ul>
@@ -362,17 +511,21 @@ export default function Registro() {
             rows={codigo.length > 40 ? 3 : 1}
             value={codigo}
             onChange={(e) => setCodigo(e.target.value)}
-            placeholder="000000 — o pega aquí el enlace del correo"
+            placeholder="000000 — o pega aquí la dirección del correo"
             autoComplete="one-time-code"
             className="w-full resize-none rounded-lg border border-hairline bg-canvas px-3 py-3 font-mono text-sm tabular-nums text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
           />
           {error && <p className="text-xs font-medium text-alerta-700">{error}</p>}
           <button
             type="submit"
-            disabled={!leerEntrada(codigo) || paso === "registrando"}
+            disabled={!codigo.trim() || cargando || paso === "registrando"}
             className="h-11 w-full rounded-lg bg-brand-600 text-sm font-semibold text-white transition-colors hover:bg-brand-600 active:scale-95 disabled:opacity-50"
           >
-            {paso === "registrando" ? "Registrando…" : "Verificar y registrar"}
+            {paso === "registrando"
+              ? "Registrando…"
+              : cargando
+                ? "Verificando…"
+                : "Verificar y registrar"}
           </button>
           <button
             type="button"
