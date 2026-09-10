@@ -24,6 +24,15 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
   const estado = estadoMeta(p.estado_proceso);
   const dias = diasHasta(p.fecha_fin_recepcion_ofertas);
   const cierre = estado.abierto ? cierreMeta(dias) : null;
+  /*
+    En un proceso ya cerrado la tarjeta no decía **cuándo** cerró: el plazo
+    solo se pintaba mientras corría, y al pasar a «Sobres abiertos» o
+    «Adjudicado» el hueco quedaba vacío. Da igual en una lista de procesos
+    abiertos; en una de cerrados —que ahora se puede pedir— era la mitad de la
+    fila. Solo si la fecha ya pasó: un cerrado con cierre futuro es el registro
+    contradiciéndose, y ahí la fecha no se afirma.
+  */
+  const cerroHace = !estado.abierto && dias !== null && dias < 0;
   const href = `/procesos/${encodeURIComponent(p.codigo_proceso)}`;
 
   return (
@@ -31,6 +40,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span
+            title={`La DGCP lo publica como «${estado.original}»`}
             className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${estado.badge}`}
           >
             <span className={`relative inline-block h-1.5 w-1.5 rounded-full ${estado.dot}`}>
@@ -90,6 +100,13 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
             >
               {cierre.texto}
             </span>
+          )}
+          {cerroHace && (
+            <Antiguedad
+              iso={p.fecha_fin_recepcion_ofertas}
+              prefijo="Cerró"
+              className="block text-[11px] text-ink-soft"
+            />
           )}
           <Link
             href={href}
