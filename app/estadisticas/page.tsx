@@ -41,12 +41,53 @@ function agrupar(lista: Proceso[], clave: (p: Proceso) => string): [string, Agre
   return [...m.entries()].sort((a, b) => b[1].monto - a[1].monto);
 }
 
+/**
+ * «No hay datos» y «la fuente no contestó» son dos pantallas distintas, y esta
+ * segunda no puede pintarse con ceros: un tablero de mercado en cero es una
+ * cifra falsa sobre el Estado, no un hueco declarado.
+ */
+function FuenteCaida() {
+  return (
+    <section className="rounded-lg border border-alerta-600/25 bg-alerta-50 px-5 py-12 text-center">
+      <p className="font-sans text-sm font-semibold text-ink">
+        La DGCP no respondió
+      </p>
+      <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-ink-soft">
+        Este tablero se arma con una sola lectura de la API de datos abiertos, y
+        ahora mismo no contesta. No se pintan ceros: un mercado en cero sería una
+        cifra falsa, no un dato que falta.
+      </p>
+      <Link
+        href="/licitaciones"
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700"
+      >
+        Ir al buscador de licitaciones
+        <IconArrowRight className="h-4 w-4" />
+      </Link>
+    </section>
+  );
+}
+
 export default async function EstadisticasPage() {
+  /*
+    La lectura degrada a `null` en vez de reventar, como manda el contrato de
+    adaptadores (.claude/rules/fuentes.md: «degrade to null, never throw into a
+    page») y como ya hacía el panorama con esta misma consulta.
+
+    No es cosmético. Esta página se prerenderiza en el build —lleva
+    `revalidate`, no es dinámica—, así que una DGCP caída no dejaba solo este
+    tablero en blanco: **tumbaba el despliegue entero**, y con él cualquier
+    arreglo de cualquier otra vertical. Era la única página de la casa que
+    ataba el deploy a que una fuente del Estado estuviera en pie.
+  */
   const data = await dgcpFetch<Proceso>(
     "/procesos",
     { startdate: fechaHaceDias(30), limit: 1000 },
     1800
-  );
+  ).catch(() => null);
+
+  if (!data) return <FuenteCaida />;
+
   const lista = data.payload.content;
   const total = data.totalResults ?? lista.length;
   const abiertos = lista.filter((p) => p.estado_proceso === "Proceso publicado");
