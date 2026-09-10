@@ -40,6 +40,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span
+            title={`La DGCP lo publica como «${estado.original}»`}
             className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${estado.badge}`}
           >
             <span className={`relative inline-block h-1.5 w-1.5 rounded-full ${estado.dot}`}>

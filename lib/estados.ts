@@ -111,6 +111,14 @@ export interface Etapa {
   /**
    * El valor exacto que la API honra, cuando la etapa es un solo estado. Deja
    * que el caso por defecto siga costando **una** petición en vez de seis.
+   *
+   * Riesgo residual, escrito porque no se puede eliminar sin pagarlo: esto es
+   * un literal tecleado, exactamente lo que el resto de la tabla evita. Si la
+   * DGCP renombrara «Proceso publicado», la vista inicial de la vertical
+   * devolvería cero y se leería como «no hay nada abierto». Se acepta a
+   * sabiendas: barrer seis páginas para la consulta más frecuente de la casa
+   * cuesta más que ese riesgo, y el fallo es ruidoso —una vertical vacía se
+   * nota— y no silencioso. Quien lo vea así, que mire aquí primero.
    */
   estadoUnico?: string;
 }
@@ -188,21 +196,33 @@ export function etapaDe(estado: string): Etapa {
 }
 
 export interface EstadoMeta extends Tone {
+  /** La etiqueta que se lee: la etapa, en llano. */
   label: string;
+  /** El literal crudo del origen, para el `title` de la marca. */
+  original: string;
   abierto: boolean;
 }
 
 /**
- * Color y condición de un estado de la DGCP. Las dos salen de su etapa, y no
- * de una tabla de literales aparte: si «abierto» y «etapa abierta» se
- * calcularan por caminos distintos podrían discrepar, y discreparían justo en
- * lo que decide si una tarjeta anuncia un plazo o la fecha en que cerró.
+ * Color, nombre y condición de un estado de la DGCP. Los tres salen de su
+ * etapa, y no de una tabla de literales aparte: si «abierto» y «etapa
+ * abierta» se calcularan por caminos distintos podrían discrepar, y
+ * discreparían justo en lo que decide si una tarjeta anuncia un plazo o la
+ * fecha en que cerró.
+ *
+ * `label` es la etapa y no el literal del origen. La marca de una tarjeta
+ * decía «Sobres estan abriendose» —sin tilde, tal cual lo escribe la DGCP—, y
+ * eso obliga al lector a traducir jerga administrativa para saber si puede
+ * ofertar. Mientras la mitad cerrada no era navegable casi no se veía; ahora
+ * es el caso común. El literal no se pierde: va en el `title` de la marca y
+ * la ficha del proceso lo sigue mostrando entero.
  */
 export function estadoMeta(estado: string): EstadoMeta {
   const etapa = etapaDe(estado);
   return {
     ...TONOS[etapa.tono],
-    label: estado || "—",
+    label: etapa.label,
+    original: estado || "—",
     abierto: etapa.clave === "abiertos",
   };
 }

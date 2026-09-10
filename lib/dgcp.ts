@@ -165,29 +165,87 @@ export const ORDENES: OrdenProceso[] = [
   "monto_asc",
 ];
 
+/** El día calendario dominicano de hoy, `YYYY-MM-DD`. */
+const DIA_RD = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Santo_Domingo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 /**
  * Ordena **en sitio** la lista ya filtrada.
  *
- * El orden por cierre pasa por `fechaValida` a propósito. Antes se comparaba
- * con `new Date(...).getTime()`, y una fecha vacía o corrupta —que el registro
- * tiene— produce `NaN`: un comparador que devuelve `NaN` deja el orden
- * indefinido y mueve filas al azar entre dos renders de la misma consulta. Sin
- * fecha legible, al final.
+ * Dos trampas, las dos del mismo sitio: la fecha de cierre.
+ *
+ * La primera es aritmética. Antes se comparaba con `new Date(...).getTime()`,
+ * y una fecha vacía o corrupta —que el registro tiene— produce `NaN`: un
+ * comparador que devuelve `NaN` deja el orden indefinido y mueve filas al azar
+ * entre dos renders de la misma consulta. Por eso pasa por `fechaValida`.
+ *
+ * La segunda es de sentido, y es la que muerde. «Cierre más próximo»
+ * ascendente a secas encabeza con los plazos **ya vencidos**, que son los más
+ * antiguos. Y un proceso «Proceso publicado» con la recepción vencida no es
+ * una rareza: la institución tarda en mover el estado, y por eso `cierreMeta`
+ * tiene una rama «Recepción cerrada» para un estado abierto. Mientras esto
+ * ordenaba las 24 filas de una página apenas se notaba; ordenando la ventana
+ * entera, la primera página se llenaba de lo que ya no se puede ofertar —justo
+ * lo contrario de lo que pide quien toca «Cierran pronto»—. Así que se
+ * particiona: primero lo que todavía cierra, del más próximo al más lejano;
+ * después lo vencido, de lo más reciente a lo más antiguo; al final lo que no
+ * tiene fecha legible. Para una etapa ya cerrada la primera partición viene
+ * vacía y se lee como «lo que cerró más recientemente», que es lo correcto ahí.
  */
 function ordenar(lista: Proceso[], orden: OrdenProceso): Proceso[] {
   switch (orden) {
     case "cierre": {
-      const clave = (p: Proceso) =>
-        fechaValida(p.fecha_fin_recepcion_ofertas) ?? "9999-12-31";
-      return lista.sort((a, b) => clave(a).localeCompare(clave(b)));
+      const hoy = DIA_RD.format(Date.now());
+      const fecha = (p: Proceso) => fechaValida(p.fecha_fin_recepcion_ofertas);
+      // 0 = todavía cierra · 1 = ya venció · 2 = sin fecha legible.
+      const grupo = (f: string | null) => (f === null ? 2 : f >= hoy ? 0 : 1);
+      return lista.sort((a, b) => {
+        const fa = fecha(a);
+        const fb = fecha(b);
+        const ga = grupo(fa);
+        const gb = grupo(fb);
+        if (ga !== gb) return ga - gb;
+        if (fa === null || fb === null) return 0;
+        return ga === 0 ? fa.localeCompare(fb) : fb.localeCompare(fa);
+      });
     }
     case "monto_desc":
-      return lista.sort((a, b) => (b.monto_estimado ?? 0) - (a.monto_estimado ?? 0));
+      return ordenarPorMonto(lista, "desc");
     case "monto_asc":
-      return lista.sort((a, b) => (a.monto_estimado ?? 0) - (b.monto_estimado ?? 0));
+      return ordenarPorMonto(lista, "asc");
     default:
       return lista;
   }
+}
+
+/**
+ * Ordena por monto **dentro del peso dominicano**.
+ *
+ * `monto_estimado` viene sin escala común: el registro publica también procesos
+ * en dólares y en euros, y por eso cada fila lleva su `divisa` y `formatMonto`
+ * la respeta. Restarlos en crudo pone US$500.000 por debajo de RD$1.000.000,
+ * y esconde justamente las obras y la infraestructura, que son las grandes.
+ * Convertir no es opción: la plataforma no tiene tasa de cambio y fabricarla
+ * sería inventar el ancla de una cifra, que es lo que la identidad prohíbe.
+ *
+ * Así que el ranking se declara acotado —el control dice «(RD$)»— y lo que no
+ * está en pesos va al final con su divisa a la vista, sin fingir que compite
+ * en la misma escala.
+ */
+function ordenarPorMonto(lista: Proceso[], sentido: "asc" | "desc"): Proceso[] {
+  const esPeso = (p: Proceso) => !p.divisa || /^(dop|rd\$?)$/i.test(p.divisa.trim());
+  return lista.sort((a, b) => {
+    const pa = esPeso(a);
+    const pb = esPeso(b);
+    if (pa !== pb) return pa ? -1 : 1;
+    const ma = a.monto_estimado ?? 0;
+    const mb = b.monto_estimado ?? 0;
+    return sentido === "desc" ? mb - ma : ma - mb;
+  });
 }
 
 export interface SearchResult {
@@ -224,7 +282,6 @@ export interface SearchResult {
 export async function listProcesos(opts: {
   q?: string;
   proceso?: string;
-  estado?: string;
   etapa?: string;
   modalidad?: string;
   unidad_compra?: number;
@@ -241,7 +298,7 @@ export async function listProcesos(opts: {
   const filtrarAqui = Boolean(etapa && !etapa.estadoUnico);
   const common: Params = {
     proceso: opts.proceso,
-    estado: opts.estado || etapa?.estadoUnico,
+    estado: etapa?.estadoUnico,
     modalidad: opts.modalidad,
     unidad_compra: opts.unidad_compra,
     startdate: opts.startdate,

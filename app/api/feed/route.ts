@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
   <channel>
     <title>${esc(titulo)}</title>
     <link>${esc(origen)}</link>
-    <description>Procesos de compras públicas de República Dominicana (datos abiertos DGCP). Suscríbete para recibir los nuevos automáticamente.</description>
+    <description>Procesos de compras públicas de República Dominicana (datos abiertos DGCP), publicados en los últimos 30 días. Suscríbete para recibir los nuevos automáticamente.</description>
     <language>es-do</language>
     <ttl>60</ttl>
 ${items}

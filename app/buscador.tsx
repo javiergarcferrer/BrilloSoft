@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Proceso } from "@/lib/dgcp";
+import type { OrdenProceso, Proceso } from "@/lib/dgcp";
 /*
   Las etapas se importan de `lib/estados.ts` y no de `lib/dgcp.ts`: son
   vocabulario de interfaz —color y condición del estado— y este componente es
@@ -68,7 +68,15 @@ const MODALIDADES = [
   "Sorteo de Obras",
 ];
 
-type Orden = "recientes" | "cierre" | "monto_desc" | "monto_asc";
+/*
+  El orden no se re-declara aquí. Es la misma enumeración que la ruta usa de
+  allowlist (`ORDENES` en lib/dgcp.ts): si las dos listas divergieran, el
+  `<select>` ofrecería un valor que el servidor descarta y el listado saldría
+  ordenado por otra cosa mientras el control afirma lo contrario — un control
+  sin efecto, que es justo lo que el gate persigue. Es un import de tipo: se
+  borra al compilar y no arrastra el adaptador al bundle.
+*/
+type Orden = OrdenProceso;
 
 interface Unidad {
   codigo: number;
@@ -127,7 +135,7 @@ export default function Buscador() {
     () => (sp.get("orden") as Orden) || "recientes"
   );
   const etapaSel = etapaPorClave(etapa);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => Math.max(1, Number(sp.get("page")) || 1));
 
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [unidadTexto, setUnidadTexto] = useState("");
@@ -167,8 +175,11 @@ export default function Buscador() {
     if (mipyme) params.set("mipyme", "1");
     if (orden !== "recientes") params.set("orden", orden);
     if (unidadSel) params.set("uc", String(unidadSel.codigo));
+    // La página también: ahora que la búsqueda pagina de verdad, un enlace
+    // compartido desde la página 7 que abriera en la 1 no es el mismo enlace.
+    if (page > 1) params.set("page", String(page));
     return params;
-  }, [q, etapa, modalidad, startdate, enddate, mipyme, orden, unidadSel]);
+  }, [q, etapa, modalidad, startdate, enddate, mipyme, orden, page, unidadSel]);
 
   // Mantiene los filtros en la URL (compartible / guardable). La ruta se toma
   // de la ubicación real: este componente vivió en `/` y hoy vive en
@@ -196,6 +207,7 @@ export default function Buscador() {
       const uc = p.get("uc");
       const u = uc ? unidades.find((x) => String(x.codigo) === uc) : null;
       setUnidadTexto(u ? etiquetaUnidad(u) : "");
+      setPage(Math.max(1, Number(p.get("page")) || 1));
     },
     [unidades]
   );
@@ -257,10 +269,20 @@ export default function Buscador() {
     return () => clearTimeout(t);
   }, [fetchData, q]);
 
-  // Cualquier cambio de filtro reinicia la paginación.
+  /*
+    Cualquier cambio de filtro reinicia la paginación — pero solo un cambio
+    de verdad. Este efecto también corre en el montaje, y hacerlo entonces
+    tiraba la página que acababa de leerse de la URL: un enlace compartido
+    desde la página 7 abría en la 1. Comparar la firma de los filtros contra
+    la del render anterior distingue «montó» de «cambió» sin banderas.
+  */
+  const firmaFiltros = `${q}|${etapa}|${modalidad}|${startdate}|${enddate}|${mipyme}|${orden}|${unidadSel?.codigo ?? ""}`;
+  const firmaPrevia = useRef(firmaFiltros);
   useEffect(() => {
+    if (firmaPrevia.current === firmaFiltros) return;
+    firmaPrevia.current = firmaFiltros;
     setPage(1);
-  }, [q, etapa, modalidad, startdate, enddate, mipyme, orden, unidadSel]);
+  }, [firmaFiltros]);
 
   /*
     La lista llega ya filtrada y ordenada, y paginada de verdad.
@@ -571,11 +593,20 @@ export default function Buscador() {
           ) : null}
           {!loading && lista.length > 0 && (
             <span className="flex items-center gap-2">
+              {/*
+                El botón dice cuántas filas baja. Antes ponía «CSV» a secas
+                junto a un encabezado que anuncia miles de procesos, y el
+                archivo trae solo las de esta página: quien lo abre cree tener
+                el conjunto y cita veinticuatro filas. Es el peor error de esta
+                casa —silencioso y citable—, y se cierra diciendo el alcance en
+                el propio control.
+              */}
               <button
                 onClick={exportarCsv}
+                title={`Descarga las ${lista.length} filas de esta página, con los filtros puestos`}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 font-medium transition hover:border-brand-500 hover:text-brand-700"
               >
-                <IconDownload className="h-4 w-4" /> CSV
+                <IconDownload className="h-4 w-4" /> CSV ({lista.length})
               </button>
               <a
                 href={feedHref}
@@ -787,8 +818,14 @@ function FiltrosControles({
         <select value={orden} onChange={(e) => setOrden(e.target.value as Orden)} className={INPUT_CLS}>
           <option value="recientes">Más recientes</option>
           <option value="cierre">Cierre más próximo</option>
-          <option value="monto_desc">Mayor monto</option>
-          <option value="monto_asc">Menor monto</option>
+          {/*
+            «(RD$)» no es adorno: el registro publica también en dólares y en
+            euros, y sin tasa de cambio no hay forma honesta de mezclarlos en
+            un mismo ranking. Se ordena dentro del peso y lo demás va al final
+            con su divisa a la vista; la etiqueta dice exactamente eso.
+          */}
+          <option value="monto_desc">Mayor monto (RD$)</option>
+          <option value="monto_asc">Menor monto (RD$)</option>
         </select>
       </label>
 

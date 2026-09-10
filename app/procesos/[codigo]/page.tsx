@@ -72,7 +72,9 @@ export default async function ProcesoPage({
   const dias = diasHasta(p.fecha_fin_recepcion_ofertas);
   const est = estadoMeta(p.estado_proceso);
   const cierreBadge = est.abierto ? cierreMeta(dias) : null;
-  const abiertoParaOfertar = p.estado_proceso === "Proceso publicado" && dias !== null && dias >= 0;
+  // `est.abierto` y no el literal: la condición de «abierto» se decide en un
+  // solo sitio (lib/estados.ts, por etapa) y no en cada página por su cuenta.
+  const abiertoParaOfertar = est.abierto && dias !== null && dias >= 0;
   const docsClave = documentos.filter(esDocClave);
   const docsOtros = documentos.filter((d) => !esDocClave(d));
 
