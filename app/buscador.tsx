@@ -700,7 +700,7 @@ export default function Buscador() {
             */}
             <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-ink-soft">
               {etapaSel && etapaSel.clave !== "abiertos"
-                ? "El rango de fechas filtra por publicación, no por cierre: un proceso que acaba de cerrar pudo publicarse mucho antes.Amplía «Publicado desde» para alcanzarlo."
+                ? "El rango de fechas filtra por publicación, no por cierre: un proceso que acaba de cerrar pudo publicarse mucho antes. Amplía «Publicado desde» para alcanzarlo."
                 : "Prueba ampliar el rango de fechas o quitar el filtro de etapa."}
             </p>
           </div>
