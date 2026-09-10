@@ -58,6 +58,22 @@ export default async function FuentesPage() {
             de adjudicación y el panel de mercado.
           </p>
           <p className="mt-2">
+            El buscador filtra por <strong>etapa</strong> —abiertos a ofertar,
+            ya cerrada la recepción, en evaluación, adjudicados, desiertos o
+            cancelados— y no solo por lo que está abierto. Dos límites que
+            conviene tener presentes: el rango de fechas corre sobre la
+            <strong> fecha de publicación</strong>, no la de cierre, así que un
+            proceso que acaba de cerrar puede haberse publicado mucho antes; y
+            cuando hay que filtrar por etapa, buscar por texto u ordenar por
+            algo que no sea «más recientes», la respuesta se arma recorriendo
+            hasta 6.000 registros del rango pedido. Son los{" "}
+            <strong>primeros</strong> 6.000 en el orden en que los sirve el
+            origen, así que en una ventana amplia el recorte no solo trunca:
+            sesga hacia lo más reciente, y por tanto cuenta de menos lo ya
+            cerrado. Ese conteo es <strong>una muestra</strong>, y el buscador
+            lo dice junto al número en vez de presentarlo como el censo.
+          </p>
+          <p className="mt-2">
             Los pliegos y actas de cada proceso son públicos, pero
             comprasdominicana los manda como descarga forzada y prohíbe
             incrustarlos: bajar un archivo para saber qué dice no es acceso a la
