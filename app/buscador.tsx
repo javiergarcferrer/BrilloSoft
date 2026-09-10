@@ -2,7 +2,19 @@
 
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Proceso } from "@/lib/dgcp";
+import type { OrdenProceso, Proceso } from "@/lib/dgcp";
+/*
+  Las etapas se importan de `lib/estados.ts` y no de `lib/dgcp.ts`: son
+  vocabulario de interfaz —color y condición del estado— y este componente es
+  de cliente. Traerlas del adaptador metería sus mil doscientas líneas de
+  acceso a la DGCP en el bundle del navegador para leer cinco etiquetas.
+*/
+import {
+  ETAPAS,
+  etapaDe,
+  etapaPorClave,
+  type EtapaClave,
+} from "@/lib/estados";
 import ProcesoCard from "@/components/proceso-card";
 import { cn } from "@/lib/cn";
 import { BottomSheet } from "@/components/bottom-sheet";
@@ -18,8 +30,8 @@ import {
 } from "@/components/icons";
 
 interface FiltrosProps {
-  estado: string;
-  setEstado: (v: string) => void;
+  etapa: EtapaFiltro;
+  setEtapa: (v: EtapaFiltro) => void;
   modalidad: string;
   setModalidad: (v: string) => void;
   unidades: Unidad[];
@@ -39,15 +51,11 @@ interface FiltrosProps {
 const INPUT_CLS =
   "mt-1 w-full rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15";
 
-const ESTADOS = [
-  "Proceso publicado",
-  "Sobres estan abriendose",
-  "Sobres abiertos o aperturados",
-  "Proceso con etapa cerrada",
-  "Proceso adjudicado y celebrado",
-  "Proceso desierto",
-  "Cancelado",
-];
+/** Etapa seleccionada; `""` es «todas», que no filtra nada. */
+type EtapaFiltro = EtapaClave | "";
+
+/** La etapa con la que abre el buscador: la pregunta del titular. */
+const ETAPA_INICIAL: EtapaFiltro = "abiertos";
 
 const MODALIDADES = [
   "Compras por Debajo del Umbral",
@@ -60,7 +68,15 @@ const MODALIDADES = [
   "Sorteo de Obras",
 ];
 
-type Orden = "recientes" | "cierre" | "monto_desc" | "monto_asc";
+/*
+  El orden no se re-declara aquí. Es la misma enumeración que la ruta usa de
+  allowlist (`ORDENES` en lib/dgcp.ts): si las dos listas divergieran, el
+  `<select>` ofrecería un valor que el servidor descarta y el listado saldría
+  ordenado por otra cosa mientras el control afirma lo contrario — un control
+  sin efecto, que es justo lo que el gate persigue. Es un import de tipo: se
+  borra al compilar y no arrastra el adaptador al bundle.
+*/
+type Orden = OrdenProceso;
 
 interface Unidad {
   codigo: number;
@@ -79,6 +95,7 @@ interface ApiResult {
   page: number;
   scanned?: number;
   truncated?: boolean;
+  muestra?: boolean;
   error?: string;
 }
 
@@ -87,10 +104,27 @@ function hoyMenosDias(dias: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * La etapa que pide un querystring.
+ *
+ * `?etapa=` es lo que se escribe hoy. `?estado=` es lo que llevan los enlaces
+ * compartidos y las búsquedas guardadas de antes —`lib/busquedas.ts` guarda el
+ * querystring crudo—, así que un estado literal de la DGCP se traduce a su
+ * etapa en vez de quedar ignorado. `?estado=` vacío era «todos los estados»:
+ * se conserva.
+ */
+function etapaDeParams(p: URLSearchParams): EtapaFiltro {
+  const clave = p.get("etapa");
+  if (clave !== null) return (etapaPorClave(clave)?.clave ?? "") as EtapaFiltro;
+  const estado = p.get("estado");
+  if (estado !== null) return estado ? etapaDe(estado).clave : "";
+  return ETAPA_INICIAL;
+}
+
 export default function Buscador() {
   const sp = useSearchParams();
   const [q, setQ] = useState(() => sp.get("q") ?? "");
-  const [estado, setEstado] = useState(() => sp.get("estado") ?? "Proceso publicado");
+  const [etapa, setEtapa] = useState<EtapaFiltro>(() => etapaDeParams(sp));
   const [modalidad, setModalidad] = useState(() => sp.get("modalidad") ?? "");
   const [startdate, setStartdate] = useState(
     () => sp.get("desde") ?? hoyMenosDias(30)
@@ -100,7 +134,8 @@ export default function Buscador() {
   const [orden, setOrden] = useState<Orden>(
     () => (sp.get("orden") as Orden) || "recientes"
   );
-  const [page, setPage] = useState(1);
+  const etapaSel = etapaPorClave(etapa);
+  const [page, setPage] = useState(() => Math.max(1, Number(sp.get("page")) || 1));
 
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [unidadTexto, setUnidadTexto] = useState("");
@@ -133,15 +168,18 @@ export default function Buscador() {
   const currentParams = useMemo(() => {
     const params = new URLSearchParams();
     if (q.trim()) params.set("q", q.trim());
-    if (estado !== "Proceso publicado") params.set("estado", estado);
+    if (etapa !== ETAPA_INICIAL) params.set("etapa", etapa);
     if (modalidad) params.set("modalidad", modalidad);
     if (startdate && startdate !== hoyMenosDias(30)) params.set("desde", startdate);
     if (enddate) params.set("hasta", enddate);
     if (mipyme) params.set("mipyme", "1");
     if (orden !== "recientes") params.set("orden", orden);
     if (unidadSel) params.set("uc", String(unidadSel.codigo));
+    // La página también: ahora que la búsqueda pagina de verdad, un enlace
+    // compartido desde la página 7 que abriera en la 1 no es el mismo enlace.
+    if (page > 1) params.set("page", String(page));
     return params;
-  }, [q, estado, modalidad, startdate, enddate, mipyme, orden, unidadSel]);
+  }, [q, etapa, modalidad, startdate, enddate, mipyme, orden, page, unidadSel]);
 
   // Mantiene los filtros en la URL (compartible / guardable). La ruta se toma
   // de la ubicación real: este componente vivió en `/` y hoy vive en
@@ -160,7 +198,7 @@ export default function Buscador() {
   const applyFromParams = useCallback(
     (p: URLSearchParams) => {
       setQ(p.get("q") ?? "");
-      setEstado(p.get("estado") ?? "Proceso publicado");
+      setEtapa(etapaDeParams(p));
       setModalidad(p.get("modalidad") ?? "");
       setStartdate(p.get("desde") ?? hoyMenosDias(30));
       setEnddate(p.get("hasta") ?? "");
@@ -169,6 +207,7 @@ export default function Buscador() {
       const uc = p.get("uc");
       const u = uc ? unidades.find((x) => String(x.codigo) === uc) : null;
       setUnidadTexto(u ? etiquetaUnidad(u) : "");
+      setPage(Math.max(1, Number(p.get("page")) || 1));
     },
     [unidades]
   );
@@ -201,12 +240,15 @@ export default function Buscador() {
     try {
       const params = new URLSearchParams();
       if (q.trim()) params.set("q", q.trim());
-      if (estado) params.set("estado", estado);
+      if (etapa) params.set("etapa", etapa);
       if (modalidad) params.set("modalidad", modalidad);
       if (startdate) params.set("startdate", startdate);
       if (enddate) params.set("enddate", enddate);
       if (mipyme) params.set("mipyme", "true");
       if (unidadSel) params.set("unidad_compra", String(unidadSel.codigo));
+      // El orden viaja al servidor: ordenar aquí solo reordenaba las 24 filas
+      // de la página y el control decía «Mayor monto» de miles de procesos.
+      if (orden !== "recientes") params.set("orden", orden);
       params.set("page", String(page));
       params.set("limit", "24");
       const res = await fetch(`/api/procesos?${params}`, { signal: ctrl.signal });
@@ -219,7 +261,7 @@ export default function Buscador() {
     } finally {
       if (abortRef.current === ctrl) setLoading(false);
     }
-  }, [q, estado, modalidad, startdate, enddate, mipyme, page, unidadSel]);
+  }, [q, etapa, modalidad, startdate, enddate, mipyme, orden, page, unidadSel]);
 
   // Debounce para el texto; inmediato para el resto de filtros.
   useEffect(() => {
@@ -227,37 +269,36 @@ export default function Buscador() {
     return () => clearTimeout(t);
   }, [fetchData, q]);
 
-  // Cualquier cambio de filtro reinicia la paginación.
+  /*
+    Cualquier cambio de filtro reinicia la paginación — pero solo un cambio
+    de verdad. Este efecto también corre en el montaje, y hacerlo entonces
+    tiraba la página que acababa de leerse de la URL: un enlace compartido
+    desde la página 7 abría en la 1. Comparar la firma de los filtros contra
+    la del render anterior distingue «montó» de «cambió» sin banderas.
+  */
+  const firmaFiltros = `${q}|${etapa}|${modalidad}|${startdate}|${enddate}|${mipyme}|${orden}|${unidadSel?.codigo ?? ""}`;
+  const firmaPrevia = useRef(firmaFiltros);
   useEffect(() => {
+    if (firmaPrevia.current === firmaFiltros) return;
+    firmaPrevia.current = firmaFiltros;
     setPage(1);
-  }, [q, estado, modalidad, startdate, enddate, mipyme, unidadSel]);
+  }, [firmaFiltros]);
 
-  const ordenados = useMemo(() => {
-    const list = [...(data?.content ?? [])];
-    switch (orden) {
-      case "cierre":
-        return list.sort(
-          (a, b) =>
-            new Date(a.fecha_fin_recepcion_ofertas).getTime() -
-            new Date(b.fecha_fin_recepcion_ofertas).getTime()
-        );
-      case "monto_desc":
-        return list.sort((a, b) => (b.monto_estimado ?? 0) - (a.monto_estimado ?? 0));
-      case "monto_asc":
-        return list.sort((a, b) => (a.monto_estimado ?? 0) - (b.monto_estimado ?? 0));
-      default:
-        return list;
-    }
-  }, [data, orden]);
+  /*
+    La lista llega ya filtrada y ordenada, y paginada de verdad.
 
+    Aquí vivían dos cosas que decían algo falso. Una: el orden se aplicaba
+    sobre `data.content`, o sea sobre las 24 filas de la página, mientras el
+    control ofrecía «Mayor monto» de un rango de miles. Otra: en modo búsqueda
+    la capa recortaba a 300 coincidencias y esta lista las soltaba de 24 en 24
+    con un «Mostrar más», así que la 301 no existía y nadie lo decía. Las dos
+    se arreglan en el mismo sitio —`listProcesos` ordena y pagina lo que
+    declara haber barrido—, y aquí solo se pinta.
+  */
+  const lista = data?.content ?? [];
   const enBusqueda = q.trim().length > 0;
-
-  // En modo búsqueda pueden llegar cientos de coincidencias: renderiza por tandas.
-  const [visibles, setVisibles] = useState(24);
-  useEffect(() => {
-    setVisibles(24);
-  }, [data]);
-  const listaVisible = enBusqueda ? ordenados.slice(0, visibles) : ordenados;
+  /* El conteo sale del barrido, no del censo: la interfaz está obligada a decirlo. */
+  const esMuestra = Boolean(data?.muestra);
 
   const exportarCsv = () => {
     const cols: [string, (p: Proceso) => string | number][] = [
@@ -275,7 +316,7 @@ export default function Buscador() {
     const esc = (v: string | number) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const lineas = [
       cols.map(([h]) => h).join(","),
-      ...ordenados.map((p) => cols.map(([, f]) => esc(f(p))).join(",")),
+      ...lista.map((p) => cols.map(([, f]) => esc(f(p))).join(",")),
     ];
     const blob = new Blob(["﻿" + lineas.join("\n")], {
       type: "text/csv;charset=utf-8",
@@ -292,13 +333,18 @@ export default function Buscador() {
   /*
     Todos los filtros puestos, incluidos los que vienen por defecto.
     Emitir un chip solo cuando el valor difiere del inicial deja invisibles
-    justo los dos que más recortan —estado y ventana de fechas—: quien busca
+    justo los dos que más recortan —etapa y ventana de fechas—: quien busca
     «hospital» y ve «0 coincidencias» nunca se entera de que está mirando
-    treinta días de procesos publicados. El estado del sistema que más pesa no
+    treinta días de procesos abiertos. El estado del sistema que más pesa no
     puede ser el que se le pide recordar sin habérselo dicho.
 
     `porDefecto` los distingue en gris: quitarlos **abre** la búsqueda en vez
     de restaurar nada.
+
+    La fecha dice «publicados» y no solo «últimos 30 días» porque el filtro
+    corre sobre la **publicación**, no sobre el cierre. Es lo que hace que un
+    proceso que cerró ayer pero se publicó hace dos meses no salga; sin la
+    palabra, la ausencia parece un hueco de la fuente y es la ventana pedida.
   */
   const chips: {
     key: string;
@@ -307,16 +353,21 @@ export default function Buscador() {
     porDefecto?: boolean;
   }[] = [];
   chips.push(
-    estado === "Proceso publicado"
+    etapa === ETAPA_INICIAL
       ? {
-          key: "est",
-          label: "solo publicados",
+          key: "etapa",
+          label: "solo abiertos",
           porDefecto: true,
-          clear: () => setEstado(""),
+          clear: () => setEtapa(""),
         }
-      : estado
-        ? { key: "est", label: estado, clear: () => setEstado("") }
-        : { key: "est", label: "todos los estados", porDefecto: true, clear: () => setEstado("Proceso publicado") },
+      : etapaSel
+        ? { key: "etapa", label: etapaSel.label.toLowerCase(), clear: () => setEtapa("") }
+        : {
+            key: "etapa",
+            label: "todas las etapas",
+            porDefecto: true,
+            clear: () => setEtapa(ETAPA_INICIAL),
+          },
   );
   if (modalidad) chips.push({ key: "mod", label: modalidad, clear: () => setModalidad("") });
   if (unidadSel)
@@ -333,18 +384,18 @@ export default function Buscador() {
     startdate === hoyMenosDias(30)
       ? {
           key: "desde",
-          label: "últimos 30 días",
+          label: "publicados: últimos 30 días",
           porDefecto: true,
           clear: () => setStartdate(""),
         }
       : startdate
-        ? { key: "desde", label: `desde ${startdate}`, clear: () => setStartdate(hoyMenosDias(30)) }
+        ? { key: "desde", label: `publicados desde ${startdate}`, clear: () => setStartdate(hoyMenosDias(30)) }
         : { key: "desde", label: "todo el histórico", porDefecto: true, clear: () => setStartdate(hoyMenosDias(30)) },
   );
   if (enddate) chips.push({ key: "hasta", label: `hasta ${enddate}`, clear: () => setEnddate("") });
 
   const filtros: FiltrosProps = {
-    estado, setEstado, modalidad, setModalidad, unidades, unidadTexto,
+    etapa, setEtapa, modalidad, setModalidad, unidades, unidadTexto,
     setUnidadTexto, unidadSel, startdate, setStartdate, enddate, setEnddate,
     orden, setOrden, mipyme, setMipyme,
   };
@@ -352,7 +403,8 @@ export default function Buscador() {
   const feedHref = (() => {
     const f = new URLSearchParams();
     if (q.trim()) f.set("q", q.trim());
-    if (estado) f.set("estado", estado);
+    // Siempre, incluso vacío: `etapa=` es «todas» y su ausencia es «abiertos».
+    f.set("etapa", etapa);
     if (modalidad) f.set("modalidad", modalidad);
     if (mipyme) f.set("mipyme", "1");
     if (unidadSel) f.set("uc", String(unidadSel.codigo));
@@ -402,9 +454,15 @@ export default function Buscador() {
               </span>
             )}
           </button>
+          {/*
+            También aquí se marca la muestra. Es el conteo que se ve en un
+            teléfono —la superficie principal— y repetir el número desnudo
+            encima del que sí declara su base es justo cómo una muestra acaba
+            usándose de censo.
+          */}
           <span className="ml-auto text-xs text-ink-soft">
             {data
-              ? `${data.totalResults.toLocaleString("es-DO")} ${enBusqueda ? "coincid." : "procesos"}`
+              ? `${data.totalResults.toLocaleString("es-DO")} ${enBusqueda ? "coincid." : "procesos"}${esMuestra ? " (muestra)" : ""}`
               : ""}
           </span>
         </div>
@@ -481,7 +539,7 @@ export default function Buscador() {
             ))}
             <button
               onClick={() => {
-                setEstado("Proceso publicado");
+                setEtapa(ETAPA_INICIAL);
                 setModalidad("");
                 setUnidadTexto("");
                 setMipyme(false);
@@ -519,21 +577,36 @@ export default function Buscador() {
                 {data.totalResults.toLocaleString("es-DO")}
               </strong>{" "}
               {enBusqueda ? "coincidencias" : "procesos"}
-              {enBusqueda && data.scanned
-                ? ` · en ${data.scanned.toLocaleString("es-DO")} registros del rango`
+              {/*
+                La base se declara siempre que el conteo salga del barrido, no
+                solo al buscar texto: filtrar por etapa u ordenar por monto
+                también cuenta sobre la muestra, y un número sin su base invita
+                a usarlo de denominador.
+              */}
+              {esMuestra && data.scanned
+                ? ` · entre ${data.scanned.toLocaleString("es-DO")} registros del rango`
                 : ""}
-              {enBusqueda && data.truncated
-                ? " — rango amplio: acota las fechas para una búsqueda completa"
+              {esMuestra && data.truncated
+                ? " — rango amplio: acota las fechas para contarlos todos"
                 : ""}
             </span>
           ) : null}
-          {!loading && ordenados.length > 0 && (
+          {!loading && lista.length > 0 && (
             <span className="flex items-center gap-2">
+              {/*
+                El botón dice cuántas filas baja. Antes ponía «CSV» a secas
+                junto a un encabezado que anuncia miles de procesos, y el
+                archivo trae solo las de esta página: quien lo abre cree tener
+                el conjunto y cita veinticuatro filas. Es el peor error de esta
+                casa —silencioso y citable—, y se cierra diciendo el alcance en
+                el propio control.
+              */}
               <button
                 onClick={exportarCsv}
+                title={`Descarga las ${lista.length} filas de esta página, con los filtros puestos`}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 font-medium transition hover:border-brand-500 hover:text-brand-700"
               >
-                <IconDownload className="h-4 w-4" /> CSV
+                <IconDownload className="h-4 w-4" /> CSV ({lista.length})
               </button>
               <a
                 href={feedHref}
@@ -546,7 +619,11 @@ export default function Buscador() {
               </a>
             </span>
           )}
-          {!enBusqueda && data && data.pages > 1 && (
+          {/*
+            El paginador ya vale también en modo búsqueda: la capa pagina de
+            verdad las coincidencias en vez de recortarlas a 300.
+          */}
+          {data && data.pages > 1 && (
             <span className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -575,7 +652,7 @@ export default function Buscador() {
           un esqueleto en cada clic hacía saltar la página y perder el sitio.
           El esqueleto solo aparece cuando aún no hay nada que mostrar.
         */}
-        {loading && ordenados.length === 0 && !error ? (
+        {loading && lista.length === 0 && !error ? (
           <div className="grid gap-3 md:grid-cols-2" role="status" aria-busy="true">
             <span className="sr-only">Consultando la DGCP…</span>
             {Array.from({ length: 6 }).map((_, i) => (
@@ -608,40 +685,37 @@ export default function Buscador() {
               Reintentar
             </button>
           </div>
-        ) : ordenados.length === 0 ? (
+        ) : lista.length === 0 ? (
           <div className="rounded-lg bg-surface p-12 text-center border border-hairline">
             <span className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-hairline text-ink-soft">
               <IconSearch className="h-6 w-6" />
             </span>
             <p className="mt-3 font-semibold text-ink">Sin resultados con estos filtros</p>
-            <p className="mt-1 text-sm text-ink-soft">
-              Prueba ampliar el rango de fechas o quitar el filtro de estado.
+            {/*
+              Pedir una etapa cerrada dentro de una ventana corta devuelve poco
+              o nada, y la razón no se adivina: la ventana corre sobre la fecha
+              de **publicación**. Un proceso que cerró la semana pasada pudo
+              publicarse dos meses antes. Decirlo aquí es la diferencia entre
+              «la plataforma no los tiene» y «pídelos bien».
+            */}
+            <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-ink-soft">
+              {etapaSel && etapaSel.clave !== "abiertos"
+                ? "El rango de fechas filtra por publicación, no por cierre: un proceso que acaba de cerrar pudo publicarse mucho antes.Amplía «Publicado desde» para alcanzarlo."
+                : "Prueba ampliar el rango de fechas o quitar el filtro de etapa."}
             </p>
           </div>
         ) : (
-          <>
-            <div
-              aria-busy={loading}
-              className={cn(
-                "grid gap-3 transition-opacity duration-200 md:grid-cols-2",
-                loading && "pointer-events-none opacity-50",
-              )}
-            >
-              {listaVisible.map((p) => (
-                <ProcesoCard key={p.codigo_proceso} p={p} />
-              ))}
-            </div>
-            {enBusqueda && ordenados.length > visibles && (
-              <div className="mt-5 text-center">
-                <button
-                  onClick={() => setVisibles((v) => v + 24)}
-                  className="rounded-lg border border-hairline bg-surface px-5 py-2.5 text-sm font-medium transition hover:border-brand-500 hover:text-brand-700"
-                >
-                  Mostrar más ({ordenados.length - visibles} restantes)
-                </button>
-              </div>
+          <div
+            aria-busy={loading}
+            className={cn(
+              "grid gap-3 transition-opacity duration-200 md:grid-cols-2",
+              loading && "pointer-events-none opacity-50",
             )}
-          </>
+          >
+            {lista.map((p) => (
+              <ProcesoCard key={p.codigo_proceso} p={p} />
+            ))}
+          </div>
         )}
       </section>
     </div>
@@ -649,10 +723,11 @@ export default function Buscador() {
 }
 
 function FiltrosControles({
-  estado, setEstado, modalidad, setModalidad, unidades, unidadTexto,
+  etapa, setEtapa, modalidad, setModalidad, unidades, unidadTexto,
   setUnidadTexto, unidadSel, startdate, setStartdate, enddate, setEnddate,
   orden, setOrden, mipyme, setMipyme,
 }: FiltrosProps) {
+  const etapaSel = etapaPorClave(etapa);
   return (
     <div className="grid gap-3 lg:grid-cols-12">
       <label className="block text-xs font-medium text-ink-soft lg:col-span-12">
@@ -680,16 +755,30 @@ function FiltrosControles({
         )}
       </label>
 
+      {/*
+        Etapa, no «estado». El control ofrecía los siete `estado_proceso` de la
+        DGCP tal cual, así que «¿qué ya cerró?» —donde están el ganador y el
+        precio— exigía saber que la respuesta se reparte entre seis de ellos y
+        elegirlos de uno en uno. Ahora la pregunta es una opción, y debajo se
+        dice en llano qué se está pidiendo.
+      */}
       <label className="block text-xs font-medium text-ink-soft lg:col-span-3">
-        Estado
-        <select value={estado} onChange={(e) => setEstado(e.target.value)} className={INPUT_CLS}>
-          <option value="">Todos</option>
-          {ESTADOS.map((s) => (
-            <option key={s} value={s}>
-              {s}
+        Etapa
+        <select
+          value={etapa}
+          onChange={(e) => setEtapa(e.target.value as EtapaFiltro)}
+          className={INPUT_CLS}
+        >
+          <option value="">Todas las etapas</option>
+          {ETAPAS.map((e) => (
+            <option key={e.clave} value={e.clave}>
+              {e.label}
             </option>
           ))}
         </select>
+        <span className="mt-1 block text-[11px] leading-snug text-ink-soft">
+          {etapaSel?.ayuda ?? "Abiertos y cerrados, en cualquier punto de su trámite."}
+        </span>
       </label>
 
       <label className="block text-xs font-medium text-ink-soft lg:col-span-3">
@@ -715,7 +804,7 @@ function FiltrosControles({
       </label>
 
       <label className="block text-xs font-medium text-ink-soft lg:col-span-2">
-        Hasta
+        Publicado hasta
         <input
           type="date"
           value={enddate}
@@ -729,8 +818,14 @@ function FiltrosControles({
         <select value={orden} onChange={(e) => setOrden(e.target.value as Orden)} className={INPUT_CLS}>
           <option value="recientes">Más recientes</option>
           <option value="cierre">Cierre más próximo</option>
-          <option value="monto_desc">Mayor monto</option>
-          <option value="monto_asc">Menor monto</option>
+          {/*
+            «(RD$)» no es adorno: el registro publica también en dólares y en
+            euros, y sin tasa de cambio no hay forma honesta de mezclarlos en
+            un mismo ranking. Se ordena dentro del peso y lo demás va al final
+            con su divisa a la vista; la etiqueta dice exactamente eso.
+          */}
+          <option value="monto_desc">Mayor monto (RD$)</option>
+          <option value="monto_asc">Menor monto (RD$)</option>
         </select>
       </label>
 
