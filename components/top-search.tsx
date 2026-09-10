@@ -12,6 +12,7 @@ import {
 } from "@/lib/busquedas";
 import {
   IconBookmark,
+  IconCheck,
   IconClock,
   IconCoins,
   IconSearch,
@@ -133,9 +134,18 @@ export default function TopSearch() {
   const presets: { label: string; Icon: typeof IconClock; run: () => void }[] = [
     { label: "Abiertas ahora", Icon: IconSparkles, run: reset },
     {
+      // Borrar la etapa devuelve el filtro a su valor inicial —abiertos a
+      // ofertar—, igual que antes borrar `estado` devolvía «Proceso publicado».
+      // Lo que hacía que este preset abriera con plazos ya vencidos era el
+      // orden, no el filtro, y se arregla en `ordenar` (lib/dgcp.ts).
       label: "Cierran pronto",
       Icon: IconClock,
-      run: () => navWith((p) => { p.delete("estado"); p.set("orden", "cierre"); }),
+      run: () => navWith((p) => { p.delete("etapa"); p.set("orden", "cierre"); }),
+    },
+    {
+      label: "Ya cerraron",
+      Icon: IconCheck,
+      run: () => navWith((p) => { p.set("etapa", "cerrados"); p.delete("orden"); }),
     },
     {
       label: "Mayor monto",
@@ -145,7 +155,7 @@ export default function TopSearch() {
     {
       label: "Para MIPYMES",
       Icon: IconSparkles,
-      run: () => navWith((p) => { p.delete("estado"); p.set("mipyme", "1"); }),
+      run: () => navWith((p) => { p.delete("etapa"); p.set("mipyme", "1"); }),
     },
   ];
 
