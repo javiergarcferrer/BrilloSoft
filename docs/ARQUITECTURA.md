@@ -24,11 +24,21 @@ Owns all DGCP types (`Proceso`, `Articulo`, `Documento`, `Contrato`,
 - `dgcpFetch<T>(path, params, revalidate)` — single wrapper for every upstream
   call: 25s timeout, **one retry**, and normalizes the API's quirks (`hasError`
   flag, `payload.content` arriving as `null`).
-- `listProcesos(opts)` — **passthrough/paginated** when there is no `q`; when `q`
-  is present it scans up to `MAX_SEARCH_PAGES` (6) × 1000 records within the date
-  filters and filters **server-side**, accent/case-insensitively (via
-  `normalize`) across título/descripción/unidad_compra/código/área. Returns
-  `scanned`/`truncated` so the UI can warn when the scan didn't cover everything.
+  (The five plain-language **stages** of a process — `ETAPAS` / `etapaDe` /
+  `etapaPorClave` — live in `lib/estados.ts`, not here: they are UI vocabulary
+  and the client imports them, so keeping them out of this module keeps the
+  adapter out of the browser bundle.)
+- `listProcesos(opts)` — two paths, and the difference is declared in the
+  response. **Passthrough** (one request, `totalResults` is the source's own
+  census) when there is no `q`, no stage the API can't filter by itself, and
+  `orden === "recientes"`. **Sweep** otherwise: up to `MAX_PAGINAS_BARRIDO`
+  (6) × 1000 records within the given filters, then filtered **server-side** by
+  stage and by text — accent/case-insensitively via `normalize`, across
+  título/descripción/unidad_compra/código/área — then sorted and **really
+  paginated**. It returns `scanned`/`truncated`/`muestra` so the UI must say the
+  count came from a sample. A non-default sort forces the sweep on purpose:
+  sorting is ranking, and ranking one page of 24 while the control says «Mayor
+  monto» asserts something false about thousands of processes.
 - `getProceso(codigo)` — fetches process + artículos + documentos + contratos in
   parallel (each failure tolerated independently).
 - `getUnidadesCompra()` — ~705 active buying units (cached 24h).
@@ -195,9 +205,22 @@ sources impose:
 - `/` → panorama (server). `/licitaciones` → `app/buscador.tsx` (client) inside
   `<Suspense>`. Filters live entirely in
   the **URL** (`useSearchParams`) so any search is shareable/bookmarkable; it
-  fetches `/api/procesos`. The `ESTADOS` and `MODALIDADES` enumerations are
-  defined here and must match the DGCP vocabulary (default estado is
-  `"Proceso publicado"`).
+  fetches `/api/procesos`. `MODALIDADES` is defined here and must match the
+  DGCP vocabulary. **State is filtered by *etapa*, not by `estado_proceso`**:
+  `ETAPAS` in `lib/estados.ts` groups the source's seven states into five
+  plain-language stages (`abiertos`, `cerrados`, `evaluacion`, `adjudicados`,
+  `sin_efecto`) so «what already closed» is one option instead of six literals
+  the reader has to know. Each stage is a **predicate over the normalised
+  state**, never a list of literals — an unrecognised state falls into
+  `cerrados` (defined by negation of `abiertos`) instead of vanishing.
+  The URL carries `?etapa=`; `?etapa=` present-and-empty means *every* stage
+  and is not the same as absent, which is the default `abiertos`. Legacy
+  `?estado=<literal>` links and saved searches are translated through
+  `etapaDe()`. Only `abiertos` maps to a single upstream value
+  (`estado=Proceso publicado`), so it stays a one-request passthrough; the
+  other stages, free-text search, and any sort other than «recientes» go
+  through the bounded sweep and therefore return `scanned`/`truncated`/
+  `muestra` for the UI to declare.
 - `/procesos/[codigo]` → server detail page, with `precios.tsx` (client),
   `loading.tsx`, `not-found.tsx`.
 - `/proveedores` → «¿Quién le vende al Estado?»: the supplier index. Search
@@ -249,7 +272,7 @@ legal por defecto:
 | `components/plegable.tsx` | Revelación progresiva; el botón dice **cuántos hay**, nunca «ver más». |
 | `components/antiguedad.tsx` | La fecha de una fila de listado: `<time>` real, relativa a la vista, exacta en el `title`. |
 | `components/esqueleto.tsx` | La silueta que se pinta mientras la fuente contesta, con las alturas del contenido. |
-| `lib/estados.ts` | **La única** tabla de color de estado, nombrada por significado (`accionable`, `contexto`, `cumplido`, `aviso`, `anulado`). Cada fuente traduce a esos cinco y no guarda tabla propia. |
+| `lib/estados.ts` | **La única** tabla de color de estado, nombrada por significado (`accionable`, `contexto`, `cumplido`, `aviso`, `anulado`). Cada fuente traduce a esos cinco y no guarda tabla propia. También las **etapas** de un proceso de compras (`ETAPAS`, `etapaDe`): la otra traducción de `estado_proceso`, por predicado y no por literal, de la que salen tanto el color como `abierto`. |
 | `lib/cifras.ts` | Una cifra con su ancla y su alcance; prohíbe el `+∞ %`, la variación de un porcentaje en por ciento y el denominador sacado de una muestra. |
 | `lib/glosario.ts` | La jerga traducida en el punto de uso, no en un glosario que nadie abre. |
 
