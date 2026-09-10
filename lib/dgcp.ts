@@ -1,3 +1,5 @@
+import { etapaPorClave } from "@/lib/estados";
+
 const BASE = "https://datosabiertos.dgcp.gob.do/api-dgcp/v1";
 
 export interface Proceso {
@@ -151,42 +153,95 @@ export function normalize(s: string): string {
     .toLowerCase();
 }
 
-/** Máximo de páginas de 1000 registros a escanear en una búsqueda por texto. */
-const MAX_SEARCH_PAGES = 6;
+/** Máximo de páginas de 1000 registros a barrer cuando hay que filtrar aquí. */
+const MAX_PAGINAS_BARRIDO = 6;
+
+export type OrdenProceso = "recientes" | "cierre" | "monto_desc" | "monto_asc";
+
+export const ORDENES: OrdenProceso[] = [
+  "recientes",
+  "cierre",
+  "monto_desc",
+  "monto_asc",
+];
+
+/**
+ * Ordena **en sitio** la lista ya filtrada.
+ *
+ * El orden por cierre pasa por `fechaValida` a propósito. Antes se comparaba
+ * con `new Date(...).getTime()`, y una fecha vacía o corrupta —que el registro
+ * tiene— produce `NaN`: un comparador que devuelve `NaN` deja el orden
+ * indefinido y mueve filas al azar entre dos renders de la misma consulta. Sin
+ * fecha legible, al final.
+ */
+function ordenar(lista: Proceso[], orden: OrdenProceso): Proceso[] {
+  switch (orden) {
+    case "cierre": {
+      const clave = (p: Proceso) =>
+        fechaValida(p.fecha_fin_recepcion_ofertas) ?? "9999-12-31";
+      return lista.sort((a, b) => clave(a).localeCompare(clave(b)));
+    }
+    case "monto_desc":
+      return lista.sort((a, b) => (b.monto_estimado ?? 0) - (a.monto_estimado ?? 0));
+    case "monto_asc":
+      return lista.sort((a, b) => (a.monto_estimado ?? 0) - (b.monto_estimado ?? 0));
+    default:
+      return lista;
+  }
+}
 
 export interface SearchResult {
   content: Proceso[];
   totalResults: number;
   pages: number;
   page: number;
-  /** Cantidad de registros escaneados upstream (solo en modo búsqueda). */
+  /** Registros recorridos upstream (solo cuando hubo que barrer). */
   scanned?: number;
-  /** true si la búsqueda no alcanzó a escanear todos los registros del rango. */
+  /** true si el barrido no alcanzó todos los registros del rango. */
   truncated?: boolean;
+  /** true si el conteo sale del barrido y no del censo que declara la API. */
+  muestra?: boolean;
 }
 
 /**
- * Lista procesos. Sin `q` es un passthrough paginado a la API de la DGCP.
- * Con `q` escanea hasta MAX_SEARCH_PAGES páginas de 1000 registros dentro de
- * los filtros dados y filtra por texto en título, descripción, unidad de
- * compra y código.
+ * Lista procesos.
+ *
+ * Dos caminos, y la diferencia se declara en la respuesta:
+ *
+ *  - **Passthrough** — sin texto, sin etapa que la API no sepa filtrar y sin
+ *    orden distinto del natural. Una petición; `totalResults` es el censo del
+ *    origen.
+ *  - **Barrido** — hasta `MAX_PAGINAS_BARRIDO` páginas de 1000 dentro de los
+ *    filtros dados, y aquí se filtra por texto y por etapa, se ordena y se
+ *    pagina. `totalResults` es entonces lo hallado **en la muestra**, y
+ *    `scanned`/`truncated`/`muestra` obligan a la interfaz a decirlo.
+ *
+ * Que un orden distinto de «recientes» fuerce el barrido no es un capricho de
+ * coste: ordenar es rankear, y rankear las 24 filas de una página mientras el
+ * control dice «Mayor monto» es afirmar algo falso sobre miles de procesos.
+ * O se ordena todo lo que se declaró leer, o no se ofrece el orden.
  */
 export async function listProcesos(opts: {
   q?: string;
   proceso?: string;
   estado?: string;
+  etapa?: string;
   modalidad?: string;
   unidad_compra?: number;
   startdate?: string;
   enddate?: string;
   mipyme?: string;
   mipyme_mujer?: string;
+  orden?: OrdenProceso;
   page?: number;
   limit?: number;
 }): Promise<SearchResult> {
+  const etapa = etapaPorClave(opts.etapa);
+  // Una etapa de un solo estado la filtra la API; las demás hay que barrerlas.
+  const filtrarAqui = Boolean(etapa && !etapa.estadoUnico);
   const common: Params = {
     proceso: opts.proceso,
-    estado: opts.estado,
+    estado: opts.estado || etapa?.estadoUnico,
     modalidad: opts.modalidad,
     unidad_compra: opts.unidad_compra,
     startdate: opts.startdate,
@@ -196,47 +251,72 @@ export async function listProcesos(opts: {
   };
 
   const q = opts.q?.trim();
-  if (!q) {
-    const data = await dgcpFetch<Proceso>("/procesos", {
-      ...common,
-      page: opts.page ?? 1,
-      limit: opts.limit ?? 24,
-    });
+  const orden = opts.orden ?? "recientes";
+  const limit = Math.max(1, opts.limit ?? 24);
+  const page = Math.max(1, opts.page ?? 1);
+
+  if (!q && !filtrarAqui && orden === "recientes") {
+    const data = await dgcpFetch<Proceso>("/procesos", { ...common, page, limit });
     return {
       content: data.payload.content,
       totalResults: data.totalResults ?? data.payload.content.length,
       pages: data.pages ?? 1,
-      page: data.page ?? opts.page ?? 1,
+      page: data.page ?? page,
     };
   }
 
   const first = await dgcpFetch<Proceso>("/procesos", { ...common, page: 1, limit: 1000 });
-  const upstreamPages = first.pages ?? 1;
-  const pagesToScan = Math.min(upstreamPages, MAX_SEARCH_PAGES);
+  /*
+    `pages` es lo que declara el origen, pero no siempre viene. Cayendo a 1 se
+    barre una sola página y se informa `truncated: false`: se afirmaría haber
+    contado todo el rango tras mirar mil registros de los que hubiera. Si falta
+    `pages`, el censo dice cuántas páginas son.
+  */
+  const censo = first.totalResults ?? first.payload.content.length;
+  const upstreamPages = first.pages ?? Math.max(1, Math.ceil(censo / 1000));
+  const aBarrer = Math.min(upstreamPages, MAX_PAGINAS_BARRIDO);
   let all = first.payload.content;
-  if (pagesToScan > 1) {
+  let fallos = 0;
+  if (aBarrer > 1) {
     const rest = await Promise.all(
-      Array.from({ length: pagesToScan - 1 }, (_, i) =>
-        dgcpFetch<Proceso>("/procesos", { ...common, page: i + 2, limit: 1000 })
-      )
+      Array.from({ length: aBarrer - 1 }, (_, i) =>
+        dgcpFetch<Proceso>("/procesos", { ...common, page: i + 2, limit: 1000 }).catch(
+          () => null,
+        ),
+      ),
     );
-    all = all.concat(...rest.map((r) => r.payload.content));
+    for (const r of rest) {
+      if (r) all = all.concat(r.payload.content);
+      else fallos += 1;
+    }
   }
 
-  const needle = normalize(q);
-  const matches = all.filter((p) =>
-    normalize(
-      `${p.titulo} ${p.descripcion} ${p.unidad_compra} ${p.codigo_proceso} ${p.area_requiriente}`
-    ).includes(needle)
-  );
+  let filtrados = all;
+  if (etapa && filtrarAqui) {
+    filtrados = filtrados.filter((p) => etapa.coincide(p.estado_proceso));
+  }
+  if (q) {
+    const needle = normalize(q);
+    filtrados = filtrados.filter((p) =>
+      normalize(
+        `${p.titulo} ${p.descripcion} ${p.unidad_compra} ${p.codigo_proceso} ${p.area_requiriente}`,
+      ).includes(needle),
+    );
+  }
 
+  ordenar(filtrados, orden);
+
+  const inicio = (page - 1) * limit;
   return {
-    content: matches.slice(0, 300),
-    totalResults: matches.length,
-    pages: 1,
-    page: 1,
+    content: filtrados.slice(inicio, inicio + limit),
+    totalResults: filtrados.length,
+    pages: Math.max(1, Math.ceil(filtrados.length / limit)),
+    page,
     scanned: all.length,
-    truncated: upstreamPages > pagesToScan,
+    // Una página caída deja el rango incompleto igual que quedarse corto de
+    // páginas: las dos cosas son lo mismo para quien lee el conteo.
+    truncated: upstreamPages > aBarrer || fallos > 0,
+    muestra: true,
   };
 }
 

@@ -63,24 +63,148 @@ export const TONOS = {
  */
 export type Tono = keyof typeof TONOS;
 
-const ESTADO_TONO: Record<string, Tono> = {
-  "Proceso publicado": "accionable",
-  "Sobres estan abriendose": "contexto",
-  "Sobres abiertos o aperturados": "contexto",
-  "Proceso con etapa cerrada": "contexto",
-  "Proceso adjudicado y celebrado": "cumplido",
-  "Proceso desierto": "anulado",
-  Cancelado: "anulado",
-};
+/* ------------------------------------------ etapas: el estado, en llano */
+
+/**
+ * En qué punto de su vida está un proceso de compras, dicho en el idioma del
+ * que pregunta.
+ *
+ * La DGCP publica siete `estado_proceso` y el buscador los ofrecía tal cual,
+ * con «Proceso publicado» puesto por defecto. Así, **«¿qué ya cerró?» no se
+ * podía preguntar**: había que saber de antemano que la respuesta se reparte
+ * entre «Sobres estan abriendose», «Sobres abiertos o aperturados», «Proceso
+ * con etapa cerrada», «Proceso adjudicado y celebrado», «Proceso desierto» y
+ * «Cancelado», y elegirlos de uno en uno. Justo lo contrario de la regla de la
+ * casa —llano primero, el término técnico después—, y es la mitad que más
+ * enseña: en un proceso cerrado están el ganador, el precio y con quién se
+ * compitió.
+ *
+ * Vive aquí, con los oficios de color, porque es la **otra** traducción del
+ * mismo campo, y este archivo existe precisamente para que esa traducción se
+ * escriba una sola vez. Dos tablas del mismo estado en dos archivos es el error
+ * que ya se pagó una vez arriba.
+ *
+ * Cada etapa es un **predicado sobre el estado normalizado**, no una lista de
+ * literales. No es estilo: el vocabulario del origen no está versionado, ya
+ * costó caro confiar en valores tecleados a mano (docs/AUDITORIA.md §A.12), y
+ * un literal mal transcrito no falla — devuelve cero, que se lee como «no
+ * hay». Con predicados, un estado que la DGCP añada mañana cae en `cerrados`
+ * —definida por negación de `abiertos`— en vez de desaparecer sin que nadie se
+ * entere, y su color es el gris que no afirma nada.
+ */
+export type EtapaClave =
+  | "abiertos"
+  | "cerrados"
+  | "evaluacion"
+  | "adjudicados"
+  | "sin_efecto";
+
+export interface Etapa {
+  clave: EtapaClave;
+  label: string;
+  /** Qué significa, en es-DO llano: se muestra junto al control. */
+  ayuda: string;
+  /** El oficio de color de los procesos de esta etapa. */
+  tono: Tono;
+  /** Recibe el estado **crudo** del origen y normaliza por dentro. */
+  coincide: (estado: string) => boolean;
+  /**
+   * El valor exacto que la API honra, cuando la etapa es un solo estado. Deja
+   * que el caso por defecto siga costando **una** petición en vez de seis.
+   */
+  estadoUnico?: string;
+}
+
+const sinTildes = (s: string) =>
+  (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+const contiene =
+  (...claves: string[]) =>
+  (estado: string) => {
+    const e = sinTildes(estado);
+    return claves.some((c) => e.includes(c));
+  };
+
+const esAbierto = contiene("publicado");
+
+export const ETAPAS: Etapa[] = [
+  {
+    clave: "abiertos",
+    label: "Abiertos a ofertar",
+    ayuda: "Todavía reciben ofertas.",
+    tono: "accionable",
+    coincide: esAbierto,
+    estadoUnico: "Proceso publicado",
+  },
+  {
+    clave: "cerrados",
+    label: "Ya cerró la recepción",
+    ayuda:
+      "Todo lo que ya no admite ofertas: en evaluación, adjudicado, desierto o cancelado.",
+    tono: "contexto",
+    coincide: (e) => !esAbierto(e),
+  },
+  {
+    clave: "evaluacion",
+    label: "Cerrados, en evaluación",
+    ayuda: "Cerró la recepción y la institución abre sobres y compara.",
+    tono: "contexto",
+    coincide: contiene("sobre", "etapa cerrada", "evaluac"),
+  },
+  {
+    clave: "adjudicados",
+    label: "Adjudicados",
+    ayuda: "Ya hay ganador y contrato: aquí están el precio y la competencia.",
+    tono: "cumplido",
+    coincide: contiene("adjudicad"),
+  },
+  {
+    clave: "sin_efecto",
+    label: "Desiertos o cancelados",
+    ayuda: "Se cayeron sin llegar a contrato.",
+    tono: "anulado",
+    coincide: contiene("desierto", "cancelad", "anulad"),
+  },
+];
+
+export function etapaPorClave(clave: string | undefined | null): Etapa | null {
+  return ETAPAS.find((e) => e.clave === clave) ?? null;
+}
+
+/**
+ * La etapa de un estado del origen. Las específicas se prueban primero;
+ * `cerrados` es el cajón por negación y recoge lo que no reconocemos, que es
+ * exactamente donde tiene que caer: un estado desconocido no es «publicado».
+ */
+export function etapaDe(estado: string): Etapa {
+  const especificas = ETAPAS.filter((x) => x.clave !== "cerrados");
+  return (
+    especificas.find((x) => x.coincide(estado)) ??
+    ETAPAS.find((x) => x.clave === "cerrados")!
+  );
+}
 
 export interface EstadoMeta extends Tone {
   label: string;
   abierto: boolean;
 }
 
+/**
+ * Color y condición de un estado de la DGCP. Las dos salen de su etapa, y no
+ * de una tabla de literales aparte: si «abierto» y «etapa abierta» se
+ * calcularan por caminos distintos podrían discrepar, y discreparían justo en
+ * lo que decide si una tarjeta anuncia un plazo o la fecha en que cerró.
+ */
 export function estadoMeta(estado: string): EstadoMeta {
-  const tono = TONOS[ESTADO_TONO[estado] ?? "contexto"];
-  return { ...tono, label: estado || "—", abierto: estado === "Proceso publicado" };
+  const etapa = etapaDe(estado);
+  return {
+    ...TONOS[etapa.tono],
+    label: estado || "—",
+    abierto: etapa.clave === "abiertos",
+  };
 }
 
 export interface CierreMeta extends Tone {

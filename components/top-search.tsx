@@ -133,9 +133,20 @@ export default function TopSearch() {
   const presets: { label: string; Icon: typeof IconClock; run: () => void }[] = [
     { label: "Abiertas ahora", Icon: IconSparkles, run: reset },
     {
+      /*
+        Cierran pronto se queda **dentro de lo abierto**: borrar la etapa metía
+        en la lista lo ya cerrado y, con el orden por cierre ascendente,
+        justamente eso encabezaba el listado. «Cierran pronto» abría con lo que
+        cerró hace más tiempo.
+      */
       label: "Cierran pronto",
       Icon: IconClock,
-      run: () => navWith((p) => { p.delete("estado"); p.set("orden", "cierre"); }),
+      run: () => navWith((p) => { p.delete("etapa"); p.set("orden", "cierre"); }),
+    },
+    {
+      label: "Ya cerraron",
+      Icon: IconClock,
+      run: () => navWith((p) => { p.set("etapa", "cerrados"); p.delete("orden"); }),
     },
     {
       label: "Mayor monto",
@@ -145,7 +156,7 @@ export default function TopSearch() {
     {
       label: "Para MIPYMES",
       Icon: IconSparkles,
-      run: () => navWith((p) => { p.delete("estado"); p.set("mipyme", "1"); }),
+      run: () => navWith((p) => { p.delete("etapa"); p.set("mipyme", "1"); }),
     },
   ];
 

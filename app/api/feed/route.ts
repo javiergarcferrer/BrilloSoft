@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { listProcesos } from "@/lib/dgcp";
+import { ETAPAS, etapaDe, etapaPorClave, type Etapa } from "@/lib/estados";
 import { formatMonto } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -16,18 +17,36 @@ function hoyMenosDias(dias: number): string {
   return new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
 }
 
+/**
+ * La etapa que pide el querystring, o `null` para «todas».
+ *
+ * `?etapa=` **presente y vacío** es «todas las etapas» y no es lo mismo que
+ * ausente, que es el feed de siempre —lo abierto a ofertar—. Distinguirlos
+ * importa: el buscador siempre escribe el parámetro, así que un RSS suscrito
+ * desde «todas las etapas» tiene que traer todas y no volver a lo abierto.
+ * `?estado=` es el vocabulario literal de la DGCP que llevan los enlaces
+ * anteriores a las etapas: se traduce en vez de romperse.
+ */
+function etapaPedida(sp: URLSearchParams): Etapa | null {
+  const clave = sp.get("etapa");
+  if (clave !== null) return etapaPorClave(clave);
+  const estado = sp.get("estado");
+  if (estado !== null) return estado ? etapaDe(estado) : null;
+  return ETAPAS[0];
+}
+
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const q = sp.get("q") ?? undefined;
-  const estado = sp.get("estado") ?? "Proceso publicado";
   const modalidad = sp.get("modalidad") ?? undefined;
   const mipyme = sp.get("mipyme") ?? undefined;
   const uc = sp.get("uc") ?? undefined;
+  const etapa = etapaPedida(sp);
 
   try {
     const r = await listProcesos({
       q,
-      estado: estado || undefined,
+      etapa: etapa?.clave,
       modalidad,
       mipyme: mipyme === "1" ? "true" : undefined,
       unidad_compra: uc ? Number(uc) : undefined,
@@ -38,6 +57,9 @@ export async function GET(req: NextRequest) {
     const origen = req.nextUrl.origin;
     const partes = [
       q && `“${q}”`,
+      etapa === null
+        ? "todas las etapas"
+        : etapa.clave !== "abiertos" && etapa.label.toLowerCase(),
       modalidad,
       uc && `institución ${uc}`,
       mipyme === "1" && "MIPYMES",
