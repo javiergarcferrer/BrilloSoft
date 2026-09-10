@@ -126,7 +126,7 @@ export interface Etapa {
 const sinTildes = (s: string) =>
   (s || "")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/\p{M}/gu, "")
     .toLowerCase();
 
 const contiene =
