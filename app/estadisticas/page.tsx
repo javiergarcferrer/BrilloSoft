@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { IconArrowRight, IconChartBar } from "@/components/icons";
 
 export const revalidate = 1800;
@@ -146,75 +147,68 @@ export default async function EstadisticasPage() {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
-        <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div className="relative p-6 sm:p-8">
-          <div className="rotulo inline-flex items-start gap-2 text-canvas/70">
-            <span aria-hidden className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400" />
-            Últimos 30 días · se actualiza cada 30 min
-          </div>
-          <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
-            ¿Quién compra, cuánto y por qué vía?
-          </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-canvas/70">
-            Basado en los {lista.length.toLocaleString("es-DO")} procesos más recientes
+      <Portada
+        rotulo="Últimos 30 días · se actualiza cada 30 min"
+        titulo="¿Quién compra, cuánto y por qué vía?"
+        descripcion={
+          <>
+            Basado en los {lista.length.toLocaleString("es-DO")} procesos más
+            recientes
             {total > lista.length
               ? ` de ${total.toLocaleString("es-DO")} publicados en el período`
               : ""}
             .
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-            {kpis.map((k) => (
-              <div
-                key={k.etiqueta}
-                className={`rounded-lg p-4 ring-1 ${
-                  k.destacar
-                    ? "bg-brand-500/15 ring-brand-400/30"
-                    : "bg-canvas/5 ring-canvas/10"
-                }`}
-              >
-                <div className="font-mono text-lg font-semibold leading-tight tabular-nums sm:text-xl">
-                {k.valor}
-              </div>
-              {k.base && (
-                <div className="rotulo mt-1 text-canvas/50">{k.base}</div>
-              )}
-                <div
-                  className={`mt-0.5 text-xs ${
-                    k.destacar ? "text-brand-100" : "text-canvas/60"
-                  }`}
-                >
+          </>
+        }
+      >
+        <PortadaCifras>
+          {kpis.map((k) => (
+            <PortadaCifra
+              key={k.etiqueta}
+              etiqueta={
+                <>
                   {k.etiqueta}
-                </div>
-              </div>
+                  {k.base && (
+                    <span className="rotulo mt-1 block text-canvas/50">{k.base}</span>
+                  )}
+                </>
+              }
+              valor={k.valor}
+              destacar={k.destacar}
+            />
+          ))}
+        </PortadaCifras>
+
+        {/*
+          El reparto por estado: una sola barra apilada con su leyenda. Los
+          colores salen de `lib/estados.ts` — un color, un significado, aquí
+          también.
+        */}
+        <div className="mt-6">
+          <div className="flex h-3 overflow-hidden rounded-sm ring-1 ring-canvas/10">
+            {porEstado.map(([e, a]) => (
+              <div
+                key={e}
+                className={estadoMeta(e).dot}
+                style={{ width: `${(a.n / totalN) * 100}%` }}
+                title={`${e}: ${a.n}`}
+              />
             ))}
           </div>
-
-          {/* Distribución por estado */}
-          <div className="mt-6">
-            <div className="flex h-3 overflow-hidden rounded-sm ring-1 ring-canvas/10">
-              {porEstado.map(([e, a]) => (
-                <div
-                  key={e}
-                  className={estadoMeta(e).dot}
-                  style={{ width: `${(a.n / totalN) * 100}%` }}
-                  title={`${e}: ${a.n}`}
-                />
-              ))}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-              {porEstado.map(([e, a]) => (
-                <span key={e} className="inline-flex items-center gap-1.5 text-xs text-canvas/70">
-                  <span className={`h-2 w-2 rounded-full ${estadoMeta(e).dot}`} />
-                  {e}
-                  <span className="font-semibold text-canvas">{a.n}</span>
-                </span>
-              ))}
-            </div>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+            {porEstado.map(([e, a]) => (
+              <span
+                key={e}
+                className="inline-flex items-center gap-1.5 text-xs text-canvas/70"
+              >
+                <span className={`h-2 w-2 rounded-full ${estadoMeta(e).dot}`} />
+                {e}
+                <span className="font-semibold text-canvas">{a.n}</span>
+              </span>
+            ))}
           </div>
         </div>
-      </section>
+      </Portada>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card as="section" className="p-6">

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 
 export const metadata: Metadata = {
   title: "Histórico de contrataciones",
@@ -50,23 +51,16 @@ export default async function ContratosPage() {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
-        <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div className="relative p-6 sm:p-8">
-          <div className="rotulo inline-flex items-start gap-2 text-canvas/70">
-            <span aria-hidden className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400" />
-            Contratos adjudicados · se actualiza cada 30 min
-          </div>
-          {r.truncado && (
-            <p className="rotulo mt-3 inline-flex items-center gap-2 text-alerta-200">
-              <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-alerta-400" />
-              Muestra · {formatInt(r.escaneados)} de {formatInt(r.totalRegistro)} contratos
-            </p>
-          )}
-          <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
-            ¿Qué está contratando el Estado?
-          </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-canvas/70">
+      <Portada
+        rotulo="Contratos adjudicados · se actualiza cada 30 min"
+        aviso={
+          r.truncado
+            ? `Muestra · ${formatInt(r.escaneados)} de ${formatInt(r.totalRegistro)} contratos`
+            : undefined
+        }
+        titulo="¿Qué está contratando el Estado?"
+        descripcion={
+          <>
             Sobre los {formatInt(r.escaneados)} contratos más recientes del
             registro de la DGCP
             {r.desde && r.hasta && (
@@ -76,27 +70,20 @@ export default async function ContratosPage() {
               </>
             )}
             .
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-            {kpis.map((k) => (
-              <div
-                key={k.etiqueta}
-                className={`rounded-lg p-4 ring-1 ${
-                  k.destacar ? "bg-brand-500/15 ring-brand-400/30" : "bg-canvas/5 ring-canvas/10"
-                }`}
-              >
-                <div className="font-mono text-lg font-semibold leading-tight tabular-nums sm:text-xl">{k.valor}</div>
-                <div
-                  className={`mt-0.5 text-xs ${k.destacar ? "text-brand-100" : "text-canvas/60"}`}
-                >
-                  {k.etiqueta}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+          </>
+        }
+      >
+        <PortadaCifras>
+          {kpis.map((k) => (
+            <PortadaCifra
+              key={k.etiqueta}
+              etiqueta={k.etiqueta}
+              valor={k.valor}
+              destacar={k.destacar}
+            />
+          ))}
+        </PortadaCifras>
+      </Portada>
 
       {/* Tendencia mensual */}
       {r.porMes.length > 1 && (

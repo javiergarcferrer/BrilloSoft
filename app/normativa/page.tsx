@@ -10,9 +10,11 @@ import {
 } from "@/lib/normativa";
 import { IconExternal, IconDoc } from "@/components/icons";
 import { desdeMayusculas } from "@/lib/congreso";
-import { cn } from "@/lib/cn";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import Antiguedad from "@/components/antiguedad";
+import { Card } from "@/components/ui/card";
+import { EstadoVacio } from "@/components/estado-vacio";
+import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 
 export const metadata: Metadata = {
   title: "Normativa del Ejecutivo",
@@ -52,42 +54,31 @@ export default async function NormativaPage({
       </header>
 
       {/* filtros de tipo */}
-      <nav aria-label="Tipo de documento" className="flex flex-wrap gap-1.5">
+      <NavFiltros etiqueta="Tipo de documento">
         {(Object.entries(TIPOS_NORMATIVA) as [TipoNormativa, string][]).map(([code, label]) => (
-          <Link
+          <FiltroEnlace
             key={code}
             href={`/normativa?tipo=${code}${anio !== ANIO_ACTUAL ? `&anio=${anio}` : ""}`}
-            aria-current={tipo === code ? "page" : undefined}
-            className={cn(
-              "rounded-md px-3.5 py-1.5 text-sm font-medium ring-1 ring-inset transition-colors",
-              tipo === code
-                ? "bg-brand-600 text-canvas ring-brand-600"
-                : "bg-surface text-ink-soft ring-hairline hover:text-ink",
-            )}
+            activo={tipo === code}
           >
             {label}
-          </Link>
+          </FiltroEnlace>
         ))}
-      </nav>
+      </NavFiltros>
 
       {/* filtros de año */}
-      <nav aria-label="Año" className="mt-2.5 flex flex-wrap gap-1.5">
+      <NavFiltros etiqueta="Año" className="mt-2.5">
         {ANIOS.map((a) => (
-          <Link
+          <FiltroEnlace
             key={a}
             href={`/normativa?tipo=${tipo}${a !== ANIO_ACTUAL ? `&anio=${a}` : ""}`}
-            aria-current={anio === a ? "page" : undefined}
-            className={cn(
-              "rounded-md px-3 py-1 font-mono text-xs tabular-nums ring-1 ring-inset transition-colors",
-              anio === a
-                ? "bg-brand-600 text-canvas ring-brand-600"
-                : "bg-surface text-ink-soft ring-hairline hover:text-ink",
-            )}
+            activo={anio === a}
+            mono
           >
             {a}
-          </Link>
+          </FiltroEnlace>
         ))}
-      </nav>
+      </NavFiltros>
 
       {/*
         La Consultoría responde por año y tipo, y no siempre rápido. Los
@@ -123,23 +114,20 @@ async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: numbe
         </span>
       </div>
 
-      <section className="mt-3 overflow-hidden rounded-lg border border-hairline bg-surface ">
-        {docs.length > 0 ? (
+      {docs.length > 0 ? (
+        <Card as="section" className="mt-3">
           <ul className="divide-y divide-hairline">
             {docs.slice(0, 200).map((d, i) => (
               <FilaDoc key={`${d.documentId}-${i}`} doc={d} />
             ))}
           </ul>
-        ) : (
-          <div className="px-5 py-14 text-center">
-            <p className="text-sm font-medium text-ink">Sin resultados</p>
-            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
-              La Consultoría no devolvió {TIPOS_NORMATIVA[tipo].toLowerCase()} para{" "}
-              {anio}, o el servicio no respondió. Prueba otro año o tipo.
-            </p>
-          </div>
-        )}
-      </section>
+        </Card>
+      ) : (
+        <EstadoVacio titulo="Sin resultados" className="mt-3">
+          La Consultoría no devolvió {TIPOS_NORMATIVA[tipo].toLowerCase()} para{" "}
+          {anio}, o el servicio no respondió. Prueba otro año o tipo.
+        </EstadoVacio>
+      )}
 
       {docs.length > 200 && (
         <p className="mt-4 text-xs text-ink-soft">

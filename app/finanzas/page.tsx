@@ -2,6 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { etiquetaCorte, getFiscal } from "@/lib/fiscal";
 import { getDeuda } from "@/lib/deuda";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { EstadoVacio } from "@/components/estado-vacio";
+import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { formatMagnitud, formatPesos, hace } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 
@@ -21,15 +25,14 @@ export default async function FinanzasPage() {
 
   if (!fiscal) {
     return (
-      <div className="mx-auto max-w-2xl rounded-lg border border-hairline bg-surface px-5 py-14 text-center">
-        <p className="text-sm font-medium text-ink">
-          Todavía no hay instantánea de ejecución
-        </p>
-        <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
-          Se genera con <span className="font-mono">python3 scripts/build-fiscal.py</span>,
-          que consulta la API de datos abiertos del SIGEF.
-        </p>
-      </div>
+      <EstadoVacio
+        className="mx-auto max-w-2xl"
+        titulo="Todavía no hay instantánea de ejecución"
+      >
+        Se genera con{" "}
+        <span className="font-mono">python3 scripts/build-fiscal.py</span>, que
+        consulta la API de datos abiertos del SIGEF.
+      </EstadoVacio>
     );
   }
 
@@ -47,49 +50,34 @@ export default async function FinanzasPage() {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
-        <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div className="relative p-6 sm:p-8">
-          <div className="rotulo inline-flex items-start gap-2 text-canvas/70">
-            <span
-              aria-hidden
-              className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400"
-            />
-            Ejecución presupuestaria · SIGEF · corte a {corte}
-          </div>
-          <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
-            ¿En qué gasta el Estado?
-          </h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-canvas/70">
+      <Portada
+        rotulo={`Ejecución presupuestaria · SIGEF · corte a ${corte}`}
+        titulo="¿En qué gasta el Estado?"
+        descripcion={
+          <>
             El presupuesto no se ejecuta de golpe: se aprueba, se modifica, se
             compromete, se devenga y se paga. Estas son las cifras de cada
             institución en {fiscal.anio}, con el gasto{" "}
             <span className="font-medium text-canvas">devengado</span> —lo que el
             Estado ya se obligó a pagar— como medida.
-          </p>
-          <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {kpis.map((k) => (
-              <div
-                key={k.etiqueta}
-                className={
-                  k.destacar
-                    ? "rounded-lg bg-canvas/10 px-4 py-3"
-                    : "rounded-lg bg-canvas/5 px-4 py-3"
-                }
-              >
-                <dt className="text-xs text-canvas/60">{k.etiqueta}</dt>
-                <dd className="mt-0.5 font-mono text-lg font-bold tabular-nums">
-                  {k.valor}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
+          </>
+        }
+      >
+        <PortadaCifras>
+          {kpis.map((k) => (
+            <PortadaCifra
+              key={k.etiqueta}
+              etiqueta={k.etiqueta}
+              valor={k.valor}
+              destacar={k.destacar}
+            />
+          ))}
+        </PortadaCifras>
+      </Portada>
 
       <div className="grid gap-5 lg:grid-cols-5">
-        <section className="rounded-lg bg-surface p-6 border border-hairline lg:col-span-3">
-          <h2 className="font-semibold">Gasto devengado mes a mes</h2>
+        <Card as="section" className="p-6 lg:col-span-3">
+          <CardTitle>Gasto devengado mes a mes</CardTitle>
           <p className="mt-1 text-xs text-ink-soft">
             Todo el Estado, {fiscal.anio}. Cada barra es un mes cerrado.
           </p>
@@ -104,19 +92,19 @@ export default async function FinanzasPage() {
                     {formatPesos(m.devengado)}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-sm bg-hairline">
-                  <div
-                    className="bar-grow h-2 rounded-sm bg-v-finanzas"
-                    style={{ width: `${Math.max(2, (m.devengado / maxMes) * 100)}%` }}
-                  />
-                </div>
+                <Progress
+                  value={Math.max(2, (m.devengado / maxMes) * 100)}
+                  aria-label={`${etiquetaCorte(m.mes, fiscal.anio)}: ${formatPesos(m.devengado)}`}
+                  indicadorClassName="bg-v-finanzas"
+                  className="mt-1"
+                />
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section className="rounded-lg bg-surface p-6 border border-hairline lg:col-span-2">
-          <h2 className="font-semibold">Y lo que debe</h2>
+        <Card as="section" className="p-6 lg:col-span-2">
+          <CardTitle>Y lo que debe</CardTitle>
           {deuda ? (
             <>
               <p className="mt-3 font-mono text-2xl font-bold tabular-nums">
@@ -149,11 +137,11 @@ export default async function FinanzasPage() {
               El saldo de deuda no está disponible ahora mismo.
             </p>
           )}
-        </section>
+        </Card>
       </div>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
-        <h2 className="font-semibold">Institución por institución</h2>
+      <Card as="section" className="p-6">
+        <CardTitle>Institución por institución</CardTitle>
         <p className="mt-1 text-xs text-ink-soft">
           Ordenadas por gasto devengado en {fiscal.anio}. El porcentaje es cuánto
           lleva ejecutado de su presupuesto vigente.
@@ -171,14 +159,12 @@ export default async function FinanzasPage() {
                     {formatPesos(i.devengado)}
                   </span>
                 </div>
-                <div className="mt-1.5 h-2 rounded-sm bg-hairline">
-                  <div
-                    className="bar-grow h-2 rounded-sm bg-v-finanzas"
-                    style={{
-                      width: `${Math.max(1, (i.devengado / maxDevengado) * 100)}%`,
-                    }}
-                  />
-                </div>
+                <Progress
+                  value={Math.max(1, (i.devengado / maxDevengado) * 100)}
+                  aria-label={`${i.nombreLegible}: ${formatPesos(i.devengado)}`}
+                  indicadorClassName="bg-v-finanzas"
+                  className="mt-1.5"
+                />
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-soft">
                   <span className="font-mono">Capítulo {i.codigo}</span>
                   <span>· {pct(i.ejecucion)} de su presupuesto vigente</span>
@@ -188,10 +174,10 @@ export default async function FinanzasPage() {
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
 
-      <section className="rounded-lg border border-hairline bg-surface p-6">
-        <h2 className="font-semibold">Cómo leer estas cifras</h2>
+      <Card as="section" className="p-6">
+        <CardTitle>Cómo leer estas cifras</CardTitle>
         <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="rotulo text-ink-soft">Presupuesto vigente</dt>
@@ -234,7 +220,7 @@ export default async function FinanzasPage() {
           General del Estado: no incluye ayuntamientos ni empresas públicas
           financieras.
         </p>
-      </section>
+      </Card>
     </div>
   );
 }

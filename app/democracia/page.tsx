@@ -1,7 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getRanking, type RankingItem } from "@/lib/democracia";
-import { IconArrowRight, IconShield, IconSparkles } from "@/components/icons";
+import { IconArrowRight, IconShield } from "@/components/icons";
+import { Button } from "@/components/ui/button";
+import { Portada } from "@/components/portada";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { EstadoVacio } from "@/components/estado-vacio";
 
 export const metadata: Metadata = {
   title: "Democracia Legislativa",
@@ -19,38 +25,40 @@ export default async function DemocraciaPage() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
-        <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div className="relative p-6 sm:p-9">
-          <div className="inline-flex items-center gap-2 rounded-md bg-canvas/10 px-3 py-1 text-xs font-medium text-canvas/85 ring-1 ring-inset ring-canvas/15">
-            <IconSparkles className="h-3.5 w-3.5" />
-            Piloto ciudadano · independiente y no oficial
-          </div>
-          <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-            ¿Qué opinas de lo que se legisla?
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-canvas/70 sm:text-base">
+      {/*
+        La portada de Democracia decía lo mismo que las demás y se pintaba de
+        otra manera: su rótulo era una plaquita con icono en vez del epígrafe
+        con el punto de sello, y su pregunta iba en sans. Ahora usa la misma
+        pieza que el resto — la excepción de esta vertical es la base de datos,
+        no la identidad.
+      */}
+      <Portada
+        principal
+        rotulo="Piloto ciudadano · independiente y no oficial"
+        titulo="¿Qué opinas de lo que se legisla?"
+        descripcion={
+          <p className="sm:text-base">
             Vota a favor o en contra de las iniciativas reales que se discuten en
             la Cámara de Diputados y el Senado, y mira cómo opina la ciudadanía. Un
             registro por cédula para que cada voto cuente una vez; tu voto es
             secreto y solo se publican los totales.
           </p>
-          <div className="mt-6 flex flex-wrap gap-2.5">
-            <Link
-              href="/democracia/registro"
-              className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700 active:scale-95"
-            >
-              Regístrate para votar
-            </Link>
-            <Link
-              href="/congreso"
-              className="inline-flex items-center gap-2 rounded-lg bg-canvas/10 px-5 py-2.5 text-sm font-semibold text-canvas ring-1 ring-inset ring-canvas/20 transition-colors hover:bg-canvas/15 active:scale-95"
-            >
-              Ver iniciativas
-            </Link>
-          </div>
+        }
+      >
+        <div className="flex flex-wrap gap-2.5">
+          <Button asChild size="lg" className="bg-brand-600 hover:bg-brand-700">
+            <Link href="/democracia/registro">Regístrate para votar</Link>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            variant="tinta"
+            className="bg-canvas/10 text-canvas ring-1 ring-inset ring-canvas/20 hover:bg-canvas/20"
+          >
+            <Link href="/congreso">Ver iniciativas</Link>
+          </Button>
         </div>
-      </section>
+      </Portada>
 
       {/* Cómo funciona / seguridad */}
       <section className="grid gap-4 sm:grid-cols-3">
@@ -87,27 +95,27 @@ export default async function DemocraciaPage() {
         </div>
 
         {conVotos.length > 0 ? (
-          <ul className="overflow-hidden rounded-lg border border-hairline bg-surface ">
-            {conVotos.map((r) => (
-              <FilaRanking key={`${r.camara}:${r.ref}`} item={r} />
-            ))}
-          </ul>
+          <Card>
+            <ul>
+              {conVotos.map((r) => (
+                <FilaRanking key={`${r.camara}:${r.ref}`} item={r} />
+              ))}
+            </ul>
+          </Card>
         ) : (
-          <div className="rounded-lg border border-hairline bg-surface px-5 py-14 text-center ">
-            <p className="text-sm font-medium text-ink">El tablero está en blanco</p>
-            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
-              Cuando la gente empiece a votar en las fichas de las iniciativas, aquí
-              aparecerá el ranking de apoyo ciudadano.
-            </p>
-          </div>
+          <EstadoVacio titulo="El tablero está en blanco">
+            Cuando la gente empiece a votar en las fichas de las iniciativas, aquí
+            aparecerá el ranking de apoyo ciudadano.
+          </EstadoVacio>
         )}
       </section>
 
       {/* franja de seguridad */}
-      <Link
-        href="/democracia/seguridad"
-        className="flex items-center gap-4 rounded-lg border border-hairline bg-surface px-5 py-4  transition-colors hover:bg-canvas/60"
-      >
+      <Card asChild className="transition-colors hover:bg-canvas/60">
+        <Link
+          href="/democracia/seguridad"
+          className="flex items-center gap-4 px-5 py-4"
+        >
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
           <IconShield className="h-5 w-5" />
         </span>
@@ -118,8 +126,9 @@ export default async function DemocraciaPage() {
             base de datos, minimización de datos según la Ley 172-13.
           </p>
         </div>
-        <IconArrowRight className="h-4 w-4 shrink-0 text-ink-soft" />
-      </Link>
+          <IconArrowRight className="h-4 w-4 shrink-0 text-ink-soft" />
+        </Link>
+      </Card>
 
       <p className="px-1 text-xs leading-relaxed text-ink-soft">
         Herramienta independiente y no oficial. Este piloto no es un canal formal
@@ -136,13 +145,13 @@ export default async function DemocraciaPage() {
 
 function Paso({ n, titulo, children }: { n: number; titulo: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-hairline bg-surface p-5 ">
+    <Card className="p-5">
       <span className="grid h-7 w-7 place-items-center rounded-full bg-alerta-100 text-xs font-bold text-alerta-600">
         {n}
       </span>
       <h3 className="mt-3 text-sm font-semibold text-ink">{titulo}</h3>
       <p className="mt-1 text-xs leading-relaxed text-ink-soft">{children}</p>
-    </div>
+    </Card>
   );
 }
 
@@ -159,19 +168,20 @@ function FilaRanking({ item }: { item: RankingItem }) {
           <span className="font-mono font-semibold tabular-nums text-brand-700">
             {item.numero ?? `${item.camara}·${item.ref}`}
           </span>
-          <span className="rounded-md bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-soft ring-1 ring-inset ring-hairline">
+          <Badge forma="etiqueta" variant="contorno" className="bg-canvas font-medium">
             {item.camara === "senado" ? "Senado" : "Diputados"}
-          </span>
+          </Badge>
           {item.grupo && <span className="text-ink-soft">{item.grupo}</span>}
         </div>
         <p className="mt-1.5 line-clamp-2 text-[15px] leading-snug text-ink">
           {item.titulo ?? "(iniciativa)"}
         </p>
         <div className="mt-2 flex items-center gap-3">
-          <div className="flex h-2 flex-1 overflow-hidden rounded-sm ring-1 ring-inset ring-hairline">
-            <div className="bg-brand-500" style={{ width: `${pct}%` }} />
-            <div className="flex-1 bg-ink-soft/30" />
-          </div>
+          <Progress
+            value={pct}
+            aria-label={`${pct} % a favor`}
+            className="flex-1 bg-ink-soft/30 ring-1 ring-inset ring-hairline"
+          />
           <span className="font-mono shrink-0 text-xs tabular-nums text-ink-soft">
             <span className="font-semibold text-brand-600">{pct}%</span> · {item.total.toLocaleString("es-DO")} votos
           </span>

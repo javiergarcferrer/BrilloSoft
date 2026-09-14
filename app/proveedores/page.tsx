@@ -29,6 +29,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconArrowRight } from "@/components/icons";
 import BuscadorProveedores from "./buscador";
+import { Portada } from "@/components/portada";
 
 export const metadata: Metadata = {
   title: "Proveedores del Estado",
@@ -66,27 +67,11 @@ export default async function ProveedoresPage({
   return (
     <div className="space-y-5">
       {/* La cabecera no espera a nadie: pinta con la navegación. */}
-      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
-        <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div className="relative p-6 sm:p-8">
-          <div className="rotulo inline-flex items-start gap-2 text-canvas/70">
-            <span
-              aria-hidden
-              className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400"
-            />
-            Registro de Proveedores del Estado · DGCP
-          </div>
-          <h1 className="mt-4 max-w-2xl font-display text-3xl leading-[1.1] sm:text-4xl">
-            ¿Quién le vende al Estado?
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-canvas/70">
-            Las empresas y personas inscritas para venderle al Estado son
-            decenas de miles. Las que de verdad se están adjudicando contratos
-            ahora mismo son muchas menos, y son estas. Cada una enlaza a su
-            historial completo y a lo que el registro dice de ella.
-          </p>
-        </div>
-      </section>
+      <Portada
+        rotulo="Registro de Proveedores del Estado · DGCP"
+        titulo="¿Quién le vende al Estado?"
+        descripcion="Las empresas y personas inscritas para venderle al Estado son decenas de miles. Las que de verdad se están adjudicando contratos ahora mismo son muchas menos, y son estas. Cada una enlaza a su historial completo y a lo que el registro dice de ella."
+      />
 
       <Suspense fallback={<TiraEsqueleto />}>
         <Indicadores />

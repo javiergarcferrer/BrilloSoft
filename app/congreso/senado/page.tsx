@@ -13,12 +13,12 @@ import {
 } from "@/lib/senado";
 import { IconSearch } from "@/components/icons";
 import { EsqueletoFilas } from "@/components/esqueleto";
-import { cn } from "@/lib/cn";
 import Antiguedad from "@/components/antiguedad";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 
 export const metadata: Metadata = {
   title: "Senado",
@@ -87,7 +87,7 @@ export default async function SenadoPage({
       </p>
 
       {/* Colecciones por cuatrienio: cada una es una base distinta en el origen. */}
-      <nav aria-label="Cuatrienios" className="mt-4 flex flex-wrap gap-1.5">
+      <NavFiltros etiqueta="Cuatrienios" className="mt-4">
         {CUATRIENIOS.map((c) => {
           const activa = c.etiqueta === cuatrienio.etiqueta;
           const sp = new URLSearchParams();
@@ -95,26 +95,17 @@ export default async function SenadoPage({
           if (c.etiqueta !== CUATRIENIO_VIGENTE.etiqueta) sp.set("c", c.etiqueta);
           const qs = sp.toString();
           return (
-            <Button
+            <FiltroEnlace
               key={c.etiqueta}
-              asChild
-              variant={activa ? "default" : "secondary"}
-              size="sm"
-              className={cn(
-                "font-mono tabular-nums",
-                activa ? "bg-brand-600 hover:bg-brand-700" : "text-ink-soft hover:text-ink",
-              )}
+              href={`/congreso/senado${qs ? `?${qs}` : ""}`}
+              activo={activa}
+              mono
             >
-              <Link
-                href={`/congreso/senado${qs ? `?${qs}` : ""}`}
-                aria-current={activa ? "page" : undefined}
-              >
-                {c.etiqueta}
-              </Link>
-            </Button>
+              {c.etiqueta}
+            </FiltroEnlace>
           );
         })}
-      </nav>
+      </NavFiltros>
 
       {/*
         El consultante del Senado es la fuente más lenta de la plataforma

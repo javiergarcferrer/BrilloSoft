@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { EstadoVacio } from "@/components/estado-vacio";
 import Antiguedad from "@/components/antiguedad";
+import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 
 export const metadata: Metadata = {
   title: "Planes anuales de compras",
@@ -61,44 +62,22 @@ export default async function PlanesPage() {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
-        <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div className="relative p-6 sm:p-8">
-          <div className="rotulo inline-flex items-start gap-2 text-canvas/70">
-            <span
-              aria-hidden
-              className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-sello-400"
+      <Portada
+        rotulo={`Plan Anual de Compras y Contrataciones · PACC ${periodo}`}
+        titulo="¿Qué planea comprar el Estado?"
+        descripcion="Antes de que exista una licitación, cada institución declara lo que piensa comprar en el año. Ese documento es el PACC, y se puede leer hoy: es la señal más temprana que publica el Estado sobre su propio gasto."
+      >
+        <PortadaCifras className="sm:grid-cols-3">
+          {kpis.map((k) => (
+            <PortadaCifra
+              key={k.etiqueta}
+              etiqueta={k.etiqueta}
+              valor={k.valor}
+              destacar={k.destacar}
             />
-            Plan Anual de Compras y Contrataciones · PACC {periodo}
-          </div>
-          <h1 className="mt-4 font-display text-3xl leading-[1.1] sm:text-4xl">
-            ¿Qué planea comprar el Estado?
-          </h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-canvas/70">
-            Antes de que exista una licitación, cada institución declara lo que
-            piensa comprar en el año. Ese documento es el PACC, y se puede leer
-            hoy: es la señal más temprana que publica el Estado sobre su propio
-            gasto.
-          </p>
-          <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {kpis.map((k) => (
-              <div
-                key={k.etiqueta}
-                className={
-                  k.destacar
-                    ? "rounded-lg bg-canvas/10 px-4 py-3"
-                    : "rounded-lg bg-canvas/5 px-4 py-3"
-                }
-              >
-                <dt className="text-xs text-canvas/60">{k.etiqueta}</dt>
-                <dd className="mt-0.5 font-mono text-lg font-bold tabular-nums">
-                  {k.valor}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
+          ))}
+        </PortadaCifras>
+      </Portada>
 
       <Card as="section" className="p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

@@ -9,6 +9,7 @@ import { formatFecha } from "@/lib/format";
 import VisorDocumento from "@/components/visor-documento";
 import { IconArrowLeft } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const revalidate = 86400;
 
@@ -80,18 +81,18 @@ export default async function NormaPage({ params }: Props) {
       </header>
 
       {explicacion && (
-        <section className="mt-5 rounded-lg border border-hairline bg-surface p-5 ">
+        <Card as="section" className="mt-5 p-5">
           <p className="rotulo text-ink-soft">
             Qué es
           </p>
           <p className="mt-1.5 text-sm leading-relaxed text-ink">{explicacion}</p>
-        </section>
+        </Card>
       )}
 
-      <section className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface ">
-        <div className="border-b border-hairline px-5 py-3.5">
-          <h2 className="font-sans text-sm font-semibold text-ink">El texto</h2>
-        </div>
+      <Card as="section" className="mt-5">
+        <CardHeader>
+          <CardTitle>El texto</CardTitle>
+        </CardHeader>
         {norma.url ? (
           <Suspense fallback={<Esqueleto className="m-5 h-24" />}>
             <TextoNorma url={norma.url} nombre={`${tipo} ${norma.numero} — texto oficial`} />
@@ -101,7 +102,7 @@ export default async function NormaPage({ params }: Props) {
             La Consultoría lista esta norma pero no expone su archivo.
           </p>
         )}
-      </section>
+      </Card>
 
       <p className="mt-5 text-xs leading-relaxed text-ink-soft">
         Fuente: Consultoría Jurídica del Poder Ejecutivo. Esta plataforma no

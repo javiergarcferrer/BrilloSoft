@@ -37,6 +37,7 @@ import {
   IconSearch,
   IconTrendingUp,
 } from "@/components/icons";
+import { Portada } from "@/components/portada";
 
 export const revalidate = 1800;
 
@@ -84,53 +85,44 @@ export default function Panorama() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-lg bg-ink text-canvas">
-        <div className="absolute inset-0 app-grid-dark" aria-hidden />
-        <div className="relative p-6 sm:p-9">
-          <div className="rotulo inline-flex items-center gap-2 text-canvas/70">
-            <span
-              aria-hidden
-              className="mt-[0.45em] h-1.5 w-1.5 shrink-0 self-start rounded-full bg-sello-400"
-            />
-            República Dominicana · fuentes oficiales leídas en vivo
-          </div>
-
-          <h1 className="mt-4 max-w-3xl font-display text-4xl leading-[1.08] sm:text-5xl">
-            ¿Qué compra, qué legisla y a quién le paga el Estado?
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-canvas/70 sm:text-base">
+      <Portada
+        principal
+        rotulo="República Dominicana · fuentes oficiales leídas en vivo"
+        titulo="¿Qué compra, qué legisla y a quién le paga el Estado?"
+        descripcion={
+          <p className="sm:text-base">
             Fuentes oficiales leídas en vivo y puestas en un mismo lugar: compras
             públicas, Congreso Nacional, normativa del Ejecutivo, nómina estatal y
             deuda pública. Sin intermediarios y sin copiar los datos a ningún lado
             — y con un piloto de voto ciudadano sobre lo que se legisla.
           </p>
-
-          <div className="mt-6 flex flex-wrap gap-2.5">
-            {/*
-              Sobre la banda de tinta la llamada principal se invierte: papel
-              sobre tinta. El `hover` sube a `surface` —la hoja—, que es un paso
-              real de la escala y no el mismo relleno repetido.
-            */}
-            <Button asChild size="lg" className="bg-canvas text-ink hover:bg-surface">
-              <Link href="/licitaciones">
-                <IconSearch className="h-4 w-4" />
-                Buscar licitaciones
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="tinta"
-              className="border border-canvas/20 bg-canvas/10 text-canvas hover:bg-canvas/20"
-            >
-              <Link href="/congreso">
-                <IconLayers className="h-4 w-4" />
-                Explorar el Congreso
-              </Link>
-            </Button>
-          </div>
+        }
+      >
+        <div className="flex flex-wrap gap-2.5">
+          {/*
+            Sobre la banda de tinta la llamada principal se invierte: papel
+            sobre tinta. El `hover` sube a `surface` —la hoja—, que es un paso
+            real de la escala y no el mismo relleno repetido.
+          */}
+          <Button asChild size="lg" className="bg-canvas text-ink hover:bg-surface">
+            <Link href="/licitaciones">
+              <IconSearch className="h-4 w-4" />
+              Buscar licitaciones
+            </Link>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            variant="tinta"
+            className="border border-canvas/20 bg-canvas/10 text-canvas hover:bg-canvas/20"
+          >
+            <Link href="/congreso">
+              <IconLayers className="h-4 w-4" />
+              Explorar el Congreso
+            </Link>
+          </Button>
         </div>
-      </section>
+      </Portada>
 
       {/* Dominios: cada tarjeta espera solo a su fuente */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
