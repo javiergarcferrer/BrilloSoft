@@ -36,10 +36,15 @@ if printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
   # Quotes are shell syntax, not part of the ref: `git push origin "main"` is a
   # push to main and was being refused as a push to `"main"`.
   refs="$(printf '%s' "$cmd" | grep -oE 'git push[^|;&]*' | sed -E 's/git push//; s/-u|--set-upstream|origin//g; s/["'"'"']//g')"
+  # `claude/*` son ramas de sesión: no despliegan nada. Existen para que el
+  # dueño pueda MIRAR el trabajo antes de que exista —Vercel les levanta un
+  # preview al llegar al remoto— y para revisarlo en un PR. Decisión suya, del
+  # 14-09-2026 (docs/DECISIONES.md). La estampa del gate, que es lo que protege
+  # producción, sigue exigiéndose más abajo para cualquier push.
   for r in $refs; do
     case "$r" in
-      -*|main|HEAD:main|main:main|*[\<\>]*|[0-9]*) ;;   # flags, main, shell redirections
-      *) negar "push only to main (branch policy in CLAUDE.md). Refusing ref '$r'." ;;
+      -*|main|HEAD:main|main:main|claude/*|*[\<\>]*|[0-9]*) ;;   # flags, main, ramas de sesión, redirecciones
+      *) negar "push only to main or a claude/* session branch (CLAUDE.md). Refusing ref '$r'." ;;
     esac
   done
 

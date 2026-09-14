@@ -71,8 +71,9 @@ Las sesiones terminan trabajo; no devuelven preguntas.
    `/fuentes` cuando toca una fuente. El chat no es memoria.
 4. **Se entrega a `main`.** Cada push a `main` despliega a producción. Rebase
    sobre `origin/main` (otras sesiones también empujan), gate completo **sobre
-   el árbol ya rebasado** —el gate estampa el commit y el guard rechaza un push
-   sin estampa—, y push. Nunca `--force`, nunca otra rama, nunca `--no-verify`.
+   el árbol ya rebasado** —estampa el commit y el guard exige esa estampa en
+   todo push—, y push. Una rama `claude/*` se empuja para verla en Vercel antes
+   de entregar; solo `main` despliega. Nunca `--force`, nunca `--no-verify`.
 5. **Nunca se debilita un check para pasarlo.** Si un hook o el gate se
    equivoca, se deja rojo y se dice con evidencia. Las jugadas legales son
    tres: usar la primitiva, añadir el token, extraer el hermano.

@@ -53,4 +53,11 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
 - **El Senado se lee por su consultante público**, no por su WordPress (401).
 - **Los PDF se rasterizan** con pdf.js *legacy* sobre un canvas a través de
   `/api/documento`; un PDF en `<iframe>` no pinta nada en móvil.
+- **Las ramas `claude/*` se pueden empujar** (14-09-2026). El guard solo
+  admitía `main`, así que una sesión no podía enseñar su trabajo antes de
+  desplegarlo: Vercel levanta el preview de una rama cuando llega al remoto.
+  Se abrió una excepción por prefijo en `.claude/hooks/guard-bash.sh`, y nada
+  más: `main` sigue siendo lo único que despliega, y la **estampa del gate se
+  sigue exigiendo para cualquier push**, rama incluida. La decisión se tomó
+  para ver la pasada de shadcn/ui desde el teléfono.
 
