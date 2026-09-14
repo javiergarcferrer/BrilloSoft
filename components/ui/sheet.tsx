@@ -10,6 +10,11 @@
  * propio desplazamiento para que una lista larga no empuje la página, y la
  * altura máxima deja ver un trozo de lo que hay debajo, que es lo que le dice
  * al lector que no cambió de página.
+ *
+ * El velo va en `z-[70]` y la hoja en `z-[80]` porque el header de la
+ * plataforma es pegajoso y vive en `z-50`: con el velo en la misma planta, el
+ * header se quedaba encima, nítido y pulsable, mientras el resto de la página
+ * estaba atenuada y bloqueada.
  */
 
 import * as React from "react";
@@ -41,7 +46,7 @@ function SheetOverlay({
   return (
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
-      className={cn("velo fixed inset-0 z-50 bg-ink/45", className)}
+      className={cn("velo fixed inset-0 z-[70] bg-ink/45", className)}
       {...props}
     />
   );
@@ -61,7 +66,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "fixed z-50 flex flex-col border-hairline bg-surface shadow-pop",
+          "fixed z-[80] flex flex-col border-hairline bg-surface shadow-pop",
           side === "bottom" &&
             "hoja-abajo inset-x-0 bottom-0 max-h-[85dvh] rounded-t-lg border-t pb-[env(safe-area-inset-bottom)]",
           side === "right" &&

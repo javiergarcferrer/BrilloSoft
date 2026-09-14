@@ -39,7 +39,7 @@ export function BottomSheet({
 }) {
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="bottom" className="z-[80] max-h-[90dvh] lg:hidden">
+      <SheetContent side="bottom" className="max-h-[90dvh] lg:hidden">
         <SheetHeader>
           <SheetTitle className="text-base tracking-tight">{title}</SheetTitle>
         </SheetHeader>

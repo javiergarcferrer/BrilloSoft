@@ -33,10 +33,11 @@ badge, a field or a layer that opens** — there is a primitive for each.
 `rounded-lg`), Button (`asChild` for links), Badge (`forma="sello"` versalitas /
 `forma="etiqueta"` for a state said in words), Input, Textarea, Label, Select
 (its `ayuda` prop carries the plain-Spanish line a native `<option>` cannot),
-Checkbox, Tabs, ToggleGroup, Dialog, Sheet, Popover, DropdownMenu, Tooltip,
-Accordion, Collapsible, Table, Progress (server-side, no Radix), Skeleton,
-Alert, Separator. Icons come from `components/icons.tsx`, never `lucide-react`;
-colours come from the token bridge in `app/globals.css`, never from shadcn's.
+Checkbox, Tabs, ToggleGroup, Sheet, Popover, Collapsible, Table, Progress
+(server-side, no Radix), Skeleton, Alert. Only the ones in use live there —
+copy the next one from ui.shadcn.com and dress it in our tokens. Icons come
+from `components/icons.tsx`, never `lucide-react`; colours come from the token
+bridge in `app/globals.css`, never from shadcn's.
 
 On top, the pieces that carry a rule of this house: `components/papel.tsx`
 (`Rotulo` — its dot is the seal; `Cifra` — a number **with its anchor**;

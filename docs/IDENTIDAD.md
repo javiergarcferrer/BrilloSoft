@@ -214,13 +214,17 @@ segunda dice qué pasó, qué sigue en pie y ofrece la única acción útil.
 Desde la pasada de **shadcn/ui**, en dos capas:
 
 - **`components/ui/*`** — las piezas genéricas: `Card`, `Button`, `Badge`,
-  `Input`, `Select`, `Tabs`, `Dialog`, `Sheet`, `Popover`, `DropdownMenu`,
-  `Tooltip`, `Table`, `Progress`, `Skeleton`, `Alert`, `Accordion`,
-  `Collapsible`, `Checkbox`, `Label`, `Textarea`, `Separator`, `ToggleGroup`.
+  `Input`, `Textarea`, `Label`, `Checkbox`, `Select`, `Tabs`, `ToggleGroup`,
+  `Sheet`, `Popover`, `Collapsible`, `Table`, `Progress`, `Skeleton` y `Alert`.
   Es código del repositorio —no una dependencia de componentes—, con Radix por
   debajo. **Entraron por el teclado y el foco, no por el aspecto**: foco
   atrapado en una hoja modal, recorrido con flechas, Escape, y el foco de vuelta
   al disparador al cerrar.
+
+  Están **las que se usan y solo esas**. Una pieza que nadie importa no es
+  neutral: invita a usarla donde ya manda una regla de la casa —un `Accordion`
+  donde `Plegable` obliga a decir cuántos hay—. La siguiente se copia de
+  ui.shadcn.com cuando haga falta, y se viste con los tokens de aquí.
 
   Sus colores son los de esta página: el puente de tokens al final de `@theme`
   en `app/globals.css` ata el vocabulario de shadcn al de aquí —`background` es
