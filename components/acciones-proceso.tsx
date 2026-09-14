@@ -2,11 +2,13 @@
 
 import SeguirButton from "./seguir-button";
 import { IconExternal, IconShare } from "./icons";
+import { Button } from "@/components/ui/button";
 
 /**
- * Sticky mobile action bar for a process detail page. Fixed above the bottom tab
- * bar; uses the native share sheet when available and falls back to WhatsApp.
- * Hidden on lg+ (desktop keeps the inline header actions).
+ * La barra de acciones de un proceso en el teléfono: fija sobre la tab bar,
+ * con lo único que se puede hacer desde aquí —seguirlo, compartirlo y ofertar
+ * en el portal—. En escritorio no existe: allí las acciones están en la
+ * cabecera de la ficha, a la vista.
  */
 export default function AccionesProceso({
   codigo,
@@ -40,23 +42,22 @@ export default function AccionesProceso({
     >
       <div className="mx-auto flex max-w-md items-center gap-2">
         <SeguirButton codigo={codigo} variant="bar" />
-        <button
+        <Button
+          variant="secondary"
+          size="icon"
           onClick={compartir}
-          aria-label="Compartir"
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-hairline bg-surface text-ink border border-hairline transition active:scale-95"
+          className="h-12 w-12"
         >
           <IconShare className="h-5 w-5" />
-        </button>
+          <span className="sr-only">Compartir</span>
+        </Button>
         {url && (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-12 flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-600 text-sm font-semibold text-canvas transition active:scale-95"
-          >
-            Ofertar
-            <IconExternal className="h-4 w-4" />
-          </a>
+          <Button asChild className="h-12 flex-1">
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              Ofertar
+              <IconExternal className="h-4 w-4" />
+            </a>
+          </Button>
         )}
       </div>
     </div>

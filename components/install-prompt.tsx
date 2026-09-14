@@ -4,6 +4,8 @@ import { SelloCompacto } from "@/components/marca";
 
 import { useEffect, useState } from "react";
 import { IconX } from "./icons";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const KEY = "lrd:install-dismissed";
 
@@ -74,10 +76,10 @@ export default function InstallPrompt() {
     en escritorio es una esquina, no una banda a media altura.
   */
   return (
-    <div
+    <Card
       role="complementary"
       aria-label="Instalar la aplicación"
-      className="fixed inset-x-3 z-[60] rounded-lg border border-hairline bg-surface p-3.5 shadow-card bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:inset-x-auto lg:bottom-4 lg:right-4 lg:max-w-sm"
+      className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[60] p-3.5 shadow-card lg:inset-x-auto lg:bottom-4 lg:right-4 lg:max-w-sm"
     >
       <div className="flex items-center gap-3">
         <SelloCompacto className="h-11 w-11 shrink-0" />
@@ -87,20 +89,19 @@ export default function InstallPrompt() {
             Acceso directo, a pantalla completa, desde tu inicio.
           </p>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={dismiss}
-          aria-label="Descartar"
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-soft transition hover:bg-canvas hover:text-ink active:scale-90"
+          className="shrink-0 text-ink-soft"
         >
           <IconX className="h-4 w-4" />
-        </button>
+          <span className="sr-only">Descartar</span>
+        </Button>
       </div>
-      <button
-        onClick={install}
-        className="mt-3 h-10 w-full rounded-lg bg-brand-600 text-sm font-semibold text-canvas transition active:scale-[0.99]"
-      >
+      <Button onClick={install} className="mt-3 w-full">
         Añadir al inicio
-      </button>
-    </div>
+      </Button>
+    </Card>
   );
 }

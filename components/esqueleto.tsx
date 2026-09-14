@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Esqueletos: la forma de la página antes de que llegue el dato.
@@ -10,13 +11,18 @@ import { cn } from "@/lib/cn";
  * papel: filete, esquina contenida, el brillo de `.shimmer` y nada más.
  *
  * Todas son componentes de servidor: no llevan estado ni efectos.
+ *
+ * La pieza atómica es `Skeleton` (`components/ui/skeleton.tsx`); lo que vive
+ * aquí son las **siluetas de esta plataforma** —la ficha, el listado con
+ * buscador, la tira de indicadores—, que es lo que ninguna librería puede
+ * traer: dependen de las alturas y las rejillas del contenido real, y si no
+ * coinciden la página salta al llegar el dato.
  */
 
 export function Esqueleto({ className }: { className?: string }) {
   return (
-    <div
-      aria-hidden
-      className={cn("shimmer rounded-lg border border-hairline bg-surface", className)}
+    <Skeleton
+      className={cn("rounded-lg border border-hairline bg-surface", className)}
     />
   );
 }
@@ -33,9 +39,9 @@ export function EsqueletoLineas({
   return (
     <div aria-hidden className={cn("space-y-2", className)}>
       {Array.from({ length: n }).map((_, i) => (
-        <div
+        <Skeleton
           key={i}
-          className={cn("shimmer h-3 rounded-md bg-hairline/70", anchos[i % anchos.length])}
+          className={cn("h-3 bg-hairline/70", anchos[i % anchos.length])}
         />
       ))}
     </div>
@@ -55,11 +61,11 @@ export function EsqueletoFilas({ n = 8, className }: { n?: number; className?: s
       {Array.from({ length: n }).map((_, i) => (
         <div key={i} className="space-y-2 px-4 py-3.5 sm:px-5">
           <div className="flex items-center gap-2.5">
-            <div className="shimmer h-3 w-28 rounded-md bg-hairline/70" />
-            <div className="shimmer h-4 w-16 rounded-md bg-hairline/70" />
+            <Skeleton className="h-3 w-28 bg-hairline/70" />
+            <Skeleton className="h-4 w-16 bg-hairline/70" />
           </div>
-          <div className="shimmer h-3.5 w-11/12 rounded-md bg-hairline/70" />
-          <div className="shimmer h-3 w-1/2 rounded-md bg-hairline/70" />
+          <Skeleton className="h-3.5 w-11/12 bg-hairline/70" />
+          <Skeleton className="h-3 w-1/2 bg-hairline/70" />
         </div>
       ))}
     </div>
@@ -105,8 +111,8 @@ export function EsqueletoPagina() {
   return (
     <Cargando className="space-y-5">
       <div className="space-y-2 pt-1">
-        <div className="shimmer h-8 w-2/3 max-w-md rounded-md bg-hairline/70" />
-        <div className="shimmer h-3 w-1/2 max-w-xs rounded-md bg-hairline/70" />
+        <Skeleton className="h-8 w-2/3 max-w-md bg-hairline/70" />
+        <Skeleton className="h-3 w-1/2 max-w-xs bg-hairline/70" />
       </div>
       <Esqueleto className="h-56" />
       <div className="grid gap-5 lg:grid-cols-2">
@@ -122,11 +128,11 @@ export function EsqueletoListado({ filas = 8 }: { filas?: number }) {
   return (
     <Cargando className="mx-auto max-w-4xl">
       <div className="mb-5 space-y-2">
-        <div className="shimmer h-9 w-2/3 max-w-sm rounded-md bg-hairline/70" />
-        <div className="shimmer h-3 w-3/4 max-w-md rounded-md bg-hairline/70" />
+        <Skeleton className="h-9 w-2/3 max-w-sm bg-hairline/70" />
+        <Skeleton className="h-3 w-3/4 max-w-md bg-hairline/70" />
       </div>
       <Esqueleto className="h-11" />
-      <div className="shimmer mt-4 h-3 w-40 rounded-md bg-hairline/70" />
+      <Skeleton className="mt-4 h-3 w-40 bg-hairline/70" />
       <EsqueletoFilas n={filas} className="mt-3" />
     </Cargando>
   );
@@ -136,14 +142,14 @@ export function EsqueletoListado({ filas = 8 }: { filas?: number }) {
 export function EsqueletoFicha() {
   return (
     <Cargando className="mx-auto max-w-4xl">
-      <div className="shimmer h-3 w-20 rounded-md bg-hairline/70" />
+      <Skeleton className="h-3 w-20 bg-hairline/70" />
       <div className="mt-4 space-y-2.5">
         <div className="flex items-center gap-2">
-          <div className="shimmer h-4 w-36 rounded-md bg-hairline/70" />
-          <div className="shimmer h-4 w-20 rounded-md bg-hairline/70" />
+          <Skeleton className="h-4 w-36 bg-hairline/70" />
+          <Skeleton className="h-4 w-20 bg-hairline/70" />
         </div>
-        <div className="shimmer h-6 w-full rounded-md bg-hairline/70" />
-        <div className="shimmer h-6 w-4/5 rounded-md bg-hairline/70" />
+        <Skeleton className="h-6 w-full bg-hairline/70" />
+        <Skeleton className="h-6 w-4/5 bg-hairline/70" />
       </div>
       <Esqueleto className="mt-5 h-40" />
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">

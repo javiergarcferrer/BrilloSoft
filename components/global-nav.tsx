@@ -4,32 +4,38 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SECCIONES, seccionDe } from "@/lib/secciones";
 import { cn } from "@/lib/cn";
+import { buttonVariants } from "@/components/ui/button";
 
 /**
  * Navegación primaria de escritorio (el móvil navega con la tab bar inferior).
  *
  * Un ítem por vertical más el panorama. El estado activo responde «¿dónde
  * estoy?» desde cualquier profundidad: `/procesos/XYZ` enciende Licitaciones,
- * `/congreso/155693` enciende Congreso. Vive sobre el header oscuro.
+ * `/congreso/155693` enciende Congreso. Vive sobre el header oscuro, y por eso
+ * usa la variante `tinta` del botón: es la única que está pensada para fondo
+ * de tinta.
+ *
+ * Aquí las etiquetas son **preguntas** («¿Qué compra?») cuando hay sitio: el
+ * usuario está eligiendo a dónde ir y la pregunta dice qué va a encontrar. En
+ * la barra de sección y en la tab bar, donde ya sabe dónde está, manda el
+ * sustantivo corto.
  */
 export default function GlobalNav() {
   const pathname = usePathname();
   const actual = seccionDe(pathname);
 
-  const base =
-    "relative rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors";
+  const item = cn(
+    buttonVariants({ variant: "tinta", size: "sm" }),
+    "h-8 gap-1.5 px-3 text-[13px] font-medium",
+  );
 
   return (
     <nav aria-label="Secciones" className="hidden items-center gap-0.5 lg:flex">
       <Link
         href="/"
         aria-current={pathname === "/" ? "page" : undefined}
-        className={cn(
-          base,
-          pathname === "/"
-            ? "bg-canvas/12 text-canvas"
-            : "text-canvas/65 hover:bg-canvas/10 hover:text-canvas",
-        )}
+        data-activo={pathname === "/"}
+        className={item}
       >
         Panorama
       </Link>
@@ -41,13 +47,8 @@ export default function GlobalNav() {
             key={seccion.id}
             href={seccion.href}
             aria-current={activa ? "page" : undefined}
-            className={cn(
-              base,
-              "flex items-center gap-1.5",
-              activa
-                ? "bg-canvas/12 text-canvas"
-                : "text-canvas/65 hover:bg-canvas/10 hover:text-canvas",
-            )}
+            data-activo={activa}
+            className={item}
           >
             <span
               aria-hidden
@@ -57,10 +58,8 @@ export default function GlobalNav() {
                 activa ? "opacity-100" : "opacity-40",
               )}
             />
-            <>
-                <span className="xl:hidden">{seccion.nombre}</span>
-                <span className="hidden xl:inline">{seccion.pregunta}</span>
-              </>
+            <span className="xl:hidden">{seccion.nombre}</span>
+            <span className="hidden xl:inline">{seccion.pregunta}</span>
           </Link>
         );
       })}

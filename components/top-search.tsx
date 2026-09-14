@@ -20,6 +20,12 @@ import {
   IconTrash,
   IconX,
 } from "./icons";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 /**
  * Intelligent top-bar search. Lives in the global header and is the single
@@ -50,7 +56,6 @@ export default function TopSearch() {
   const [recientes, setRecientes] = useState<string[]>([]);
   const [busquedas, setBusquedas] = useState<Busqueda[]>([]);
   const focused = useRef(false);
-  const wrap = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -79,16 +84,6 @@ export default function TopSearch() {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, spq]);
-
-  // Close dropdown on outside click.
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
 
   function navWith(mutate: (p: URLSearchParams) => void) {
     const p = new URLSearchParams(
@@ -160,142 +155,160 @@ export default function TopSearch() {
   ];
 
   return (
-    <div ref={wrap} className="relative w-full max-w-xl">
-      <div className="group flex items-center gap-2 rounded-lg bg-canvas/10 px-3 ring-1 ring-inset ring-canvas/20 transition focus-within:bg-surface focus-within:ring-canvas/40">
-        <IconSearch className="h-5 w-5 shrink-0 text-canvas/60 transition-colors group-focus-within:text-ink" />
-        <input
-          ref={inputRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onFocus={() => {
-            focused.current = true;
-            setOpen(true);
-          }}
-          onBlur={() => {
-            focused.current = false;
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") aplicarTermino(text);
-            if (e.key === "Escape") {
-              setOpen(false);
-              inputRef.current?.blur();
-            }
-          }}
-          placeholder="Buscar licitaciones…"
-          aria-label="Buscar licitaciones"
-          className="h-10 w-full bg-transparent text-[15px] text-canvas outline-none placeholder:text-canvas/55 focus:text-ink focus:placeholder:text-ink-soft"
-        />
-        {text && (
-          <button
-            onMouseDown={(e) => {
-              e.preventDefault();
-              reset();
-              inputRef.current?.focus();
-            }}
-            aria-label="Limpiar"
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-canvas/60 transition hover:text-canvas group-focus-within:text-ink-soft active:scale-90"
-          >
-            <IconX className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-
-      {open && (
-        <div className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-lg bg-surface text-ink shadow-pop ring-1 ring-hairline">
-          <div className="border-b border-hairline p-2">
-            <div className="px-2 pb-1 pt-1 rotulo text-ink-soft">
-              Filtros rápidos
-            </div>
-            <div className="flex flex-wrap gap-1.5 p-1">
-              {presets.map((p) => (
-                <button
-                  key={p.label}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    p.run();
-                    setOpen(false);
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-hairline bg-canvas px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-brand-50 hover:text-brand-700 active:scale-95"
-                >
-                  <p.Icon className="h-3.5 w-3.5" />
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {recientes.length > 0 && (
-            <div className="border-b border-hairline p-1.5">
-              <div className="px-2.5 pb-1 pt-1 rotulo text-ink-soft">
-                Recientes
-              </div>
-              {recientes.slice(0, 5).map((t) => (
-                <button
-                  key={t}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    aplicarTermino(t);
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition hover:bg-canvas"
-                >
-                  <IconClock className="h-4 w-4 shrink-0 text-ink-soft" />
-                  <span className="truncate">{t}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="p-1.5">
-            <div className="flex items-center justify-between px-2.5 pb-1 pt-1">
-              <span className="rotulo text-ink-soft">
-                Guardadas
-              </span>
-              <button
+    /*
+      El panel de sugerencias es un `Popover` de Radix y no un `div` absoluto
+      con un escucha de `mousedown` en el documento, que es como estaba. Lo que
+      se gana no es el aspecto: es el cierre con Escape, el `aria-expanded` y
+      la relación entre campo y panel para un lector de pantalla, y que al
+      cerrar el foco vuelva donde estaba. `onOpenAutoFocus` se cancela a
+      propósito — el foco tiene que quedarse en el campo mientras se teclea—, y
+      `modal={false}` deja la página detrás viva.
+    */
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <PopoverAnchor asChild>
+        <div className="relative w-full max-w-xl">
+          <div className="group flex items-center gap-2 rounded-lg bg-canvas/10 px-3 ring-1 ring-inset ring-canvas/20 transition focus-within:bg-surface focus-within:ring-canvas/40">
+            <IconSearch className="h-5 w-5 shrink-0 text-canvas/60 transition-colors group-focus-within:text-ink" />
+            <input
+              ref={inputRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onFocus={() => {
+                focused.current = true;
+                setOpen(true);
+              }}
+              onBlur={() => {
+                focused.current = false;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") aplicarTermino(text);
+                if (e.key === "Escape") {
+                  setOpen(false);
+                  inputRef.current?.blur();
+                }
+              }}
+              placeholder="Buscar licitaciones…"
+              aria-label="Buscar licitaciones"
+              className="h-10 w-full bg-transparent text-[15px] text-canvas outline-none placeholder:text-canvas/55 focus:text-ink focus:placeholder:text-ink-soft"
+            />
+            {text && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  guardarActual();
+                  reset();
+                  inputRef.current?.focus();
                 }}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:text-brand-800"
+                className="h-7 w-7 shrink-0 text-canvas/60 hover:bg-canvas/10 hover:text-canvas group-focus-within:text-ink-soft group-focus-within:hover:text-ink"
               >
-                <IconBookmark className="h-3.5 w-3.5" />
-                Guardar actual
-              </button>
-            </div>
-            {busquedas.length === 0 ? (
-              <p className="px-2.5 py-2 text-xs text-ink-soft">
-                Aún no tienes búsquedas guardadas.
-              </p>
-            ) : (
-              <ul className="max-h-56 overflow-y-auto">
-                {busquedas.map((b) => (
-                  <li key={b.id} className="flex items-center gap-1">
-                    <button
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        aplicarGuardada(b);
-                      }}
-                      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition hover:bg-canvas"
-                    >
-                      <IconBookmark className="h-4 w-4 shrink-0 text-brand-600" filled />
-                      <span className="truncate font-medium">{b.nombre}</span>
-                    </button>
-                    <button
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setBusquedas(removeBusqueda(b.id));
-                      }}
-                      aria-label="Eliminar"
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-ink-soft transition hover:bg-canvas hover:text-ink active:scale-90"
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                <IconX className="h-4 w-4" />
+                <span className="sr-only">Limpiar</span>
+              </Button>
             )}
           </div>
         </div>
-      )}
-    </div>
+      </PopoverAnchor>
+
+      <PopoverContent
+        align="start"
+        sideOffset={8}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="w-[min(36rem,calc(100vw-2rem))] p-0 shadow-pop"
+      >
+        <div className="border-b border-hairline p-2">
+          <p className="rotulo px-2 pb-1 pt-1 text-ink-soft">Filtros rápidos</p>
+          <div className="flex flex-wrap gap-1.5 p-1">
+            {presets.map((p) => (
+              <Button
+                key={p.label}
+                variant="secondary"
+                size="sm"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  p.run();
+                  setOpen(false);
+                }}
+                className="bg-canvas font-medium hover:bg-brand-50 hover:text-brand-700"
+              >
+                <p.Icon className="h-3.5 w-3.5" />
+                {p.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {recientes.length > 0 && (
+          <div className="border-b border-hairline p-1.5">
+            <p className="rotulo px-2.5 pb-1 pt-1 text-ink-soft">Recientes</p>
+            {recientes.slice(0, 5).map((t) => (
+              <button
+                key={t}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  aplicarTermino(t);
+                }}
+                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-canvas"
+              >
+                <IconClock className="h-4 w-4 shrink-0 text-ink-soft" />
+                <span className="truncate">{t}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="p-1.5">
+          <div className="flex items-center justify-between px-2.5 pb-1 pt-1">
+            <span className="rotulo text-ink-soft">Guardadas</span>
+            <Button
+              variant="link"
+              size="sm"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                guardarActual();
+              }}
+              className="h-auto gap-1 px-0 text-[11px]"
+            >
+              <IconBookmark className="h-3.5 w-3.5" />
+              Guardar actual
+            </Button>
+          </div>
+          {busquedas.length === 0 ? (
+            <p className="px-2.5 py-2 text-xs text-ink-soft">
+              Aún no tienes búsquedas guardadas.
+            </p>
+          ) : (
+            <ul className="max-h-56 overflow-y-auto">
+              {busquedas.map((b) => (
+                <li key={b.id} className="flex items-center gap-1">
+                  <button
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      aplicarGuardada(b);
+                    }}
+                    className="flex min-w-0 flex-1 items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-canvas"
+                  >
+                    <IconBookmark className="h-4 w-4 shrink-0 text-brand-600" filled />
+                    <span className="truncate font-medium">{b.nombre}</span>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setBusquedas(removeBusqueda(b.id));
+                    }}
+                    className="shrink-0 text-ink-soft hover:bg-canvas hover:text-ink"
+                  >
+                    <IconTrash className="h-4 w-4" />
+                    <span className="sr-only">Eliminar «{b.nombre}»</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

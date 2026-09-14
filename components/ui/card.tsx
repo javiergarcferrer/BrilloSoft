@@ -1,0 +1,115 @@
+/**
+ * Tarjeta — la hoja sobre el papel.
+ *
+ * shadcn la dibuja con `rounded-xl` y `shadow-sm`; aquí no. «El papel no
+ * flota» (docs/IDENTIDAD.md §2): las superficies se separan con **filete**, y
+ * la esquina se queda en 8 px. La sombra queda reservada a lo que de verdad se
+ * superpone —menú, hoja modal, botón flotante—, y esas primitivas sí la traen.
+ */
+
+import * as React from "react";
+
+import { cn } from "@/lib/cn";
+
+function Card({
+  className,
+  as: Etiqueta = "div",
+  ...props
+}: React.HTMLAttributes<HTMLElement> & {
+  /**
+   * La etiqueta que se pinta. Una tarjeta de un listado es un `<article>` y una
+   * fila es un `<li>`: el vestido no puede costarle la semántica al documento,
+   * que es justo de lo que vive un lector de pantalla.
+   */
+  as?: "div" | "section" | "article" | "li";
+}) {
+  return (
+    <Etiqueta
+      data-slot="card"
+      className={cn(
+        // `overflow-hidden` porque una lista con filetes dentro de una hoja de
+        // esquinas contenidas tiene que recortarse contra la esquina, no
+        // desbordarla.
+        "overflow-hidden rounded-lg border border-hairline bg-surface text-ink",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-hairline px-5 py-3.5",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/**
+ * Título de panel: sans en negrita a 14 px. La serif a ese tamaño se lee
+ * floja, así que el titular serif se queda para la pregunta de la página.
+ */
+function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
+  return (
+    <h3
+      data-slot="card-title"
+      className={cn("font-sans text-sm font-semibold text-ink", className)}
+      {...props}
+    />
+  );
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"p">) {
+  return (
+    <p
+      data-slot="card-description"
+      className={cn("text-xs leading-relaxed text-ink-soft", className)}
+      {...props}
+    />
+  );
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn("shrink-0 text-xs text-ink-soft", className)}
+      {...props}
+    />
+  );
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div data-slot="card-content" className={cn("px-5 py-4", className)} {...props} />
+  );
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn(
+        "flex items-center gap-3 border-t border-hairline px-5 py-3",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardAction,
+  CardContent,
+  CardFooter,
+};

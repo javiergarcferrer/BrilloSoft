@@ -12,6 +12,9 @@ import { RUTA_POR_TIPO, resolverNorma } from "@/lib/normativa";
 import type { Documento as DocumentoNormativo } from "@/lib/normativa";
 import { formatFecha } from "@/lib/format";
 import { desdeMayusculas } from "@/lib/congreso";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Props {
   /** Título tal como lo publica la cámara; de aquí salen las citas. */
@@ -73,11 +76,11 @@ export default async function Dossier({
   }
 
   return (
-    <section className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface ">
-      <div className="flex items-center gap-2 border-b border-hairline px-5 py-3.5">
+    <Card as="section" className="mt-5">
+      <CardHeader className="justify-start gap-2">
         <IconLayers className="h-4 w-4 text-brand-700" />
-        <h2 className="font-sans text-sm font-semibold text-ink">De qué se trata</h2>
-      </div>
+        <CardTitle>De qué se trata</CardTitle>
+      </CardHeader>
 
       <div className="divide-y divide-hairline">
         {ley && (
@@ -93,12 +96,11 @@ export default async function Dossier({
                 .filter(Boolean)
                 .join(" · ")}
             </p>
-            <Link
-              href={`/normativa/ley/${ley.numero}`}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-canvas transition-colors hover:bg-brand-700"
-            >
-              Leer el texto de la ley →
-            </Link>
+            <Button asChild size="sm" className="mt-2">
+              <Link href={`/normativa/ley/${ley.numero}`}>
+                Leer el texto de la ley →
+              </Link>
+            </Button>
           </div>
         )}
 
@@ -154,17 +156,23 @@ export default async function Dossier({
             <ul className="mt-2.5 space-y-2.5">
               {citas.map(({ ref, norma }) => (
                 <li key={`${ref.tipo}-${ref.numero ?? "s/n"}`} className="flex gap-2.5">
-                  <span
-                    className={`rotulo mt-0.5 inline-flex h-fit shrink-0 self-start rounded-[3px] px-1.5 py-0.5 ${
+                  {/*
+                    El sello rojo solo para lo que **deroga**: es una de las
+                    cuatro cosas de la plataforma a las que la identidad les
+                    reserva la marca (docs/IDENTIDAD.md §Color).
+                  */}
+                  <Badge
+                    variant={
                       ref.relacion === "deroga"
-                        ? "bg-sello-50 text-sello-700"
+                        ? "sello"
                         : ref.relacion === "cita"
-                          ? "bg-canvas text-ink-soft"
-                          : "bg-alerta-50 text-alerta-600"
-                    }`}
+                          ? "neutro"
+                          : "alerta"
+                    }
+                    className="mt-0.5 h-fit self-start"
                   >
                     {ETIQUETA_RELACION[ref.relacion]}
-                  </span>
+                  </Badge>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-ink">{ref.etiqueta}</p>
                     {norma ? (
@@ -175,23 +183,29 @@ export default async function Dossier({
                           {norma.gaceta && ` · Gaceta ${norma.gaceta}`}
                         </p>
                         {RUTA_POR_TIPO[ref.tipo] && ref.numero ? (
-                          <Link
-                            href={`/normativa/${RUTA_POR_TIPO[ref.tipo]}/${ref.numero}`}
-                            className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+                          <Button
+                            asChild
+                            variant="link"
+                            size="sm"
+                            className="mt-1 h-auto px-0 text-xs font-medium"
                           >
-                            Leer el texto de esta norma →
-                          </Link>
+                            <Link href={`/normativa/${RUTA_POR_TIPO[ref.tipo]}/${ref.numero}`}>
+                              Leer el texto de esta norma →
+                            </Link>
+                          </Button>
                         ) : (
                           norma.url && (
-                            <a
-                              href={norma.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+                            <Button
+                              asChild
+                              variant="link"
+                              size="sm"
+                              className="mt-1 h-auto px-0 text-xs font-medium"
                             >
-                              Texto oficial en la Consultoría Jurídica
-                              <IconExternal className="h-3.5 w-3.5" />
-                            </a>
+                              <a href={norma.url} target="_blank" rel="noopener noreferrer">
+                                Texto oficial en la Consultoría Jurídica
+                                <IconExternal className="h-3.5 w-3.5" />
+                              </a>
+                            </Button>
                           )
                         )}
                       </>
@@ -214,6 +228,6 @@ export default async function Dossier({
           </div>
         )}
       </div>
-    </section>
+    </Card>
   );
 }

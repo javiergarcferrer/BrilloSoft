@@ -1,84 +1,30 @@
 /**
- * Vocabulario del papel — las primitivas de la identidad.
+ * Vocabulario del papel — lo que esta plataforma tiene y una librería no.
  *
- * Antes cada página se dibujaba su propia tarjeta a mano
- * (`rounded-2xl border border-hairline bg-surface shadow-card`), y por eso la
- * identidad se diluía: cambiar el sistema exigía tocar cuarenta sitios y
- * acertar en los cuarenta. Aquí vive el sistema una sola vez.
+ * Aquí vivía el sistema entero: la superficie, la cabecera, la marca de estado
+ * y el botón. Desde la pasada de shadcn/ui esas cuatro **se fueron a
+ * `components/ui/*`**, donde son `Card`, `CardHeader`, `Badge` y `Button` con
+ * los mismos colores y la misma tipografía de siempre. No es una capa nueva
+ * encima: es la misma pieza, movida, y por eso no queda un `Hoja` que envuelva
+ * a `Card` — dos nombres para una cosa es exactamente la «segunda tabla» que
+ * `lib/estados.ts` documenta como la forma concreta en que un sistema se
+ * rompe.
  *
- * La regla de fondo, de `docs/IDENTIDAD.md`: **el papel no flota**. Las superficies
- * se separan con filete, no con sombra; las esquinas son contenidas; los datos
- * que se verifican van en mono.
+ * Lo que se queda es lo que **no existe fuera de esta casa**, porque no es
+ * aspecto sino doctrina:
+ *
+ *  · `Rotulo` — el epígrafe cuyo punto es el sello. La regla única de la marca.
+ *  · `Cifra` — un número **con su ancla**: de dónde sale y sobre qué base. Un
+ *    número sin referencia obliga al lector a inventarse el contexto, y el
+ *    contexto inventado es el error más caro de una plataforma de
+ *    transparencia.
+ *  · `TiraDeCifras` — la tira de casillas de un formulario: la forma canónica
+ *    de presentar indicadores, sin tarjetas y sin sombras.
  */
 
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { textoAncla, type Ancla } from "@/lib/cifras";
-
-/* -------------------------------------------------------------- superficie */
-
-/**
- * Una hoja sobre el papel: la superficie base de toda tarjeta o panel.
- * `acento` pinta el filete superior grueso con el matiz de la vertical o el
- * significado del contenido — es el equivalente de la pestaña de un archivador.
- */
-export function Hoja({
-  children,
-  className,
-  acento,
-  as: Etiqueta = "section",
-}: {
-  children: ReactNode;
-  className?: string;
-  acento?: string;
-  as?: "section" | "div" | "article" | "li";
-}) {
-  return (
-    <Etiqueta
-      className={cn(
-        "overflow-hidden rounded-lg border border-hairline bg-surface",
-        acento && `border-t-[3px] ${acento}`,
-        className,
-      )}
-    >
-      {children}
-    </Etiqueta>
-  );
-}
-
-/**
- * Cabecera de una hoja: rótulo a la izquierda, dato o enlace a la derecha,
- * separada del cuerpo por su filete. El título va en sans —a 14px la serif se
- * lee floja— y el epígrafe en versalitas monoespaciadas.
- */
-export function CabeceraHoja({
-  titulo,
-  rotulo,
-  derecha,
-  className,
-}: {
-  titulo?: ReactNode;
-  rotulo?: ReactNode;
-  derecha?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-hairline px-5 py-3.5",
-        className,
-      )}
-    >
-      <div className="min-w-0">
-        {rotulo && <p className="rotulo text-ink-soft">{rotulo}</p>}
-        {titulo && (
-          <h2 className="font-sans text-sm font-semibold text-ink">{titulo}</h2>
-        )}
-      </div>
-      {derecha && <div className="shrink-0 text-xs text-ink-soft">{derecha}</div>}
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------------ rótulo */
 
@@ -177,73 +123,5 @@ export function TiraDeCifras({
     >
       {children}
     </div>
-  );
-}
-
-/* ------------------------------------------------------------------ marcas */
-
-const TONOS_MARCA = {
-  sello: "bg-sello-50 text-sello-700",
-  firma: "bg-brand-50 text-brand-700",
-  alerta: "bg-alerta-50 text-alerta-700",
-  valido: "bg-valido-50 text-valido-700",
-  neutro: "bg-canvas text-ink-soft",
-} as const;
-
-export type TonoMarca = keyof typeof TONOS_MARCA;
-
-/**
- * Marca de estado: el sello de goma sobre el expediente. Rectangular y en
- * versalitas —nunca una píldora—, porque un sello no tiene esquinas redondas.
- */
-export function Marca({
-  children,
-  tono = "neutro",
-  className,
-}: {
-  children: ReactNode;
-  tono?: TonoMarca;
-  className?: string;
-}) {
-  return (
-    <span
-      className={cn(
-        "rotulo inline-flex items-center rounded-[3px] px-1.5 py-0.5 text-[10px]",
-        TONOS_MARCA[tono],
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
-/* ------------------------------------------------------------------ acción */
-
-/**
- * La acción principal: tinta plana, esquina contenida. Un botón no es una
- * píldora de app; es el sello que se estampa al final del formulario.
- */
-export function Accion({
-  children,
-  className,
-  tono = "principal",
-}: {
-  children: ReactNode;
-  className?: string;
-  tono?: "principal" | "secundaria";
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors",
-        tono === "principal"
-          ? "bg-brand-500 text-canvas hover:bg-brand-600"
-          : "border border-hairline bg-surface text-ink hover:bg-canvas",
-        className,
-      )}
-    >
-      {children}
-    </span>
   );
 }

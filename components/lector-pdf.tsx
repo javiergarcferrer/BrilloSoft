@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 /**
  * Lector de PDF que dibuja las páginas en un canvas.
@@ -155,14 +156,11 @@ export default function LectorPdf({ url, urlOrigen }: Props) {
           El origen no lo entregó en un formato que se pueda dibujar. Ábrelo en
           su sitio oficial.
         </p>
-        <a
-          href={urlOrigen}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs font-medium text-ink hover:bg-canvas"
-        >
-          Abrir en el origen
-        </a>
+        <Button asChild variant="secondary" size="sm" className="mt-3">
+          <a href={urlOrigen} target="_blank" rel="noopener noreferrer">
+            Abrir en el origen
+          </a>
+        </Button>
       </div>
     );
   }
@@ -226,6 +224,7 @@ export default function LectorPdf({ url, urlOrigen }: Props) {
   );
 }
 
+/** El mando del lector: ocho por ocho, con nombre para el lector de pantalla. */
 function Boton({
   children,
   onClick,
@@ -238,14 +237,16 @@ function Boton({
   etiqueta: string;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
+      size="icon-sm"
       onClick={onClick}
       disabled={desactivado}
-      aria-label={etiqueta}
-      className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline bg-surface text-sm font-semibold text-ink transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-40"
+      className="text-sm"
     >
       {children}
-    </button>
+      <span className="sr-only">{etiqueta}</span>
+    </Button>
   );
 }

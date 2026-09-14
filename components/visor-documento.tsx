@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { IconDoc, IconDownload, IconExternal } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 
 // pdf.js pesa: entra solo cuando alguien abre de verdad un documento.
 const LectorPdf = dynamic(() => import("@/components/lector-pdf"), { ssr: false });
@@ -78,32 +79,27 @@ export default function VisorDocumento({
 
       <div className="flex flex-wrap gap-2 px-5 pb-4">
         {esPdf && (
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={() => setAbierto((v) => !v)}
             aria-expanded={abierto}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-canvas transition-colors hover:bg-brand-700"
           >
             {abierto ? "Ocultar el documento" : "Leer el documento aquí"}
-          </button>
+          </Button>
         )}
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-canvas"
-        >
-          Abrir en pestaña nueva
-          <IconExternal className="h-3.5 w-3.5" />
-        </a>
-        <a
-          href={url}
-          download
-          className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:bg-canvas"
-        >
-          Descargar
-          <IconDownload className="h-3.5 w-3.5" />
-        </a>
+        <Button asChild variant="secondary" size="sm">
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            Abrir en pestaña nueva
+            <IconExternal className="h-3.5 w-3.5" />
+          </a>
+        </Button>
+        <Button asChild variant="secondary" size="sm">
+          <a href={url} download>
+            Descargar
+            <IconDownload className="h-3.5 w-3.5" />
+          </a>
+        </Button>
       </div>
 
       {abierto && esPdf && (

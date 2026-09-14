@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { IconArrowUp } from "./icons";
+import { Button } from "@/components/ui/button";
 
-/** Floating scroll-to-top button; appears after scrolling, sits above the
- *  mobile tab bar. */
+/** Botón flotante para volver arriba; aparece tras desplazarse un poco. */
 export default function ScrollTop() {
   const [show, setShow] = useState(false);
 
@@ -18,18 +18,19 @@ export default function ScrollTop() {
   if (!show) return null;
 
   return (
-    <button
+    <Button
+      size="icon"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="Volver arriba"
       /*
-        El mismo defecto que tenía el aviso de instalación: el desplazamiento
-        inferior libra la tab bar móvil, que en escritorio es `lg:hidden`, y
-        aquí no había **ningún** override `lg:`. El botón flotaba 84 px sobre
-        el borde esquivando una barra que no se pinta.
+        Flota de verdad: es de las tres piezas de la plataforma que llevan
+        sombra. El desplazamiento inferior libra la tab bar móvil, que en
+        escritorio es `lg:hidden` — sin el override `lg:` el botón flotaba
+        84 px sobre el borde esquivando una barra que no se pinta.
       */
-      className="boton-subir fixed right-4 z-40 grid h-11 w-11 place-items-center rounded-lg bg-ink text-canvas shadow-card transition hover:bg-brand-700 active:scale-90 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:bottom-4"
+      className="boton-subir fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-4 z-40 h-11 w-11 rounded-lg bg-ink text-canvas shadow-card hover:bg-brand-700 lg:bottom-4"
     >
       <IconArrowUp className="h-5 w-5" />
-    </button>
+      <span className="sr-only">Volver arriba</span>
+    </Button>
   );
 }

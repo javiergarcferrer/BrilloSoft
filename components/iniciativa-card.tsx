@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { evaluarPerencion, type CondicionTono, type Iniciativa } from "@/lib/congreso";
-import { TONOS } from "@/lib/estados";
-import { cn } from "@/lib/cn";
 import Antiguedad from "@/components/antiguedad";
+import { MarcaEstado } from "@/components/marca-estado";
 
 /**
  * La marca de estado de una pieza legislativa.
  *
  * Este archivo tenía su propia tabla de colores y un comentario que la decía
  * «alineada con lib/estados.ts». No lo estaba: invertía los dos tonos que más
- * pesan. Ahora no hay tabla aquí — solo el componente que la pinta.
+ * pesan. Hoy no hay tabla **ni marca** aquí: las dos viven una sola vez, la
+ * tabla en `lib/estados.ts` y la marca en `components/marca-estado.tsx`. Lo que
+ * queda es el nombre con el que el Congreso la llama.
  */
 export function CondicionBadge({
   tono,
@@ -21,15 +22,9 @@ export function CondicionBadge({
   className?: string;
 }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ring-1 ring-inset",
-        TONOS[tono].badge,
-        className,
-      )}
-    >
+    <MarcaEstado tono={tono} conPunto={false} className={className}>
       {children}
-    </span>
+    </MarcaEstado>
   );
 }
 
@@ -58,9 +53,9 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
           )}
 
           {enRiesgo && (
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-alerta-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-alerta-600 ring-1 ring-inset ring-alerta-600/20">
+            <MarcaEstado tono="aviso" conPunto={false}>
               Perime en {perencion.diasRestantes} d
-            </span>
+            </MarcaEstado>
           )}
         </div>
 

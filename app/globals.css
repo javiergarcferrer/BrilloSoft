@@ -102,6 +102,60 @@
     0 8px 24px -14px rgb(23 29 46 / 0.22);
   --shadow-pop: 0 18px 44px -14px rgb(23 29 46 / 0.32),
     0 6px 16px -8px rgb(23 29 46 / 0.16);
+
+  /*
+    ------------------------------------------------------------------
+    Puente con shadcn/ui
+    ------------------------------------------------------------------
+    Las primitivas de `components/ui/*` vienen escritas contra el
+    vocabulario semántico de shadcn (`bg-background`, `text-muted-foreground`,
+    `border-border`…). Aquí ese vocabulario se **ata** al sistema de arriba:
+    ningún valor nuevo, ningún color nuevo — cada nombre de shadcn apunta al
+    token de «El Contrasello» que le corresponde.
+
+    Por eso importa el orden de lectura: si alguien cambia el papel, lo cambia
+    en `--color-canvas` y las cuarenta primitivas lo siguen. El puente no es
+    una segunda paleta; es la misma paleta con los nombres que espera la
+    librería.
+
+    `primary` es la firma (azul de bolígrafo) porque es lo accionable, y
+    `destructive` es el sello: lo que deroga, anula o borra. Sobre relleno
+    saturado el texto es papel —`canvas`—, nunca blanco de pantalla
+    (docs/IDENTIDAD.md §Prohibiciones 6).
+  */
+  --color-background: var(--color-canvas);
+  --color-foreground: var(--color-ink);
+
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-ink);
+
+  --color-primary: var(--color-brand-500);
+  --color-primary-foreground: var(--color-canvas);
+
+  --color-secondary: var(--color-canvas);
+  --color-secondary-foreground: var(--color-ink);
+
+  --color-muted: var(--color-canvas);
+  --color-muted-foreground: var(--color-ink-soft);
+
+  --color-accent: var(--color-brand-50);
+  --color-accent-foreground: var(--color-brand-700);
+
+  --color-destructive: var(--color-sello-600);
+  --color-destructive-foreground: var(--color-canvas);
+
+  --color-border: var(--color-hairline);
+  --color-input: var(--color-hairline);
+  --color-ring: var(--color-brand-500);
+
+  /*
+    El radio máximo de una superficie es 8 px (§3: «esquinas contenidas»). Las
+    primitivas que shadcn dibuja con `rounded-xl` aquí se quedan en `rounded-lg`,
+    y este token es el techo para lo que se calcula.
+  */
+  --radius: 0.5rem;
 }
 
 @layer base {
@@ -193,6 +247,91 @@
   background-size: 42px 42px;
   -webkit-mask-image: radial-gradient(ellipse 80% 80% at 30% 0%, black 35%, transparent 100%);
   mask-image: radial-gradient(ellipse 80% 80% at 30% 0%, black 35%, transparent 100%);
+}
+
+/*
+  Capas que se superponen —menú, desplegable, hoja modal, globo de ayuda—.
+  Son las únicas piezas que de verdad flotan, y por eso son las únicas que
+  llevan sombra (docs/IDENTIDAD.md §2).
+
+  La animación se escribe aquí, en CSS plano, y no con un plugin de
+  utilidades de animación: son cuatro fotogramas, los usan las seis primitivas
+  de `components/ui/*` que abren algo, y así se apagan de una vez con
+  `prefers-reduced-motion` al final de este archivo. El movimiento es corto y
+  sin rebote — papel que se apoya, no una tarjeta que salta.
+*/
+@keyframes lr-capa-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+}
+@keyframes lr-capa-sale {
+  to {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+.capa[data-state="open"] {
+  animation: lr-capa-entra 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.capa[data-state="closed"] {
+  animation: lr-capa-sale 110ms ease-in;
+}
+
+/* El velo que apaga el fondo bajo una hoja modal. */
+@keyframes lr-velo-entra {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes lr-velo-sale {
+  to {
+    opacity: 0;
+  }
+}
+.velo[data-state="open"] {
+  animation: lr-velo-entra 160ms ease-out;
+}
+.velo[data-state="closed"] {
+  animation: lr-velo-sale 140ms ease-in;
+}
+
+/*
+  La hoja lateral entra por su borde. En el teléfono entra por abajo —es donde
+  llega el pulgar— y por eso esa es la dirección que más se usa.
+*/
+@keyframes lr-hoja-abajo-entra {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes lr-hoja-abajo-sale {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes lr-hoja-derecha-entra {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes lr-hoja-derecha-sale {
+  to {
+    transform: translateX(100%);
+  }
+}
+.hoja-abajo[data-state="open"] {
+  animation: lr-hoja-abajo-entra 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hoja-abajo[data-state="closed"] {
+  animation: lr-hoja-abajo-sale 200ms ease-in;
+}
+.hoja-derecha[data-state="open"] {
+  animation: lr-hoja-derecha-entra 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hoja-derecha[data-state="closed"] {
+  animation: lr-hoja-derecha-sale 200ms ease-in;
 }
 
 /* Skeleton shimmer */
@@ -288,7 +427,11 @@
   }
   .shimmer::after,
   .live-dot::before,
-  .bar-grow {
+  .bar-grow,
+  .capa[data-state],
+  .velo[data-state],
+  .hoja-abajo[data-state],
+  .hoja-derecha[data-state] {
     animation: none;
   }
 }

@@ -2,6 +2,11 @@
 
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 /**
  * Revelación progresiva.
@@ -13,7 +18,10 @@ import { cn } from "@/lib/cn";
  * que el expediente esté ahí.
  *
  * El botón dice **cuántos hay**, no «ver más»: quien decide si abre necesita
- * saber a qué se enfrenta.
+ * saber a qué se enfrenta. Esa es la política, y por eso esta pieza existe
+ * sobre `ui/collapsible` en vez de llamarlo directamente desde las páginas: el
+ * `Collapsible` de Radix aporta el estado, el `aria-expanded` y la relación
+ * entre disparador y región; la regla de qué dice el botón es de la casa.
  */
 export default function Plegable({
   resumen,
@@ -34,19 +42,23 @@ export default function Plegable({
   const [abierto, setAbierto] = useState(false);
 
   return (
-    <div className={className}>
+    <Collapsible open={abierto} onOpenChange={setAbierto} className={className}>
       {resumen}
-      {abierto && <div className={cn(Boolean(resumen) && "border-t border-hairline")}>{children}</div>}
-      <div className={cn("px-5 py-3", Boolean(resumen) && !abierto && "border-t border-hairline")}>
-        <button
-          type="button"
-          onClick={() => setAbierto((v) => !v)}
-          aria-expanded={abierto}
-          className="text-xs font-semibold text-brand-700 hover:underline"
-        >
+      <CollapsibleContent>
+        <div className={cn(Boolean(resumen) && "border-t border-hairline")}>
+          {children}
+        </div>
+      </CollapsibleContent>
+      <div
+        className={cn(
+          "px-5 py-3",
+          Boolean(resumen) && !abierto && "border-t border-hairline",
+        )}
+      >
+        <CollapsibleTrigger className="text-xs font-semibold text-brand-700 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
           {abierto ? etiquetaCerrar : etiqueta}
-        </button>
+        </CollapsibleTrigger>
       </div>
-    </div>
+    </Collapsible>
   );
 }

@@ -114,6 +114,24 @@ export const IconChevronLeft = (p: P) => (
   </Svg>
 );
 
+/**
+ * Abre hacia abajo: acordeón, desplegable, selector. Las primitivas de
+ * `components/ui/*` lo traen de aquí y no de una librería de iconos —«los
+ * iconos son de trazo», y el juego de la casa es este archivo.
+ */
+export const IconChevronDown = (p: P) => (
+  <Svg {...p}>
+    <path d="M6 9l6 6 6-6" />
+  </Svg>
+);
+
+/** Selector de dos sentidos: el disparador de un `Select`. */
+export const IconChevronUpDown = (p: P) => (
+  <Svg {...p}>
+    <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />
+  </Svg>
+);
+
 export const IconBell = (p: P) => (
   <Svg {...p}>
     <path d="M6 9a6 6 0 0 1 12 0c0 5 2.5 6 2.5 6H3.5S6 14 6 9zM10 20a2 2 0 0 0 4 0" />

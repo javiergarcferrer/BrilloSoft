@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { IconCheck, IconShare } from "./icons";
+import { Button } from "@/components/ui/button";
 
+/**
+ * Compartir y copiar el enlace.
+ *
+ * «Copiado» se dice en el propio botón durante dos segundos y no en un aviso
+ * flotante: la confirmación tiene que aparecer donde estaba mirando el dedo.
+ * La región `aria-live` la anuncia también a quien no la ve.
+ */
 export default function Compartir({ titulo }: { titulo: string }) {
   const [copiado, setCopiado] = useState(false);
 
@@ -33,20 +41,14 @@ export default function Compartir({ titulo }: { titulo: string }) {
 
   return (
     <span className="flex items-center gap-2">
-      <button
-        onClick={compartir}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium transition hover:border-brand-500 hover:text-brand-600 active:scale-95"
-      >
+      <Button variant="outline" size="sm" onClick={compartir}>
         <IconShare className="h-3.5 w-3.5" />
         Compartir
-      </button>
-      <button
-        onClick={copiar}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1.5 text-xs font-medium transition hover:border-brand-500 hover:text-brand-600 active:scale-95"
-      >
-        {copiado ? <IconCheck className="h-4 w-4 text-valido-600" /> : null}
-        {copiado ? "Copiado" : "Copiar enlace"}
-      </button>
+      </Button>
+      <Button variant="outline" size="sm" onClick={copiar}>
+        {copiado && <IconCheck className="h-4 w-4 text-valido-600" />}
+        <span aria-live="polite">{copiado ? "Copiado" : "Copiar enlace"}</span>
+      </Button>
     </span>
   );
 }

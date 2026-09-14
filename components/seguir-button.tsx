@@ -7,9 +7,17 @@ import {
   toggleSeguimiento,
 } from "@/lib/seguimiento";
 import { IconStar } from "./icons";
+import { Button } from "@/components/ui/button";
 
-/** Follow/unfollow toggle for a process. `chip` for inline rows, `bar` for the
- *  mobile action bar. Stays in sync with localStorage across the app. */
+/**
+ * Seguir o dejar de seguir un proceso. `chip` va en las filas de un listado y
+ * `bar` en la barra de acciones del teléfono. El estado vive en
+ * `localStorage` y se sincroniza entre todas las instancias de la página.
+ *
+ * Seguido y sin seguir son **dos vestidos distintos del mismo botón** —relleno
+ * contra filete—, no el mismo con un icono cambiado: en una lista de veinte, el
+ * icono solo no se ve.
+ */
 export default function SeguirButton({
   codigo,
   variant = "chip",
@@ -24,35 +32,43 @@ export default function SeguirButton({
     return onSeguimientoCambio(sync);
   }, [codigo]);
 
+  const comun = {
+    onClick: () => toggleSeguimiento(codigo),
+    "aria-pressed": seguido,
+  };
+
   if (variant === "bar") {
     return (
-      <button
-        onClick={() => toggleSeguimiento(codigo)}
-        aria-pressed={seguido}
-        className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition active:scale-95 ${
-          seguido
-            ? "bg-brand-600 text-canvas"
-            : "border border-hairline bg-surface text-ink"
-        }`}
+      <Button
+        {...comun}
+        variant={seguido ? "default" : "secondary"}
+        className="h-12 flex-1"
       >
         <IconStar className="h-5 w-5" filled={seguido} />
         {seguido ? "Siguiendo" : "Seguir"}
-      </button>
+      </Button>
     );
   }
 
   return (
-    <button
-      onClick={() => toggleSeguimiento(codigo)}
-      aria-pressed={seguido}
-      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition active:scale-95 ${
+    <Button
+      {...comun}
+      variant="outline"
+      size="sm"
+      /*
+        Seguido: relleno tenue y filete de la firma. El `hover` tiene que
+        seguir cambiando algo —si repitiera el relleno que ya tiene, el botón
+        parecería interactivo y no respondería, que es el «control mudo» que
+        el gate persigue—, así que sube un escalón de la escala.
+      */
+      className={
         seguido
-          ? "border-brand-200 bg-brand-50 text-brand-700"
-          : "border-hairline hover:border-brand-500 hover:text-brand-600"
-      }`}
+          ? "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100 hover:text-brand-800"
+          : undefined
+      }
     >
       <IconStar className="h-4 w-4" filled={seguido} />
       {seguido ? "Siguiendo" : "Seguir"}
-    </button>
+    </Button>
   );
 }

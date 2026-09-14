@@ -13,17 +13,18 @@ import {
 import { titulizar } from "@/lib/capitulos";
 import { formatFecha, formatMonto, formatPesos, hace } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
+import { Cifra, Rotulo, TiraDeCifras } from "@/components/papel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Accion,
-  Cifra,
-  Hoja,
-  CabeceraHoja,
-  Marca,
-  Rotulo,
-  TiraDeCifras,
-} from "@/components/papel";
+  Card,
+  CardAction,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { Ancla } from "@/lib/cifras";
 import { Cargando, Esqueleto, EsqueletoFilas } from "@/components/esqueleto";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { IconArrowRight } from "@/components/icons";
 import BuscadorProveedores from "./buscador";
 
@@ -246,12 +247,14 @@ async function RankingPorMonto() {
   const max = Math.max(1, ...top.map((p) => p.monto));
 
   return (
-    <Hoja>
-      <CabeceraHoja
-        rotulo="Por monto adjudicado"
-        titulo="Los que más se adjudican"
-        derecha={`${top.length} de ${formatInt(m.proveedores.length)}`}
-      />
+    <Card>
+      <CardHeader>
+        <div className="min-w-0">
+          <p className="rotulo text-ink-soft">Por monto adjudicado</p>
+          <CardTitle>Los que más se adjudican</CardTitle>
+        </div>
+        <CardAction>{`${top.length} de ${formatInt(m.proveedores.length)}`}</CardAction>
+      </CardHeader>
       <ol className="divide-y divide-hairline">
         {top.map((p, i) => (
           <li key={p.rpe} className="cv-auto px-5 py-3" style={{ "--cv-alto": "5rem" } as React.CSSProperties}>
@@ -290,7 +293,7 @@ async function RankingPorMonto() {
           </li>
         ))}
       </ol>
-    </Hoja>
+    </Card>
   );
 }
 
@@ -304,12 +307,14 @@ async function RankingPorContratos() {
   const max = Math.max(1, ...top.map((p) => p.contratos));
 
   return (
-    <Hoja>
-      <CabeceraHoja
-        rotulo="Por número de adjudicaciones"
-        titulo="Los que más contratos ganan"
-        derecha="Otra foto distinta"
-      />
+    <Card>
+      <CardHeader>
+        <div className="min-w-0">
+          <p className="rotulo text-ink-soft">Por número de adjudicaciones</p>
+          <CardTitle>Los que más contratos ganan</CardTitle>
+        </div>
+        <CardAction>Otra foto distinta</CardAction>
+      </CardHeader>
       <ol className="divide-y divide-hairline">
         {top.map((p, i) => (
           <li key={p.rpe} className="cv-auto px-5 py-3" style={{ "--cv-alto": "5rem" } as React.CSSProperties}>
@@ -344,7 +349,7 @@ async function RankingPorContratos() {
           </li>
         ))}
       </ol>
-    </Hoja>
+    </Card>
   );
 }
 
@@ -370,12 +375,14 @@ async function QuienesSon() {
   ).length;
 
   return (
-    <Hoja>
-      <CabeceraHoja
-        rotulo="Ficha de registro"
-        titulo={`Quiénes son los ${CABEZA} mayores`}
-        derecha={`${conFicha.length} con ficha en el RPE`}
-      />
+    <Card>
+      <CardHeader>
+        <div className="min-w-0">
+          <p className="rotulo text-ink-soft">Ficha de registro</p>
+          <CardTitle>{`Quiénes son los ${CABEZA} mayores`}</CardTitle>
+        </div>
+        <CardAction>{`${conFicha.length} con ficha en el RPE`}</CardAction>
+      </CardHeader>
       <ul className="divide-y divide-hairline">
         {conFicha.map((p) => {
           const f = fichas.get(p.rpe)!;
@@ -403,16 +410,16 @@ async function QuienesSon() {
               </div>
 
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <Marca tono="neutro">
+                <Badge variant="neutro">
                   {f.tipoDocumento} {f.numeroDocumento || "—"}
-                </Marca>
+                </Badge>
                 {f.estado === "Activo" ? (
-                  <Marca tono="valido">Activo en el RPE</Marca>
+                  <Badge variant="valido">Activo en el RPE</Badge>
                 ) : (
-                  <Marca tono="alerta">{f.estado} en el RPE</Marca>
+                  <Badge variant="alerta">{f.estado} en el RPE</Badge>
                 )}
-                {f.esMipyme && <Marca tono="firma">MIPYME</Marca>}
-                {f.productorNacional && <Marca tono="firma">Productor nacional</Marca>}
+                {f.esMipyme && <Badge variant="firma">MIPYME</Badge>}
+                {f.productorNacional && <Badge variant="firma">Productor nacional</Badge>}
               </div>
 
               <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">
@@ -449,7 +456,7 @@ async function QuienesSon() {
         El registro dice quién es cada empresa; qué se le adjudicó lo dicen los
         contratos, y están en su ficha.
       </p>
-    </Hoja>
+    </Card>
   );
 }
 
@@ -467,22 +474,24 @@ async function Resultados({ q }: { q: string }) {
       {r.registro && <FichaEncontrada r={r} registro={r.registro} />}
 
       {r.coincidencias.length > 0 && (
-        <Hoja>
-          <CabeceraHoja
-            rotulo={`Coincidencias con «${r.consulta}»`}
-            titulo="Proveedores con contrato reciente"
-            derecha={
-              r.totalCoincidencias > r.coincidencias.length
-                ? `${r.coincidencias.length} de ${formatInt(r.totalCoincidencias)}`
-                : formatInt(r.totalCoincidencias)
-            }
-          />
+        <Card>
+          <CardHeader>
+            <div className="min-w-0">
+              <p className="rotulo text-ink-soft">{`Coincidencias con «${r.consulta}»`}</p>
+              <CardTitle>Proveedores con contrato reciente</CardTitle>
+            </div>
+            <CardAction>{
+                        r.totalCoincidencias > r.coincidencias.length
+                          ? `${r.coincidencias.length} de ${formatInt(r.totalCoincidencias)}`
+                          : formatInt(r.totalCoincidencias)
+                      }</CardAction>
+          </CardHeader>
           <ul className="divide-y divide-hairline">
             {r.coincidencias.map((p) => (
               <FilaCoincidencia key={p.rpe} p={p} />
             ))}
           </ul>
-        </Hoja>
+        </Card>
       )}
 
       {/*
@@ -538,33 +547,35 @@ function FichaEncontrada({
   );
 
   return (
-    <Hoja acento="border-t-v-compras">
-      <CabeceraHoja
-        rotulo={
-          r.via === "documento"
-            ? `Encontrado por ${registro.tipoDocumento}`
-            : "Encontrado por número de RPE"
-        }
-        titulo="En el Registro de Proveedores del Estado"
-        derecha={`RPE ${registro.rpe}`}
-      />
+    <Card className="border-t-[3px] border-t-v-compras">
+      <CardHeader>
+        <div className="min-w-0">
+          <p className="rotulo text-ink-soft">{
+                r.via === "documento"
+                  ? `Encontrado por ${registro.tipoDocumento}`
+                  : "Encontrado por número de RPE"
+              }</p>
+          <CardTitle>En el Registro de Proveedores del Estado</CardTitle>
+        </div>
+        <CardAction>{`RPE ${registro.rpe}`}</CardAction>
+      </CardHeader>
       <div className="px-5 py-4">
         <h2 className="font-display text-2xl leading-tight text-ink">
           {registro.razonSocial}
         </h2>
 
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <Marca tono="neutro">
+          <Badge variant="neutro">
             {registro.tipoDocumento} {registro.numeroDocumento || "—"}
-          </Marca>
+          </Badge>
           {registro.estado === "Activo" ? (
-            <Marca tono="valido">Activo en el RPE</Marca>
+            <Badge variant="valido">Activo en el RPE</Badge>
           ) : (
-            <Marca tono="alerta">{registro.estado} en el RPE</Marca>
+            <Badge variant="alerta">{registro.estado} en el RPE</Badge>
           )}
-          {registro.esMipyme && <Marca tono="firma">MIPYME</Marca>}
-          {registro.certificacionMicm && <Marca tono="firma">Certificación MICM</Marca>}
-          {registro.productorNacional && <Marca tono="firma">Productor nacional</Marca>}
+          {registro.esMipyme && <Badge variant="firma">MIPYME</Badge>}
+          {registro.certificacionMicm && <Badge variant="firma">Certificación MICM</Badge>}
+          {registro.productorNacional && <Badge variant="firma">Productor nacional</Badge>}
         </div>
 
         <p className="mt-2.5 text-sm leading-relaxed text-ink-soft">
@@ -611,14 +622,14 @@ function FichaEncontrada({
           )}
         </p>
 
-        <Link href={`/proveedores/${registro.rpe}`} className="mt-4 inline-block">
-          <Accion>
+        <Button asChild className="mt-4">
+          <Link href={`/proveedores/${registro.rpe}`}>
             Ver su historial completo
             <IconArrowRight className="h-4 w-4" />
-          </Accion>
-        </Link>
+          </Link>
+        </Button>
       </div>
-    </Hoja>
+    </Card>
   );
 }
 
@@ -655,35 +666,30 @@ function FilaCoincidencia({ p }: { p: ProveedorEnMercado }) {
 
 /* ---------------------------------------------------------------- vacíos */
 
-/**
- * «No hay resultados» y «la fuente no contestó» son dos pantallas distintas:
- * la segunda dice qué pasó y qué sigue en pie.
- */
+/*
+  Cuatro desenlaces y ninguno se puede hacer pasar por otro. Los cuatro se
+  componen con `EstadoVacio`, que reserva el sitio de la explicación y el de la
+  única acción útil; la variante `caida` los pinta en ocre, que es el color de
+  «esto es un aviso», no de «esto no existe».
+*/
+
 function SinResultados({ r }: { r: ResultadoProveedores }) {
   return (
-    <Hoja>
-      <div className="px-5 py-14 text-center">
-        <p className="text-sm font-medium text-ink">
-          Nada encontrado para «{r.consulta}»
-        </p>
-        <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-ink-soft">
-          {r.via === "nombre" ? (
-            <>
-              Ningún proveedor con contrato reciente se llama así. La búsqueda
-              por nombre solo alcanza la ventana de contratos escaneada: si
-              sabes su RNC o su número de RPE, ese sí consulta el registro
-              entero.
-            </>
-          ) : (
-            <>
-              No hay ningún proveedor inscrito con ese número, ni como RPE ni
-              como RNC o cédula. El registro guarda las cédulas con once dígitos
-              y los RNC con nueve; se prueban ambos formatos.
-            </>
-          )}
-        </p>
-      </div>
-    </Hoja>
+    <EstadoVacio titulo={`Nada encontrado para «${r.consulta}»`}>
+      {r.via === "nombre" ? (
+        <>
+          Ningún proveedor con contrato reciente se llama así. La búsqueda por
+          nombre solo alcanza la ventana de contratos escaneada: si sabes su RNC
+          o su número de RPE, ese sí consulta el registro entero.
+        </>
+      ) : (
+        <>
+          No hay ningún proveedor inscrito con ese número, ni como RPE ni como
+          RNC o cédula. El registro guarda las cédulas con once dígitos y los RNC
+          con nueve; se prueban ambos formatos.
+        </>
+      )}
+    </EstadoVacio>
   );
 }
 
@@ -694,75 +700,53 @@ function SinResultados({ r }: { r: ResultadoProveedores }) {
  */
 function RegistroCaido() {
   return (
-    <Hoja>
-      <div className="px-5 py-14 text-center">
-        <p className="text-sm font-medium text-ink">
-          El Registro de Proveedores del Estado no respondió
-        </p>
-        <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-ink-soft">
-          No podemos decir si ese número está inscrito o no: la consulta al
-          registro de la DGCP falló. Vuelve en unos minutos, o mira{" "}
-          <Link href="/proveedores" className="font-medium text-brand-700 hover:underline">
-            quiénes se están adjudicando contratos
-          </Link>
-          .
-        </p>
-      </div>
-    </Hoja>
+    <EstadoVacio
+      variante="caida"
+      titulo="El Registro de Proveedores del Estado no respondió"
+      accion={
+        <Button asChild variant="secondary" size="sm">
+          <Link href="/proveedores">Ver quiénes se adjudican contratos</Link>
+        </Button>
+      }
+    >
+      No podemos decir si ese número está inscrito o no: la consulta al registro
+      de la DGCP falló. Vuelve en unos minutos, o mira la ventana de contratos
+      recientes, que sí sigue en pie.
+    </EstadoVacio>
   );
 }
 
 /** No se buscó nada: decirlo, en vez de reportar cero coincidencias. */
 function ConsultaCorta({ r }: { r: ResultadoProveedores }) {
   return (
-    <Hoja>
-      <div className="px-5 py-14 text-center">
-        <p className="text-sm font-medium text-ink">
-          «{r.consulta}» es demasiado corto para buscarlo
-        </p>
-        <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-ink-soft">
-          Una búsqueda por nombre necesita al menos tres letras: con dos
-          coincidiría media plataforma. Si lo que tienes es un RNC, una cédula o
-          un número de RPE, escríbelo completo — ese camino sí consulta el
-          registro entero.
-        </p>
-      </div>
-    </Hoja>
+    <EstadoVacio titulo={`«${r.consulta}» es demasiado corto para buscarlo`}>
+      Una búsqueda por nombre necesita al menos tres letras: con dos coincidiría
+      media plataforma. Si lo que tienes es un RNC, una cédula o un número de
+      RPE, escríbelo completo — ese camino sí consulta el registro entero.
+    </EstadoVacio>
   );
 }
 
 function VentanaCaida() {
   return (
-    <Hoja>
-      <div className="px-5 py-14 text-center">
-        <p className="text-sm font-medium text-ink">
-          El registro de contratos no respondió
-        </p>
-        <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-ink-soft">
-          La búsqueda por nombre necesita esa ventana y ahora mismo la API de la
-          DGCP no la sirve. La búsqueda por RNC, cédula o número de RPE sí sigue
-          en pie: usa cualquiera de esos y verás la ficha del registro.
-        </p>
-      </div>
-    </Hoja>
+    <EstadoVacio variante="caida" titulo="El registro de contratos no respondió">
+      La búsqueda por nombre necesita esa ventana y ahora mismo la API de la
+      DGCP no la sirve. La búsqueda por RNC, cédula o número de RPE sí sigue en
+      pie: usa cualquiera de esos y verás la ficha del registro.
+    </EstadoVacio>
   );
 }
 
 function FuenteCaida({ titulo }: { titulo: string }) {
   return (
-    <Hoja>
-      <CabeceraHoja titulo={titulo} />
-      <div className="px-5 py-14 text-center">
-        <p className="text-sm font-medium text-ink">
-          El registro de contratos no respondió
-        </p>
-        <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-ink-soft">
-          La API de la DGCP está caída o no devolvió datos. La búsqueda por RNC
-          o número de RPE sigue funcionando; vuelve en unos minutos para el
-          ranking.
-        </p>
-      </div>
-    </Hoja>
+    <EstadoVacio
+      variante="caida"
+      rotulo={titulo}
+      titulo="El registro de contratos no respondió"
+    >
+      La API de la DGCP está caída o no devolvió datos. La búsqueda por RNC o
+      número de RPE sigue funcionando; vuelve en unos minutos para el ranking.
+    </EstadoVacio>
   );
 }
 
