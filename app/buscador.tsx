@@ -24,10 +24,24 @@ import {
   IconDownload,
   IconFilter,
   IconRss,
-  IconSearch,
   IconSliders,
   IconX,
 } from "@/components/icons";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoVacio } from "@/components/estado-vacio";
 
 interface FiltrosProps {
   etapa: EtapaFiltro;
@@ -48,8 +62,13 @@ interface FiltrosProps {
   setMipyme: (v: boolean) => void;
 }
 
-const INPUT_CLS =
-  "mt-1 w-full rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15";
+/**
+ * Radix no admite la cadena vacía como valor de una opción —la reserva para
+ * «no hay nada elegido»—, así que «todas» viaja como un centinela explícito y
+ * se traduce en los dos sentidos. El estado de la página sigue siendo `""`,
+ * que es lo que la URL y la API entienden.
+ */
+const TODAS = "__todas__";
 
 /** Etapa seleccionada; `""` es «todas», que no filtra nada. */
 type EtapaFiltro = EtapaClave | "";
@@ -429,23 +448,20 @@ export default function Buscador() {
       </div>
 
       {/* Filtros — panel en escritorio */}
-      <section className="hidden rounded-lg bg-surface p-5 border border-hairline lg:block">
-        <div className="flex items-center gap-2 text-sm font-semibold text-ink">
+      <Card as="section" className="hidden p-5 lg:block">
+        <CardTitle className="flex items-center gap-2">
           <IconFilter className="h-4 w-4 text-brand-600" />
           Filtros
-        </div>
+        </CardTitle>
         <div className="mt-4">
           <FiltrosControles {...filtros} />
         </div>
-      </section>
+      </Card>
 
       {/* Barra de control en móvil: filtros + conteo + chips activos */}
       <div className="sticky top-[60px] z-30 -mx-4 border-b border-hairline bg-canvas px-4 py-2.5 lg:hidden">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSheetOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3.5 py-2 text-sm font-semibold  transition active:scale-95"
-          >
+          <Button variant="secondary" onClick={() => setSheetOpen(true)}>
             <IconSliders className="h-4 w-4 text-brand-600" />
             Filtros
             {chips.length > 0 && (
@@ -453,7 +469,7 @@ export default function Buscador() {
                 {chips.length}
               </span>
             )}
-          </button>
+          </Button>
           {/*
             También aquí se marca la muestra. Es el conteo que se ve en un
             teléfono —la superficie principal— y repetir el número desnudo
@@ -469,24 +485,9 @@ export default function Buscador() {
         {chips.length > 0 && (
           <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto">
             {chips.map((c) => (
-              <button
-                key={c.key}
-                onClick={c.clear}
-                title={
-                  c.porDefecto
-                    ? "Filtro por defecto — quítalo para ampliar la búsqueda"
-                    : "Quitar este filtro"
-                }
-                className={cn(
-                  "inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition active:scale-95",
-                  c.porDefecto
-                    ? "border-hairline bg-canvas text-ink-soft hover:text-ink"
-                    : "border-brand-200 bg-brand-50 text-brand-700",
-                )}
-              >
+              <Chip key={c.key} chip={c} className="shrink-0">
                 <span className="max-w-[8.5rem] truncate">{c.label}</span>
-                <IconX className="h-3 w-3 shrink-0" />
-              </button>
+              </Chip>
             ))}
           </div>
         )}
@@ -498,14 +499,11 @@ export default function Buscador() {
         onClose={() => setSheetOpen(false)}
         title="Filtros"
         footer={
-          <button
-            onClick={() => setSheetOpen(false)}
-            className="h-12 w-full rounded-lg bg-brand-600 text-sm font-semibold text-canvas transition active:scale-[0.99]"
-          >
+          <Button onClick={() => setSheetOpen(false)} className="h-12 w-full">
             {data
               ? `Ver ${data.totalResults.toLocaleString("es-DO")} resultados`
               : "Ver resultados"}
-          </button>
+          </Button>
         }
       >
         <div className="pb-2">
@@ -518,26 +516,13 @@ export default function Buscador() {
         {chips.length > 0 && (
           <div className="mb-3 hidden flex-wrap items-center gap-1.5 lg:flex">
             {chips.map((c) => (
-              <button
-                key={c.key}
-                onClick={c.clear}
-                title={
-                  c.porDefecto
-                    ? "Filtro por defecto — quítalo para ampliar la búsqueda"
-                    : "Quitar este filtro"
-                }
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition active:scale-95",
-                  c.porDefecto
-                    ? "border-hairline bg-canvas text-ink-soft hover:text-ink"
-                    : "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100",
-                )}
-              >
+              <Chip key={c.key} chip={c}>
                 {c.label}
-                <IconX className="h-3 w-3" />
-              </button>
+              </Chip>
             ))}
-            <button
+            <Button
+              variant="link"
+              size="sm"
               onClick={() => {
                 setEtapa(ETAPA_INICIAL);
                 setModalidad("");
@@ -546,10 +531,10 @@ export default function Buscador() {
                 setStartdate(hoyMenosDias(30));
                 setEnddate("");
               }}
-              className="ml-1 text-xs font-medium text-ink-soft transition hover:text-brand-700"
+              className="ml-1 h-auto px-0 text-xs font-medium text-ink-soft hover:text-brand-700"
             >
               Limpiar todo
-            </button>
+            </Button>
           </div>
         )}
         {/*
@@ -601,22 +586,24 @@ export default function Buscador() {
                 casa —silencioso y citable—, y se cierra diciendo el alcance en
                 el propio control.
               */}
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={exportarCsv}
                 title={`Descarga las ${lista.length} filas de esta página, con los filtros puestos`}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 font-medium transition hover:border-brand-500 hover:text-brand-700"
               >
                 <IconDownload className="h-4 w-4" /> CSV ({lista.length})
-              </button>
-              <a
-                href={feedHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Suscríbete a esta búsqueda con cualquier lector RSS y entérate de los procesos nuevos"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 font-medium transition hover:border-brand-500 hover:text-brand-700"
-              >
-                <IconRss className="h-4 w-4" /> RSS
-              </a>
+              </Button>
+              <Button asChild variant="secondary" size="sm">
+                <a
+                  href={feedHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Suscríbete a esta búsqueda con cualquier lector RSS y entérate de los procesos nuevos"
+                >
+                  <IconRss className="h-4 w-4" /> RSS
+                </a>
+              </Button>
             </span>
           )}
           {/*
@@ -625,23 +612,25 @@ export default function Buscador() {
           */}
           {data && data.pages > 1 && (
             <span className="flex items-center gap-2">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1 || loading}
-                className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-surface px-2.5 py-1.5 disabled:opacity-40"
               >
                 <IconChevronLeft className="h-4 w-4" /> Anterior
-              </button>
+              </Button>
               <span className="tabular-nums">
                 Página {data.page} de {data.pages}
               </span>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page >= data.pages || loading}
-                className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-surface px-2.5 py-1.5 disabled:opacity-40"
               >
                 Siguiente <IconChevronRight className="h-4 w-4" />
-              </button>
+              </Button>
             </span>
           )}
         </div>
@@ -656,10 +645,7 @@ export default function Buscador() {
           <div className="grid gap-3 md:grid-cols-2" role="status" aria-busy="true">
             <span className="sr-only">Consultando la DGCP…</span>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="shimmer h-44 rounded-lg border border-hairline"
-              />
+              <Skeleton key={i} className="h-44 rounded-lg border border-hairline" />
             ))}
           </div>
         ) : error ? (
@@ -669,7 +655,7 @@ export default function Buscador() {
             línea ocre de 12px. Sin esta rama, quien tropieza con un 502 de la
             DGCP se queda con una página en blanco y sin la única acción útil.
           */
-          <div className="rounded-lg border border-alerta-600/25 bg-alerta-50 px-5 py-10 text-center">
+          <Alert variant="aviso" className="px-5 py-10 text-center">
             <p className="font-sans text-sm font-semibold text-ink">
               La DGCP no respondió
             </p>
@@ -677,20 +663,12 @@ export default function Buscador() {
               No es un problema de tu búsqueda: los filtros siguen puestos. La
               fuente oficial no contestó a tiempo.
             </p>
-            <button
-              type="button"
-              onClick={() => fetchData()}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700"
-            >
+            <Button type="button" onClick={() => fetchData()} className="mt-4">
               Reintentar
-            </button>
-          </div>
+            </Button>
+          </Alert>
         ) : lista.length === 0 ? (
-          <div className="rounded-lg bg-surface p-12 text-center border border-hairline">
-            <span className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-hairline text-ink-soft">
-              <IconSearch className="h-6 w-6" />
-            </span>
-            <p className="mt-3 font-semibold text-ink">Sin resultados con estos filtros</p>
+          <EstadoVacio titulo="Sin resultados con estos filtros">
             {/*
               Pedir una etapa cerrada dentro de una ventana corta devuelve poco
               o nada, y la razón no se adivina: la ventana corre sobre la fecha
@@ -698,12 +676,10 @@ export default function Buscador() {
               publicarse dos meses antes. Decirlo aquí es la diferencia entre
               «la plataforma no los tiene» y «pídelos bien».
             */}
-            <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-ink-soft">
-              {etapaSel && etapaSel.clave !== "abiertos"
-                ? "El rango de fechas filtra por publicación, no por cierre: un proceso que acaba de cerrar pudo publicarse mucho antes. Amplía «Publicado desde» para alcanzarlo."
-                : "Prueba ampliar el rango de fechas o quitar el filtro de etapa."}
-            </p>
-          </div>
+            {etapaSel && etapaSel.clave !== "abiertos"
+              ? "El rango de fechas filtra por publicación, no por cierre: un proceso que acaba de cerrar pudo publicarse mucho antes. Amplía «Publicado desde» para alcanzarlo."
+              : "Prueba ampliar el rango de fechas o quitar el filtro de etapa."}
+          </EstadoVacio>
         ) : (
           <div
             aria-busy={loading}
@@ -722,6 +698,47 @@ export default function Buscador() {
   );
 }
 
+/**
+ * Un filtro puesto, y cómo quitarlo.
+ *
+ * Los que vienen **de fábrica** se ven igual que los que puso el usuario, en
+ * gris en vez de azul: un chip que solo aparece cuando difiere del valor por
+ * defecto deja invisibles justo los que más recortan, y quien busca y lee «0
+ * coincidencias» nunca se entera de que estaba mirando treinta días.
+ */
+function Chip({
+  chip,
+  children,
+  className,
+}: {
+  chip: { porDefecto?: boolean; clear: () => void };
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Button
+      variant={chip.porDefecto ? "secondary" : "outline"}
+      size="sm"
+      onClick={chip.clear}
+      title={
+        chip.porDefecto
+          ? "Filtro por defecto — quítalo para ampliar la búsqueda"
+          : "Quitar este filtro"
+      }
+      className={cn(
+        "h-7 gap-1 px-2.5 font-medium",
+        chip.porDefecto
+          ? "bg-canvas text-ink-soft hover:text-ink"
+          : "border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100 hover:text-brand-800",
+        className,
+      )}
+    >
+      {children}
+      <IconX className="h-3 w-3 shrink-0" />
+    </Button>
+  );
+}
+
 function FiltrosControles({
   etapa, setEtapa, modalidad, setModalidad, unidades, unidadTexto,
   setUnidadTexto, unidadSel, startdate, setStartdate, enddate, setEnddate,
@@ -729,10 +746,13 @@ function FiltrosControles({
 }: FiltrosProps) {
   const etapaSel = etapaPorClave(etapa);
   return (
-    <div className="grid gap-3 lg:grid-cols-12">
-      <label className="block text-xs font-medium text-ink-soft lg:col-span-12">
-        Institución (unidad de compra)
-        <input
+    <div className="grid gap-4 lg:grid-cols-12">
+      <div className="lg:col-span-12">
+        <Label htmlFor="f-unidad" className="text-xs text-ink-soft">
+          Institución (unidad de compra)
+        </Label>
+        <Input
+          id="f-unidad"
           list="lista-unidades"
           value={unidadTexto}
           onChange={(e) => setUnidadTexto(e.target.value)}
@@ -741,8 +761,12 @@ function FiltrosControles({
               ? "Todas — escribe para filtrar por institución…"
               : "Cargando instituciones…"
           }
-          className={INPUT_CLS}
+          className="mt-1"
         />
+        {/*
+          Lista nativa a propósito: son más de mil instituciones y el navegador
+          las filtra mientras se teclea sin traerse ninguna librería.
+        */}
         <datalist id="lista-unidades">
           {unidades.map((u) => (
             <option key={u.codigo} value={etiquetaUnidad(u)} />
@@ -753,91 +777,130 @@ function FiltrosControles({
             Selecciona una institución de la lista para aplicar el filtro.
           </span>
         )}
-      </label>
+      </div>
 
       {/*
         Etapa, no «estado». El control ofrecía los siete `estado_proceso` de la
         DGCP tal cual, así que «¿qué ya cerró?» —donde están el ganador y el
         precio— exigía saber que la respuesta se reparte entre seis de ellos y
-        elegirlos de uno en uno. Ahora la pregunta es una opción, y debajo se
-        dice en llano qué se está pidiendo.
+        elegirlos de uno en uno. Ahora la pregunta es una opción, y cada una
+        lleva pegada, dentro del desplegable, qué recoge exactamente.
       */}
-      <label className="block text-xs font-medium text-ink-soft lg:col-span-3">
-        Etapa
-        <select
-          value={etapa}
-          onChange={(e) => setEtapa(e.target.value as EtapaFiltro)}
-          className={INPUT_CLS}
+      <div className="lg:col-span-3">
+        <Label className="text-xs text-ink-soft">Etapa</Label>
+        <Select
+          value={etapa === "" ? TODAS : etapa}
+          onValueChange={(v) => setEtapa(v === TODAS ? "" : (v as EtapaFiltro))}
         >
-          <option value="">Todas las etapas</option>
-          {ETAPAS.map((e) => (
-            <option key={e.clave} value={e.clave}>
-              {e.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger aria-label="Etapa del proceso" className="mt-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem
+              value={TODAS}
+              ayuda="Abiertos y cerrados, en cualquier punto de su trámite."
+            >
+              Todas las etapas
+            </SelectItem>
+            {ETAPAS.map((e) => (
+              <SelectItem key={e.clave} value={e.clave} ayuda={e.ayuda}>
+                {e.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <span className="mt-1 block text-[11px] leading-snug text-ink-soft">
           {etapaSel?.ayuda ?? "Abiertos y cerrados, en cualquier punto de su trámite."}
         </span>
-      </label>
+      </div>
 
-      <label className="block text-xs font-medium text-ink-soft lg:col-span-3">
-        Modalidad
-        <select value={modalidad} onChange={(e) => setModalidad(e.target.value)} className={INPUT_CLS}>
-          <option value="">Todas</option>
-          {MODALIDADES.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="lg:col-span-3">
+        <Label className="text-xs text-ink-soft">Modalidad</Label>
+        <Select
+          value={modalidad === "" ? TODAS : modalidad}
+          onValueChange={(v) => setModalidad(v === TODAS ? "" : v)}
+        >
+          <SelectTrigger aria-label="Modalidad de compra" className="mt-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={TODAS}>Todas</SelectItem>
+            {MODALIDADES.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <label className="block text-xs font-medium text-ink-soft lg:col-span-2">
-        Publicado desde
-        <input
+      <div className="lg:col-span-2">
+        <Label htmlFor="f-desde" className="text-xs text-ink-soft">
+          Publicado desde
+        </Label>
+        <Input
+          id="f-desde"
           type="date"
           value={startdate}
           onChange={(e) => setStartdate(e.target.value)}
-          className={INPUT_CLS}
+          className="mt-1"
         />
-      </label>
+      </div>
 
-      <label className="block text-xs font-medium text-ink-soft lg:col-span-2">
-        Publicado hasta
-        <input
+      <div className="lg:col-span-2">
+        <Label htmlFor="f-hasta" className="text-xs text-ink-soft">
+          Publicado hasta
+        </Label>
+        <Input
+          id="f-hasta"
           type="date"
           value={enddate}
           onChange={(e) => setEnddate(e.target.value)}
-          className={INPUT_CLS}
+          className="mt-1"
         />
-      </label>
+      </div>
 
-      <label className="block text-xs font-medium text-ink-soft lg:col-span-2">
-        Ordenar por
-        <select value={orden} onChange={(e) => setOrden(e.target.value as Orden)} className={INPUT_CLS}>
-          <option value="recientes">Más recientes</option>
-          <option value="cierre">Cierre más próximo</option>
-          {/*
-            «(RD$)» no es adorno: el registro publica también en dólares y en
-            euros, y sin tasa de cambio no hay forma honesta de mezclarlos en
-            un mismo ranking. Se ordena dentro del peso y lo demás va al final
-            con su divisa a la vista; la etiqueta dice exactamente eso.
-          */}
-          <option value="monto_desc">Mayor monto (RD$)</option>
-          <option value="monto_asc">Menor monto (RD$)</option>
-        </select>
-      </label>
+      <div className="lg:col-span-2">
+        <Label className="text-xs text-ink-soft">Ordenar por</Label>
+        <Select value={orden} onValueChange={(v) => setOrden(v as Orden)}>
+          <SelectTrigger aria-label="Ordenar los resultados" className="mt-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="recientes">Más recientes</SelectItem>
+            <SelectItem value="cierre">Cierre más próximo</SelectItem>
+            {/*
+              «(RD$)» no es adorno: el registro publica también en dólares y en
+              euros, y sin tasa de cambio no hay forma honesta de mezclarlos en
+              un mismo ranking. Se ordena dentro del peso y lo demás va al final
+              con su divisa a la vista; la etiqueta dice exactamente eso.
+            */}
+            <SelectItem
+              value="monto_desc"
+              ayuda="Solo entre los publicados en pesos."
+            >
+              Mayor monto (RD$)
+            </SelectItem>
+            <SelectItem
+              value="monto_asc"
+              ayuda="Solo entre los publicados en pesos."
+            >
+              Menor monto (RD$)
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      <label className="flex items-center gap-2 text-sm text-ink lg:col-span-12">
-        <input
-          type="checkbox"
+      <div className="flex items-center gap-2 lg:col-span-12">
+        <Checkbox
+          id="f-mipyme"
           checked={mipyme}
-          onChange={(e) => setMipyme(e.target.checked)}
-          className="h-4 w-4 rounded border-hairline accent-brand-600"
+          onCheckedChange={(v) => setMipyme(v === true)}
         />
-        Solo dirigidos a MIPYMES
-      </label>
+        <Label htmlFor="f-mipyme" className="font-normal">
+          Solo dirigidos a MIPYMES
+        </Label>
+      </div>
     </div>
   );
 }

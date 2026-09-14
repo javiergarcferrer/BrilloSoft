@@ -15,6 +15,7 @@ import { formatFecha, formatMonto, formatPesos, hace } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { Cifra, Rotulo, TiraDeCifras } from "@/components/papel";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +26,7 @@ import {
 import type { Ancla } from "@/lib/cifras";
 import { Cargando, Esqueleto, EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { Skeleton } from "@/components/ui/skeleton";
 import { IconArrowRight } from "@/components/icons";
 import BuscadorProveedores from "./buscador";
 
@@ -272,12 +274,11 @@ async function RankingPorMonto() {
                 {formatMonto(p.monto, "DOP")}
               </span>
             </div>
-            <div className="ml-[1.875rem] mt-1 h-1.5 rounded-sm bg-hairline">
-              <div
-                className="bar-grow h-1.5 rounded-sm bg-brand-500"
-                style={{ width: `${Math.max(2, (p.monto / max) * 100)}%` }}
-              />
-            </div>
+            <Progress
+              value={Math.max(2, (p.monto / max) * 100)}
+              aria-label={`${p.razonSocial}: ${formatMonto(p.monto, "DOP")}`}
+              className="ml-[1.875rem] mt-1 h-1.5"
+            />
             <p className="ml-[1.875rem] mt-1 text-xs text-ink-soft">
               {p.contratos} {p.contratos === 1 ? "contrato" : "contratos"}
               <Sep />
@@ -332,12 +333,12 @@ async function RankingPorContratos() {
                 {formatInt(p.contratos)}
               </span>
             </div>
-            <div className="ml-[1.875rem] mt-1 h-1.5 rounded-sm bg-hairline">
-              <div
-                className="bar-grow h-1.5 rounded-sm bg-brand-400"
-                style={{ width: `${Math.max(2, (p.contratos / max) * 100)}%` }}
-              />
-            </div>
+            <Progress
+              value={Math.max(2, (p.contratos / max) * 100)}
+              aria-label={`${p.razonSocial}: ${formatInt(p.contratos)} contratos`}
+              indicadorClassName="bg-brand-400"
+              className="ml-[1.875rem] mt-1 h-1.5"
+            />
             <p className="ml-[1.875rem] mt-1 text-xs text-ink-soft">
               {formatMonto(p.monto, "DOP")}
               <Sep />
@@ -775,9 +776,9 @@ function TiraEsqueleto() {
       <TiraDeCifras>
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="space-y-2">
-            <div className="shimmer h-3 w-24 rounded-md bg-hairline/70" />
-            <div className="shimmer h-6 w-28 rounded-md bg-hairline/70" />
-            <div className="shimmer h-2.5 w-32 rounded-md bg-hairline/70" />
+            <Skeleton className="h-3 w-24 bg-hairline/70" />
+            <Skeleton className="h-6 w-28 bg-hairline/70" />
+            <Skeleton className="h-2.5 w-32 bg-hairline/70" />
           </div>
         ))}
       </TiraDeCifras>

@@ -3,6 +3,9 @@ import { listPacc } from "@/lib/dgcp";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { IconExternal } from "@/components/icons";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { EstadoVacio } from "@/components/estado-vacio";
 import Antiguedad from "@/components/antiguedad";
 
 export const metadata: Metadata = {
@@ -29,14 +32,12 @@ export default async function PlanesPage() {
 
   if (planes.length === 0) {
     return (
-      <div className="mx-auto max-w-2xl rounded-lg border border-hairline bg-surface px-5 py-14 text-center">
-        <p className="text-sm font-medium text-ink">
-          No hay planes publicados para {periodo}
-        </p>
-        <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
-          O la API de la DGCP no respondió. Vuelve en unos minutos.
-        </p>
-      </div>
+      <EstadoVacio
+        titulo={`No hay planes publicados para ${periodo}`}
+        className="mx-auto max-w-2xl"
+      >
+        O la API de la DGCP no respondió. Vuelve en unos minutos.
+      </EstadoVacio>
     );
   }
 
@@ -99,9 +100,9 @@ export default async function PlanesPage() {
         </div>
       </section>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
+      <Card as="section" className="p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-semibold">Planes publicados, del más reciente</h2>
+          <CardTitle>Planes publicados, del más reciente</CardTitle>
           {ultimo && (
             <span className="text-xs text-ink-soft">
               Última publicación: {formatFecha(ultimo)}
@@ -128,15 +129,12 @@ export default async function PlanesPage() {
                   )}
                 </div>
               </div>
-              <a
-                href={p.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-hairline px-2.5 py-1 text-xs font-medium hover:border-brand-500 hover:text-brand-600"
-              >
-                Ver el plan
-                <IconExternal className="h-3.5 w-3.5" />
-              </a>
+              <Button asChild variant="secondary" size="sm" className="shrink-0">
+                <a href={p.url} target="_blank" rel="noopener noreferrer">
+                  Ver el plan
+                  <IconExternal className="h-3.5 w-3.5" />
+                </a>
+              </Button>
             </li>
           ))}
         </ul>
@@ -156,7 +154,7 @@ export default async function PlanesPage() {
           filtra aquí. Una versión alta no es un defecto: significa que la
           institución corrigió su plan muchas veces.
         </p>
-      </section>
+      </Card>
     </div>
   );
 }

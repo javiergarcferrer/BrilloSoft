@@ -5,6 +5,10 @@ import { formatMonto, formatFecha } from "@/lib/format";
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import { IconArrowRight, IconChartBar } from "@/components/icons";
 import Antiguedad from "@/components/antiguedad";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { EstadoVacio } from "@/components/estado-vacio";
 
 export const metadata: Metadata = {
   title: "Histórico de contrataciones",
@@ -22,13 +26,14 @@ export default async function ContratosPage() {
 
   if (!r || r.escaneados === 0) {
     return (
-      <div className="mx-auto max-w-2xl rounded-lg border border-hairline bg-surface px-5 py-14 text-center ">
-        <p className="text-sm font-medium text-ink">El registro de contratos no respondió</p>
-        <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
-          La API de contratos de la DGCP está caída o no devolvió datos. Vuelve
-          en unos minutos.
-        </p>
-      </div>
+      <EstadoVacio
+        variante="caida"
+        titulo="El registro de contratos no respondió"
+        className="mx-auto max-w-2xl"
+      >
+        La API de contratos de la DGCP está caída o no devolvió datos. Vuelve en
+        unos minutos.
+      </EstadoVacio>
     );
   }
 
@@ -95,8 +100,8 @@ export default async function ContratosPage() {
 
       {/* Tendencia mensual */}
       {r.porMes.length > 1 && (
-        <section className="rounded-lg bg-surface p-6 border border-hairline">
-          <h2 className="font-sans font-semibold">Monto adjudicado por mes</h2>
+        <Card as="section" className="p-6">
+          <CardTitle>Monto adjudicado por mes</CardTitle>
           <p className="mt-0.5 text-xs text-ink-soft">
             Dentro de la ventana escaneada; los meses de los extremos pueden estar
             incompletos.
@@ -110,16 +115,15 @@ export default async function ContratosPage() {
                     {formatInt(m.n)} · {formatMonto(m.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-sm bg-hairline">
-                  <div
-                    className="bar-grow h-2 rounded-sm bg-brand-500"
-                    style={{ width: `${Math.max(2, (m.monto / maxMes) * 100)}%` }}
-                  />
-                </div>
+                <Progress
+                  value={Math.max(2, (m.monto / maxMes) * 100)}
+                  aria-label={`${m.mes}: ${formatMonto(m.monto, "DOP")}`}
+                  className="mt-1"
+                />
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       )}
 
       <div className="grid gap-5 lg:grid-cols-2">
@@ -138,11 +142,11 @@ export default async function ContratosPage() {
       </div>
 
       {/* Detalle reciente */}
-      <section className="overflow-hidden rounded-lg bg-surface border border-hairline">
-        <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-          <h2 className="font-sans font-semibold">Adjudicaciones más recientes</h2>
-          <span className="text-xs text-ink-soft">{r.recientes.length}</span>
-        </div>
+      <Card as="section">
+        <CardHeader>
+          <CardTitle>Adjudicaciones más recientes</CardTitle>
+          <CardAction>{r.recientes.length}</CardAction>
+        </CardHeader>
         <ul className="divide-y divide-hairline">
           {r.recientes.map((c, i) => (
             <li key={`${c.codigo_contrato}-${i}`} className="px-5 py-3">
@@ -167,17 +171,21 @@ export default async function ContratosPage() {
                 <Sep />
                 <Antiguedad iso={c.fecha_adjudicacion} prefijo="Adjudicado" />
                 <Sep />
-                <Link
-                  href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
-                  className="text-brand-600 hover:underline"
+                <Button
+                  asChild
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-0 text-xs text-brand-600"
                 >
-                  ver proceso →
-                </Link>
+                  <Link href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}>
+                    ver proceso →
+                  </Link>
+                </Button>
               </div>
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
 
       <p className="px-1 text-xs leading-relaxed text-ink-soft">
         Muestra de los {formatInt(r.escaneados)} contratos más recientes de{" "}
@@ -218,9 +226,9 @@ function RankingContratos({
 }) {
   const max = Math.max(1, ...items.map((a) => a.monto));
   return (
-    <section className="rounded-lg bg-surface p-6 border border-hairline">
+    <Card as="section" className="p-6">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-sans font-semibold">{titulo}</h2>
+        <CardTitle>{titulo}</CardTitle>
         {nota && <span className="text-xs text-ink-soft">{nota}</span>}
       </div>
       <ul className="mt-3 space-y-2.5 text-sm">
@@ -241,16 +249,16 @@ function RankingContratos({
                   {a.n} · {formatMonto(a.monto, "DOP")}
                 </span>
               </div>
-              <div className="mt-1 h-2 rounded-sm bg-hairline">
-                <div
-                  className={`bar-grow h-2 rounded-sm ${color}`}
-                  style={{ width: `${Math.max(2, (a.monto / max) * 100)}%` }}
-                />
-              </div>
+              <Progress
+                value={Math.max(2, (a.monto / max) * 100)}
+                aria-label={`${a.clave}: ${formatMonto(a.monto, "DOP")}`}
+                indicadorClassName={color}
+                className="mt-1"
+              />
             </li>
           );
         })}
       </ul>
-    </section>
+    </Card>
   );
 }
