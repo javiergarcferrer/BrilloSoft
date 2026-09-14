@@ -21,12 +21,31 @@ are enforced by `.claude/hooks/guard-edit.sh` and `verificar.sh`.
 4. No emoji, no decorative icons. Stroke icons (16/20/24) from `components/icons.tsx`.
 5. No coat of arms, no flag. Independent, not official.
 6. No screen white. On ink and on a saturated fill the text is `canvas`, never
-   `white` — the `Accion` primitive already decided this.
+   `white` — the `Button` primitive already decided this.
 7. No mute controls: a `hover:` whose value repeats what the element already
    has changes nothing, and a ring colour with no ring width never paints.
 
 ## Use the primitives, not hand-rolled markup
-`components/papel.tsx` (Hoja, and the paper vocabulary), `components/marca.tsx`
+Two layers (docs/IDENTIDAD.md §8). **Never hand-roll a surface, a button, a
+badge, a field or a layer that opens** — there is a primitive for each.
+
+`components/ui/*` is **shadcn/ui, restyled with our tokens**: Card (no shadow,
+`rounded-lg`), Button (`asChild` for links), Badge (`forma="sello"` versalitas /
+`forma="etiqueta"` for a state said in words), Input, Textarea, Label, Select
+(its `ayuda` prop carries the plain-Spanish line a native `<option>` cannot),
+Checkbox, Tabs, ToggleGroup, Dialog, Sheet, Popover, DropdownMenu, Tooltip,
+Accordion, Collapsible, Table, Progress (server-side, no Radix), Skeleton,
+Alert, Separator. Icons come from `components/icons.tsx`, never `lucide-react`;
+colours come from the token bridge in `app/globals.css`, never from shadcn's.
+
+On top, the pieces that carry a rule of this house: `components/papel.tsx`
+(`Rotulo` — its dot is the seal; `Cifra` — a number **with its anchor**;
+`TiraDeCifras`), `components/portada.tsx` (the ink band with the question),
+`components/estado-vacio.tsx` («nothing found» vs `variante="caida"`, which
+forces you to say what happened, what still stands and the one useful action),
+`components/marca-estado.tsx` (the state mark, over `lib/estados.ts`),
+`components/campo-busqueda.tsx` (search with its **scope stated below it**),
+`components/nav-filtros.tsx` (filters that are links), `components/marca.tsx`
 (Sello, SelloCompacto, Logotipo), `components/plegable.tsx` (progressive
 disclosure; the button says how many, never "ver más"),
 `components/antiguedad.tsx` (a date in a **listing row** is «hace 2 meses» in a
@@ -41,7 +60,7 @@ percentage deltas in points), `lib/glosario.ts` (jargon translated at the
 point of use), `components/esqueleto.tsx` (the silhouette a page shows while
 a source answers: every `loading.tsx` and `Suspense` fallback composes it,
 same heights and grids as the content so nothing jumps). If a primitive is
-missing, add it there; do not reimplement
+missing, add it to the layer it belongs to; do not reimplement
 the idea in one page. Legal moves are three: use the primitive, add the
 token, or extract the sibling. Adding an exception or relaxing a matcher
 registers the finding instead of fixing it.

@@ -107,7 +107,11 @@ contra todas las reglas de arriba).
 ## Convenciones
 
 Next.js 15 **App Router** + React 19 + TypeScript + Tailwind CSS 4 (plugin
-`@tailwindcss/postcss`; los tokens y utilidades viven en `app/globals.css`). El
-alias `@/*` resuelve a la **raíz del repositorio** — este proyecto no usa `src/`.
+`@tailwindcss/postcss`; los tokens y utilidades viven en `app/globals.css`). La
+interfaz se compone con **shadcn/ui** en `components/ui/` —código del
+repositorio, Radix por debajo— vestido con los tokens de la identidad; encima
+van las primitivas de la casa (`docs/IDENTIDAD.md` §8). Nada de markup a mano
+para una superficie, un botón, una marca o una capa que abre. El alias `@/*`
+resuelve a la **raíz del repositorio** — este proyecto no usa `src/`.
 Los mensajes de commit van en español, sujeto imperativo, cuerpo en prosa que
 explica el porqué.

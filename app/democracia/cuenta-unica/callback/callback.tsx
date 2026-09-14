@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { IconArrowLeft, IconCheck, IconShield } from "@/components/icons";
@@ -144,9 +144,9 @@ export default function Callback() {
           <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-brand-500 text-canvas">
             <IconCheck className="h-6 w-6" />
           </span>
-          <h2 className="font-sans mt-3 text-lg font-semibold text-ink">
+          <CardTitle className="mt-3 text-lg">
             {estado.repetido ? "Ya estabas verificado" : "Identidad verificada"}
-          </h2>
+          </CardTitle>
           <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-ink-soft">
             Tu registro de votante queda vinculado a tu identidad de Cuenta Única.
             Guardamos solo un código irreversible: de tu cédula si Cuenta Única la

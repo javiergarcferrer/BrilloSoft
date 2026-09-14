@@ -519,7 +519,7 @@ function Dominio({
           <Icon className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0">
-          <h2 className="font-sans text-base font-semibold tracking-tight text-ink">{titulo}</h2>
+          <CardTitle className="text-base tracking-tight">{titulo}</CardTitle>
           <p className="mt-0.5 text-xs text-ink-soft">{fuente}</p>
         </div>
       </div>
@@ -578,7 +578,7 @@ function DominioEsqueleto({
           <Icon className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0">
-          <h2 className="font-sans text-base font-semibold tracking-tight text-ink">{s.nombre}</h2>
+          <CardTitle className="text-base tracking-tight">{s.nombre}</CardTitle>
           <p className="mt-0.5 text-xs text-ink-soft">{s.descriptor}</p>
         </div>
       </div>

@@ -399,7 +399,8 @@ export default function Registro() {
       </header>
 
       {paso === "datos" && (
-        <form onSubmit={enviarCodigo} className="space-y-4 rounded-lg border border-hairline bg-surface p-5">
+        <Card asChild className="p-5">
+          <form onSubmit={enviarCodigo} className="space-y-4">
           <Campo
             etiqueta="Cédula"
             hint={cedula && !cedulaOk ? "Cédula inválida" : "11 dígitos"}
@@ -435,8 +436,9 @@ export default function Registro() {
             className="h-11 w-full bg-brand-600 hover:bg-brand-700"
           >
             {cargando ? "Enviando…" : "Enviar código"}
-          </Button>
-        </form>
+            </Button>
+          </form>
+        </Card>
       )}
 
       {paso === "cedula-pendiente" && cuentaUnicaHabilitada() && (
@@ -444,10 +446,8 @@ export default function Registro() {
       )}
 
       {paso === "cedula-pendiente" && (
-        <form
-          onSubmit={registrarConSesion}
-          className="space-y-4 rounded-lg border border-hairline bg-surface p-5"
-        >
+        <Card asChild className="p-5">
+          <form onSubmit={registrarConSesion} className="space-y-4">
           <p className="text-sm text-ink-soft">
             Tu correo ya está verificado
             {email && (
@@ -482,12 +482,14 @@ export default function Registro() {
             className="h-11 w-full bg-brand-600 hover:bg-brand-700"
           >
             Completar el registro
-          </Button>
-        </form>
+            </Button>
+          </form>
+        </Card>
       )}
 
       {(paso === "codigo" || paso === "registrando") && (
-        <form onSubmit={verificar} className="space-y-4 rounded-lg border border-hairline bg-surface p-5">
+        <Card asChild className="p-5">
+          <form onSubmit={verificar} className="space-y-4">
           <p className="text-sm leading-relaxed text-ink-soft">
             Revisa el correo que enviamos a{" "}
             <span className="font-medium text-ink">{email}</span>.
@@ -549,8 +551,9 @@ export default function Registro() {
             className="h-auto w-full text-xs font-medium text-ink-soft hover:text-ink"
           >
             Cambiar cédula o correo
-          </Button>
-        </form>
+            </Button>
+          </form>
+        </Card>
       )}
 
       <Alert className="mt-4 flex items-start gap-2.5 bg-canvas/60 p-3.5">

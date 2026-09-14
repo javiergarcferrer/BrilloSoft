@@ -5,7 +5,7 @@ import { IconArrowRight, IconShield } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Portada } from "@/components/portada";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
 
@@ -80,9 +80,9 @@ export default async function DemocraciaPage() {
       <section>
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
-            <h2 className="font-sans text-lg font-semibold tracking-tight text-ink">
+            <CardTitle className="text-lg tracking-tight">
               ¿Qué dice la ciudadanía?
-            </h2>
+            </CardTitle>
             <p className="mt-0.5 text-sm text-ink-soft">
               {totalVotos > 0
                 ? `${totalVotos.toLocaleString("es-DO")} votos sobre ${conVotos.length} iniciativas`

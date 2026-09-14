@@ -10,6 +10,7 @@ import GlobalNav from "@/components/global-nav";
 import SectionBar from "@/components/section-bar";
 import { SECCIONES } from "@/lib/secciones";
 import { Logotipo, Sello, SelloCompacto } from "@/components/marca";
+import { Card } from "@/components/ui/card";
 
 /*
   Tres familias, tres oficios (ver app/globals.css):
@@ -167,7 +168,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               toda la plataforma, con el marco normativo dominicano nombrado.
               La credibilidad institucional se declara página por página.
             */}
-            <div className="mt-10 rounded-lg border border-hairline bg-canvas p-5 sm:p-6">
+            <Card className="mt-10 bg-canvas p-5 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="rotulo flex items-center gap-2 text-ink">
                   <span
@@ -218,7 +219,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </p>
                 </div>
               </div>
-            </div>
+            </Card>
 
             <div className="mt-6 flex flex-col gap-2 border-t border-hairline pt-5 text-xs sm:flex-row sm:items-center sm:justify-between">
               <p>

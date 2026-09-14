@@ -209,7 +209,41 @@ segunda dice qué pasó, qué sigue en pie y ofrece la única acción útil.
   una alineación no la produce**, y que una segunda tabla es la forma concreta
   en que esta regla se rompe.
 
-### 8. Cómo se sostiene esto
+### 8. Dónde vive el sistema
+
+Desde la pasada de **shadcn/ui**, en dos capas:
+
+- **`components/ui/*`** — las piezas genéricas: `Card`, `Button`, `Badge`,
+  `Input`, `Select`, `Tabs`, `Dialog`, `Sheet`, `Popover`, `DropdownMenu`,
+  `Tooltip`, `Table`, `Progress`, `Skeleton`, `Alert`, `Accordion`,
+  `Collapsible`, `Checkbox`, `Label`, `Textarea`, `Separator`, `ToggleGroup`.
+  Es código del repositorio —no una dependencia de componentes—, con Radix por
+  debajo. **Entraron por el teclado y el foco, no por el aspecto**: foco
+  atrapado en una hoja modal, recorrido con flechas, Escape, y el foco de vuelta
+  al disparador al cerrar.
+
+  Sus colores son los de esta página: el puente de tokens al final de `@theme`
+  en `app/globals.css` ata el vocabulario de shadcn al de aquí —`background` es
+  `canvas`, `primary` es la firma, `destructive` es el sello, `border` es el
+  filete—. **No hay una segunda paleta**; hay los mismos hexadecimales con los
+  nombres que espera la librería. Un color nuevo se añade arriba, en los tokens,
+  y baja solo.
+
+- **Lo que ninguna librería puede traer**, porque es doctrina y no aspecto:
+  `components/papel.tsx` (`Rotulo`, `Cifra`, `TiraDeCifras`),
+  `components/portada.tsx`, `components/estado-vacio.tsx`,
+  `components/marca-estado.tsx`, `components/campo-busqueda.tsx`,
+  `components/nav-filtros.tsx`, `components/marca.tsx`,
+  `components/plegable.tsx`, `components/antiguedad.tsx`,
+  `components/esqueleto.tsx`, `lib/estados.ts`, `lib/cifras.ts` y
+  `lib/glosario.ts`.
+
+`Hoja`, `CabeceraHoja`, `Marca` y `Accion` **ya no existen**: son `Card`,
+`CardHeader`, `Badge` y `Button`. No se envolvieron con su nombre viejo a
+propósito — dos nombres para una misma cosa es la «segunda tabla» que
+`lib/estados.ts` documenta como la forma concreta en que un sistema se rompe.
+
+### 9. Cómo se sostiene esto
 
 > «Un rojo aquí es un problema de enrutamiento, no de regla. Subir un piso,
 > ampliar una lista de excepciones o relajar un emparejador **registra** el
@@ -218,11 +252,18 @@ segunda dice qué pasó, qué sigue en pie y ofrece la única acción útil.
 Las jugadas legales son tres: usar la primitiva, añadir el token, o extraer el
 hermano. Y la causa raíz de que esta identidad se diluyera dos veces está
 diagnosticada en la misma doctrina: **donde existe una primitiva compartida la
-adopción es alta; donde no existe, la idea se reimplementa en cada sitio.** Por
-eso el sistema vive en `components/papel.tsx`, `components/marca.tsx`,
-`components/plegable.tsx`, `components/antiguedad.tsx`, `lib/estados.ts`,
-`lib/cifras.ts` y `lib/glosario.ts`, y no en cuarenta archivos que hay que
-acertar uno por uno.
+adopción es alta; donde no existe, la idea se reimplementa en cada sitio.** La
+pasada de shadcn/ui lo confirmó midiéndolo: `papel.tsx` existía y lo importaban
+**dos** archivos, mientras el resto del árbol dibujaba a mano cuatro campos de
+búsqueda con tres alturas, seis pantallas de «la fuente no contestó», dos marcas
+de estado sobre la misma tabla de colores y siete portadas con dos tamaños de
+titular. Por eso el sistema vive en las dos capas de §8 y no en cuarenta
+archivos que hay que acertar uno por uno.
+
+Y por eso una pieza nueva se añade **donde ya está su familia**: si es genérica,
+a `components/ui/`; si lleva una regla de esta casa, a `components/` con su
+porqué en la cabecera. Un componente suelto en una página es la primera línea de
+la próxima dilución.
 
 Y porque una regla que solo vive en un documento se vuelve a diluir, tres
 clases de infracción que esta pasada encontró a mano las busca ahora el gate

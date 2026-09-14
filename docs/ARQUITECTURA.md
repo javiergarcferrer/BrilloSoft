@@ -265,13 +265,49 @@ donde existe una primitiva la adopción es alta; donde no existe, la idea se
 reimplementa en cada archivo. Estas son las que hay, y usarlas es la jugada
 legal por defecto:
 
+### La capa de abajo: `components/ui/*` (shadcn/ui)
+Las piezas genéricas —superficie, botón, marca, campo, pestañas, hoja modal,
+desplegable, tabla, medidor— son **shadcn/ui**: código en el repositorio, no una
+dependencia de componentes, con Radix por debajo, `cva` para las variantes y
+`tailwind-merge` dentro de `cn` para que el sitio de uso pueda ajustar una clase
+sin pelearse con la base.
+
+No entraron por aspecto —ese ya lo teníamos— sino por lo que cuesta hacer bien a
+mano y casi nadie hace: **foco atrapado dentro de una hoja modal, recorrido con
+flechas, cierre con Escape y devolución del foco al disparador**. La hoja de
+filtros del buscador tenía las cuatro cosas mal.
+
+Ninguna decisión de color de la librería sobrevive. El puente de tokens al final
+de `@theme` en `app/globals.css` ata el vocabulario semántico de shadcn
+(`bg-background`, `text-muted-foreground`, `border-border`, `bg-primary`) a los
+tokens de «El Contrasello»: `background` **es** `canvas`, `primary` **es** la
+firma, `destructive` **es** el sello. Cambiar el papel se sigue haciendo en
+`--color-canvas` y las cuarenta primitivas lo siguen.
+
+Tres desviaciones deliberadas respecto a shadcn, todas escritas en la cabecera
+del archivo que las lleva:
+- **`Card` no flota**: sin `shadow-sm` y con `rounded-lg`, porque el papel se
+  separa con filete (§2 y §3 de la identidad). La sombra queda para lo que de
+  verdad se superpone: `dialog`, `sheet`, `popover`, `dropdown-menu`, `tooltip`.
+- **`Progress` no usa Radix**: es un componente de servidor. Esta plataforma
+  dibuja barras sobre todo en el servidor —veinte adjudicatarios, veintitantos
+  capítulos— y lo único que Radix aportaba eran cuatro atributos ARIA.
+- **Los iconos salen de `components/icons.tsx`**, no de `lucide-react`.
+
+### La capa de arriba: lo que ninguna librería puede traer
 | Primitiva | Qué resuelve |
 |---|---|
-| `components/papel.tsx` | El vocabulario del papel: `Hoja`, `CabeceraHoja`, `Rotulo`, `Cifra`, `TiraDeCifras`, `Marca`, `Accion`. |
+| `components/papel.tsx` | Lo que es doctrina y no aspecto: `Rotulo` (su punto es el sello), `Cifra` (un número **con su ancla**) y `TiraDeCifras`. `Hoja`, `CabeceraHoja`, `Marca` y `Accion` ya no existen: son `Card`, `CardHeader`, `Badge` y `Button`. |
+| `components/portada.tsx` | La banda de tinta con la pregunta, y su tira de cifras. Estaba copiada en siete páginas. |
+| `components/estado-vacio.tsx` | «No hay nada» y «no pudimos mirar», que no se pueden confundir: `variante="caida"` obliga a decir qué pasó, qué sigue en pie y cuál es la única acción útil. |
+| `components/marca-estado.tsx` | La marca de estado de un expediente, sea de la fuente que sea, sobre `lib/estados.ts`. Estaba escrita tres veces. |
+| `components/campo-busqueda.tsx` | El campo de búsqueda con su **alcance dicho debajo**, antes del toque y no después de «sin resultados». |
+| `components/nav-filtros.tsx` | La fila de filtros que **son enlaces** (tipo, año, cuatrienio): cada uno es una página que se comparte. |
 | `components/marca.tsx` | El contrasello: `Sello`, `SelloCompacto`, `Logotipo`. |
-| `components/plegable.tsx` | Revelación progresiva; el botón dice **cuántos hay**, nunca «ver más». |
+| `components/plegable.tsx` | Revelación progresiva sobre `ui/collapsible`; el botón dice **cuántos hay**, nunca «ver más». |
+| `components/bottom-sheet.tsx` | La hoja de filtros del teléfono, sobre `ui/sheet`. |
 | `components/antiguedad.tsx` | La fecha de una fila de listado: `<time>` real, relativa a la vista, exacta en el `title`. |
-| `components/esqueleto.tsx` | La silueta que se pinta mientras la fuente contesta, con las alturas del contenido. |
+| `components/esqueleto.tsx` | Las siluetas de **esta** plataforma —ficha, listado, tira de indicadores— compuestas con `ui/skeleton`, con las alturas del contenido. |
 | `lib/estados.ts` | **La única** tabla de color de estado, nombrada por significado (`accionable`, `contexto`, `cumplido`, `aviso`, `anulado`). Cada fuente traduce a esos cinco y no guarda tabla propia. También las **etapas** de un proceso de compras (`ETAPAS`, `etapaDe`): la otra traducción de `estado_proceso`, por predicado y no por literal, de la que salen tanto el color como `abierto`. |
 | `lib/cifras.ts` | Una cifra con su ancla y su alcance; prohíbe el `+∞ %`, la variación de un porcentaje en por ciento y el denominador sacado de una muestra. |
 | `lib/glosario.ts` | La jerga traducida en el punto de uso, no en un glosario que nadie abre. |
@@ -295,6 +331,11 @@ The sources are slow and outside our control, so the contract is that the
   and by sibling sections (`procesosRecientes` on `/`), so a render issues one
   upstream request per datum. Anything the page can compute without the
   network (legislature dates, counts of a sample) stays outside the boundary.
+- **La rejilla de la nómina no es `ui/table`**, y su cabecera lo dice: son cien
+  mil plazas virtualizadas, la fila se mide en píxeles para poder saltarse las
+  que no se ven y en teléfono se pliega a dos líneas. `ui/table` manda donde hay
+  un cuadro de datos normal (los artículos de un proceso); aquí manda el
+  desplazamiento fluido.
 - **Client lists keep the previous results on screen** while the next page
   loads (`aria-busy` + dimmed), never a skeleton swap; the skeleton is only
   for the first paint. `/licitaciones` renders a real silhouette as the
