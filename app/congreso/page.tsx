@@ -2,6 +2,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import IniciativaCard from "@/components/iniciativa-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EstadoVacio } from "@/components/estado-vacio";
 import BuscadorCongreso from "./buscador-congreso";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import {
@@ -60,10 +64,11 @@ export default async function CongresoPage({
       </header>
 
       {legislatura && diasParaCierre !== null && (
-        <Link
-          href="/congreso/perencion"
-          className="mb-5 flex items-center gap-3 rounded-lg border border-hairline bg-surface px-4 py-3  transition-colors hover:bg-canvas/60"
+        <Card
+          asChild
+          className="mb-5 transition-colors hover:bg-canvas/60"
         >
+          <Link href="/congreso/perencion" className="flex items-center gap-3 px-4 py-3">
           <IconClock className="h-5 w-5 shrink-0 text-alerta-600" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-ink">
@@ -78,7 +83,8 @@ export default async function CongresoPage({
             </p>
           </div>
           <IconArrowRight className="h-4 w-4 shrink-0 text-ink-soft" />
-        </Link>
+          </Link>
+        </Card>
       )}
 
       <BuscadorCongreso initial={q} />
@@ -123,7 +129,7 @@ async function ListaIniciativas({
           ) : null}
         </span>
         {grupo && (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-surface px-2.5 py-0.5 text-xs font-medium text-ink ring-1 ring-inset ring-hairline">
+          <Badge forma="etiqueta" variant="contorno" className="bg-surface text-ink">
             {grupo}
             <Link
               href={`/congreso${q ? `?q=${encodeURIComponent(q)}` : ""}`}
@@ -132,28 +138,25 @@ async function ListaIniciativas({
             >
               ×
             </Link>
-          </span>
+          </Badge>
         )}
       </div>
 
-      <section className="mt-3 overflow-hidden rounded-lg border border-hairline bg-surface ">
-        {iniciativas.length > 0 ? (
+      {iniciativas.length > 0 ? (
+        <Card as="section" className="mt-3">
           <ul>
             {iniciativas.map((ini) => (
               <IniciativaCard key={ini.id} iniciativa={ini} />
             ))}
           </ul>
-        ) : (
-          <div className="px-5 py-14 text-center">
-            <p className="text-sm font-medium text-ink">Sin resultados</p>
-            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
-              {q
-                ? "La búsqueda del SIL hace match de subcadena sobre la descripción. Probá con menos palabras."
-                : "El SIL no devolvió iniciativas para esta página."}
-            </p>
-          </div>
-        )}
-      </section>
+        </Card>
+      ) : (
+        <EstadoVacio titulo="Sin resultados" className="mt-3">
+          {q
+            ? "La búsqueda del SIL hace match de subcadena sobre la descripción. Prueba con menos palabras."
+            : "El SIL no devolvió iniciativas para esta página."}
+        </EstadoVacio>
+      )}
 
       {respuesta.total > 0 && (
         <Paginacion pagina={page} totalPaginas={totalPaginas} q={q} grupo={grupo} />
@@ -193,16 +196,15 @@ function Paginacion({
     return `/congreso${qs ? `?${qs}` : ""}`;
   };
 
-  const btn =
-    "inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-ink active:scale-95";
-
   return (
     <nav className="mt-5 flex items-center justify-between gap-4">
       {pagina > 1 ? (
-        <Link href={href(pagina - 1)} className={btn}>
-          <IconArrowLeft className="h-4 w-4" />
-          Anterior
-        </Link>
+        <Button asChild variant="secondary" size="sm">
+          <Link href={href(pagina - 1)}>
+            <IconArrowLeft className="h-4 w-4" />
+            Anterior
+          </Link>
+        </Button>
       ) : (
         <span />
       )}
@@ -212,10 +214,12 @@ function Paginacion({
       </span>
 
       {pagina < totalPaginas ? (
-        <Link href={href(pagina + 1)} className={btn}>
-          Siguiente
-          <IconArrowRight className="h-4 w-4" />
-        </Link>
+        <Button asChild variant="secondary" size="sm">
+          <Link href={href(pagina + 1)}>
+            Siguiente
+            <IconArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
       ) : (
         <span />
       )}

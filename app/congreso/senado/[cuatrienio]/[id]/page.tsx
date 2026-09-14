@@ -17,6 +17,8 @@ import VisorDocumento from "@/components/visor-documento";
 import { urlDeLectura } from "@/lib/documentos";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
+import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const revalidate = 3600;
 
@@ -149,7 +151,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         </div>
       )}
 
-      <section className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg border border-hairline bg-surface p-5  sm:grid-cols-3">
+      <Card as="section" className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
         <Dato etiqueta="Tipo" valor={ficha.tipo} />
         <Dato etiqueta="Cámara inicial" valor={ficha.camaraInicial} />
         <Dato etiqueta="Poder de origen" valor={ficha.poderOrigen} />
@@ -172,7 +174,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
               : null
           }
         />
-      </section>
+      </Card>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <Panel
@@ -281,13 +283,13 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-hairline bg-surface ">
-      <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-        <h2 className="font-sans text-sm font-semibold text-ink">{titulo}</h2>
-        {nota && <span className="font-mono text-xs tabular-nums text-ink-soft">{nota}</span>}
-      </div>
+    <Card as="section">
+      <CardHeader>
+        <CardTitle>{titulo}</CardTitle>
+        {nota && <CardAction className="font-mono tabular-nums">{nota}</CardAction>}
+      </CardHeader>
       {children}
-    </section>
+    </Card>
   );
 }
 
@@ -322,18 +324,17 @@ function Dato({
 
 function DocumentoEsqueleto() {
   return (
-    <section
-      aria-busy="true"
-      className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface "
-    >
-      <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-        <h2 className="font-sans text-sm font-semibold text-ink">El documento</h2>
-      </div>
+    <Card as="section" aria-busy="true" className="mt-5">
+      <CardHeader>
+        <CardTitle>El documento</CardTitle>
+      </CardHeader>
       <div className="px-5 py-4">
-        <div className="shimmer h-14 rounded-lg border border-hairline bg-canvas" />
-        <p className="mt-2 text-xs text-ink-soft">Localizando el archivo en el SIL del Senado…</p>
+        <Skeleton className="h-14 rounded-lg border border-hairline bg-canvas" />
+        <p className="mt-2 text-xs text-ink-soft">
+          Localizando el archivo en el SIL del Senado…
+        </p>
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -349,15 +350,15 @@ async function SeccionDocumento({ cuatrienio, id }: { cuatrienio: string; id: nu
     : null;
 
   return (
-    <section className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface ">
-      <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-        <h2 className="font-sans text-sm font-semibold text-ink">El documento</h2>
+    <Card as="section" className="mt-5">
+      <CardHeader>
+        <CardTitle>El documento</CardTitle>
         {documentos.length > 1 && (
-          <span className="font-mono text-xs tabular-nums text-ink-soft">
+          <CardAction className="font-mono tabular-nums">
             {documentos.length} piezas
-          </span>
+          </CardAction>
         )}
-      </div>
+      </CardHeader>
 
       {archivo && principal ? (
         <VisorDocumento
@@ -411,6 +412,6 @@ async function SeccionDocumento({ cuatrienio, id }: { cuatrienio: string; id: nu
             ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }

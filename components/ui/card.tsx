@@ -8,12 +8,14 @@
  */
 
 import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
 
 import { cn } from "@/lib/cn";
 
 function Card({
   className,
-  as: Etiqueta = "div",
+  as = "div",
+  asChild = false,
   ...props
 }: React.HTMLAttributes<HTMLElement> & {
   /**
@@ -22,7 +24,14 @@ function Card({
    * que es justo de lo que vive un lector de pantalla.
    */
   as?: "div" | "section" | "article" | "li";
+  /**
+   * La hoja entera es el enlace. Útil donde toda la tarjeta lleva al mismo
+   * sitio: un objetivo de toque grande vale más en un teléfono que un enlace
+   * de tres palabras dentro de una caja que no responde.
+   */
+  asChild?: boolean;
 }) {
+  const Etiqueta = asChild ? Slot : as;
   return (
     <Etiqueta
       data-slot="card"

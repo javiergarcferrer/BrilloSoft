@@ -15,6 +15,10 @@ import { IconSearch } from "@/components/icons";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import { cn } from "@/lib/cn";
 import Antiguedad from "@/components/antiguedad";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { EstadoVacio } from "@/components/estado-vacio";
 
 export const metadata: Metadata = {
   title: "Senado",
@@ -56,24 +60,26 @@ export default async function SenadoPage({
       <form action="/congreso/senado" method="get" className="flex gap-2">
         <div className="relative flex-1">
           <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
-          <input
+          {/*
+            Esta búsqueda es un formulario GET de servidor —no hay estado de
+            cliente que compartir—, así que usa el campo directamente y no
+            `CampoBusqueda`, que vive del estado. Mismo vestido, otra mecánica.
+          */}
+          <Input
             type="search"
             name="q"
             defaultValue={q}
             placeholder="Buscar en las descripciones — p. ej. “código penal”"
             aria-label="Buscar expedientes del Senado"
-            className="h-11 w-full rounded-lg border border-hairline bg-surface pl-9 pr-3 text-sm text-ink  placeholder:text-ink-soft/70 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            className="pl-9"
           />
         </div>
         {cuatrienio.etiqueta !== CUATRIENIO_VIGENTE.etiqueta && (
           <input type="hidden" name="c" value={cuatrienio.etiqueta} />
         )}
-        <button
-          type="submit"
-          className="h-11 shrink-0 rounded-lg bg-brand-600 px-5 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700 active:scale-95"
-        >
+        <Button type="submit" className="shrink-0">
           Buscar
-        </button>
+        </Button>
       </form>
       <p className="mt-2 text-xs leading-relaxed text-ink-soft">
         La búsqueda del Senado es literal y distingue tildes: «educación» no
@@ -89,19 +95,23 @@ export default async function SenadoPage({
           if (c.etiqueta !== CUATRIENIO_VIGENTE.etiqueta) sp.set("c", c.etiqueta);
           const qs = sp.toString();
           return (
-            <Link
+            <Button
               key={c.etiqueta}
-              href={`/congreso/senado${qs ? `?${qs}` : ""}`}
-              aria-current={activa ? "page" : undefined}
+              asChild
+              variant={activa ? "default" : "secondary"}
+              size="sm"
               className={cn(
-                "rounded-md px-3 py-1 font-mono text-xs tabular-nums ring-1 ring-inset transition-colors",
-                activa
-                  ? "bg-brand-600 font-semibold text-canvas ring-brand-600"
-                  : "bg-surface text-ink-soft ring-hairline hover:text-ink",
+                "font-mono tabular-nums",
+                activa ? "bg-brand-600 hover:bg-brand-700" : "text-ink-soft hover:text-ink",
               )}
             >
-              {c.etiqueta}
-            </Link>
+              <Link
+                href={`/congreso/senado${qs ? `?${qs}` : ""}`}
+                aria-current={activa ? "page" : undefined}
+              >
+                {c.etiqueta}
+              </Link>
+            </Button>
           );
         })}
       </nav>
@@ -145,24 +155,21 @@ async function ListadoSenado({ q, etiqueta }: { q: string; etiqueta: string }) {
             </span>
           </div>
 
-          <section className="mt-3 overflow-hidden rounded-lg border border-hairline bg-surface ">
-            {listado.expedientes.length > 0 ? (
+          {listado.expedientes.length > 0 ? (
+            <Card as="section" className="mt-3">
               <ul>
                 {listado.expedientes.map((exp) => (
                   <ExpedienteRow key={exp.id} exp={exp} />
                 ))}
               </ul>
-            ) : (
-              <div className="px-5 py-14 text-center">
-                <p className="text-sm font-medium text-ink">Sin resultados</p>
-                <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
-                  {q
-                    ? "El consultante busca la subcadena exacta, con tildes. Probá con menos palabras o revisá los acentos."
-                    : "El Senado no devolvió expedientes para esta colección."}
-                </p>
-              </div>
-            )}
-          </section>
+            </Card>
+          ) : (
+            <EstadoVacio titulo="Sin resultados" className="mt-3">
+              {q
+                ? "El consultante busca la subcadena exacta, con tildes. Prueba con menos palabras o revisa los acentos."
+                : "El Senado no devolvió expedientes para esta colección."}
+            </EstadoVacio>
+          )}
 
           {listado.total > listado.expedientes.length && (
             <p className="mt-4 text-xs leading-relaxed text-ink-soft">
@@ -173,13 +180,14 @@ async function ListadoSenado({ q, etiqueta }: { q: string; etiqueta: string }) {
           )}
         </>
       ) : (
-        <section className="mt-4 rounded-lg border border-hairline bg-surface px-5 py-12 text-center ">
-          <p className="text-sm font-medium text-ink">El Senado no respondió</p>
-          <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
-            El sistema de consulta del Senado está caído o rechazó la conexión.
-            Los datos vuelven solos cuando el origen se restablece.
-          </p>
-        </section>
+        <EstadoVacio
+          variante="caida"
+          titulo="El Senado no respondió"
+          className="mt-4"
+        >
+          El sistema de consulta del Senado está caído o rechazó la conexión. Los
+          datos vuelven solos cuando el origen se restablece.
+        </EstadoVacio>
       )}
     </>
   );

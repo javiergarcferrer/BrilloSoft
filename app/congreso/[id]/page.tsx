@@ -19,6 +19,8 @@ import { getAgregado, refIniciativa } from "@/lib/democracia";
 import VotoWidget from "@/components/democracia/voto-widget";
 import Dossier from "@/components/congreso/dossier";
 import Plegable from "@/components/plegable";
+import { Alert } from "@/components/ui/alert";
+import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
 
@@ -107,12 +109,9 @@ export default async function IniciativaPage({ params }: Props) {
       </header>
 
       {perencion && perencion.estado !== "sin-datos" && (
-        <section
-          className={
-            perencion.estado === "en-riesgo"
-              ? "mt-5 rounded-lg border border-alerta-600/20 bg-alerta-50 px-4 py-3"
-              : "mt-5 rounded-lg border border-hairline bg-surface px-4 py-3 "
-          }
+        <Alert
+          variant={perencion.estado === "en-riesgo" ? "aviso" : "neutro"}
+          className="mt-5"
         >
           <p
             className={
@@ -131,7 +130,7 @@ export default async function IniciativaPage({ params }: Props) {
             {perencion.legislatura.nombre} {perencion.legislatura.anio} · cierra el{" "}
             {formatFecha(perencion.legislatura.cierre.toISOString().slice(0, 10))}
           </p>
-        </section>
+        </Alert>
       )}
 
       {/*
@@ -361,13 +360,13 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-hairline bg-surface ">
-      <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-        <h2 className="font-sans text-sm font-semibold text-ink">{titulo}</h2>
-        {nota && <span className="font-mono text-xs tabular-nums text-ink-soft">{nota}</span>}
-      </div>
+    <Card as="section">
+      <CardHeader>
+        <CardTitle>{titulo}</CardTitle>
+        {nota && <CardAction className="font-mono tabular-nums">{nota}</CardAction>}
+      </CardHeader>
       {children}
-    </section>
+    </Card>
   );
 }
 

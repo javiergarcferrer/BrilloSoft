@@ -1,6 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import IniciativaCard from "@/components/iniciativa-card";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { EstadoVacio } from "@/components/estado-vacio";
 import {
   DURACION_LEGISLATURA_DIAS,
   VENTANA_ALERTA_DIAS,
@@ -47,13 +51,17 @@ export default async function PerencionPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <Link
-        href="/congreso"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+      <Button
+        asChild
+        variant="link"
+        size="sm"
+        className="h-auto gap-1.5 px-0 text-xs text-ink-soft hover:text-ink"
       >
-        <IconArrowLeft className="h-3.5 w-3.5" />
-        Congreso
-      </Link>
+        <Link href="/congreso">
+          <IconArrowLeft className="h-3.5 w-3.5" />
+          Congreso
+        </Link>
+      </Button>
 
       <header className="mb-6 mt-3">
         <h1 className="font-display text-3xl text-ink sm:text-4xl">
@@ -67,7 +75,7 @@ export default async function PerencionPage() {
       </header>
 
       {legislatura && diasParaCierre !== null && (
-        <section className="mb-6 rounded-lg border border-hairline bg-surface p-5 ">
+        <Card as="section" className="mb-6 p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-ink">
@@ -85,42 +93,43 @@ export default async function PerencionPage() {
               </span>
             </p>
           </div>
-          <div className="mt-4 h-1.5 overflow-hidden rounded-sm border border-hairline bg-canvas">
-            <div
-              className="h-full bg-alerta-500"
-              style={{ width: `${progreso}%` }}
-            />
-          </div>
-        </section>
+          {/*
+            Lo que corre no es un logro sino un plazo: por eso la barra va en
+            ocre —el color del aviso— y no en la firma.
+          */}
+          <Progress
+            value={progreso}
+            aria-label={`Legislatura consumida al ${progreso} %`}
+            className="mt-4 h-1.5 border border-hairline bg-canvas"
+            indicadorClassName="bg-alerta-500"
+          />
+        </Card>
       )}
 
-      <section className="overflow-hidden rounded-lg border border-hairline bg-surface ">
-        <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-          <h2 className="font-sans text-sm font-semibold text-ink">
-            Piezas en la ventana de aviso
-          </h2>
-          <span className="font-mono text-xs tabular-nums text-ink-soft">{enRiesgo.length}</span>
-        </div>
-
-        {enRiesgo.length > 0 ? (
+      {enRiesgo.length > 0 ? (
+        <Card as="section">
+          <CardHeader>
+            <CardTitle>Piezas en la ventana de aviso</CardTitle>
+            <CardAction className="font-mono tabular-nums">
+              {enRiesgo.length}
+            </CardAction>
+          </CardHeader>
           <ul>
             {enRiesgo.map(({ ini }) => (
               <IniciativaCard key={ini.id} iniciativa={ini} />
             ))}
           </ul>
-        ) : (
-          <div className="px-5 py-14 text-center">
-            <p className="text-sm font-medium text-ink">
-              Ninguna pieza entra hoy en la ventana de {VENTANA_ALERTA_DIAS} días
-            </p>
-            <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-ink-soft">
-              Se revisaron {vivas.length} piezas vigentes dentro de una muestra de{" "}
-              {muestra.muestra}. La alerta se activa cuando el cierre de la legislatura
-              queda a {VENTANA_ALERTA_DIAS} días o menos.
-            </p>
-          </div>
-        )}
-      </section>
+        </Card>
+      ) : (
+        <EstadoVacio
+          rotulo="Piezas en la ventana de aviso"
+          titulo={`Ninguna pieza entra hoy en la ventana de ${VENTANA_ALERTA_DIAS} días`}
+        >
+          Se revisaron {vivas.length} piezas vigentes dentro de una muestra de{" "}
+          {muestra.muestra}. La alerta se activa cuando el cierre de la legislatura
+          queda a {VENTANA_ALERTA_DIAS} días o menos.
+        </EstadoVacio>
+      )}
 
       <p className="mt-5 text-xs leading-relaxed text-ink-soft">
         Cobertura parcial: se evalúan las {muestra.muestra} iniciativas más recientes
