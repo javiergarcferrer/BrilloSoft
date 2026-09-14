@@ -19,6 +19,15 @@ import { getResumenNomina } from "@/lib/nomina-server";
 import { diasHasta, formatMagnitud, formatMonto, formatPesos } from "@/lib/format";
 import { SECCIONES } from "@/lib/secciones";
 import { Esqueleto, EsqueletoLineas } from "@/components/esqueleto";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   IconArrowRight,
   IconChartBar,
@@ -97,20 +106,28 @@ export default function Panorama() {
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2.5">
-            <Link
-              href="/licitaciones"
-              className="inline-flex items-center gap-2 rounded-lg bg-canvas px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-surface active:scale-95"
+            {/*
+              Sobre la banda de tinta la llamada principal se invierte: papel
+              sobre tinta. El `hover` sube a `surface` —la hoja—, que es un paso
+              real de la escala y no el mismo relleno repetido.
+            */}
+            <Button asChild size="lg" className="bg-canvas text-ink hover:bg-surface">
+              <Link href="/licitaciones">
+                <IconSearch className="h-4 w-4" />
+                Buscar licitaciones
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="tinta"
+              className="border border-canvas/20 bg-canvas/10 text-canvas hover:bg-canvas/20"
             >
-              <IconSearch className="h-4 w-4" />
-              Buscar licitaciones
-            </Link>
-            <Link
-              href="/congreso"
-              className="inline-flex items-center gap-2 rounded-lg border border-canvas/20 bg-canvas/10 px-5 py-2.5 text-sm font-semibold text-canvas ring-1 ring-inset ring-canvas/20 transition-colors hover:bg-canvas/15 active:scale-95"
-            >
-              <IconLayers className="h-4 w-4" />
-              Explorar el Congreso
-            </Link>
+              <Link href="/congreso">
+                <IconLayers className="h-4 w-4" />
+                Explorar el Congreso
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -333,25 +350,26 @@ async function SeccionDeuda() {
   if (!deuda) return null;
 
   return (
-    <section className="rounded-lg border border-hairline bg-surface p-5 ">
+    <Card as="section" className="p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 font-sans text-sm font-semibold text-ink">
+          <CardTitle className="flex items-center gap-2">
             <IconTrendingUp className="h-4 w-4 text-ink-soft" />
             Deuda pública
-          </h2>
+          </CardTitle>
           <p className="mt-0.5 text-xs text-ink-soft">
             Sector Público No Financiero · saldo a {deuda.periodo}
           </p>
         </div>
-        <a
-          href="https://www.creditopublico.gob.do/inicio/estadisticas"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs font-medium text-brand-700 hover:underline"
-        >
-          Crédito Público ↗
-        </a>
+        <Button asChild variant="link" size="sm" className="h-auto px-0 text-xs">
+          <a
+            href="https://www.creditopublico.gob.do/inicio/estadisticas"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Crédito Público ↗
+          </a>
+        </Button>
       </div>
       <div className="mt-4 grid grid-cols-3 gap-4">
         <IndicadorDeuda
@@ -372,7 +390,7 @@ async function SeccionDeuda() {
           </>
         )}
       </p>
-    </section>
+    </Card>
   );
 }
 
@@ -400,9 +418,13 @@ async function PanelCierran() {
                 href={`/procesos/${encodeURIComponent(p.codigo_proceso)}`}
                 className="flex items-start gap-3 px-5 py-3 transition-colors hover:bg-canvas/60"
               >
-                <span className="mt-0.5 shrink-0 rounded-md bg-alerta-50 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-alerta-600 ring-1 ring-inset ring-alerta-600/20">
+                <Badge
+                  forma="etiqueta"
+                  variant="alerta"
+                  className="mt-0.5 font-mono tabular-nums ring-1 ring-inset ring-alerta-600/20"
+                >
                   {dias === 0 ? "hoy" : `${dias} d`}
-                </span>
+                </Badge>
                 <span className="min-w-0 flex-1">
                   <span className="line-clamp-2 block text-sm text-ink">{p.titulo}</span>
                   <span className="mt-0.5 block truncate text-xs text-ink-soft">
@@ -499,7 +521,7 @@ function Dominio({
   disponible: boolean;
 }) {
   return (
-    <article className="flex flex-col rounded-lg border border-hairline bg-surface p-5 ">
+    <Card as="article" className="flex flex-col p-5">
       <div className="flex items-start gap-3">
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${chip}`}>
           <Icon className="h-[18px] w-[18px]" />
@@ -534,14 +556,17 @@ function Dominio({
         </p>
       )}
 
-      <Link
-        href={href}
-        className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 transition-colors hover:text-brand-600"
+      <Button
+        asChild
+        variant="link"
+        className="mt-5 h-auto justify-start gap-1.5 px-0 font-semibold"
       >
-        {cta}
-        <IconArrowRight className="h-4 w-4" />
-      </Link>
-    </article>
+        <Link href={href}>
+          {cta}
+          <IconArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </Card>
   );
 }
 
@@ -555,10 +580,7 @@ function DominioEsqueleto({
 }) {
   const s = hue[seccion];
   return (
-    <article
-      aria-busy="true"
-      className="flex flex-col rounded-lg border border-hairline bg-surface p-5 "
-    >
+    <Card as="article" aria-busy="true" className="flex flex-col p-5">
       <div className="flex items-start gap-3">
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${s.hue.chip}`}>
           <Icon className="h-[18px] w-[18px]" />
@@ -570,20 +592,20 @@ function DominioEsqueleto({
       </div>
       <div className="mt-4 flex-1 space-y-3">
         <div className="flex items-baseline justify-between gap-3">
-          <div className="shimmer h-3 w-28 rounded-md bg-hairline/70" />
-          <div className="shimmer h-5 w-16 rounded-md bg-hairline/70" />
+          <Skeleton className="h-3 w-28 bg-hairline/70" />
+          <Skeleton className="h-5 w-16 bg-hairline/70" />
         </div>
         <div className="flex items-baseline justify-between gap-3">
-          <div className="shimmer h-3 w-24 rounded-md bg-hairline/70" />
-          <div className="shimmer h-3.5 w-20 rounded-md bg-hairline/70" />
+          <Skeleton className="h-3 w-24 bg-hairline/70" />
+          <Skeleton className="h-3.5 w-20 bg-hairline/70" />
         </div>
         <div className="flex items-baseline justify-between gap-3">
-          <div className="shimmer h-3 w-32 rounded-md bg-hairline/70" />
-          <div className="shimmer h-3.5 w-12 rounded-md bg-hairline/70" />
+          <Skeleton className="h-3 w-32 bg-hairline/70" />
+          <Skeleton className="h-3.5 w-12 bg-hairline/70" />
         </div>
       </div>
       <span className="mt-5 text-sm text-ink-soft">Consultando la fuente…</span>
-    </article>
+    </Card>
   );
 }
 
@@ -601,19 +623,21 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-hairline bg-surface ">
-      <div className="flex items-center justify-between border-b border-hairline px-5 py-3.5">
-        <h2 className="flex items-center gap-2 font-sans text-sm font-semibold text-ink">
+    <Card as="section">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-ink-soft" />
           {titulo}
-        </h2>
-        <Link href={href} className="text-xs font-medium text-brand-700 hover:underline">
-          Ver todas
-        </Link>
-      </div>
+        </CardTitle>
+        <CardAction>
+          <Button asChild variant="link" size="sm" className="h-auto px-0 text-xs">
+            <Link href={href}>Ver todas</Link>
+          </Button>
+        </CardAction>
+      </CardHeader>
       {children}
       <span className="sr-only">{nota}</span>
-    </section>
+    </Card>
   );
 }
 
@@ -647,7 +671,7 @@ function IndicadorDeuda({
   destacar?: boolean;
 }) {
   return (
-    <div className="rounded-lg bg-canvas/60 px-4 py-3 border border-hairline">
+    <Card className="bg-canvas/60 px-4 py-3">
       <div className="text-xs text-ink-soft">{etiqueta}</div>
       {/*
         Las tres cifras son comparables entre sí, así que las tres van en mono
@@ -664,6 +688,6 @@ function IndicadorDeuda({
       >
         {valor}
       </div>
-    </div>
+    </Card>
   );
 }

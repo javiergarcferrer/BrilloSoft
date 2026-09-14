@@ -1,7 +1,6 @@
 "use client";
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { cn } from "@/lib/cn";
 import {
   IconBuilding,
   IconChartBar,
@@ -30,6 +29,25 @@ import {
 } from "@/lib/nomina";
 import { BarList, Histogram } from "./charts";
 import { DataTable, type SortDir, type SortKey } from "./data-table";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const norm = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -57,9 +75,7 @@ export function Explorer() {
 
   if (error) {
     return (
-      <p className="rounded-lg border border-hairline bg-surface p-6 text-sm text-ink-soft">
-        {error}
-      </p>
+      <Card className="p-6 text-sm text-ink-soft">{error}</Card>
     );
   }
   if (!data) {
@@ -68,13 +84,16 @@ export function Explorer() {
     return (
       <div role="status" aria-busy="true" className="space-y-5">
         <span className="sr-only">Cargando la nómina consolidada…</span>
-        <div className="shimmer h-20 rounded-lg border border-hairline bg-surface" />
+        <Skeleton className="h-20 rounded-lg border border-hairline bg-surface" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="shimmer h-24 rounded-lg border border-hairline bg-surface" />
+            <Skeleton
+              key={i}
+              className="h-24 rounded-lg border border-hairline bg-surface"
+            />
           ))}
         </div>
-        <div className="shimmer h-72 rounded-lg border border-hairline bg-surface" />
+        <Skeleton className="h-72 rounded-lg border border-hairline bg-surface" />
       </div>
     );
   }
@@ -254,69 +273,87 @@ function ExplorerReady({ data }: { data: NominaData }) {
   return (
     <div className="space-y-5">
       {/* ---------- filter bar ---------- */}
-      <div className="rounded-lg border border-hairline bg-surface p-4  sm:p-5">
+      <Card className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <label className="relative flex-1">
+            <span className="sr-only">Buscar por institución, área o cargo</span>
             <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
-            <input
+            <Input
               value={queryInput}
               onChange={(e) => setQueryInput(e.target.value)}
               placeholder="Buscar por institución, área o cargo…"
-              className="h-11 w-full rounded-lg border border-hairline bg-canvas pl-10 pr-9 text-sm outline-none focus:border-brand-400"
+              className="bg-canvas pl-10 pr-9"
             />
             {queryInput && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setQueryInput("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-soft hover:text-ink"
-                aria-label="Limpiar búsqueda"
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-ink-soft"
               >
                 <IconX className="h-4 w-4" />
-              </button>
+                <span className="sr-only">Limpiar búsqueda</span>
+              </Button>
             )}
           </label>
 
-          <select
-            value={instId ?? ""}
-            onChange={(e) => setInstId(e.target.value === "" ? null : Number(e.target.value))}
-            className="h-11 rounded-lg border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400 lg:max-w-xs"
+          <Select
+            value={instId === null ? "todas" : String(instId)}
+            onValueChange={(v) => setInstId(v === "todas" ? null : Number(v))}
           >
-            <option value="">Todas las instituciones ({data.instituciones.length})</option>
-            {data.instituciones.map((o, i) => (
-              <option key={o.codigo} value={i}>
-                {o.nombre}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger
+              aria-label="Filtrar por institución"
+              className="bg-canvas lg:max-w-xs"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">
+                Todas las instituciones ({data.instituciones.length})
+              </SelectItem>
+              {data.instituciones.map((o, i) => (
+                <SelectItem key={o.codigo} value={String(i)} ayuda={o.codigo}>
+                  {o.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <div className="flex items-center gap-2">
-            <input
+            <Input
               type="number"
               inputMode="numeric"
               value={salMin}
               onChange={(e) => setSalMin(e.target.value)}
               placeholder="Sueldo mín."
-              className="h-11 w-28 rounded-lg border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400"
+              aria-label="Sueldo mínimo"
+              className="w-28 bg-canvas"
             />
-            <span className="text-ink-soft">–</span>
-            <input
+            <span aria-hidden className="text-ink-soft">
+              –
+            </span>
+            <Input
               type="number"
               inputMode="numeric"
               value={salMax}
               onChange={(e) => setSalMax(e.target.value)}
               placeholder="máx."
-              className="h-11 w-24 rounded-lg border border-hairline bg-canvas px-4 text-sm outline-none focus:border-brand-400"
+              aria-label="Sueldo máximo"
+              className="w-24 bg-canvas"
             />
           </div>
 
           {hasFilters && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={reset}
-              className="inline-flex items-center gap-1.5 self-start rounded-md px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 lg:self-auto"
+              className="self-start text-brand-700 lg:self-auto"
             >
               <IconX className="h-3.5 w-3.5" /> Limpiar
-            </button>
+            </Button>
           )}
         </div>
 
@@ -327,7 +364,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
             {formatInt(instSel.plazas)} plazas
           </p>
         )}
-      </div>
+      </Card>
 
       {/* ---------- KPI cards ---------- */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -354,29 +391,42 @@ function ExplorerReady({ data }: { data: NominaData }) {
         <Kpi icon={IconMapPin} label="Cargos distintos" value={formatInt(kpis.cargos)} />
       </div>
 
-      {/* ---------- view tabs ---------- */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="inline-flex rounded-lg border border-hairline bg-surface p-1">
-          <TabBtn active={view === "resumen"} onClick={() => setView("resumen")} icon={IconChartBar}>
-            Resumen
-          </TabBtn>
-          <TabBtn active={view === "tabla"} onClick={() => setView("tabla")} icon={IconLayers}>
-            Tabla
-          </TabBtn>
+      {/* ---------- vistas ---------- */}
+      <Tabs value={view} onValueChange={(v) => setView(v as View)}>
+        <div className="flex items-center justify-between gap-3">
+          <TabsList className="w-auto">
+            <TabsTrigger value="resumen">
+              <IconChartBar className="h-4 w-4" />
+              Resumen
+            </TabsTrigger>
+            <TabsTrigger value="tabla">
+              <IconLayers className="h-4 w-4" />
+              Tabla
+            </TabsTrigger>
+          </TabsList>
+          {/*
+            El conteo cambia sin navegar —cada tecla del buscador lo mueve—, así
+            que vive en una región cortés: quien no ve la pantalla se entera de
+            que su filtro recortó a 412 plazas.
+          */}
+          <p aria-live="polite" className="text-sm text-ink-soft">
+            <span className="font-semibold text-ink">{formatInt(kpis.count)}</span> de{" "}
+            {formatInt(data.rows.length)} plazas
+          </p>
         </div>
-        <p className="text-sm text-ink-soft">
-          <span className="font-semibold text-ink">{formatInt(kpis.count)}</span> de{" "}
-          {formatInt(data.rows.length)} plazas
-        </p>
-      </div>
 
-      {view === "resumen" ? (
-        <div className="space-y-5">
-          <Card
+        <TabsContent value="resumen" className="space-y-5">
+          <Panel
             title="Instituciones"
             subtitle="Cada institución aporta su último mes publicado (clic para filtrar)"
             action={
-              <div className="inline-flex rounded-lg border border-hairline p-0.5 text-xs">
+              <ToggleGroup
+                type="single"
+                value={metric}
+                onValueChange={(v) => v && setMetric(v as Metric)}
+                aria-label="Qué se mide en el ranking"
+                className="p-0.5"
+              >
                 {(
                   [
                     ["total", "Masa"],
@@ -384,19 +434,11 @@ function ExplorerReady({ data }: { data: NominaData }) {
                     ["avg", "Promedio"],
                   ] as [Metric, string][]
                 ).map(([m, lbl]) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMetric(m)}
-                    className={cn(
-                      "rounded-md px-2.5 py-1 transition-colors",
-                      metric === m ? "bg-brand-600 text-canvas" : "text-ink-soft hover:text-ink",
-                    )}
-                  >
+                  <ToggleGroupItem key={m} value={m} className="px-2.5 py-1 text-xs">
                     {lbl}
-                  </button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             }
           >
             <BarList
@@ -413,10 +455,10 @@ function ExplorerReady({ data }: { data: NominaData }) {
               onSelect={(id) => setInstId(id === instId ? null : id)}
               selectedId={instId}
             />
-          </Card>
+          </Panel>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <Card title="Top áreas por gasto">
+            <Panel title="Top áreas por gasto">
               <BarList
                 items={topAreas.map((g) => ({
                   id: g.key,
@@ -426,9 +468,9 @@ function ExplorerReady({ data }: { data: NominaData }) {
                 }))}
                 format={formatCompactDOP}
               />
-            </Card>
+            </Panel>
 
-            <Card title="Top cargos por gasto">
+            <Panel title="Top cargos por gasto">
               <BarList
                 items={topCargos.map((g) => ({
                   id: g.key,
@@ -438,30 +480,26 @@ function ExplorerReady({ data }: { data: NominaData }) {
                 }))}
                 format={formatCompactDOP}
               />
-            </Card>
+            </Panel>
           </div>
 
-          <Card
+          <Panel
             title="Distribución salarial"
             subtitle={`Sueldo mediano ${formatDOP(kpis.median)} · promedio ${formatDOP(kpis.avg)}`}
           >
             <Histogram bins={histogram} />
-          </Card>
-        </div>
-      ) : (
-        <div className="space-y-3">
+          </Panel>
+        </TabsContent>
+
+        <TabsContent value="tabla" className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-ink-soft">
               Ordenado por <span className="font-medium text-ink">{sortLabel(sortKey)}</span> (
               {sortDir === "asc" ? "asc" : "desc"})
             </p>
-            <button
-              type="button"
-              onClick={exportCsv}
-              className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-canvas  transition-colors hover:bg-brand-700"
-            >
+            <Button type="button" onClick={exportCsv}>
               <IconDownload className="h-4 w-4" /> Exportar CSV
-            </button>
+            </Button>
           </div>
           <DataTable
             rows={sorted}
@@ -472,8 +510,8 @@ function ExplorerReady({ data }: { data: NominaData }) {
             sortDir={sortDir}
             onSort={handleSort}
           />
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
 
       <p className="pt-1 text-xs leading-relaxed text-ink-soft">
         Foto transversal: el último mes publicado por cada una de las{" "}
@@ -531,18 +569,24 @@ function Kpi({
   base?: string;
 }) {
   return (
-    <div className="rounded-lg border border-hairline bg-surface p-3.5">
+    <Card className="p-3.5">
       <div className="flex items-center gap-1.5 text-ink-soft">
         <Icon className="h-3.5 w-3.5" />
         <span className="rotulo">{label}</span>
       </div>
       <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums text-ink">{value}</p>
       {base && <p className="mt-1 text-[11px] leading-snug text-ink-soft">{base}</p>}
-    </div>
+    </Card>
   );
 }
 
-function Card({
+/**
+ * Un panel del explorador: cabecera con título, subtítulo y su control a la
+ * derecha. Es `Card` de `components/ui` con el título en serif, que es lo que
+ * la identidad reserva a un titular de sección grande — un título de panel de
+ * 14 px iría en sans.
+ */
+function Panel({
   title,
   subtitle,
   action,
@@ -554,41 +598,15 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-hairline bg-surface p-4  sm:p-5">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="font-display text-lg text-ink">{title}</h2>
+    <Card>
+      <CardHeader className="items-start px-4 py-4 sm:px-5">
+        <div className="min-w-0">
+          <CardTitle className="font-display text-lg">{title}</CardTitle>
           {subtitle && <p className="mt-0.5 text-sm text-ink-soft">{subtitle}</p>}
         </div>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function TabBtn({
-  active,
-  onClick,
-  icon: Icon,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: IconType;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-        active ? "bg-brand-600 text-canvas " : "text-ink-soft hover:text-ink",
-      )}
-    >
-      <Icon className="h-4 w-4" />
-      {children}
-    </button>
+        {action && <CardAction>{action}</CardAction>}
+      </CardHeader>
+      <CardContent className="px-4 py-4 sm:px-5">{children}</CardContent>
+    </Card>
   );
 }

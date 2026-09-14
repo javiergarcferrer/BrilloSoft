@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { Card } from "@/components/ui/card";
+import { IconChevronDown, IconChevronUpDown } from "@/components/icons";
 import {
   COL,
   formatDOP,
@@ -50,8 +52,17 @@ export function DataTable({
   const end = Math.min(total, Math.ceil((scrollTop + VIEWPORT_H) / ROW_H) + OVERSCAN);
   const visible = rows.slice(start, end);
 
+  /*
+    Esta rejilla **no** es la `Table` de `components/ui`: son cien mil plazas
+    virtualizadas, la fila se mide en píxeles para poder saltarse las que no se
+    ven, y en teléfono se pliega a dos líneas. Una `<table>` con esa mecánica
+    pintaría igual y costaría el desplazamiento fluido, que es justo lo que
+    esta vista vende. La primitiva se usa donde manda un cuadro de datos
+    normal; aquí manda el rendimiento, y queda dicho para que nadie lo
+    «unifique» sin saberlo.
+  */
   return (
-    <div className="overflow-hidden rounded-lg border border-hairline bg-surface">
+    <Card>
       <div
         className={cn(
           GRID,
@@ -128,7 +139,7 @@ export function DataTable({
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -164,25 +175,12 @@ function HeaderCell({
   );
 }
 
+/** El glifo del orden, del juego de iconos de la casa y no de un svg suelto. */
 function SortGlyph({ active, dir }: { active: boolean; dir: SortDir }) {
+  if (!active) return <IconChevronUpDown className="h-3.5 w-3.5 opacity-40" />;
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className={cn("h-3.5 w-3.5", active ? "opacity-100" : "opacity-40")}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {!active ? (
-        <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />
-      ) : dir === "asc" ? (
-        <path d="M6 14l6-6 6 6" />
-      ) : (
-        <path d="M6 10l6 6 6-6" />
-      )}
-    </svg>
+    <IconChevronDown
+      className={cn("h-3.5 w-3.5", dir === "asc" && "rotate-180")}
+    />
   );
 }

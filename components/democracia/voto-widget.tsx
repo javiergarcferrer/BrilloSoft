@@ -5,6 +5,10 @@ import Link from "next/link";
 import { supabase, db } from "@/lib/supabase";
 import type { Agregado, Camara } from "@/lib/democracia";
 import { cn } from "@/lib/cn";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 /**
  * Widget de voto ciudadano (a favor / en contra) sobre una iniciativa, embebido en su ficha.
@@ -130,7 +134,7 @@ export default function VotoWidget({
   const pctFavor = total > 0 ? Math.round((agg.a_favor / total) * 100) : 0;
 
   return (
-    <section className="rounded-lg border border-brand-100 bg-brand-50/50 p-5 ">
+    <Card as="section" className="border-brand-100 bg-brand-50/50 p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="font-sans flex items-center gap-2 text-sm font-semibold text-ink">
@@ -156,10 +160,11 @@ export default function VotoWidget({
       */}
       {total > 0 && miVoto !== null && (
         <div className="mt-4">
-          <div className="flex h-2.5 overflow-hidden rounded-sm ring-1 ring-inset ring-hairline">
-            <div className="bg-brand-500" style={{ width: `${pctFavor}%` }} />
-            <div className="flex-1 bg-ink-soft/30" />
-          </div>
+          <Progress
+            value={pctFavor}
+            aria-label={`${pctFavor} % a favor`}
+            className="h-2.5 bg-ink-soft/30 ring-1 ring-inset ring-hairline"
+          />
           <div className="font-mono mt-1.5 flex justify-between text-xs tabular-nums text-ink-soft">
             <span className="font-medium text-brand-600">{pctFavor}% a favor</span>
             <span className="font-medium text-sello-600">{100 - pctFavor}% en contra</span>
@@ -179,7 +184,10 @@ export default function VotoWidget({
         después de un error.
       */}
       {(estado === "anon" || estado === "sin-registro") && (
-        <p className="mt-4 rounded-lg border border-hairline bg-canvas px-3.5 py-2.5 text-xs leading-relaxed text-ink-soft">
+        <Alert
+          variant="neutro"
+          className="mt-4 bg-canvas px-3.5 py-2.5 text-xs leading-relaxed text-ink-soft"
+        >
           {estado === "anon" ? (
             <>
               Para votar hace falta{" "}
@@ -203,7 +211,7 @@ export default function VotoWidget({
               para votar.
             </>
           )}
-        </p>
+        </Alert>
       )}
 
       {/* botones */}
@@ -228,8 +236,12 @@ export default function VotoWidget({
         </BotonVoto>
       </div>
 
-      {error && <p className="mt-3 text-xs font-medium text-alerta-700">{error}</p>}
-    </section>
+      {error && (
+        <Alert variant="sello" className="mt-3 px-3.5 py-2.5 text-xs font-medium">
+          {error}
+        </Alert>
+      )}
+    </Card>
   );
 }
 
@@ -247,15 +259,23 @@ function BotonVoto({
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const favor = tono === "favor";
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
+      size="lg"
       aria-pressed={activo}
+      /*
+        Votado y sin votar son dos vestidos distintos —relleno contra filete—,
+        y el `hover` del vestido activo sigue cambiando algo: un control que
+        parece pulsable y no responde es la regla «un control apagado explica
+        por qué» fallando en silencio.
+      */
       className={cn(
-        "flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors active:scale-95 disabled:opacity-60",
-        activo && favor && "border-brand-500 bg-brand-500 text-canvas",
-        activo && !favor && "border-ink bg-ink text-canvas",
-        !activo && favor && "border-hairline bg-surface text-brand-600 hover:border-brand-400 hover:bg-brand-50",
-        !activo && !favor && "border-hairline bg-surface text-ink hover:border-ink hover:bg-canvas",
+        "h-auto px-3 py-2.5",
+        activo && favor && "border-brand-500 bg-brand-500 text-canvas hover:bg-brand-600",
+        activo && !favor && "border-ink bg-ink text-canvas hover:bg-ink/90",
+        !activo && favor && "text-brand-600 hover:border-brand-400 hover:bg-brand-50",
+        !activo && !favor && "hover:border-ink",
       )}
       {...props}
     >
@@ -266,7 +286,7 @@ function BotonVoto({
           {conteo.toLocaleString("es-DO")}
         </span>
       )}
-    </button>
+    </Button>
   );
 }
 
