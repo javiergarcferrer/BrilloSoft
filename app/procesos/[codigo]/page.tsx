@@ -5,9 +5,24 @@ import { getCompetencia, getProceso, normalize, type Documento } from "@/lib/dgc
 import { pesoDocumento, urlDeLectura } from "@/lib/documentos";
 import VisorDocumento from "@/components/visor-documento";
 import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
-import { cierreMeta, estadoMeta } from "@/lib/estados";
+import { cierreMeta, estadoMeta, etapaDe } from "@/lib/estados";
+import { cn } from "@/lib/cn";
 import PreciosHistoricos from "./precios";
 import Compartir from "@/components/compartir";
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { MarcaEstado } from "@/components/marca-estado";
 import SeguirButton from "@/components/seguir-button";
 import AccionesProceso from "@/components/acciones-proceso";
 import { IconArrowLeft, IconDoc, IconExternal, IconStar } from "@/components/icons";
@@ -110,36 +125,37 @@ export default async function ProcesoPage({
   return (
     <div className="space-y-5 pb-24 lg:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link
-          href="/licitaciones"
-          className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
-        >
-          <IconArrowLeft className="h-4 w-4" />
-          Volver al buscador
-        </Link>
+        <Button asChild variant="link" className="h-auto gap-1 px-0 text-brand-600">
+          <Link href="/licitaciones">
+            <IconArrowLeft className="h-4 w-4" />
+            Volver al buscador
+          </Link>
+        </Button>
         <div className="flex items-center gap-2">
           <SeguirButton codigo={p.codigo_proceso} />
           <Compartir titulo={p.titulo} />
         </div>
       </div>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
+      <Card as="section" className="p-6">
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 ring-1 ring-inset ${est.badge}`}
+          <MarcaEstado
+            tono={etapaDe(p.estado_proceso).tono}
+            vivo={abiertoParaOfertar}
+            title={`La DGCP lo publica como «${p.estado_proceso}»`}
           >
-            <span className={`h-1.5 w-1.5 rounded-full ${est.dot}`} />
             {est.label}
-          </span>
-          <span className="rounded-md bg-hairline px-2.5 py-1 text-ink-soft">
+          </MarcaEstado>
+          <Badge forma="etiqueta" className="bg-hairline text-ink-soft">
             {p.modalidad}
-          </span>
+          </Badge>
           {cierreBadge && (
-            <span
-              className={`rounded-md px-2.5 py-1 ring-1 ring-inset ${cierreBadge.badge}`}
+            <Badge
+              forma="etiqueta"
+              className={cn("ring-1 ring-inset", cierreBadge.badge)}
             >
               {cierreBadge.texto}
-            </span>
+            </Badge>
           )}
         </div>
 
@@ -179,15 +195,12 @@ export default async function ProcesoPage({
             </div>
           </div>
           {p.url && (
-            <a
-              href={p.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-canvas transition hover:bg-brand-600"
-            >
-              Ver en el Portal Transaccional
-              <IconExternal className="h-4 w-4" />
-            </a>
+            <Button asChild size="lg" className="ml-auto">
+              <a href={p.url} target="_blank" rel="noopener noreferrer">
+                Ver en el Portal Transaccional
+                <IconExternal className="h-4 w-4" />
+              </a>
+            </Button>
           )}
         </div>
 
@@ -196,11 +209,11 @@ export default async function ProcesoPage({
             {p.descripcion}
           </p>
         )}
-      </section>
+      </Card>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
+      <Card as="section" className="p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-sans font-semibold">Cómo participar</h2>
+          <CardTitle>Cómo participar</CardTitle>
           <Link href="/guia" className="text-xs font-medium text-brand-600 hover:underline">
             ¿Primera vez ofertando? Lee la guía completa →
           </Link>
@@ -279,11 +292,11 @@ export default async function ProcesoPage({
             el buscador para encontrar procesos similares abiertos.
           </p>
         )}
-      </section>
+      </Card>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-lg bg-surface p-6 border border-hairline">
-          <h2 className="font-sans font-semibold">Cronograma</h2>
+        <Card as="section" className="p-6">
+          <CardTitle>Cronograma</CardTitle>
           <ol className="mt-4">
             {fechas.map(([label, iso, destacar], i) => {
               const last = i === fechas.length - 1;
@@ -313,10 +326,10 @@ export default async function ProcesoPage({
               );
             })}
           </ol>
-        </section>
+        </Card>
 
-        <section className="rounded-lg bg-surface p-6 border border-hairline">
-          <h2 className="font-sans font-semibold">Información general</h2>
+        <Card as="section" className="p-6">
+          <CardTitle>Información general</CardTitle>
           <dl className="mt-3 space-y-2 text-sm">
             {flags.map(([label, value]) => (
               <div
@@ -328,87 +341,89 @@ export default async function ProcesoPage({
               </div>
             ))}
           </dl>
-        </section>
+        </Card>
       </div>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
-        <h2 className="font-sans font-semibold">
+      <Card as="section" className="p-6">
+        <CardTitle>
           Artículos solicitados{" "}
           <span className="font-normal text-ink-soft">({articulos.length})</span>
-        </h2>
+        </CardTitle>
         {articulos.length === 0 ? (
           <p className="mt-2 text-sm text-ink-soft">
             La API no reporta artículos para este proceso.
           </p>
         ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-hairline text-xs uppercase tracking-wide text-ink-soft">
-                  <th className="py-2 pr-3">Descripción</th>
-                  <th className="py-2 pr-3">UNSPSC</th>
-                  <th className="py-2 pr-3 text-right">Cantidad</th>
-                  <th className="py-2 pr-3 text-right">P. unitario</th>
-                  <th className="py-2 text-right">Total estimado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {articulos.map((a, i) => (
-                  <tr key={i} className="border-b border-hairline align-top">
-                    <td className="py-2 pr-3">
-                      <div className="font-medium">{a.descripcion_usuario || a.descripcion_articulo}</div>
-                      {a.descripcion_usuario && (
-                        <div className="text-xs text-ink-soft">{a.descripcion_articulo}</div>
-                      )}
-                    </td>
-                    <td className="py-2 pr-3 font-mono text-xs text-ink-soft">
-                      {a.subclase_unspsc}
-                    </td>
-                    <td className="py-2 pr-3 text-right">
-                      {a.cantidad?.toLocaleString("es-DO")} {a.unidad_medida}
-                    </td>
-                    <td className="py-2 pr-3 text-right">
-                      {formatMonto(a.precio_unitario_estimado, p.divisa)}
-                    </td>
-                    <td className="py-2 text-right font-mono font-medium tabular-nums">
-                      {formatMonto(a.precio_total_estimado, p.divisa)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              {totalArticulos > 0 && (
-                <tfoot>
-                  <tr className="border-t-2 border-hairline">
-                    <td colSpan={4} className="py-2 pr-3 text-right font-semibold">
-                      Total estimado de artículos
-                    </td>
-                    <td className="py-2 text-right font-mono font-semibold tabular-nums">
-                      {formatMonto(totalArticulos, p.divisa)}
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
+          <Table className="mt-3 min-w-[640px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Descripción</TableHead>
+                <TableHead>UNSPSC</TableHead>
+                <TableHead className="text-right">Cantidad</TableHead>
+                <TableHead className="text-right">P. unitario</TableHead>
+                <TableHead className="text-right">Total estimado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {articulos.map((a, i) => (
+                <TableRow key={i} className="align-top">
+                  <TableCell className="pl-0">
+                    <div className="font-medium">
+                      {a.descripcion_usuario || a.descripcion_articulo}
+                    </div>
+                    {a.descripcion_usuario && (
+                      <div className="text-xs text-ink-soft">
+                        {a.descripcion_articulo}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-ink-soft">
+                    {a.subclase_unspsc}
+                  </TableCell>
+                  <TableCell numerica className="font-sans">
+                    {a.cantidad?.toLocaleString("es-DO")} {a.unidad_medida}
+                  </TableCell>
+                  <TableCell numerica>
+                    {formatMonto(a.precio_unitario_estimado, p.divisa)}
+                  </TableCell>
+                  <TableCell numerica className="pr-0 font-medium">
+                    {formatMonto(a.precio_total_estimado, p.divisa)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            {totalArticulos > 0 && (
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={4} className="pl-0 text-right font-semibold">
+                    Total estimado de artículos
+                  </TableCell>
+                  <TableCell numerica className="pr-0 font-semibold">
+                    {formatMonto(totalArticulos, p.divisa)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            )}
+          </Table>
         )}
-      </section>
+      </Card>
 
       {competencia && (
-        <section className="rounded-lg bg-surface p-6 border border-hairline">
-          <h2 className="font-sans font-semibold">
+        <Card as="section" className="p-6">
+          <CardTitle>
             Ofertas — quién compitió{" "}
             <span className="font-normal text-ink-soft">
               ({competencia.oferentes.length}
               {competencia.oferentes.length === 1 ? " oferente" : " oferentes"})
             </span>
-          </h2>
+          </CardTitle>
 
           {competencia.oferenteUnico && (
-            <p className="mt-3 rounded-lg border border-alerta-600/20 bg-alerta-50 px-4 py-3 text-sm text-alerta-700">
+            <Alert variant="aviso" className="mt-3">
               <span className="font-semibold">Se presentó un solo oferente.</span>{" "}
               No es una irregularidad por sí misma —hay compras que solo un
               proveedor puede servir—, pero es lo primero que conviene mirar.
-            </p>
+            </Alert>
           )}
 
           {competencia.menor !== null && competencia.mayor !== null &&
@@ -466,15 +481,15 @@ export default async function ProcesoPage({
             <span className="font-medium">quién ganó lo dicen los contratos</span>,
             no las ofertas.
           </p>
-        </section>
+        </Card>
       )}
 
       {contratos.length > 0 && (
-        <section className="rounded-lg bg-surface p-6 border border-hairline">
-          <h2 className="font-sans font-semibold">
+        <Card as="section" className="p-6">
+          <CardTitle>
             Adjudicación — quién ganó{" "}
             <span className="font-normal text-ink-soft">({contratos.length})</span>
-          </h2>
+          </CardTitle>
           <ul className="mt-3 space-y-2">
             {contratos.map((c, i) => (
               <li
@@ -504,32 +519,26 @@ export default async function ProcesoPage({
                     {formatMonto(c.valor_contratado, c.divisa || p.divisa)}
                   </span>
                   {c.url_contrato && (
-                    <a
-                      href={c.url_contrato}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-lg border border-hairline px-2.5 py-1 text-xs font-medium hover:border-brand-500 hover:text-brand-600"
-                    >
-                      Ver contrato ↗
-                    </a>
+                    <Button asChild variant="secondary" size="sm">
+                      <a href={c.url_contrato} target="_blank" rel="noopener noreferrer">
+                        Ver contrato ↗
+                      </a>
+                    </Button>
                   )}
                 </div>
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       )}
 
       <PreciosHistoricos subclases={subclasesUnicas} divisa={p.divisa} />
 
-      <section
-        id="documentos"
-        className="rounded-lg bg-surface p-6 border border-hairline"
-      >
-        <h2 className="font-sans font-semibold">
+      <Card as="section" id="documentos" className="p-6">
+        <CardTitle>
           Documentos del proceso{" "}
           <span className="font-normal text-ink-soft">({documentos.length})</span>
-        </h2>
+        </CardTitle>
         {documentos.length === 0 ? (
           <p className="mt-2 text-sm text-ink-soft">
             La API no reporta documentos para este proceso.
@@ -572,7 +581,7 @@ export default async function ProcesoPage({
             )}
           </>
         )}
-      </section>
+      </Card>
 
       <AccionesProceso codigo={p.codigo_proceso} titulo={p.titulo} url={p.url} />
     </div>

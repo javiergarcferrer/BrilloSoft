@@ -2,6 +2,11 @@ import Link from "next/link";
 import { dgcpFetch, type Proceso } from "@/lib/dgcp";
 import { formatMonto } from "@/lib/format";
 import { estadoMeta } from "@/lib/estados";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { IconArrowRight, IconChartBar } from "@/components/icons";
 
 export const revalidate = 1800;
@@ -48,23 +53,22 @@ function agrupar(lista: Proceso[], clave: (p: Proceso) => string): [string, Agre
  */
 function FuenteCaida() {
   return (
-    <section className="rounded-lg border border-alerta-600/25 bg-alerta-50 px-5 py-12 text-center">
-      <p className="font-sans text-sm font-semibold text-ink">
-        La DGCP no respondió
-      </p>
-      <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-ink-soft">
-        Este tablero se arma con una sola lectura de la API de datos abiertos, y
-        ahora mismo no contesta. No se pintan ceros: un mercado en cero sería una
-        cifra falsa, no un dato que falta.
-      </p>
-      <Link
-        href="/licitaciones"
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700"
-      >
-        Ir al buscador de licitaciones
-        <IconArrowRight className="h-4 w-4" />
-      </Link>
-    </section>
+    <EstadoVacio
+      variante="caida"
+      titulo="La DGCP no respondió"
+      accion={
+        <Button asChild>
+          <Link href="/licitaciones">
+            Ir al buscador de licitaciones
+            <IconArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      }
+    >
+      Este tablero se arma con una sola lectura de la API de datos abiertos, y
+      ahora mismo no contesta. No se pintan ceros: un mercado en cero sería una
+      cifra falsa, no un dato que falta.
+    </EstadoVacio>
   );
 }
 
@@ -213,8 +217,8 @@ export default async function EstadisticasPage() {
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-lg bg-surface p-6 border border-hairline">
-          <h2 className="font-sans font-semibold">Por modalidad</h2>
+        <Card as="section" className="p-6">
+          <CardTitle>Por modalidad</CardTitle>
           <ul className="mt-3 space-y-2.5 text-sm">
             {porModalidad.map(([nombre, a]) => (
               <li key={nombre}>
@@ -224,19 +228,18 @@ export default async function EstadisticasPage() {
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-sm bg-hairline">
-                  <div
-                    className="bar-grow h-2 rounded-sm bg-brand-500"
-                    style={{ width: `${Math.max(2, (a.monto / maxMod) * 100)}%` }}
-                  />
-                </div>
+                <Progress
+                  value={Math.max(2, (a.monto / maxMod) * 100)}
+                  aria-label={`${nombre}: ${formatMonto(a.monto, "DOP")}`}
+                  className="mt-1"
+                />
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section className="rounded-lg bg-surface p-6 border border-hairline">
-          <h2 className="font-sans font-semibold">Top 10 instituciones por monto</h2>
+        <Card as="section" className="p-6">
+          <CardTitle>Top 10 instituciones por monto</CardTitle>
           <ul className="mt-3 space-y-2.5 text-sm">
             {porInstitucion.map(([nombre, a]) => (
               <li key={nombre}>
@@ -246,31 +249,33 @@ export default async function EstadisticasPage() {
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-sm bg-hairline">
-                  <div
-                    className="bar-grow h-2 rounded-sm bg-brand-400"
-                    style={{ width: `${Math.max(2, (a.monto / maxInst) * 100)}%` }}
-                  />
-                </div>
+                <Progress
+                  value={Math.max(2, (a.monto / maxInst) * 100)}
+                  aria-label={`${nombre}: ${formatMonto(a.monto, "DOP")}`}
+                  indicadorClassName="bg-brand-400"
+                  className="mt-1"
+                />
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       </div>
 
-      <section className="flex flex-col items-start gap-3 rounded-lg bg-brand-50 p-6 ring-1 ring-brand-100 sm:flex-row sm:items-center sm:justify-between">
+      <Alert
+        variant="firma"
+        className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between"
+      >
         <span className="text-sm text-brand-900">
           ¿Buscas tu nicho? Usa el buscador con tu palabra clave y suscríbete al RSS de
           esa búsqueda para no perderte procesos nuevos.
         </span>
-        <Link
-          href="/licitaciones"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-brand-600 active:scale-95"
-        >
-          Ir al buscador
-          <IconArrowRight className="h-4 w-4" />
-        </Link>
-      </section>
+        <Button asChild className="shrink-0">
+          <Link href="/licitaciones">
+            Ir al buscador
+            <IconArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      </Alert>
     </div>
   );
 }

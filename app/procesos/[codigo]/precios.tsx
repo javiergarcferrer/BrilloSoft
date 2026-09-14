@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { getPreciosSubclase, type PreciosStats } from "@/lib/dgcp";
 import { formatFecha, formatMonto } from "@/lib/format";
 import Plegable from "@/components/plegable";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Precios históricos de adjudicación por subclase UNSPSC.
@@ -23,8 +25,8 @@ export default function PreciosHistoricos({
 }) {
   if (subclases.length === 0) return null;
   return (
-    <section className="rounded-lg bg-surface p-6 border border-hairline">
-      <h2 className="font-sans font-semibold">Precios históricos de adjudicación</h2>
+    <Card as="section" className="p-6">
+      <CardTitle>Precios históricos de adjudicación</CardTitle>
       <p className="mt-1 text-sm text-ink-soft">
         Lo que el Estado realmente pagó en contratos recientes por artículos de la misma
         categoría UNSPSC — úsalo como referencia antes de fijar tu precio.
@@ -36,7 +38,7 @@ export default function PreciosHistoricos({
           </Suspense>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -53,15 +55,18 @@ function Cabecera({ subclase }: { subclase: { codigo: string; descripcion: strin
 
 function SubclaseEsqueleto({ subclase }: { subclase: { codigo: string; descripcion: string } }) {
   return (
-    <div aria-busy="true" className="rounded-lg border border-hairline p-4">
+    <Card aria-busy="true" className="bg-transparent p-4">
       <Cabecera subclase={subclase} />
       <div className="mt-3 grid grid-cols-3 gap-2">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="shimmer h-14 rounded-lg border border-hairline bg-canvas" />
+          <Skeleton
+            key={i}
+            className="h-14 rounded-lg border border-hairline bg-canvas"
+          />
         ))}
       </div>
       <p className="mt-1.5 text-xs text-ink-soft">Consultando los contratos de la DGCP…</p>
-    </div>
+    </Card>
   );
 }
 
@@ -77,7 +82,7 @@ async function SubclaseStats({
   );
 
   return (
-    <div className="rounded-lg border border-hairline p-4">
+    <Card className="bg-transparent p-4">
       <Cabecera subclase={subclase} />
 
       {!stats ? (
@@ -158,6 +163,6 @@ async function SubclaseStats({
           )}
         </>
       )}
-    </div>
+    </Card>
   );
 }
