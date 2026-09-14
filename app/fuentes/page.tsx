@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Card, CardTitle } from "@/components/ui/card";
 import { getCountIniciativas, getPeriodos } from "@/lib/congreso";
 import { contarProveedoresRegistrados } from "@/lib/dgcp";
 import { CUATRIENIOS, getCensoSenado } from "@/lib/senado";
@@ -373,8 +374,8 @@ export default async function FuentesPage() {
         </Fuente>
       </div>
 
-      <section className="mt-8 rounded-lg border border-hairline bg-surface p-5 ">
-        <h2 className="font-sans text-sm font-semibold text-ink">Límites de cobertura</h2>
+      <Card as="section" className="mt-8 p-5">
+        <CardTitle>Límites de cobertura</CardTitle>
         <ul className="mt-2.5 space-y-2 text-sm leading-relaxed text-ink-soft">
           <li>
             El listado de <strong>Diputados</strong> cubre el registro vigente. Las
@@ -402,7 +403,7 @@ export default async function FuentesPage() {
           Herramienta independiente y no oficial. Para efectos legales, verificar
           contra la institución correspondiente.
         </p>
-      </section>
+      </Card>
     </div>
   );
 }
@@ -426,9 +427,9 @@ function Fuente({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-hairline bg-surface p-5 ">
+    <Card as="section" className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-sans text-base font-semibold text-ink">{nombre}</h2>
+        <CardTitle className="text-base">{nombre}</CardTitle>
         <span
           className={`inline-flex items-center rounded-[3px] px-2 py-0.5 rotulo ring-1 ring-inset ${ESTADOS[estado]}`}
         >
@@ -436,7 +437,7 @@ function Fuente({
         </span>
       </div>
       <div className="mt-2.5 text-sm leading-relaxed text-ink-soft">{children}</div>
-    </section>
+    </Card>
   );
 }
 

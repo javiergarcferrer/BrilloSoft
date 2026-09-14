@@ -4,6 +4,8 @@ import { etiquetaCorte, getFiscal, getInstitucionFiscal } from "@/lib/fiscal";
 import { formatMonto, formatPesos } from "@/lib/format";
 
 import { IconArrowLeft } from "@/components/icons";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 export async function generateStaticParams() {
   const fiscal = await getFiscal();
@@ -56,7 +58,7 @@ export default async function InstitucionFiscalPage({
         Volver a la ejecución
       </Link>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
+      <Card as="section" className="p-6">
         <div className="rotulo text-ink-soft">
           Capítulo {i.codigo} · {i.seccionNombre}
         </div>
@@ -119,11 +121,11 @@ export default async function InstitucionFiscalPage({
             </>
           )}
         </p>
-      </section>
+      </Card>
 
       <div className="grid gap-5 lg:grid-cols-5">
-        <section className="rounded-lg bg-surface p-6 border border-hairline lg:col-span-3">
-          <h2 className="font-semibold">Mes a mes</h2>
+        <Card as="section" className="p-6 lg:col-span-3">
+          <CardTitle>Mes a mes</CardTitle>
           <p className="mt-1 text-xs text-ink-soft">
             Barra llena: devengado. Línea interior: pagado.
           </p>
@@ -143,34 +145,38 @@ export default async function InstitucionFiscalPage({
                       {formatPesos(m.devengado)}
                     </span>
                   </div>
-                  <div className="mt-1 h-2.5 rounded-sm bg-hairline">
-                    <div
-                      className="bar-grow relative h-2.5 rounded-sm bg-v-finanzas"
+                  {/*
+                    Dos medidas en una barra: el ancho es lo devengado sobre el
+                    mes mayor, y el tramo oscuro de dentro es cuánto de eso ya
+                    salió de caja. La etiqueta accesible dice las dos, porque el
+                    tramo interior no se puede leer con un lector de pantalla.
+                  */}
+                  <Progress
+                    value={Math.max(1, (m.devengado / maxMes) * 100)}
+                    aria-label={`${etiquetaCorte(m.mes, fiscal.anio)}: devengado ${formatPesos(m.devengado)}, pagado ${formatPesos(m.pagado)}`}
+                    className="mt-1 h-2.5"
+                    indicadorClassName="relative bg-v-finanzas"
+                  >
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-0 left-0 rounded-sm bg-ink/25"
                       style={{
-                        width: `${Math.max(1, (m.devengado / maxMes) * 100)}%`,
+                        width: `${
+                          m.devengado > 0
+                            ? Math.min(100, (m.pagado / Math.max(m.devengado, 1)) * 100)
+                            : 0
+                        }%`,
                       }}
-                    >
-                      <span
-                        aria-hidden
-                        className="absolute inset-y-0 left-0 rounded-sm bg-ink/25"
-                        style={{
-                          width: `${
-                            m.devengado > 0
-                              ? Math.min(100, (m.pagado / Math.max(m.devengado, 1)) * 100)
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                  </div>
+                    />
+                  </Progress>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Card>
 
-        <section className="rounded-lg bg-surface p-6 border border-hairline lg:col-span-2">
-          <h2 className="font-semibold">Quién ejecuta dentro</h2>
+        <Card as="section" className="p-6 lg:col-span-2">
+          <CardTitle>Quién ejecuta dentro</CardTitle>
           <p className="mt-1 text-xs text-ink-soft">
             Unidades ejecutoras con más gasto devengado.
           </p>
@@ -188,19 +194,17 @@ export default async function InstitucionFiscalPage({
                       {formatPesos(u.devengado)}
                     </span>
                   </div>
-                  <div className="mt-1 h-2 rounded-sm bg-hairline">
-                    <div
-                      className="bar-grow h-2 rounded-sm bg-v-finanzas"
-                      style={{
-                        width: `${Math.max(2, (u.devengado / maxUnidad) * 100)}%`,
-                      }}
-                    />
-                  </div>
+                  <Progress
+                    value={Math.max(2, (u.devengado / maxUnidad) * 100)}
+                    aria-label={`${u.nombre}: ${formatPesos(u.devengado)}`}
+                    indicadorClassName="bg-v-finanzas"
+                    className="mt-1"
+                  />
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Card>
       </div>
 
       <p className="text-xs leading-relaxed text-ink-soft">

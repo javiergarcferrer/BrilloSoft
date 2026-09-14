@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Buscador from "../buscador";
 import { Cargando, Esqueleto, EsqueletoTarjetas } from "@/components/esqueleto";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Licitaciones",
@@ -33,8 +34,8 @@ function BuscadorEsqueleto() {
   return (
     <Cargando className="space-y-5">
       <div className="space-y-2 pt-1">
-        <div className="shimmer h-8 w-3/4 max-w-lg rounded-md bg-hairline/70" />
-        <div className="shimmer h-3 w-56 rounded-md bg-hairline/70" />
+        <Skeleton className="h-8 w-3/4 max-w-lg bg-hairline/70" />
+        <Skeleton className="h-3 w-56 bg-hairline/70" />
       </div>
       <Esqueleto className="hidden h-56 lg:block" />
       <Esqueleto className="h-11 lg:hidden" />

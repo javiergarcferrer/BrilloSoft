@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
 
 export const metadata = {
   title: "Guía para ofertar al Estado — Licitaciones RD",
@@ -45,16 +48,16 @@ const ESTADOS: [string, string][] = [
 export default function GuiaPage() {
   return (
     <div className="space-y-5">
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
+      <Card as="section" className="p-6">
         <h1 className="font-display text-3xl">¿Cómo se le oferta al Estado?</h1>
         <p className="mt-2 text-sm text-ink-soft">
           Lo esencial para pasar de &quot;vi una licitación interesante&quot; a
           &quot;presenté mi oferta a tiempo&quot;, en cuatro pasos.
         </p>
-      </section>
+      </Card>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
-        <h2 className="font-semibold">1 · Regístrate una sola vez: el RPE</h2>
+      <Card as="section" className="p-6">
+        <CardTitle className="text-[15px]">1 · Regístrate una sola vez: el RPE</CardTitle>
         <p className="mt-2 text-sm text-ink-soft">
           El <strong>Registro de Proveedores del Estado (RPE)</strong> es el requisito
           de entrada para ofertar en cualquier institución. Necesitas tu RNC activo y
@@ -63,31 +66,29 @@ export default function GuiaPage() {
           ofertar — solo puedes participar en procesos de tus rubros.
         </p>
         <div className="mt-3 flex flex-wrap gap-2 text-sm">
-          <a
-            href="https://www.dgcp.gob.do/servicios/registro-de-proveedores/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg bg-brand-500 px-3 py-1.5 font-medium text-canvas hover:bg-brand-600"
-          >
-            Inscribirse en el RPE (DGCP) ↗
-          </a>
-          <a
-            href="https://comunidad.comprasdominicana.gob.do/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg border border-hairline px-3 py-1.5 font-medium hover:border-brand-500 hover:text-brand-600"
-          >
-            Portal Transaccional ↗
-          </a>
+          <Button asChild size="sm">
+            <a href="https://www.dgcp.gob.do/servicios/registro-de-proveedores/" target="_blank" rel="noopener noreferrer">
+              Inscribirse en el RPE (DGCP) ↗
+            </a>
+          </Button>
+          <Button asChild variant="secondary" size="sm">
+            <a
+              href="https://comunidad.comprasdominicana.gob.do/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Portal Transaccional ↗
+            </a>
+          </Button>
         </div>
         <p className="mt-2 text-xs text-ink-soft">
           Consejo: si eres MIPYME (y más aún MIPYME liderada por mujeres), certifícalo —
           hay procesos reservados con menos competencia.
         </p>
-      </section>
+      </Card>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
-        <h2 className="font-semibold">2 · Conoce las modalidades (y dónde empezar)</h2>
+      <Card as="section" className="p-6">
+        <CardTitle className="text-[15px]">2 · Conoce las modalidades (y dónde empezar)</CardTitle>
         <dl className="mt-3 space-y-2 text-sm">
           {MODALIDADES.map(([m, d]) => (
             <div key={m} className="rounded-lg bg-canvas px-4 py-2.5">
@@ -96,10 +97,10 @@ export default function GuiaPage() {
             </div>
           ))}
         </dl>
-      </section>
+      </Card>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
-        <h2 className="font-semibold">3 · Los documentos que casi siempre piden</h2>
+      <Card as="section" className="p-6">
+        <CardTitle className="text-[15px]">3 · Los documentos que casi siempre piden</CardTitle>
         <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-ink-soft">
           <li>Constancia de inscripción en el RPE (vigente y en el rubro del proceso).</li>
           <li>Certificaciones de estar al día: DGII (impuestos) y TSS (seguridad social).</li>
@@ -121,10 +122,10 @@ export default function GuiaPage() {
           La lista exacta siempre está en el pliego de condiciones de cada proceso — por
           eso es el primer documento que debes leer.
         </p>
-      </section>
+      </Card>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
-        <h2 className="font-semibold">4 · Qué significa cada estado</h2>
+      <Card as="section" className="p-6">
+        <CardTitle className="text-[15px]">4 · Qué significa cada estado</CardTitle>
         <dl className="mt-3 space-y-2 text-sm">
           {ESTADOS.map(([e, d]) => (
             <div key={e} className="flex items-start gap-3 rounded-lg bg-canvas px-4 py-2.5">
@@ -133,10 +134,12 @@ export default function GuiaPage() {
             </div>
           ))}
         </dl>
-      </section>
+      </Card>
 
-      <section className="rounded-lg bg-brand-50 p-6 border border-brand-100">
-        <h2 className="font-semibold text-brand-900">Consejos que ganan procesos</h2>
+      <Alert variant="firma" className="p-6">
+        <CardTitle className="text-[15px] text-brand-900">
+          Consejos que ganan procesos
+        </CardTitle>
         <ul className="mt-3 list-inside list-disc space-y-1.5 text-sm text-brand-900/80">
           <li>
             Cotiza con datos: revisa los <strong>precios históricos de adjudicación</strong>{" "}
@@ -159,13 +162,10 @@ export default function GuiaPage() {
             del plazo que fija el pliego.
           </li>
         </ul>
-        <Link
-          href="/licitaciones"
-          className="mt-4 inline-block rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-canvas hover:bg-brand-600"
-        >
-          Buscar oportunidades abiertas →
-        </Link>
-      </section>
+        <Button asChild className="mt-4">
+          <Link href="/licitaciones">Buscar oportunidades abiertas →</Link>
+        </Button>
+      </Alert>
     </div>
   );
 }

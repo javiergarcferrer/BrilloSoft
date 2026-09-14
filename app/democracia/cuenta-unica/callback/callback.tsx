@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { IconArrowLeft, IconCheck, IconShield } from "@/components/icons";
@@ -127,17 +130,17 @@ export default function Callback() {
       </header>
 
       {estado.fase === "verificando" && (
-        <div className="rounded-lg border border-hairline bg-surface p-5">
+        <Card className="p-5" aria-busy="true">
           <p className="text-sm text-ink">Comprobando la respuesta de Cuenta Única…</p>
           <p className="mt-1 text-xs leading-relaxed text-ink-soft">
             La credencial se verifica dentro de Supabase, junto a la base de datos,
             y se vincula a tu sesión. No guardamos tu cédula ni tu nombre.
           </p>
-        </div>
+        </Card>
       )}
 
       {estado.fase === "listo" && (
-        <div className="rounded-lg border border-brand-200/60 bg-brand-50/70 p-6 text-center">
+        <Alert variant="firma" className="border-brand-200/60 bg-brand-50/70 p-6 text-center">
           <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-brand-500 text-canvas">
             <IconCheck className="h-6 w-6" />
           </span>
@@ -149,26 +152,20 @@ export default function Callback() {
             Guardamos solo un código irreversible: de tu cédula si Cuenta Única la
             incluyó, y si no, de tu identificador. Nunca la cédula en claro.
           </p>
-          <Link
-            href="/congreso"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700"
-          >
-            Ir a las iniciativas
-          </Link>
-        </div>
+          <Button asChild size="lg" className="mt-4 bg-brand-600 hover:bg-brand-700">
+            <Link href="/congreso">Ir a las iniciativas</Link>
+          </Button>
+        </Alert>
       )}
 
       {estado.fase === "error" && (
-        <div className="rounded-lg border border-alerta-100/60 bg-alerta-50/60 p-5">
+        <Alert variant="aviso" className="border-alerta-100/60 bg-alerta-50/60 p-5">
           <p className="text-sm font-medium text-ink">No se completó la verificación</p>
           <p className="mt-1 text-sm leading-relaxed text-ink-soft">{estado.mensaje}</p>
-          <Link
-            href="/democracia/registro"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-hairline bg-surface px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-canvas"
-          >
-            Volver al registro
-          </Link>
-        </div>
+          <Button asChild variant="secondary" className="mt-4">
+            <Link href="/democracia/registro">Volver al registro</Link>
+          </Button>
+        </Alert>
       )}
 
       <p className="mt-4 text-xs leading-relaxed text-ink-soft">

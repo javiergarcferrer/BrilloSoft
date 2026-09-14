@@ -26,11 +26,18 @@ function Progress({
   indicadorClassName,
   value,
   max = 100,
+  children,
   ...props
 }: Omit<React.HTMLAttributes<HTMLDivElement>, "role"> & {
   value: number | null | undefined;
   max?: number;
   indicadorClassName?: string;
+  /**
+   * Lo que se pinta **dentro del relleno**: la ejecución presupuestaria marca
+   * ahí qué parte de lo devengado ya salió de caja. Va dentro y no al lado
+   * porque es una fracción de la barra, no otra barra.
+   */
+  children?: React.ReactNode;
 }) {
   const pct = Math.min(100, Math.max(0, ((value ?? 0) / max) * 100));
   return (
@@ -50,7 +57,9 @@ function Progress({
         data-slot="progress-indicator"
         className={cn("bar-grow h-full bg-brand-500", indicadorClassName)}
         style={{ width: `${pct}%` }}
-      />
+      >
+        {children}
+      </div>
     </div>
   );
 }

@@ -6,6 +6,11 @@ import { supabase, db } from "@/lib/supabase";
 import { cedulaValida, formatearCedula, limpiarCedula } from "@/lib/cedula";
 import { IconArrowLeft, IconCheck, IconShield } from "@/components/icons";
 import { cn } from "@/lib/cn";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cuentaUnicaHabilitada, iniciarFlujo } from "@/app/democracia/cuenta-unica/cliente";
 
 /**
@@ -345,7 +350,7 @@ export default function Registro() {
     return (
       <div className="mx-auto max-w-lg">
         <VolverCongreso />
-        <div className="mt-4 rounded-lg border border-brand-200/60 bg-brand-50/70 p-6 text-center ">
+        <Alert variant="firma" className="mt-4 border-brand-200/60 bg-brand-50/70 p-6 text-center">
           <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-brand-500 text-canvas">
             <IconCheck className="h-6 w-6" />
           </span>
@@ -365,13 +370,10 @@ export default function Registro() {
                 : "Registro por cédula y correo · sin verificar"}
             </p>
           )}
-          <Link
-            href="/congreso"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700"
-          >
-            Ir a las iniciativas
-          </Link>
-        </div>
+          <Button asChild size="lg" className="mt-4 bg-brand-600 hover:bg-brand-700">
+            <Link href="/congreso">Ir a las iniciativas</Link>
+          </Button>
+        </Alert>
         {cuentaUnicaHabilitada() && origen !== "cuenta_unica" && (
           <CuentaUnica onClick={irACuentaUnica} cargando={cargando} error={error} />
         )}
@@ -397,39 +399,43 @@ export default function Registro() {
       </header>
 
       {paso === "datos" && (
-        <form onSubmit={enviarCodigo} className="space-y-4 rounded-lg border border-hairline bg-surface p-5 ">
+        <form onSubmit={enviarCodigo} className="space-y-4 rounded-lg border border-hairline bg-surface p-5">
           <Campo
             etiqueta="Cédula"
             hint={cedula && !cedulaOk ? "Cédula inválida" : "11 dígitos"}
             hintError={!!cedula && !cedulaOk}
           >
-            <input
+            <Input
               inputMode="numeric"
               value={formatearCedula(cedula)}
               onChange={(e) => setCedula(limpiarCedula(e.target.value).slice(0, 11))}
               placeholder="001-0000000-0"
               autoComplete="off"
-              className="h-11 w-full rounded-lg border border-hairline bg-canvas px-3 font-mono text-sm tabular-nums text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+              className="h-11 bg-canvas font-mono tabular-nums"
             />
           </Campo>
           <Campo etiqueta="Correo electrónico" hint="Te enviaremos un código de un solo uso">
-            <input
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@correo.do"
               autoComplete="email"
-              className="h-11 w-full rounded-lg border border-hairline bg-canvas px-3 text-sm text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+              className="h-11 bg-canvas"
             />
           </Campo>
-          {error && <p className="text-xs font-medium text-alerta-700">{error}</p>}
-          <button
+          {error && (
+            <p role="alert" className="text-xs font-medium text-alerta-700">
+              {error}
+            </p>
+          )}
+          <Button
             type="submit"
             disabled={!cedulaOk || !emailOk || cargando}
-            className="h-11 w-full rounded-lg bg-brand-600 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700 active:scale-95 disabled:opacity-50"
+            className="h-11 w-full bg-brand-600 hover:bg-brand-700"
           >
             {cargando ? "Enviando…" : "Enviar código"}
-          </button>
+          </Button>
         </form>
       )}
 
@@ -456,28 +462,32 @@ export default function Registro() {
             <label htmlFor="cedula-pendiente" className="rotulo text-ink-soft">
               Cédula
             </label>
-            <input
+            <Input
               id="cedula-pendiente"
               inputMode="numeric"
               value={formatearCedula(cedula)}
               onChange={(e) => setCedula(limpiarCedula(e.target.value).slice(0, 11))}
               placeholder="000-0000000-0"
-              className="mt-1.5 h-11 w-full rounded-lg border border-hairline bg-canvas px-3 font-mono text-sm tabular-nums text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+              className="mt-1.5 h-11 bg-canvas font-mono tabular-nums"
             />
           </div>
-          {error && <p className="text-xs font-medium text-alerta-700">{error}</p>}
-          <button
+          {error && (
+            <p role="alert" className="text-xs font-medium text-alerta-700">
+              {error}
+            </p>
+          )}
+          <Button
             type="submit"
             disabled={!cedulaOk || cargando}
-            className="h-11 w-full rounded-lg bg-brand-600 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700 active:scale-95 disabled:opacity-50"
+            className="h-11 w-full bg-brand-600 hover:bg-brand-700"
           >
             Completar el registro
-          </button>
+          </Button>
         </form>
       )}
 
       {(paso === "codigo" || paso === "registrando") && (
-        <form onSubmit={verificar} className="space-y-4 rounded-lg border border-hairline bg-surface p-5 ">
+        <form onSubmit={verificar} className="space-y-4 rounded-lg border border-hairline bg-surface p-5">
           <p className="text-sm leading-relaxed text-ink-soft">
             Revisa el correo que enviamos a{" "}
             <span className="font-medium text-ink">{email}</span>.
@@ -507,44 +517,50 @@ export default function Registro() {
               </span>
             </li>
           </ul>
-          <textarea
+          <Textarea
             rows={codigo.length > 40 ? 3 : 1}
             value={codigo}
             onChange={(e) => setCodigo(e.target.value)}
             placeholder="000000 — o pega aquí la dirección del correo"
             autoComplete="one-time-code"
-            className="w-full resize-none rounded-lg border border-hairline bg-canvas px-3 py-3 font-mono text-sm tabular-nums text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+            aria-label="Código de verificación o enlace del correo"
+            className="min-h-0 resize-none bg-canvas px-3 py-3 font-mono tabular-nums"
           />
-          {error && <p className="text-xs font-medium text-alerta-700">{error}</p>}
-          <button
+          {error && (
+            <p role="alert" className="text-xs font-medium text-alerta-700">
+              {error}
+            </p>
+          )}
+          <Button
             type="submit"
             disabled={!codigo.trim() || cargando || paso === "registrando"}
-            className="h-11 w-full rounded-lg bg-brand-600 text-sm font-semibold text-canvas transition-colors hover:bg-brand-700 active:scale-95 disabled:opacity-50"
+            className="h-11 w-full bg-brand-600 hover:bg-brand-700"
           >
             {paso === "registrando"
               ? "Registrando…"
               : cargando
                 ? "Verificando…"
                 : "Verificar y registrar"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="link"
             onClick={() => { setPaso("datos"); setCodigo(""); setError(null); }}
-            className="w-full text-center text-xs font-medium text-ink-soft hover:text-ink"
+            className="h-auto w-full text-xs font-medium text-ink-soft hover:text-ink"
           >
             Cambiar cédula o correo
-          </button>
+          </Button>
         </form>
       )}
 
-      <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-hairline bg-canvas/60 p-3.5">
+      <Alert className="mt-4 flex items-start gap-2.5 bg-canvas/60 p-3.5">
         <IconShield className="mt-0.5 h-4 w-4 shrink-0 text-alerta-600" />
         <p className="text-xs leading-relaxed text-ink-soft">
           No guardamos tu cédula en claro: se convierte en un código irreversible
           con una clave que vive solo en la base de datos. Tampoco guardamos tu
           nombre. Puedes borrar tu registro y tus votos cuando quieras.
         </p>
-      </div>
+      </Alert>
     </div>
   );
 }
@@ -566,11 +582,9 @@ function CuentaUnica({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-lg border border-hairline bg-surface p-5", className)}>
+    <Card className={cn("p-5", className)}>
       <p className="rotulo text-ink-soft">Cuenta Única · OGTIC</p>
-      <h2 className="font-sans mt-1.5 text-sm font-semibold text-ink">
-        ¿Tienes Cuenta Única?
-      </h2>
+      <CardTitle className="mt-1.5">¿Tienes Cuenta Única?</CardTitle>
       <p className="mt-1 text-xs leading-relaxed text-ink-soft">
         Es la identidad digital ciudadana del Estado: ya comprobó tu cédula contra
         el padrón y que eres tú. Al verificar, este sitio no guarda tu cédula ni
@@ -580,15 +594,16 @@ function CuentaUnica({
         lleva a cuentaunica.gob.do y vuelves aquí.
       </p>
       {error && <p className="mt-2 text-xs font-medium text-alerta-700">{error}</p>}
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={onClick}
         disabled={cargando}
-        className="mt-3 h-11 w-full rounded-lg border border-brand-500 bg-surface text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 active:scale-95 disabled:opacity-50"
+        className="mt-3 h-11 w-full border-brand-500 bg-surface text-brand-700"
       >
         {cargando ? "Abriendo Cuenta Única…" : "Verificar con Cuenta Única"}
-      </button>
-    </div>
+      </Button>
+    </Card>
   );
 }
 

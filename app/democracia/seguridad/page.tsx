@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Alert } from "@/components/ui/alert";
+import { Card, CardTitle } from "@/components/ui/card";
 import type { Metadata } from "next";
 import { IconArrowLeft, IconCheck, IconShield } from "@/components/icons";
 import { cuentaUnicaHabilitada } from "@/app/democracia/cuenta-unica/cliente";
@@ -96,8 +98,8 @@ export default function SeguridadPage() {
         </Medida>
       </div>
 
-      <section className="mt-8 rounded-lg border border-alerta-100/50 bg-alerta-50/60 p-5">
-        <h2 className="font-sans text-sm font-semibold text-ink">Lo que este piloto todavía no hace</h2>
+      <Alert variant="aviso" className="mt-8 border-alerta-100/50 bg-alerta-50/60 p-5">
+        <CardTitle>Lo que este piloto todavía no hace</CardTitle>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
           Honestidad sobre los límites: con el registro por correo verificamos que
           la cédula sea <strong>válida</strong> y que controles un correo, pero no
@@ -108,7 +110,7 @@ export default function SeguridadPage() {
             ? "Está activa: cualquier votante puede verificar su registro con ella, y los totales distinguen cuántos votos vienen de identidad verificada."
             : "La integración está construida y espera el cliente que emite la OGTIC; hasta entonces todos los registros cuentan como cédula declarada."}
         </p>
-      </section>
+      </Alert>
 
       <p className="mt-6 text-xs leading-relaxed text-ink-soft">
         Herramienta independiente y no oficial, sin afiliación con el Estado
@@ -126,14 +128,14 @@ export default function SeguridadPage() {
 
 function Medida({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-hairline bg-surface p-5 ">
-      <h2 className="font-sans flex items-start gap-2.5 text-base font-semibold text-ink">
+    <Card as="section" className="p-5">
+      <CardTitle className="flex items-start gap-2.5 text-base">
         <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-valido-600 text-canvas">
           <IconCheck className="h-3.5 w-3.5" />
         </span>
         {titulo}
-      </h2>
+      </CardTitle>
       <p className="mt-2 pl-7 text-sm leading-relaxed text-ink-soft">{children}</p>
-    </section>
+    </Card>
   );
 }

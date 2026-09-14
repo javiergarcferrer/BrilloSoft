@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { notFound } from "next/navigation";
 import { getHistorialProveedor, getProveedorRegistro } from "@/lib/dgcp";
 import { titulizar } from "@/lib/capitulos";
@@ -80,7 +82,7 @@ export default async function ProveedorPage({
         Proveedores del Estado
       </Link>
 
-      <section className="rounded-lg bg-surface p-6 border border-hairline">
+      <Card as="section" className="p-6">
         <div className="text-xs uppercase tracking-wide text-ink-soft">
           Proveedor del Estado · RPE {rpe}
         </div>
@@ -111,11 +113,11 @@ export default async function ProveedorPage({
           adjudicaciones; {formatMonto(historial.montoVigente, "DOP")} corresponden
           a contratos vigentes (sin cancelados ni rescindidos).
         </p>
-      </section>
+      </Card>
 
       {registro && (
-        <section className="rounded-lg bg-surface p-6 border border-hairline">
-          <h2 className="font-semibold">Ficha de registro</h2>
+        <Card as="section" className="p-6">
+          <CardTitle className="text-[15px]">Ficha de registro</CardTitle>
           <p className="mt-1 text-xs text-ink-soft">
             Lo que el Registro de Proveedores del Estado dice de esta empresa.
           </p>
@@ -230,12 +232,12 @@ export default async function ProveedorPage({
             publica: esto es una herramienta de vigilancia, no un directorio
             comercial.
           </p>
-        </section>
+        </Card>
       )}
 
       {historial.porAnio.length > 1 && (
-        <section className="rounded-lg bg-surface p-6 border border-hairline">
-          <h2 className="font-semibold">Contratos por año</h2>
+        <Card as="section" className="p-6">
+          <CardTitle className="text-[15px]">Contratos por año</CardTitle>
           <ul className="mt-3 space-y-2.5 text-sm">
             {historial.porAnio.map((a) => (
               <li key={a.anio}>
@@ -245,21 +247,20 @@ export default async function ProveedorPage({
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
                 </div>
-                <div className="mt-1 h-2 rounded-sm bg-hairline">
-                  <div
-                    className="bar-grow h-2 rounded-sm bg-brand-500"
-                    style={{ width: `${Math.max(2, (a.monto / maxAnio) * 100)}%` }}
-                  />
-                </div>
+                <Progress
+                  value={Math.max(2, (a.monto / maxAnio) * 100)}
+                  aria-label={`${a.anio}: ${formatMonto(a.monto, "DOP")}`}
+                  className="mt-1"
+                />
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       )}
 
       <div className="grid gap-5 lg:grid-cols-5">
-        <section className="rounded-lg bg-surface p-6 border border-hairline lg:col-span-2">
-          <h2 className="font-semibold">Sus principales clientes</h2>
+        <Card as="section" className="p-6 lg:col-span-2">
+          <CardTitle className="text-[15px]">Sus principales clientes</CardTitle>
           <ul className="mt-3 space-y-2 text-sm">
             {topInstituciones.map(([inst, a]) => (
               <li
@@ -273,10 +274,10 @@ export default async function ProveedorPage({
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
 
-        <section className="rounded-lg bg-surface p-6 border border-hairline lg:col-span-3">
-          <h2 className="font-semibold">Contratos recientes</h2>
+        <Card as="section" className="p-6 lg:col-span-3">
+          <CardTitle className="text-[15px]">Contratos recientes</CardTitle>
           <ul className="mt-3 space-y-2 text-sm">
             {recientes.map((c, i) => (
               <li key={i} className="rounded-lg border border-hairline px-3 py-2.5">
@@ -299,7 +300,7 @@ export default async function ProveedorPage({
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       </div>
     </div>
   );

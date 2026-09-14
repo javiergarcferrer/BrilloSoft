@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Card, CardTitle } from "@/components/ui/card";
 import { IconArrowRight, IconCheck, IconShield } from "@/components/icons";
 
 export const metadata: Metadata = {
@@ -98,10 +99,11 @@ export default function SeguridadPlataformaPage() {
         </Medida>
       </div>
 
-      <Link
-        href="/democracia/seguridad"
-        className="mt-6 flex items-center gap-4 rounded-lg border border-hairline bg-surface px-5 py-4  transition-colors hover:bg-canvas/60"
-      >
+      <Card asChild className="mt-6 transition-colors hover:bg-canvas/60">
+        <Link
+          href="/democracia/seguridad"
+          className="flex items-center gap-4 px-5 py-4"
+        >
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
           <IconShield className="h-5 w-5" />
         </span>
@@ -114,8 +116,9 @@ export default function SeguridadPlataformaPage() {
             Democracia Legislativa.
           </p>
         </div>
-        <IconArrowRight className="h-4 w-4 shrink-0 text-ink-soft" />
-      </Link>
+          <IconArrowRight className="h-4 w-4 shrink-0 text-ink-soft" />
+        </Link>
+      </Card>
 
       <p className="mt-6 text-xs leading-relaxed text-ink-soft">
         Herramienta independiente y no oficial, sin afiliación con el Estado
@@ -138,24 +141,24 @@ function Marco({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-hairline bg-surface p-4 ">
+    <Card className="p-4">
       <div className="font-mono text-xs font-semibold text-ink">{norma}</div>
       <div className="mt-1.5 text-sm font-semibold text-ink">{titulo}</div>
       <p className="mt-1 text-xs leading-relaxed text-ink-soft">{children}</p>
-    </div>
+    </Card>
   );
 }
 
 function Medida({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-hairline bg-surface p-5 ">
-      <h2 className="font-sans flex items-start gap-2.5 text-base font-semibold text-ink">
+    <Card as="section" className="p-5">
+      <CardTitle className="flex items-start gap-2.5 text-base">
         <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-valido-600 text-canvas">
           <IconCheck className="h-3.5 w-3.5" />
         </span>
         {titulo}
-      </h2>
+      </CardTitle>
       <p className="mt-2 pl-7 text-sm leading-relaxed text-ink-soft">{children}</p>
-    </section>
+    </Card>
   );
 }
