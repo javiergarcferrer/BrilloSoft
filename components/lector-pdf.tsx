@@ -167,8 +167,16 @@ export default function LectorPdf({ url, urlOrigen }: Props) {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline bg-canvas/60 px-4 py-2">
-        <div className="flex items-center gap-1.5">
+      {/*
+        La barra de mandos del lector se usa con el pulgar, una página tras
+        otra: seis objetivos de 44 px (`icon`) en vez de los 36 con que estaba,
+        y los dos contadores estrechados —de 6.5 rem a 4.5 y de 3 a 2.75— para
+        que los seis quepan en una sola línea a 390 px en vez de partirse en
+        dos. El `flex-wrap` se queda de red por si un idioma o una lupa del
+        sistema los ensancha.
+      */}
+      <div className="flex flex-wrap items-center justify-between gap-y-1 border-b border-hairline bg-canvas/60 px-3 py-2 sm:px-4">
+        <div className="flex items-center gap-1">
           <Boton
             onClick={() => setPagina((p) => Math.max(1, p - 1))}
             desactivado={pagina <= 1 || estado !== "listo"}
@@ -176,7 +184,7 @@ export default function LectorPdf({ url, urlOrigen }: Props) {
           >
             ‹
           </Boton>
-          <span className="min-w-[6.5rem] text-center font-mono text-xs tabular-nums text-ink-soft">
+          <span className="min-w-[4.5rem] text-center font-mono text-xs tabular-nums text-ink-soft">
             {estado === "listo" ? `${pagina} / ${paginas}` : "cargando…"}
           </span>
           <Boton
@@ -187,7 +195,7 @@ export default function LectorPdf({ url, urlOrigen }: Props) {
             ›
           </Boton>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <Boton
             onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.25) * 100) / 100))}
             desactivado={zoom <= 0.5 || estado !== "listo"}
@@ -195,7 +203,7 @@ export default function LectorPdf({ url, urlOrigen }: Props) {
           >
             −
           </Boton>
-          <span className="min-w-[3rem] text-center font-mono text-xs tabular-nums text-ink-soft">
+          <span className="min-w-[2.75rem] text-center font-mono text-xs tabular-nums text-ink-soft">
             {Math.round(zoom * 100)}%
           </span>
           <Boton
@@ -208,9 +216,16 @@ export default function LectorPdf({ url, urlOrigen }: Props) {
         </div>
       </div>
 
+      {/*
+        Al acercar, el que se desplaza es este cajón y no la página: el canvas
+        crece dentro de `overflow-auto` y nunca desborda el documento. Con
+        `overscroll-contain`, llegar al borde del documento no arrastra la
+        página de debajo —el rebote que en un teléfono saca al lector de donde
+        estaba leyendo.
+      */}
       <div
         ref={contenedor}
-        className="max-h-[75vh] overflow-auto bg-canvas px-1 py-3 text-center"
+        className="max-h-[75vh] overflow-auto overscroll-contain bg-canvas px-1 py-3 text-center"
       >
         {estado === "cargando" && (
           <p className="py-16 text-xs text-ink-soft">Abriendo el documento…</p>
@@ -224,7 +239,11 @@ export default function LectorPdf({ url, urlOrigen }: Props) {
   );
 }
 
-/** El mando del lector: ocho por ocho, con nombre para el lector de pantalla. */
+/**
+ * El mando del lector: cuadrado y con nombre para el lector de pantalla.
+ * Talla `icon` —44 px en el teléfono, 40 desde `sm`—, porque pasar página en
+ * un documento de ciento cuarenta es el gesto que más se repite aquí.
+ */
 function Boton({
   children,
   onClick,
@@ -240,10 +259,10 @@ function Boton({
     <Button
       type="button"
       variant="secondary"
-      size="icon-sm"
+      size="icon"
       onClick={onClick}
       disabled={desactivado}
-      className="text-sm"
+      className="text-base"
     >
       {children}
       <span className="sr-only">{etiqueta}</span>

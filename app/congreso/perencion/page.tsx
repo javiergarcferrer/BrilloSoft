@@ -29,6 +29,13 @@ const PAGINAS_MUESTRA = 25;
 
 export default async function PerencionPage() {
   const muestra = await muestrearIniciativas(PAGINAS_MUESTRA);
+  /*
+    `total` solo queda en `null` cuando **ninguna** de las páginas de la muestra
+    contestó: es la señal de que el SIL está caído. Sin ella, esta vista
+    respondía «ninguna pieza está en riesgo» —una afirmación sobre el Congreso—
+    cuando lo cierto era que no pudimos mirar ni una sola.
+  */
+  const silCaido = muestra.total === null;
   const legislatura = legislaturaVigente();
   const diasParaCierre = legislatura ? diffDias(new Date(), legislatura.cierre) : null;
 
@@ -51,19 +58,19 @@ export default async function PerencionPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <Button
-        asChild
-        variant="link"
-        size="sm"
-        className="h-auto gap-1.5 px-0 text-xs text-ink-soft hover:text-ink"
+      {/*
+        Volver era un renglón de 16 px: se le da la altura de un mando (44 px)
+        en el teléfono, con un margen negativo que deja el texto donde estaba.
+      */}
+      <Link
+        href="/congreso"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink sm:min-h-0 sm:py-1"
       >
-        <Link href="/congreso">
-          <IconArrowLeft className="h-3.5 w-3.5" />
-          Congreso
-        </Link>
-      </Button>
+        <IconArrowLeft className="h-3.5 w-3.5" />
+        Congreso
+      </Link>
 
-      <header className="mb-6 mt-3">
+      <header className="mb-6 mt-1 sm:mt-3">
         <h1 className="font-display text-3xl text-ink sm:text-4xl">
           ¿Qué se muere cuando cierra la legislatura?
         </h1>
@@ -120,6 +127,21 @@ export default async function PerencionPage() {
             ))}
           </ul>
         </Card>
+      ) : silCaido ? (
+        <EstadoVacio
+          variante="caida"
+          rotulo="Piezas en la ventana de aviso"
+          titulo="El SIL de la Cámara no respondió"
+          accion={
+            <Button asChild variant="secondary">
+              <Link href="/fuentes">Ver el estado de las fuentes</Link>
+            </Button>
+          }
+        >
+          Ninguna de las {PAGINAS_MUESTRA} páginas de la muestra llegó, así que
+          no se pudo evaluar una sola pieza. Decir aquí que no hay nada en
+          riesgo sería afirmar algo que no miramos.
+        </EstadoVacio>
       ) : (
         <EstadoVacio
           rotulo="Piezas en la ventana de aviso"
@@ -131,15 +153,17 @@ export default async function PerencionPage() {
         </EstadoVacio>
       )}
 
-      <p className="mt-5 text-xs leading-relaxed text-ink-soft">
-        Cobertura parcial: se evalúan las {muestra.muestra} iniciativas más recientes
-        del registro, no el corpus completo. El SIL pagina de 10 en 10 y barrer sus
-        ~622 páginas en cada carga no es viable.{" "}
-        <Link href="/fuentes" className="text-brand-700 underline">
-          Ver estado de las fuentes
-        </Link>
-        .
-      </p>
+      {!silCaido && (
+        <p className="mt-5 text-xs leading-relaxed text-ink-soft">
+          Cobertura parcial: se evalúan las {muestra.muestra} iniciativas más recientes
+          del registro, no el corpus completo. El SIL pagina de 10 en 10 y barrer sus
+          ~622 páginas en cada carga no es viable.{" "}
+          <Link href="/fuentes" className="text-brand-700 underline">
+            Ver estado de las fuentes
+          </Link>
+          .
+        </p>
+      )}
     </div>
   );
 }

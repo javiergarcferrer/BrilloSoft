@@ -77,35 +77,66 @@ export default function VisorDocumento({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 px-5 pb-4">
+      {/*
+        Tres mandos de talla `sm` —36 px— que en un teléfono caían en dos
+        líneas desiguales, por debajo del objetivo táctil y con la acción
+        principal indistinguible de las dos que sacan de la plataforma. Ahora
+        leer aquí ocupa el ancho entero, y abrir y descargar se reparten la
+        línea de abajo a medias: tres objetivos de 44 px que se aciertan con el
+        pulgar. Desde `sm` vuelven a ser tres mandos en fila.
+      */}
+      <div className="flex flex-col gap-2 px-5 pb-4 sm:flex-row sm:flex-wrap">
         {esPdf && (
           <Button
             type="button"
-            size="sm"
             onClick={() => setAbierto((v) => !v)}
             aria-expanded={abierto}
+            className="w-full sm:w-auto"
           >
             {abierto ? "Ocultar el documento" : "Leer el documento aquí"}
           </Button>
         )}
-        <Button asChild variant="secondary" size="sm">
-          <a href={url} target="_blank" rel="noopener noreferrer">
-            Abrir en pestaña nueva
-            <IconExternal className="h-3.5 w-3.5" />
-          </a>
-        </Button>
-        <Button asChild variant="secondary" size="sm">
-          <a href={url} download>
-            Descargar
-            <IconDownload className="h-3.5 w-3.5" />
-          </a>
-        </Button>
+        <div className="flex gap-2">
+          {/*
+            «Abrir en el origen» y no «en pestaña nueva»: en una herramienta de
+            verificación importa **a dónde** lleva —al archivo del Estado, no a
+            una copia nuestra— más que en qué pestaña se abre, y de paso cabe
+            en media línea de teléfono. Es además el mismo rótulo con que el
+            lector ofrece la salida cuando no puede dibujar el PDF.
+          */}
+          <Button
+            asChild
+            variant="secondary"
+            className="flex-1 px-3 text-xs sm:flex-none sm:px-4 sm:text-sm"
+          >
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              Abrir en el origen
+              <IconExternal className="h-3.5 w-3.5" />
+            </a>
+          </Button>
+          <Button
+            asChild
+            variant="secondary"
+            className="flex-1 px-3 text-xs sm:flex-none sm:px-4 sm:text-sm"
+          >
+            <a href={url} download>
+              Descargar
+              <IconDownload className="h-3.5 w-3.5" />
+            </a>
+          </Button>
+        </div>
       </div>
 
       {abierto && esPdf && (
         <div className="border-t border-hairline">
+          {/*
+            El aviso de escaneo no es decoración: explica por qué el buscador
+            del lector no encontrará nada dentro del documento. A 11 px se leía
+            como letra pequeña de contrato; sube a 12, el suelo de la casa para
+            un metadato.
+          */}
           {(peso || escaneo) && (
-            <p className="bg-canvas/60 px-5 py-2 text-[11px] leading-relaxed text-ink-soft">
+            <p className="bg-canvas/60 px-5 py-2 text-xs leading-relaxed text-ink-soft">
               {peso && `${peso} · servido desde ${origen}.`}
               {escaneo &&
                 " Es un escaneo: el texto no se puede buscar ni copiar, porque así lo publica el Estado."}

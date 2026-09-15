@@ -49,13 +49,15 @@ export default function Plegable({
           {children}
         </div>
       </CollapsibleContent>
-      <div
-        className={cn(
-          "px-5 py-3",
-          Boolean(resumen) && !abierto && "border-t border-hairline",
-        )}
-      >
-        <CollapsibleTrigger className="text-xs font-semibold text-brand-700 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
+      {/*
+        El mando ocupa el ancho del bloque y mide 44 px de alto en el teléfono.
+        Antes era un renglón de texto de 16 px perdido en el medio de un
+        contenedor con relleno: el dedo acertaba en la caja, no en el botón, y
+        el toque no hacía nada. Quien abre un historial de treinta trámites lo
+        hace con el pulgar, así que el objetivo es la fila entera.
+      */}
+      <div className={cn(Boolean(resumen) && !abierto && "border-t border-hairline")}>
+        <CollapsibleTrigger className="flex min-h-11 w-full items-center px-5 py-3 text-left text-xs font-semibold text-brand-700 transition-colors hover:bg-canvas/60 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
           {abierto ? etiquetaCerrar : etiqueta}
         </CollapsibleTrigger>
       </div>

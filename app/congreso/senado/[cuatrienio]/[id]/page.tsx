@@ -13,6 +13,8 @@ import { formatFecha, hace } from "@/lib/format";
 import { getAgregado, refIniciativa } from "@/lib/democracia";
 import VotoWidget from "@/components/democracia/voto-widget";
 import Dossier from "@/components/congreso/dossier";
+import Plegable from "@/components/plegable";
+import ListaPlegada from "../../../lista-plegada";
 import VisorDocumento from "@/components/visor-documento";
 import { urlDeLectura } from "@/lib/documentos";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
@@ -21,6 +23,14 @@ import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const revalidate = 3600;
+
+/*
+  Cuántas filas de cada registro se ven sin pedirlo. Un expediente arrastrado
+  entre legislaturas trae treinta eventos de trámite y otros tantos firmantes:
+  se enseña la cabeza y el resto queda a un toque, con el número en el botón.
+*/
+const VISIBLES_TRAMITES = 4;
+const VISIBLES_FIRMANTES = 3;
 
 type Props = { params: Promise<{ cuatrienio: string; id: string }> };
 
@@ -55,15 +65,20 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl">
+      {/*
+        Volver es la única salida de una ficha en un teléfono y era un renglón
+        de 16 px: se le da la altura de un mando (44 px) con un margen negativo
+        que deja el texto donde estaba ópticamente.
+      */}
       <Link
         href="/congreso/senado"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink sm:min-h-0 sm:py-1"
       >
         <IconArrowLeft className="h-3.5 w-3.5" />
         Senado
       </Link>
 
-      <header className="mt-3">
+      <header className="mt-1 sm:mt-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-sm font-semibold tabular-nums text-brand-700">
             {ficha.numero?.completo ?? `#${ficha.id}`}
@@ -80,7 +95,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         </h1>
 
         {ficha.tituloModificado && (
-          <div className="mt-3 rounded-lg border-l-[3px] border-brand-500 bg-surface py-3 pl-4 pr-3 ">
+          <div className="mt-3 rounded-lg border-l-[3px] border-brand-500 bg-surface py-3 pl-4 pr-3">
             <p className="rotulo text-brand-700">
               Título modificado durante el trámite
             </p>
@@ -98,8 +113,13 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
               ? `Promulgada como Ley ${ficha.numPromulgacion}`
               : "Promulgada"}
           </p>
+          {/*
+            La fecha iba en azul de firma dentro de una tarjeta verde de
+            archivo: dos oficios de color en la misma caja diciendo cosas
+            distintas. La fecha no significa nada por sí misma — es grafito.
+          */}
           {ficha.fechaPromulgacion && (
-            <p className="mt-0.5 text-xs text-brand-600/80">
+            <p className="mt-0.5 text-xs text-ink-soft">
               {formatFecha(ficha.fechaPromulgacion)}
             </p>
           )}
@@ -151,30 +171,42 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         </div>
       )}
 
-      <Card as="section" className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
-        <Dato etiqueta="Tipo" valor={ficha.tipo} />
-        <Dato etiqueta="Cámara inicial" valor={ficha.camaraInicial} />
-        <Dato etiqueta="Poder de origen" valor={ficha.poderOrigen} />
-        <Dato etiqueta="Condición" valor={ficha.condicion} />
-        <Dato etiqueta="Materia" valor={ficha.materia} />
-        <Dato etiqueta="Legislatura de inicio" valor={ficha.legislaturaInicio} mono />
-        <Dato etiqueta="Cuatrienio" valor={ficha.cuatrienio} mono />
-        <Dato
-          etiqueta="Recibido por el Senado"
-          valor={ficha.fechaRecibido ? formatFecha(ficha.fechaRecibido) : null}
-          nota={hace(ficha.fechaRecibido)}
-        />
-        <Dato
-          etiqueta="Despachada"
-          valor={
-            ficha.despachada
-              ? [formatFecha(ficha.despachada), ficha.despachadaHacia]
-                  .filter(Boolean)
-                  .join(" · hacia ")
-              : null
-          }
-        />
-      </Card>
+      {/*
+        Nueve celdas de taxonomía cruda son el bloque de mayor densidad y menor
+        valor decisorio de la ficha: es el registro literal para verificar, no
+        lo que se lee para entender. Va plegado, igual que en Diputados, para
+        que en el teléfono no se interponga entre el texto y los trámites.
+      */}
+      <Plegable
+        className="mt-5 overflow-hidden rounded-lg border border-hairline bg-surface"
+        etiqueta="Ver la ficha técnica"
+        etiquetaCerrar="Ocultar la ficha técnica"
+      >
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 px-5 py-5 sm:grid-cols-3">
+          <Dato etiqueta="Tipo" valor={ficha.tipo} />
+          <Dato etiqueta="Cámara inicial" valor={ficha.camaraInicial} />
+          <Dato etiqueta="Poder de origen" valor={ficha.poderOrigen} />
+          <Dato etiqueta="Condición" valor={ficha.condicion} />
+          <Dato etiqueta="Materia" valor={ficha.materia} />
+          <Dato etiqueta="Legislatura de inicio" valor={ficha.legislaturaInicio} mono />
+          <Dato etiqueta="Cuatrienio" valor={ficha.cuatrienio} mono />
+          <Dato
+            etiqueta="Recibido por el Senado"
+            valor={ficha.fechaRecibido ? formatFecha(ficha.fechaRecibido) : null}
+            nota={hace(ficha.fechaRecibido)}
+          />
+          <Dato
+            etiqueta="Despachada"
+            valor={
+              ficha.despachada
+                ? [formatFecha(ficha.despachada), ficha.despachadaHacia]
+                    .filter(Boolean)
+                    .join(" · hacia ")
+                : null
+            }
+          />
+        </dl>
+      </Plegable>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <Panel
@@ -182,24 +214,32 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
           nota={ficha.historial.length > 0 ? String(ficha.historial.length) : undefined}
         >
           {ficha.historial.length > 0 ? (
-            <ol className="px-5 py-4">
-              {ficha.historial.map((h, i) => (
-                <li key={`${h.evento}-${i}`} className="flex gap-3 pb-4 last:pb-0">
-                  <div className="flex flex-col items-center">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-sello-600" />
-                    {i < ficha.historial.length - 1 && (
-                      <span className="mt-1 w-px flex-1 bg-hairline" />
-                    )}
-                  </div>
-                  <div className="-mt-0.5 min-w-0 flex-1">
-                    <p className="text-sm font-medium text-ink">{h.evento}</p>
-                    <p className="font-mono mt-0.5 text-xs tabular-nums text-ink-soft">
-                      {h.fecha ? formatFecha(h.fecha) : "—"}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <ListaPlegada
+              total={ficha.historial.length}
+              visibles={VISIBLES_TRAMITES}
+              etiqueta={`Ver los ${ficha.historial.length} trámites`}
+              etiquetaCerrar="Ocultar el resto de los trámites"
+              render={(desde, hasta) => (
+                <ol className="px-5 pb-4 pt-4">
+                  {ficha.historial.slice(desde, hasta).map((h, i) => (
+                    <li key={`${h.evento}-${desde + i}`} className="flex gap-3 pb-4 last:pb-0">
+                      <div className="flex flex-col items-center">
+                        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-sello-600" />
+                        {desde + i < ficha.historial.length - 1 && (
+                          <span className="mt-1 w-px flex-1 bg-hairline" />
+                        )}
+                      </div>
+                      <div className="-mt-0.5 min-w-0 flex-1">
+                        <p className="text-sm font-medium text-ink">{h.evento}</p>
+                        <p className="font-mono mt-0.5 text-xs tabular-nums text-ink-soft">
+                          {h.fecha ? formatFecha(h.fecha) : "—"}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            />
           ) : ficha.historialCrudo ? (
             <p className="px-5 py-4 text-sm leading-relaxed text-ink-soft">
               {ficha.historialCrudo}
@@ -225,13 +265,21 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
             nota={ficha.proponentes.length > 0 ? String(ficha.proponentes.length) : undefined}
           >
             {ficha.proponentes.length > 0 ? (
-              <ul className="divide-y divide-hairline">
-                {ficha.proponentes.map((p) => (
-                  <li key={p} className="px-5 py-3">
-                    <p className="text-sm font-medium text-ink">{p}</p>
-                  </li>
-                ))}
-              </ul>
+              <ListaPlegada
+                total={ficha.proponentes.length}
+                visibles={VISIBLES_FIRMANTES}
+                etiqueta={`Ver los ${ficha.proponentes.length} proponentes`}
+                etiquetaCerrar="Ocultar el resto de los proponentes"
+                render={(desde, hasta) => (
+                  <ul className="divide-y divide-hairline">
+                    {ficha.proponentes.slice(desde, hasta).map((p) => (
+                      <li key={p} className="px-5 py-3">
+                        <p className="text-sm font-medium text-ink">{p}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              />
             ) : (
               <p className="px-5 py-6 text-sm text-ink-soft">Sin proponentes registrados.</p>
             )}
@@ -403,7 +451,7 @@ async function SeccionDocumento({ cuatrienio, id }: { cuatrienio: string; id: nu
                   href={`/api/senado/documento?c=${encodeURIComponent(cuatrienio)}&e=${id}&item=${d.item}&bd=${d.bd}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+                  className="-my-1 -mr-2 inline-flex min-h-11 shrink-0 items-center gap-1 px-2 text-xs font-medium text-brand-700 hover:underline sm:my-0 sm:mr-0 sm:min-h-0 sm:px-0"
                 >
                   Abrir
                   <IconExternal className="h-3.5 w-3.5" />

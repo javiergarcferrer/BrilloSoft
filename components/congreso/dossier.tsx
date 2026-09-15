@@ -96,7 +96,12 @@ export default async function Dossier({
                 .filter(Boolean)
                 .join(" · ")}
             </p>
-            <Button asChild size="sm" className="mt-2">
+            {/*
+              Es la salida más valiosa de toda la ficha —del expediente al
+              texto vigente— y estaba en talla `sm`, 36 px. Ocupa el ancho del
+              bloque en el teléfono, con los 44 px de un mando.
+            */}
+            <Button asChild className="mt-3 w-full sm:mt-2 sm:w-auto">
               <Link href={`/normativa/ley/${ley.numero}`}>
                 Leer el texto de la ley →
               </Link>
@@ -182,12 +187,19 @@ export default async function Dossier({
                           {norma.fecha && ` · ${formatFecha(norma.fechaIso ?? undefined)}`}
                           {norma.gaceta && ` · Gaceta ${norma.gaceta}`}
                         </p>
+                        {/*
+                          Cada cita lleva su enlace al texto vigente, y era un
+                          renglón de 16 px dentro de una lista apretada: dos
+                          seguidos quedaban a menos de un dedo uno de otro. Con
+                          `min-h-11` cada uno ocupa el alto de un mando y se
+                          separan solos; desde `sm` vuelven al renglón.
+                        */}
                         {RUTA_POR_TIPO[ref.tipo] && ref.numero ? (
                           <Button
                             asChild
                             variant="link"
                             size="sm"
-                            className="mt-1 h-auto px-0 text-xs font-medium"
+                            className="mt-1 h-auto min-h-11 justify-start whitespace-normal px-0 text-left text-xs font-medium sm:min-h-0"
                           >
                             <Link href={`/normativa/${RUTA_POR_TIPO[ref.tipo]}/${ref.numero}`}>
                               Leer el texto de esta norma →
@@ -199,7 +211,7 @@ export default async function Dossier({
                               asChild
                               variant="link"
                               size="sm"
-                              className="mt-1 h-auto px-0 text-xs font-medium"
+                              className="mt-1 h-auto min-h-11 justify-start whitespace-normal px-0 text-left text-xs font-medium sm:min-h-0"
                             >
                               <a href={norma.url} target="_blank" rel="noopener noreferrer">
                                 Texto oficial en la Consultoría Jurídica
@@ -218,7 +230,9 @@ export default async function Dossier({
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-[11px] leading-relaxed text-ink-soft">
+            {/* 11 px es letra pequeña de contrato; el suelo de la casa para un
+                metadato son 12, y esta línea dice de dónde salen las citas. */}
+            <p className="mt-3 text-xs leading-relaxed text-ink-soft">
               Las citas se extraen del enunciado oficial y se resuelven contra la{" "}
               <Link href="/normativa" className="text-brand-700 underline">
                 normativa del Poder Ejecutivo

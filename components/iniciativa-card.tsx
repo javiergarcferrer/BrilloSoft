@@ -1,7 +1,13 @@
 import Link from "next/link";
-import { evaluarPerencion, type CondicionTono, type Iniciativa } from "@/lib/congreso";
+import {
+  desdeMayusculas,
+  evaluarPerencion,
+  type CondicionTono,
+  type Iniciativa,
+} from "@/lib/congreso";
 import Antiguedad from "@/components/antiguedad";
 import { MarcaEstado } from "@/components/marca-estado";
+import { cn } from "@/lib/cn";
 
 /**
  * La marca de estado de una pieza legislativa.
@@ -59,8 +65,15 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
           )}
         </div>
 
+        {/*
+          El SIL publica la descripción en versales: «LEY QUE MODIFICA LOS
+          ARTÍCULOS…». En un teléfono ese mismo enunciado ocupa ocho líneas de
+          caja alta —la forma de la palabra desaparece y la fila deja de
+          escanearse— así que se devuelve a caja mixta para leerlo. El texto no
+          cambia: cambia la caja, igual que ya hacía el Senado en su capa.
+        */}
         <p className="mt-1.5 text-[15px] leading-snug text-ink group-hover:text-brand-700">
-          {iniciativa.titulo}
+          {desdeMayusculas(iniciativa.titulo)}
         </p>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-ink-soft">
@@ -77,10 +90,18 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
               <Antiguedad iso={iniciativa.fechaDeposito} prefijo="Depositada" />
             </>
           )}
+          {/*
+            La legislatura es un nombre largo —«Segunda Legislatura Ordinaria
+            2026»— que en el teléfono se lleva una línea entera de la fila para
+            decir algo que la ficha repite y que el aviso de perención ya
+            resume. Desde `sm` hay sitio y vuelve.
+          */}
           {iniciativa.legislatura && (
             <>
-              <Sep />
-              <span className="font-mono tabular-nums">{iniciativa.legislatura}</span>
+              <Sep className="hidden sm:inline" />
+              <span className="hidden font-mono tabular-nums sm:inline">
+                {iniciativa.legislatura}
+              </span>
             </>
           )}
         </div>
@@ -89,9 +110,9 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
   );
 }
 
-function Sep() {
+function Sep({ className }: { className?: string }) {
   return (
-    <span aria-hidden className="text-hairline">
+    <span aria-hidden className={cn("text-hairline", className)}>
       ·
     </span>
   );

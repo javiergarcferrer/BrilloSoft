@@ -3,6 +3,7 @@ import { Suspense, cache } from "react";
 import { notFound } from "next/navigation";
 import { CondicionBadge } from "@/components/iniciativa-card";
 import {
+  desdeMayusculas,
   documentoUrl,
   evaluarPerencion,
   getDocumentos,
@@ -19,12 +20,26 @@ import { getAgregado, refIniciativa } from "@/lib/democracia";
 import VotoWidget from "@/components/democracia/voto-widget";
 import Dossier from "@/components/congreso/dossier";
 import Plegable from "@/components/plegable";
+import ListaPlegada from "../lista-plegada";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconArrowLeft, IconExternal } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
 
 export const revalidate = 300;
+
+/*
+  Cuántas filas de cada registro se ven sin pedirlo.
+
+  Un expediente veterano trae treinta trámites, una docena de documentos y
+  treinta firmantes: en un teléfono eso son seis pantallas de desplazamiento
+  antes de llegar al final de la ficha, y el único evento que importa —el
+  último— queda enterrado bajo los rutinarios. Se enseña la cabeza de cada
+  registro y el resto queda a un toque, con el número dicho en el botón.
+*/
+const VISIBLES_DOCS = 4;
+const VISIBLES_TRAMITES = 4;
+const VISIBLES_FIRMANTES = 3;
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -51,6 +66,11 @@ export default async function IniciativaPage({ params }: Props) {
   if (!raw) notFound();
 
   const ini = normalizarIniciativa(raw);
+  // El SIL publica el enunciado en versales. En caja alta un título de
+  // cuarenta palabras se convierte en ocho líneas ilegibles en un teléfono, y
+  // es justo el primer bloque de la ficha: se devuelve a caja mixta para
+  // leerlo, sin tocar una palabra. La capa del Senado ya lo hacía.
+  const titulo = desdeMayusculas(ini.titulo);
   const ref = refIniciativa("diputados", ini.id);
 
   // Todo lo que depende solo del id sale en una tanda, el agregado de votos
@@ -67,6 +87,8 @@ export default async function IniciativaPage({ params }: Props) {
     .map(normalizarDocumento)
     .sort((a, b) => (a.cargado ?? "").localeCompare(b.cargado ?? ""));
   const cadenaTexto = docs.filter((d) => d.etapa.texto);
+  const tramites = historicos.results;
+  const firmantes = proponentes.results.map(normalizarProponente);
   const proponentePrincipal =
     proponentes.results.find((p) => p.principal)?.nombreCompleto ??
     proponentes.results[0]?.nombreCompleto ??
@@ -75,15 +97,20 @@ export default async function IniciativaPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl">
+      {/*
+        Volver es la única salida de una ficha en un teléfono y era un renglón
+        de 16 px: se le da la altura de un mando (44 px) con un margen negativo
+        que deja el texto donde estaba ópticamente.
+      */}
       <Link
         href="/congreso"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink sm:min-h-0 sm:py-1"
       >
         <IconArrowLeft className="h-3.5 w-3.5" />
         Congreso
       </Link>
 
-      <header className="mt-3">
+      <header className="mt-1 sm:mt-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-sm font-semibold tabular-nums text-brand-700">
             {ini.numero?.completo ?? `#${ini.id}`}
@@ -93,16 +120,16 @@ export default async function IniciativaPage({ params }: Props) {
         </div>
 
         <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
-          {ini.titulo}
+          {titulo}
         </h1>
 
         {ini.tituloModificado && (
-          <div className="mt-3 rounded-lg border-l-[3px] border-brand-500 bg-surface py-3 pl-4 pr-3 ">
+          <div className="mt-3 rounded-lg border-l-[3px] border-brand-500 bg-surface py-3 pl-4 pr-3">
             <p className="rotulo text-brand-700">
               Título modificado durante el trámite
             </p>
             <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-              {ini.tituloModificado}
+              {desdeMayusculas(ini.tituloModificado)}
             </p>
           </div>
         )}
@@ -136,11 +163,10 @@ export default async function IniciativaPage({ params }: Props) {
       {/*
         Antes de los metadatos: qué es la pieza, qué norma vigente toca y en qué
         punto del trámite está. El SIL no publica sinopsis, así que se explica
-        desde el propio enunciado oficial.
-      */}
-      {/*
-        El dossier resuelve hasta cinco normas contra la Consultoría. Se
-        transmite en su propio Suspense: la ficha se lee mientras llega.
+        desde el propio enunciado oficial. El dossier resuelve hasta cinco
+        normas contra la Consultoría, y por eso va en su propio Suspense: la
+        ficha se lee mientras llega. Recibe el título **crudo**, en versales,
+        porque de él se extraen las citas con expresiones regulares.
       */}
       <Suspense fallback={<Esqueleto className="mt-5 h-40" />}>
         <Dossier
@@ -153,8 +179,6 @@ export default async function IniciativaPage({ params }: Props) {
         />
       </Suspense>
 
-
-
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-5">
           <Panel
@@ -162,48 +186,23 @@ export default async function IniciativaPage({ params }: Props) {
             nota={cadenaTexto.length > 1 ? `${cadenaTexto.length} versiones del texto` : undefined}
           >
             {docs.length > 0 ? (
-              <ul className="divide-y divide-hairline">
-                {docs.map((doc) => {
-                  const url = documentoUrl(rutaBase, doc.id);
-                  return (
-                    <li key={doc.id} className="flex items-start gap-3 px-5 py-3">
-                      <span
-                        aria-hidden
-                        className={
-                          doc.etapa.texto
-                            ? "mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sello-600"
-                            : "mt-1.5 h-2 w-2 shrink-0 rounded-full bg-hairline"
-                        }
+              <ListaPlegada
+                total={docs.length}
+                visibles={VISIBLES_DOCS}
+                etiqueta={`Ver los ${docs.length} documentos`}
+                etiquetaCerrar="Ocultar el resto de los documentos"
+                render={(desde, hasta) => (
+                  <ul className="divide-y divide-hairline">
+                    {docs.slice(desde, hasta).map((doc) => (
+                      <FilaDocumento
+                        key={doc.id}
+                        doc={doc}
+                        url={documentoUrl(rutaBase, doc.id)}
                       />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-ink">
-                          {doc.etiqueta}
-                          {doc.etapa.texto && (
-                            <span className="ml-2 rounded bg-brand-50 px-1.5 py-0.5 rotulo text-brand-700">
-                              texto
-                            </span>
-                          )}
-                        </p>
-                        <p className="font-mono mt-0.5 text-xs tabular-nums text-ink-soft">
-                          {formatFecha(doc.cargado ?? undefined)}
-                          {doc.extension && ` · ${doc.extension.toUpperCase()}`}
-                        </p>
-                      </div>
-                      {url && (
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
-                        >
-                          Abrir
-                          <IconExternal className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
+                    ))}
+                  </ul>
+                )}
+              />
             ) : (
               <p className="px-5 py-6 text-sm text-ink-soft">
                 Esta pieza aún no tiene documentos cargados en el SIL.
@@ -230,8 +229,14 @@ export default async function IniciativaPage({ params }: Props) {
 
         </div>
 
+      {/*
+        El voto va donde estaba —después del texto, nunca antes—, pero es un
+        hijo suelto de esta rejilla: sin el `col-span` caía en la segunda
+        columna y partía el ancho con los trámites. En el teléfono, que es de
+        una sola columna, el orden no cambia.
+      */}
       {agregado && (
-        <div className="mt-5">
+        <div className="mt-5 lg:col-span-2">
           <VotoWidget
             camara="diputados"
             refIni={ref}
@@ -244,29 +249,37 @@ export default async function IniciativaPage({ params }: Props) {
       )}
 
         <div className="flex flex-col gap-5">
-          <Panel titulo="Trámites">
-            {historicos.results.length > 0 ? (
-              <ol className="px-5 py-4">
-                {historicos.results.map((h, i) => (
-                  <li key={h.id} className="flex gap-3 pb-4 last:pb-0">
-                    <div className="flex flex-col items-center">
-                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-sello-600" />
-                      {i < historicos.results.length - 1 && (
-                        <span className="mt-1 w-px flex-1 bg-hairline" />
-                      )}
-                    </div>
-                    <div className="-mt-0.5 min-w-0 flex-1">
-                      <p className="text-sm font-medium text-ink">{h.estado ?? "—"}</p>
-                      <p className="font-mono mt-0.5 text-xs tabular-nums text-ink-soft">
-                        {formatFecha(h.inicio ?? undefined)}
-                        {h.fin && h.fin !== h.inicio && (
-                          <> → {formatFecha(h.fin)}</>
-                        )}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+          <Panel titulo="Trámites" nota={tramites.length > 0 ? String(tramites.length) : undefined}>
+            {tramites.length > 0 ? (
+              <ListaPlegada
+                total={tramites.length}
+                visibles={VISIBLES_TRAMITES}
+                etiqueta={`Ver los ${tramites.length} trámites`}
+                etiquetaCerrar="Ocultar el resto de los trámites"
+                render={(desde, hasta) => (
+                  <ol className="px-5 pb-4 pt-4">
+                    {tramites.slice(desde, hasta).map((h, i) => (
+                      <li key={h.id} className="flex gap-3 pb-4 last:pb-0">
+                        <div className="flex flex-col items-center">
+                          <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-sello-600" />
+                          {desde + i < tramites.length - 1 && (
+                            <span className="mt-1 w-px flex-1 bg-hairline" />
+                          )}
+                        </div>
+                        <div className="-mt-0.5 min-w-0 flex-1">
+                          <p className="text-sm font-medium text-ink">{h.estado ?? "—"}</p>
+                          <p className="font-mono mt-0.5 text-xs tabular-nums text-ink-soft">
+                            {formatFecha(h.inicio ?? undefined)}
+                            {h.fin && h.fin !== h.inicio && (
+                              <> → {formatFecha(h.fin)}</>
+                            )}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              />
             ) : (
               <p className="px-5 py-6 text-sm text-ink-soft">Sin trámites registrados.</p>
             )}
@@ -279,24 +292,32 @@ export default async function IniciativaPage({ params }: Props) {
         </div>
 
         <Panel titulo="Proponentes" nota={String(proponentes.total)}>
-          {proponentes.results.length > 0 ? (
-            <ul className="divide-y divide-hairline">
-              {proponentes.results.map(normalizarProponente).map((p, i) => (
-                <li key={p.legisladorId ?? i} className="px-5 py-3">
-                  <p className="text-sm font-medium text-ink">
-                    {p.nombre}
-                    {p.principal && (
-                      <span className="ml-2 rotulo text-brand-700">
-                        principal
-                      </span>
-                    )}
-                  </p>
-                  <p className="mt-0.5 text-xs text-ink-soft">
-                    {[p.funcion, p.provincia, p.partidoSiglas].filter(Boolean).join(" · ")}
-                  </p>
-                </li>
-              ))}
-            </ul>
+          {firmantes.length > 0 ? (
+            <ListaPlegada
+              total={firmantes.length}
+              visibles={VISIBLES_FIRMANTES}
+              etiqueta={`Ver los ${firmantes.length} proponentes`}
+              etiquetaCerrar="Ocultar el resto de los proponentes"
+              render={(desde, hasta) => (
+                <ul className="divide-y divide-hairline">
+                  {firmantes.slice(desde, hasta).map((p, i) => (
+                    <li key={p.legisladorId ?? desde + i} className="px-5 py-3">
+                      <p className="text-sm font-medium text-ink">
+                        {p.nombre}
+                        {p.principal && (
+                          <span className="ml-2 rotulo text-brand-700">
+                            principal
+                          </span>
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-soft">
+                        {[p.funcion, p.provincia, p.partidoSiglas].filter(Boolean).join(" · ")}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            />
           ) : (
             <p className="px-5 py-6 text-sm text-ink-soft">Sin proponentes registrados.</p>
           )}
@@ -347,6 +368,58 @@ export default async function IniciativaPage({ params }: Props) {
         </dl>
       </Plegable>
     </div>
+  );
+}
+
+/** Una pieza documental del expediente, con su enlace al archivo del SIL. */
+function FilaDocumento({
+  doc,
+  url,
+}: {
+  doc: ReturnType<typeof normalizarDocumento>;
+  url: string | null;
+}) {
+  return (
+    <li className="flex items-start gap-3 px-5 py-3">
+      <span
+        aria-hidden
+        className={
+          doc.etapa.texto
+            ? "mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sello-600"
+            : "mt-1.5 h-2 w-2 shrink-0 rounded-full bg-hairline"
+        }
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-ink">
+          {doc.etiqueta}
+          {doc.etapa.texto && (
+            <span className="ml-2 rounded bg-brand-50 px-1.5 py-0.5 rotulo text-brand-700">
+              texto
+            </span>
+          )}
+        </p>
+        <p className="font-mono mt-0.5 text-xs tabular-nums text-ink-soft">
+          {formatFecha(doc.cargado ?? undefined)}
+          {doc.extension && ` · ${doc.extension.toUpperCase()}`}
+        </p>
+      </div>
+      {/*
+        «Abrir» era un renglón de 16 px al borde de la pantalla: el objetivo
+        más difícil de acertar de la ficha. Con `min-h-11` y su margen negativo
+        ocupa el alto de un mando sin mover la fila.
+      */}
+      {url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="-my-1 -mr-2 inline-flex min-h-11 shrink-0 items-center gap-1 px-2 text-xs font-medium text-brand-700 hover:underline sm:my-0 sm:mr-0 sm:min-h-0 sm:px-0"
+        >
+          Abrir
+          <IconExternal className="h-3.5 w-3.5" />
+        </a>
+      )}
+    </li>
   );
 }
 

@@ -12,6 +12,7 @@ import { IconExternal, IconDoc } from "@/components/icons";
 import { desdeMayusculas } from "@/lib/congreso";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import Antiguedad from "@/components/antiguedad";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
@@ -53,7 +54,12 @@ export default async function NormativaPage({
         </p>
       </header>
 
-      {/* filtros de tipo */}
+      {/*
+        Filtros de tipo y de año. A 390 px las dos barras envuelven en líneas
+        limpias —cinco tipos en dos líneas, cuatro años en una— sin cortar el
+        último filtro; la altura táctil la pone `FiltroEnlace`, que es donde
+        vive esa decisión.
+      */}
       <NavFiltros etiqueta="Tipo de documento">
         {(Object.entries(TIPOS_NORMATIVA) as [TipoNormativa, string][]).map(([code, label]) => (
           <FiltroEnlace
@@ -66,7 +72,6 @@ export default async function NormativaPage({
         ))}
       </NavFiltros>
 
-      {/* filtros de año */}
       <NavFiltros etiqueta="Año" className="mt-2.5">
         {ANIOS.map((a) => (
           <FiltroEnlace
@@ -104,15 +109,24 @@ export default async function NormativaPage({
 async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: number }) {
   const docs = await buscarNormativa(tipo, anio);
 
+  /*
+    «No hay» y «no contestó» dicen cosas opuestas sobre el Ejecutivo, y la
+    Consultoría degrada las dos a una lista vacía. Cuando no hay nada que
+    pintar se sondea el registro más poblado que existe —los decretos del año
+    pasado, que son varios cientos y están cerrados—: si tampoco llega, lo que
+    falló es el servicio, no el año consultado. Es una consulta más, solo en el
+    caso ambiguo, y cacheada una hora como el resto.
+  */
+  const sonda = docs.length === 0 ? await buscarNormativa("3", ANIO_ACTUAL - 1) : [];
+  const consultoriaCaida = docs.length === 0 && sonda.length === 0;
+
   return (
     <>
-      <div className="mt-4 flex items-center justify-between gap-3 text-sm text-ink-soft">
-        <span className="font-mono tabular-nums">
-          {docs.length > 0
-            ? `${docs.length.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} en ${anio}`
-            : ""}
-        </span>
-      </div>
+      {docs.length > 0 && (
+        <p className="mt-4 font-mono text-sm tabular-nums text-ink-soft">
+          {`${docs.length.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} en ${anio}`}
+        </p>
+      )}
 
       {docs.length > 0 ? (
         <Card as="section" className="mt-3">
@@ -122,10 +136,26 @@ async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: numbe
             ))}
           </ul>
         </Card>
+      ) : consultoriaCaida ? (
+        <EstadoVacio
+          variante="caida"
+          titulo="La Consultoría Jurídica no respondió"
+          className="mt-4"
+          accion={
+            <Button asChild variant="secondary">
+              <Link href="/fuentes">Ver el estado de las fuentes</Link>
+            </Button>
+          }
+        >
+          El buscador de la Consultoría Jurídica del Poder Ejecutivo está caído
+          o rechazó la conexión. No es que no haya normativa: es que no pudimos
+          mirar. Los datos vuelven solos cuando el origen se restablece.
+        </EstadoVacio>
       ) : (
-        <EstadoVacio titulo="Sin resultados" className="mt-3">
-          La Consultoría no devolvió {TIPOS_NORMATIVA[tipo].toLowerCase()} para{" "}
-          {anio}, o el servicio no respondió. Prueba otro año o tipo.
+        <EstadoVacio titulo="Sin resultados" className="mt-4">
+          La Consultoría respondió, pero no tiene{" "}
+          {TIPOS_NORMATIVA[tipo].toLowerCase()} publicadas para {anio}. Prueba
+          otro año o cambia el tipo de documento.
         </EstadoVacio>
       )}
 
@@ -149,6 +179,18 @@ function ListaEsqueleto({ tipo, anio }: { tipo: TipoNormativa; anio: number }) {
   );
 }
 
+/**
+ * Fila de una norma.
+ *
+ * El objetivo táctil era «Leer»: un renglón de 46 × 16 px pegado al borde
+ * derecho, el más difícil de acertar con el pulgar de toda la vertical, con
+ * una fila de 70 px de alto muerta a su lado. Cuando la norma tiene ficha
+ * propia, la fila **entera** es el enlace —como en las dos cámaras—; el
+ * rótulo se queda como afordancia visual y el resto del papel ya responde.
+ * Cuando el origen escribe el número de otra forma y no hay ficha, queda el
+ * enlace al archivo del Estado, que sí sale de la plataforma y por eso sigue
+ * siendo un enlace aparte, ahora con altura de mando.
+ */
 function FilaDoc({ doc }: { doc: Documento }) {
   // El número normalizado es la identidad de la ficha propia; si el origen lo
   // escribe de otra forma, la fila se queda con el enlace al documento.
@@ -157,9 +199,15 @@ function FilaDoc({ doc }: { doc: Documento }) {
       ? `/normativa/${RUTA_POR_TIPO[doc.tipo]}/${doc.numero.trim()}`
       : null;
 
-  return (
-    <li className="cv-auto flex items-start gap-3 px-4 py-3.5 sm:px-5">
-      <IconDoc className="mt-0.5 h-4 w-4 shrink-0 text-ink-soft" />
+  const cuerpo = (
+    <>
+      {/*
+        El icono es el mismo en las doscientas filas de una lista de
+        documentos: no distingue una de otra, así que en el teléfono —donde se
+        lleva 28 px de la columna más estrecha que hay— se retira y el título
+        gana una palabra por línea. Desde `sm` sobra el ancho y vuelve.
+      */}
+      <IconDoc className="mt-0.5 hidden h-4 w-4 shrink-0 text-ink-soft sm:block" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
           <span className="font-mono font-semibold tabular-nums text-brand-700">
@@ -170,29 +218,42 @@ function FilaDoc({ doc }: { doc: Documento }) {
           )}
           {doc.gaceta && <span className="text-ink-soft">Gaceta {doc.gaceta}</span>}
         </div>
-        <p className="mt-1 text-sm leading-snug text-ink">
+        <p className="mt-1 text-[15px] leading-snug text-ink group-hover:text-brand-700">
           {desdeMayusculas(doc.titulo)}
         </p>
       </div>
-      {ruta ? (
+    </>
+  );
+
+  if (ruta) {
+    return (
+      <li className="cv-auto group">
         <Link
           href={ruta}
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+          className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-canvas/60 sm:px-5"
         >
-          Leer
+          {cuerpo}
+          <span className="shrink-0 self-center text-xs font-medium text-brand-700">
+            Leer
+          </span>
         </Link>
-      ) : (
-        doc.url && (
-          <a
-            href={doc.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
-          >
-            Abrir
-            <IconExternal className="h-3.5 w-3.5" />
-          </a>
-        )
+      </li>
+    );
+  }
+
+  return (
+    <li className="cv-auto flex items-start gap-3 px-4 py-3.5 sm:px-5">
+      {cuerpo}
+      {doc.url && (
+        <a
+          href={doc.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="-my-1 -mr-2 inline-flex min-h-11 shrink-0 items-center gap-1 px-2 text-xs font-medium text-brand-700 hover:underline sm:my-0 sm:mr-0 sm:min-h-0 sm:px-0"
+        >
+          Abrir
+          <IconExternal className="h-3.5 w-3.5" />
+        </a>
       )}
     </li>
   );

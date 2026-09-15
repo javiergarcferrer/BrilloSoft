@@ -65,12 +65,21 @@ export default async function SenadoPage({
             cliente que compartir—, así que usa el campo directamente y no
             `CampoBusqueda`, que vive del estado. Mismo vestido, otra mecánica.
           */}
+          {/*
+            El marcador va corto porque en un teléfono el campo mide unos
+            250 px y la frase larga se cortaba a la mitad; el alcance lo dice
+            entera la ayuda de abajo. `enterKeyHint` pone «buscar» en la tecla
+            de retorno del teclado táctil, que es la que se pulsa aquí: sin
+            ella el teclado ofrece «intro» y no se sabe si envía o salta línea.
+          */}
           <Input
             type="search"
             name="q"
             defaultValue={q}
-            placeholder="Buscar en las descripciones — p. ej. “código penal”"
+            placeholder="Buscar — p. ej. “código penal”"
             aria-label="Buscar expedientes del Senado"
+            aria-describedby="alcance-busqueda-senado"
+            enterKeyHint="search"
             className="pl-9"
           />
         </div>
@@ -81,12 +90,20 @@ export default async function SenadoPage({
           Buscar
         </Button>
       </form>
-      <p className="mt-2 text-xs leading-relaxed text-ink-soft">
+      <p
+        id="alcance-busqueda-senado"
+        className="mt-2 text-xs leading-relaxed text-ink-soft"
+      >
         La búsqueda del Senado es literal y distingue tildes: «educación» no
         encuentra «educacion».
       </p>
 
-      {/* Colecciones por cuatrienio: cada una es una base distinta en el origen. */}
+      {/*
+        Colecciones por cuatrienio: cada una es una base distinta en el origen.
+        Seis filtros de nueve caracteres que a 390 px envuelven en dos líneas
+        limpias de tres, sin cortar el último; la altura táctil la pone
+        `FiltroEnlace`, que es donde vive esa decisión.
+      */}
       <NavFiltros etiqueta="Cuatrienios" className="mt-4">
         {CUATRIENIOS.map((c) => {
           const activa = c.etiqueta === cuatrienio.etiqueta;
@@ -175,9 +192,15 @@ async function ListadoSenado({ q, etiqueta }: { q: string; etiqueta: string }) {
           variante="caida"
           titulo="El Senado no respondió"
           className="mt-4"
+          accion={
+            <Button asChild variant="secondary">
+              <Link href="/fuentes">Ver el estado de las fuentes</Link>
+            </Button>
+          }
         >
-          El sistema de consulta del Senado está caído o rechazó la conexión. Los
-          datos vuelven solos cuando el origen se restablece.
+          El sistema de consulta del Senado está caído o rechazó la conexión. No
+          es que no haya expedientes: es que no pudimos mirar. Los datos vuelven
+          solos cuando el origen se restablece.
         </EstadoVacio>
       )}
     </>

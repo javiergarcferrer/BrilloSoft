@@ -65,6 +65,13 @@ export function EsqueletoFilas({ n = 8, className }: { n?: number; className?: s
             <Skeleton className="h-4 w-16 bg-hairline/70" />
           </div>
           <Skeleton className="h-3.5 w-11/12 bg-hairline/70" />
+          {/*
+            En el teléfono un título legislativo ocupa dos o tres líneas —el SIL
+            publica enunciados de cuarenta palabras—: con una sola, la silueta
+            mide 87 px contra los 113 de la fila real, y un listado de diez
+            saltaba medio pantallazo al llegar el dato.
+          */}
+          <Skeleton className="h-3.5 w-3/4 bg-hairline/70 sm:hidden" />
           <Skeleton className="h-3 w-1/2 bg-hairline/70" />
         </div>
       ))}

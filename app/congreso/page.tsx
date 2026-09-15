@@ -9,6 +9,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import BuscadorCongreso from "./buscador-congreso";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import {
+  getCountIniciativas,
   listIniciativas,
   normalizarIniciativa,
   SIL_PAGE_SIZE,
@@ -114,13 +115,26 @@ async function ListaIniciativas({
 
   const totalPaginas = Math.max(1, Math.ceil(respuesta.total / SIL_PAGE_SIZE));
 
+  /*
+    «No hay resultados» y «la fuente no contestó» dicen cosas opuestas sobre el
+    Congreso, y `listIniciativas` degrada el fallo a una página vacía: las dos
+    llegan aquí idénticas. El censo (`CountIniciativas`) sí devuelve `null`
+    cuando el SIL no responde, así que en el único caso ambiguo —cero filas— se
+    pregunta por él y se sabe cuál de las dos pantallas toca. Es una petición
+    más, solo cuando no hay nada que pintar, y cacheada una hora.
+  */
+  const censo = iniciativas.length === 0 ? await getCountIniciativas() : 0;
+  const silCaido = censo === null;
+
   return (
     <>
       <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
         <span className="font-mono tabular-nums">
-          {`${respuesta.total.toLocaleString("es-DO")} ${
-            respuesta.total === 1 ? "iniciativa" : "iniciativas"
-          }`}
+          {silCaido
+            ? "— iniciativas"
+            : `${respuesta.total.toLocaleString("es-DO")} ${
+                respuesta.total === 1 ? "iniciativa" : "iniciativas"
+              }`}
           {q ? (
             <>
               {" para "}
@@ -150,6 +164,21 @@ async function ListaIniciativas({
             ))}
           </ul>
         </Card>
+      ) : silCaido ? (
+        <EstadoVacio
+          variante="caida"
+          titulo="El SIL de la Cámara no respondió"
+          className="mt-3"
+          accion={
+            <Button asChild variant="secondary">
+              <Link href="/fuentes">Ver el estado de las fuentes</Link>
+            </Button>
+          }
+        >
+          El sistema de información legislativa de la Cámara está caído o
+          rechazó la conexión. No es que no haya iniciativas: es que no pudimos
+          mirar. Los datos vuelven solos cuando el origen se restablece.
+        </EstadoVacio>
       ) : (
         <EstadoVacio titulo="Sin resultados" className="mt-3">
           {q
@@ -196,11 +225,19 @@ function Paginacion({
     return `/congreso${qs ? `?${qs}` : ""}`;
   };
 
+  /*
+    Paginar es la acción más repetida de esta vista y se hace con el pulgar:
+    los dos mandos van a la talla por defecto —44 px en el teléfono— en vez de
+    la talla `sm` de 36 px con la que estaban.
+  */
   return (
-    <nav className="mt-5 flex items-center justify-between gap-4">
+    <nav
+      aria-label="Paginación de iniciativas"
+      className="mt-5 flex items-center justify-between gap-3"
+    >
       {pagina > 1 ? (
-        <Button asChild variant="secondary" size="sm">
-          <Link href={href(pagina - 1)}>
+        <Button asChild variant="secondary">
+          <Link href={href(pagina - 1)} rel="prev">
             <IconArrowLeft className="h-4 w-4" />
             Anterior
           </Link>
@@ -214,8 +251,8 @@ function Paginacion({
       </span>
 
       {pagina < totalPaginas ? (
-        <Button asChild variant="secondary" size="sm">
-          <Link href={href(pagina + 1)}>
+        <Button asChild variant="secondary">
+          <Link href={href(pagina + 1)} rel="next">
             Siguiente
             <IconArrowRight className="h-4 w-4" />
           </Link>
