@@ -35,7 +35,12 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "no-scrollbar flex w-full items-stretch gap-1 overflow-x-auto border-b border-hairline",
+        [
+        "no-scrollbar flex w-full items-stretch gap-1 overflow-x-auto overscroll-x-contain border-b border-hairline",
+        // Las pestañas se anclan al desplazarse: en un teléfono media pestaña
+        // cortada no dice si hay una más o si aquello se acabó.
+        "snap-x snap-proximity [&>*]:snap-start",
+      ].join(" "),
         className,
       )}
       {...props}

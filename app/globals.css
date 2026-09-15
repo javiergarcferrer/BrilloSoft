@@ -165,7 +165,14 @@
 
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 5rem;
+    /*
+      Un enlace de ancla (#documentos, #contenido) tiene que aterrizar **debajo**
+      del cromo pegajoso, no detrás de él: el header mide 64 px y la barra de
+      sección otros 41 cuando la hay. Con los 5 rem de antes, el título al que
+      se saltaba quedaba tapado justo en el teléfono, que es donde más se usa un
+      salto dentro de una ficha larga.
+    */
+    scroll-padding-top: 7rem;
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
   }
@@ -436,6 +443,20 @@
 */
 [data-oferta-instalar] .boton-subir {
   display: none;
+}
+
+/*
+  Y una tercera: la ficha de un proceso monta su barra de acciones fija —seguir,
+  compartir, ofertar— justo encima de la tab bar, ocupando la franja de 72 a
+  145 px sobre el borde. El botón de «volver arriba» vive en 84 px y mide 44:
+  caía dentro de esa franja, tapando las dos acciones de la página. Mientras la
+  barra está montada marca la raíz, y aquí el botón sube por encima de ella.
+  Solo por debajo de `lg`, que es donde la barra se pinta.
+*/
+@media (max-width: 1023px) {
+  [data-barra-acciones] .boton-subir {
+    bottom: calc(10.25rem + env(safe-area-inset-bottom));
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar {

@@ -41,7 +41,12 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "capa z-50 w-72 rounded-lg border border-hairline bg-surface p-4 text-sm text-ink shadow-card outline-none",
+          [
+            // `dvh` y no `vh`: con el teclado virtual abierto, `vh` sigue
+            // midiendo la pantalla entera y el globo queda por debajo del
+            // teclado, donde no se puede ni ver ni tocar.
+            "capa z-50 max-h-[70dvh] w-72 overflow-y-auto overscroll-contain rounded-lg border border-hairline bg-surface p-4 text-sm text-ink shadow-card outline-none",
+          ].join(" "),
           className,
         )}
         {...props}

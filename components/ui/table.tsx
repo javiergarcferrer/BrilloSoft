@@ -17,7 +17,15 @@ import { cn } from "@/lib/cn";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div data-slot="table-container" className="w-full overflow-x-auto">
+    <div
+      data-slot="table-container"
+      /*
+        `overscroll-x-contain`: cuando el dedo llega al final del cuadro, el
+        gesto se queda aquí y no se convierte en el «volver atrás» del
+        navegador, que es lo que pasaba al barrer una tabla ancha en iOS.
+      */
+      className="w-full overflow-x-auto overscroll-x-contain"
+    >
       <table
         data-slot="table"
         className={cn("w-full caption-bottom border-collapse text-sm", className)}

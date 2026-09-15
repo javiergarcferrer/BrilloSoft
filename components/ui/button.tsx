@@ -24,7 +24,7 @@ const buttonVariants = cva(
     "inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold",
     // Un dedo no tiene `hover`: la respuesta al toque es el `active`. Sin él
     // un botón en el teléfono parece no haber oído, y se pulsa dos veces.
-    "transition-[color,background-color,border-color,transform,opacity] duration-150 active:scale-[0.98]",
+    "transition-[color,background-color,border-color,transform,opacity] duration-150 motion-safe:active:scale-[0.98]",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas",
     "disabled:pointer-events-none disabled:opacity-55 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   ].join(" "),
