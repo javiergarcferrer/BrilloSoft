@@ -52,6 +52,77 @@ function SheetOverlay({
   );
 }
 
+/**
+ * El gesto de arrastrar la hoja hacia abajo para cerrarla.
+ *
+ * En un teléfono el asidero promete ese gesto, y una hoja que no lo cumple se
+ * siente rota aunque tenga su botón de cerrar. Radix no lo trae: aquí se
+ * implementa con eventos de puntero sobre la **cabecera** y no sobre toda la
+ * hoja, porque el cuerpo se desplaza y un arrastre que compitiera con ese
+ * desplazamiento se llevaría la lista por delante.
+ *
+ * Dos decisiones que no son de adorno:
+ *  · No se captura el puntero (`setPointerCapture`). Capturarlo redirigiría el
+ *    `click` del botón de cerrar a la cabecera y el botón dejaría de funcionar.
+ *    Los eventos de movimiento y suelta se escuchan en `window` mientras dura
+ *    el gesto.
+ *  · Cerrar es pulsar el `Close` de Radix, no un estado paralelo: así el foco
+ *    vuelve al disparador y `onOpenChange` se dispara igual que con Escape.
+ */
+const ArrastreContexto = React.createContext<{
+  iniciar: (e: React.PointerEvent) => void;
+} | null>(null);
+
+const UMBRAL_CIERRE_PX = 96;
+const UMBRAL_VELOCIDAD = 0.6; // px/ms: un tirón corto pero rápido también cierra
+
+function useArrastreParaCerrar(activo: boolean) {
+  const hoja = React.useRef<HTMLDivElement>(null);
+  const cerrar = React.useRef<HTMLButtonElement>(null);
+
+  const iniciar = React.useCallback(
+    (e: React.PointerEvent) => {
+      if (!activo || !hoja.current) return;
+      // Los botones de la cabecera se pulsan, no se arrastran.
+      if ((e.target as HTMLElement).closest("button, a")) return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+
+      const el = hoja.current;
+      const y0 = e.clientY;
+      const t0 = performance.now();
+      let dy = 0;
+      el.style.transition = "none";
+
+      const mover = (ev: PointerEvent) => {
+        dy = Math.max(0, ev.clientY - y0);
+        el.style.transform = `translateY(${dy}px)`;
+      };
+      const soltar = (ev: PointerEvent) => {
+        window.removeEventListener("pointermove", mover);
+        window.removeEventListener("pointerup", soltar);
+        window.removeEventListener("pointercancel", soltar);
+        const velocidad = dy / Math.max(1, performance.now() - t0);
+        el.style.transition = "";
+        if (
+          ev.type !== "pointercancel" &&
+          (dy > UMBRAL_CIERRE_PX || (dy > 24 && velocidad > UMBRAL_VELOCIDAD))
+        ) {
+          // La animación de salida de Radix arranca desde donde quedó el dedo.
+          cerrar.current?.click();
+        } else {
+          el.style.transform = "";
+        }
+      };
+      window.addEventListener("pointermove", mover, { passive: true });
+      window.addEventListener("pointerup", soltar);
+      window.addEventListener("pointercancel", soltar);
+    },
+    [activo],
+  );
+
+  return { hoja, cerrar, iniciar };
+}
+
 function SheetContent({
   className,
   children,
@@ -60,22 +131,29 @@ function SheetContent({
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "bottom" | "right";
 }) {
+  const { hoja, cerrar, iniciar } = useArrastreParaCerrar(side === "bottom");
   return (
     <SheetPrimitive.Portal>
       <SheetOverlay />
       <SheetPrimitive.Content
+        ref={hoja}
         data-slot="sheet-content"
         className={cn(
           "fixed z-[80] flex flex-col border-hairline bg-surface shadow-pop",
           side === "bottom" &&
-            "hoja-abajo inset-x-0 bottom-0 max-h-[85dvh] rounded-t-lg border-t pb-[env(safe-area-inset-bottom)]",
+            "hoja-abajo inset-x-0 bottom-0 max-h-[85dvh] rounded-t-lg border-t pb-[env(safe-area-inset-bottom)] transition-transform duration-200 ease-out",
           side === "right" &&
             "hoja-derecha inset-y-0 right-0 w-[min(24rem,92vw)] border-l",
           className,
         )}
         {...props}
       >
-        {children}
+        <ArrastreContexto.Provider value={side === "bottom" ? { iniciar } : null}>
+          {children}
+        </ArrastreContexto.Provider>
+        {side === "bottom" && (
+          <SheetPrimitive.Close ref={cerrar} tabIndex={-1} aria-hidden className="hidden" />
+        )}
       </SheetPrimitive.Content>
     </SheetPrimitive.Portal>
   );
@@ -91,16 +169,24 @@ function SheetHeader({
   children,
   ...props
 }: React.ComponentProps<"div">) {
+  const arrastre = React.useContext(ArrastreContexto);
   return (
     <div
       data-slot="sheet-header"
-      className={cn("shrink-0 border-b border-hairline px-4 pb-3 pt-2", className)}
+      onPointerDown={arrastre?.iniciar}
+      className={cn(
+        "shrink-0 border-b border-hairline px-4 pb-3 pt-2",
+        // `touch-none`: mientras el dedo arrastra la cabecera, el navegador no
+        // debe desplazar la página ni disparar «tirar para recargar».
+        arrastre && "touch-none select-none",
+        className,
+      )}
       {...props}
     >
       <div
         data-asidero
         aria-hidden
-        className="mx-auto mb-2 h-1 w-10 rounded-sm bg-hairline sm:hidden"
+        className="mx-auto mb-2 h-1.5 w-10 rounded-sm bg-hairline sm:hidden"
       />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">{children}</div>
