@@ -3,9 +3,7 @@ import type { Metadata } from "next";
 import { muestrearContratos, type AgregadoContrato } from "@/lib/dgcp";
 import { formatMonto, formatFecha } from "@/lib/format";
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
-import { IconArrowRight, IconChartBar } from "@/components/icons";
 import Antiguedad from "@/components/antiguedad";
-import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
@@ -135,19 +133,39 @@ export default async function ContratosPage() {
           <CardAction>{r.recientes.length}</CardAction>
         </CardHeader>
         <ul className="divide-y divide-hairline">
+          {/*
+            La fila entera lleva al proceso.
+
+            Antes el enlace al proceso era un «ver proceso →» de 12 px al final
+            de una línea de metadatos que en un teléfono ya venía envuelta en
+            tres renglones: el objetivo acababa en cualquier sitio de la fila y
+            medía dieciséis píxeles de alto. Ahora el enlace del título se
+            estira sobre la fila —el mismo recurso de la tarjeta de proceso— y
+            el del proveedor, que lleva a otro sitio, se eleva por encima.
+          */}
           {r.recientes.map((c, i) => (
-            <li key={`${c.codigo_contrato}-${i}`} className="px-5 py-3">
+            <li
+              key={`${c.codigo_contrato}-${i}`}
+              className="relative px-5 py-3 transition-colors hover:bg-brand-50/40"
+            >
               <div className="flex items-baseline justify-between gap-3">
-                <span className="line-clamp-1 text-sm font-medium text-ink">
+                <Link
+                  href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
+                  title={c.descripcion || c.codigo_contrato}
+                  className="line-clamp-1 text-sm font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:text-brand-700"
+                >
                   {c.descripcion || c.codigo_contrato}
-                </span>
+                </Link>
                 <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-ink">
                   {formatMonto(c.valor_contratado, c.divisa)}
                 </span>
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-soft">
                 {c.rpe ? (
-                  <Link href={`/proveedores/${c.rpe}`} className="text-brand-600 hover:underline">
+                  <Link
+                    href={`/proveedores/${c.rpe}`}
+                    className="relative z-10 font-medium text-brand-600 hover:underline"
+                  >
                     {c.razon_social}
                   </Link>
                 ) : (
@@ -157,17 +175,6 @@ export default async function ContratosPage() {
                 <span className="line-clamp-1">{c.unidad_compra}</span>
                 <Sep />
                 <Antiguedad iso={c.fecha_adjudicacion} prefijo="Adjudicado" />
-                <Sep />
-                <Button
-                  asChild
-                  variant="link"
-                  size="sm"
-                  className="h-auto px-0 text-xs text-brand-600"
-                >
-                  <Link href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}>
-                    ver proceso →
-                  </Link>
-                </Button>
               </div>
             </li>
           ))}

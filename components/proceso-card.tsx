@@ -41,10 +41,27 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
   const cerroHace = !estado.abierto && dias !== null && dias < 0;
   const href = `/procesos/${encodeURIComponent(p.codigo_proceso)}`;
 
+  const titulo = p.titulo || p.descripcion || p.codigo_proceso;
+
+  /*
+    La hoja entera es el objetivo de toque.
+
+    En el teléfono esta tarjeta es la pieza más pulsada de la plataforma, y sus
+    dos enlaces medían 17 px y 16 px de alto: el titular recortado a dos líneas
+    y un «Ver detalle» de once caracteres en la esquina. Con el pulgar eso no
+    se acierta. `Card` ya contempla el patrón —`asChild`, «la hoja entera es el
+    enlace»—, pero aquí no sirve: la estrella es un botón y un botón dentro de
+    un enlace no es HTML válido. Así que el enlace del titular se estira sobre
+    la tarjeta con un pseudoelemento y la estrella se eleva por encima.
+
+    Un solo enlace, con el título por nombre accesible: «Ver detalle» pasa a
+    ser lo que siempre fue de verdad, un indicio visual, y se marca
+    `aria-hidden` para no anunciar dos veces el mismo destino.
+  */
   return (
     <Card
       as="article"
-      className="cv-auto group flex flex-col p-4 transition-colors hover:border-brand-300"
+      className="cv-auto group relative flex flex-col p-4 transition-colors focus-within:border-brand-400 hover:border-brand-300"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -64,14 +81,24 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
             </Badge>
           )}
         </div>
+        {/*
+          44 px de lado, y por encima del enlace estirado: la estrella es el
+          único control de la tarjeta que no lleva a la ficha, y con `icon-sm`
+          medía 36. Los márgenes negativos devuelven la alineación óptica con
+          la fila de marcas sin recortar el objetivo de toque.
+        */}
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="icon"
           onClick={() => toggleSeguimiento(p.codigo_proceso)}
-          aria-label={seguido ? "Quitar de seguimiento" : "Guardar en seguimiento"}
+          aria-label={
+            seguido
+              ? `Quitar de seguimiento: ${titulo}`
+              : `Guardar en seguimiento: ${titulo}`
+          }
           aria-pressed={seguido}
           className={cn(
-            "-mr-1 -mt-1 shrink-0",
+            "relative z-10 -mr-2 -mt-2 shrink-0",
             seguido
               ? "text-brand-600 hover:bg-brand-50 hover:text-brand-700"
               : "text-ink-soft hover:text-brand-600",
@@ -81,14 +108,20 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
         </Button>
       </div>
 
-      <h2 className="mt-2.5 line-clamp-2 font-sans text-[15px] font-semibold leading-snug tracking-tight">
-        <Link href={href} className="transition-colors hover:text-brand-700">
-          {p.titulo || p.descripcion || p.codigo_proceso}
+      <h2 className="mt-2.5 font-sans text-[15px] font-semibold leading-snug tracking-tight">
+        <Link
+          href={href}
+          title={titulo}
+          className="line-clamp-2 transition-colors after:absolute after:inset-0 after:content-[''] hover:text-brand-700 focus-visible:outline-none"
+        >
+          {titulo}
         </Link>
       </h2>
       <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink-soft">
         <IconBuilding className="h-3.5 w-3.5 shrink-0 text-ink-soft" />
-        <span className="line-clamp-1">{p.unidad_compra}</span>
+        <span className="line-clamp-1" title={p.unidad_compra}>
+          {p.unidad_compra}
+        </span>
       </p>
 
       <div className="mt-3 flex flex-1 items-end justify-between gap-3 border-t border-hairline pt-3">
@@ -115,15 +148,21 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
             <Antiguedad
               iso={p.fecha_fin_recepcion_ofertas}
               prefijo="Cerró"
-              className="block text-[11px] text-ink-soft"
+              className="block text-xs text-ink-soft"
             />
           )}
-          <Button asChild variant="link" size="sm" className="h-auto gap-1 px-0 text-xs">
-            <Link href={href}>
-              Ver detalle
-              <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </Button>
+          {/*
+            Indicio, no control: toda la hoja lleva a la ficha, así que un
+            segundo enlace al mismo sitio solo duplicaría el destino para quien
+            navega con lector de pantalla.
+          */}
+          <span
+            aria-hidden
+            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700"
+          >
+            Ver detalle
+            <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+          </span>
         </div>
       </div>
     </Card>

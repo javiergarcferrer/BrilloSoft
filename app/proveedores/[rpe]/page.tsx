@@ -1,11 +1,15 @@
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Cifra, Rotulo, TiraDeCifras } from "@/components/papel";
 import { notFound } from "next/navigation";
 import { getHistorialProveedor, getProveedorRegistro } from "@/lib/dgcp";
 import { titulizar } from "@/lib/capitulos";
 import { formatFecha, formatMonto } from "@/lib/format";
 import { IconArrowLeft } from "@/components/icons";
+import Antiguedad from "@/components/antiguedad";
 
 export async function generateMetadata({
   params,
@@ -74,40 +78,45 @@ export default async function ProveedorPage({
 
   return (
     <div className="space-y-5">
-      <Link
-        href="/proveedores"
-        className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
-      >
-        <IconArrowLeft className="h-4 w-4" />
-        Proveedores del Estado
-      </Link>
+      {/* 44 px de alto en el teléfono: es la única salida de esta ficha. */}
+      <Button asChild variant="link" className="gap-1 px-0 text-brand-600">
+        <Link href="/proveedores">
+          <IconArrowLeft className="h-4 w-4" />
+          Proveedores del Estado
+        </Link>
+      </Button>
 
       <Card as="section" className="p-6">
-        <div className="text-xs uppercase tracking-wide text-ink-soft">
-          Proveedor del Estado · RPE {rpe}
-        </div>
-        <h1 className="mt-1 text-2xl font-semibold leading-tight">{nombre}</h1>
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
-          <div className="rounded-lg bg-canvas px-4 py-3">
-            <div className="text-xs text-ink-soft">Contratos registrados</div>
-            <div className="mt-0.5 text-lg font-bold">
-              {total.toLocaleString("es-DO")}
-            </div>
-          </div>
-          <div className="rounded-lg bg-ink px-4 py-3 text-canvas">
-            <div className="text-xs text-canvas/70">
-              Monto total (últimos {contratos.length.toLocaleString("es-DO")})
-            </div>
-            <div className="mt-0.5 text-lg font-bold">{formatMonto(suma, "DOP")}</div>
-          </div>
-          <div className="rounded-lg bg-canvas px-4 py-3">
-            <div className="text-xs text-ink-soft">Instituciones cliente</div>
-            <div className="mt-0.5 text-lg font-bold">
-              {porInstitucion.size.toLocaleString("es-DO")}
-            </div>
-          </div>
-        </div>
-        <p className="mt-2 text-xs text-ink-soft">
+        <Rotulo>Proveedor del Estado · RPE {rpe}</Rotulo>
+        <h1 className="mt-2 font-display text-3xl leading-tight text-ink">{nombre}</h1>
+        {/*
+          Las tres cifras de la ficha pasan a la tira de casillas de la casa.
+          Estaban dibujadas a mano —tres cajas, una de ellas de tinta con el
+          texto en papel— en una rejilla de dos columnas que a 390 px dejaba la
+          tercera sola en su fila y partía «RD$1,986,088,831» dentro de 150 px.
+          `TiraDeCifras` es la forma canónica de un indicador y `Cifra` obliga a
+          declarar la base: el número de contratos sale del registro entero, el
+          monto solo de los que la API devuelve.
+        */}
+        <TiraDeCifras className="mt-5 lg:grid-cols-3">
+          <Cifra
+            etiqueta="Contratos registrados"
+            valor={total.toLocaleString("es-DO")}
+            nota="lo que el registro declara para este RPE"
+          />
+          <Cifra
+            etiqueta="Monto adjudicado"
+            valor={formatMonto(suma, "DOP")}
+            tono="text-brand-700"
+            nota={`sobre los ${contratos.length.toLocaleString("es-DO")} contratos que devuelve la API`}
+          />
+          <Cifra
+            etiqueta="Instituciones cliente"
+            valor={porInstitucion.size.toLocaleString("es-DO")}
+            nota="distintas, en esos mismos contratos"
+          />
+        </TiraDeCifras>
+        <p className="mt-3 text-xs leading-relaxed text-ink-soft">
           Fuente: registro público de contratos de la DGCP. Útil para dimensionar a tu
           competencia antes de ofertar. Los montos incluyen todas las
           adjudicaciones; {formatMonto(historial.montoVigente, "DOP")} corresponden
@@ -190,20 +199,25 @@ export default async function ProveedorPage({
 
           {(registro.esMipyme || registro.productorNacional ||
             registro.certificacionMicm) && (
-            <ul className="mt-4 flex flex-wrap gap-2 text-xs">
+            /*
+              Tres marcas dibujadas a mano con su propio relleno y su propio
+              radio, sobre la misma escala verde que la primitiva ya conoce.
+              `Badge` las pone donde están sus hermanas de `/proveedores`.
+            */
+            <ul className="mt-4 flex flex-wrap gap-1.5">
               {registro.esMipyme && (
-                <li className="rounded-md bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
-                  MIPYME
+                <li>
+                  <Badge variant="valido">MIPYME</Badge>
                 </li>
               )}
               {registro.certificacionMicm && (
-                <li className="rounded-md bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
-                  Certificación MICM
+                <li>
+                  <Badge variant="valido">Certificación MICM</Badge>
                 </li>
               )}
               {registro.productorNacional && (
-                <li className="rounded-md bg-valido-50 px-2.5 py-1 font-medium text-valido-700">
-                  Productor nacional
+                <li>
+                  <Badge variant="valido">Productor nacional</Badge>
                 </li>
               )}
             </ul>
@@ -278,26 +292,40 @@ export default async function ProveedorPage({
 
         <Card as="section" className="p-6 lg:col-span-3">
           <CardTitle className="text-[15px]">Contratos recientes</CardTitle>
+          {/*
+            La fila entera lleva al proceso. Antes el enlace era «ver proceso →»
+            en 12 px al final de una línea de metadatos que en un teléfono ya
+            venía envuelta en tres: el objetivo medía unos ochenta píxeles de
+            ancho por dieciséis de alto. Con la hoja entera como enlace
+            (`Card asChild`, el patrón que la primitiva documenta) el objetivo
+            es la fila, y la fecha pasa por `Antiguedad` —relativa en la fila,
+            exacta en el `title`—, que es la regla para un listado.
+          */}
           <ul className="mt-3 space-y-2 text-sm">
             {recientes.map((c, i) => (
-              <li key={i} className="rounded-lg border border-hairline px-3 py-2.5">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="line-clamp-1 font-medium">{c.descripcion}</span>
-                  <span className="shrink-0 font-semibold">
-                    {formatMonto(c.valor_contratado, c.divisa)}
+              <Card
+                as="li"
+                key={i}
+                className="transition-colors hover:border-brand-300 hover:bg-brand-50/40"
+              >
+                <Link
+                  href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
+                  className="block px-3 py-2.5"
+                >
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="line-clamp-1 font-medium" title={c.descripcion}>
+                      {c.descripcion}
+                    </span>
+                    <span className="shrink-0 font-mono font-semibold tabular-nums">
+                      {formatMonto(c.valor_contratado, c.divisa)}
+                    </span>
                   </span>
-                </div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-soft">
-                  <span>{c.unidad_compra}</span>
-                  <span>· {formatFecha(c.fecha_adjudicacion)}</span>
-                  <Link
-                    href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
-                    className="text-brand-600 hover:underline"
-                  >
-                    ver proceso →
-                  </Link>
-                </div>
-              </li>
+                  <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-soft">
+                    <span className="line-clamp-1">{c.unidad_compra}</span>
+                    <Antiguedad iso={c.fecha_adjudicacion} prefijo="Adjudicado" />
+                  </span>
+                </Link>
+              </Card>
             ))}
           </ul>
         </Card>

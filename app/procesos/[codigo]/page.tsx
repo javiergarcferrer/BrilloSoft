@@ -124,14 +124,23 @@ export default async function ProcesoPage({
 
   return (
     <div className="space-y-5 pb-24 lg:pb-0">
+      {/*
+        Seguir y compartir se esconden en el teléfono: ahí exactamente las
+        mismas dos acciones viven en la barra fija de `AccionesProceso`, al
+        alcance del pulgar y siempre a la vista. Tenerlas dos veces era
+        duplicar el destino para un lector de pantalla y, de paso, meter tres
+        controles de 36 px en la línea más estrecha de la ficha. El enlace de
+        vuelta se queda —la barra fija no navega hacia atrás— y ocupa los 44 px
+        de alto del botón.
+      */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button asChild variant="link" className="h-auto gap-1 px-0 text-brand-600">
+        <Button asChild variant="link" className="gap-1 px-0 text-brand-600">
           <Link href="/licitaciones">
             <IconArrowLeft className="h-4 w-4" />
             Volver al buscador
           </Link>
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 lg:flex">
           <SeguirButton codigo={p.codigo_proceso} />
           <Compartir titulo={p.titulo} />
         </div>
@@ -171,12 +180,24 @@ export default async function ProcesoPage({
         </p>
         <p className="mt-1 font-mono text-sm text-ink-soft">{p.codigo_proceso}</p>
 
-        <div className="mt-4 flex flex-wrap items-center gap-6">
+        {/*
+          Las dos cifras que responden la pregunta —cuánto y hasta cuándo— y la
+          salida al portal.
+
+          A 390 px esto era una fila envuelta: dos bloques a 24 px de tipo, con
+          una fecha larga («3 sept 2026, 3:00 p. m.») que caía en tres líneas, y
+          un botón empujado por `ml-auto` a una línea propia alineada a la
+          derecha, sin ancho. Ahora en el teléfono son dos bloques apilados a
+          20 px y un botón de ancho completo; desde `sm`, la fila de siempre.
+          La fecha pasa a mono: es un dato que se copia y se verifica, y así las
+          dos cifras se leen con la misma letra.
+        */}
+        <div className="mt-4 grid gap-4 sm:flex sm:flex-wrap sm:items-center sm:gap-6">
           <div>
             <div className="rotulo text-ink-soft">
               Monto estimado
             </div>
-            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
+            <div className="font-mono text-xl font-semibold tabular-nums text-ink sm:text-2xl">
               {formatMonto(p.monto_estimado, p.divisa)}
             </div>
           </div>
@@ -185,7 +206,7 @@ export default async function ProcesoPage({
               Recibe ofertas hasta
             </div>
             <div
-              className={`text-2xl font-bold ${
+              className={`font-mono text-xl font-semibold tabular-nums sm:text-2xl ${
                 abiertoParaOfertar && dias !== null && dias <= 2
                   ? "text-sello-600"
                   : "text-ink"
@@ -195,7 +216,7 @@ export default async function ProcesoPage({
             </div>
           </div>
           {p.url && (
-            <Button asChild size="lg" className="ml-auto">
+            <Button asChild size="lg" className="w-full sm:ml-auto sm:w-auto">
               <a href={p.url} target="_blank" rel="noopener noreferrer">
                 Ver en el Portal Transaccional
                 <IconExternal className="h-4 w-4" />
@@ -214,9 +235,15 @@ export default async function ProcesoPage({
       <Card as="section" className="p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <CardTitle>Cómo participar</CardTitle>
-          <Link href="/guia" className="text-xs font-medium text-brand-600 hover:underline">
-            ¿Primera vez ofertando? Lee la guía completa →
-          </Link>
+          {/* 40 px de alto en el teléfono: es un enlace suelto, no prosa. */}
+          <Button
+            asChild
+            variant="link"
+            size="sm"
+            className="h-10 px-0 text-xs font-medium text-brand-600 sm:h-auto"
+          >
+            <Link href="/guia">¿Primera vez ofertando? Lee la guía completa →</Link>
+          </Button>
         </div>
         {abiertoParaOfertar ? (
           <ol className="mt-4 space-y-3">
@@ -330,14 +357,23 @@ export default async function ProcesoPage({
 
         <Card as="section" className="p-6">
           <CardTitle>Información general</CardTitle>
+          {/*
+            En el teléfono la etiqueta va encima del valor. «Objeto» trae dos
+            frases concatenadas («Bienes · Adquisición de…») y, alineado a la
+            derecha contra su etiqueta, caía en cuatro líneas de dos palabras
+            pegadas al borde. Desde `sm` vuelve el par etiqueta/valor en una
+            línea, que es como se lee un formulario cuando hay ancho.
+          */}
           <dl className="mt-3 space-y-2 text-sm">
             {flags.map(([label, value]) => (
               <div
                 key={label}
-                className="flex items-start justify-between gap-3 rounded-lg bg-canvas px-3 py-2"
+                className="rounded-lg bg-canvas px-3 py-2 sm:flex sm:items-start sm:justify-between sm:gap-3"
               >
                 <dt className="text-ink-soft">{label}</dt>
-                <dd className="text-right font-medium">{value || "—"}</dd>
+                <dd className="mt-0.5 font-medium sm:mt-0 sm:text-right">
+                  {value || "—"}
+                </dd>
               </div>
             ))}
           </dl>
@@ -354,7 +390,68 @@ export default async function ProcesoPage({
             La API no reporta artículos para este proceso.
           </p>
         ) : (
-          <Table className="mt-3 min-w-[640px]">
+          <>
+            {/*
+              A menos de `sm`, el cuadro deja de ser la única forma de leer un
+              artículo.
+
+              La tabla tiene cinco columnas y un ancho mínimo de 640 px: en un
+              teléfono había que arrastrarla de lado para ver el precio, y una
+              descripción larga quedaba en una columna de dos palabras. Aquí
+              cada artículo es una ficha apilada —qué es, después cuánto y a
+              cuánto—, con los montos en mono tabular para que se comparen en
+              vertical. Desde `sm` manda el cuadro, que es donde de verdad se
+              comparan cinco columnas.
+            */}
+            <ul className="mt-3 divide-y divide-hairline border-t border-hairline sm:hidden">
+              {articulos.map((a, i) => (
+                <li key={i} className="py-3">
+                  <p className="text-sm font-medium leading-snug">
+                    {a.descripcion_usuario || a.descripcion_articulo}
+                  </p>
+                  {a.descripcion_usuario && (
+                    <p className="mt-0.5 text-xs leading-snug text-ink-soft">
+                      {a.descripcion_articulo}
+                    </p>
+                  )}
+                  <dl className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-ink-soft">
+                    <div className="flex items-baseline gap-1.5">
+                      <dt>Cantidad</dt>
+                      <dd className="font-mono tabular-nums text-ink">
+                        {a.cantidad?.toLocaleString("es-DO")} {a.unidad_medida}
+                      </dd>
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <dt>Unitario</dt>
+                      <dd className="font-mono tabular-nums text-ink">
+                        {formatMonto(a.precio_unitario_estimado, p.divisa)}
+                      </dd>
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <dt>Total</dt>
+                      <dd className="font-mono font-semibold tabular-nums text-ink">
+                        {formatMonto(a.precio_total_estimado, p.divisa)}
+                      </dd>
+                    </div>
+                  </dl>
+                  {a.subclase_unspsc && (
+                    <p className="mt-1 font-mono text-xs text-ink-soft">
+                      UNSPSC {a.subclase_unspsc}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {totalArticulos > 0 && (
+              <p className="flex items-baseline justify-between gap-3 border-t border-hairline pt-3 text-sm sm:hidden">
+                <span className="font-semibold">Total estimado de artículos</span>
+                <span className="font-mono font-semibold tabular-nums">
+                  {formatMonto(totalArticulos, p.divisa)}
+                </span>
+              </p>
+            )}
+
+            <Table className="mt-3 hidden min-w-[640px] sm:table">
             <TableHeader>
               <TableRow>
                 <TableHead>Descripción</TableHead>
@@ -404,7 +501,8 @@ export default async function ProcesoPage({
                 </TableRow>
               </TableFooter>
             )}
-          </Table>
+            </Table>
+          </>
         )}
       </Card>
 
@@ -519,7 +617,7 @@ export default async function ProcesoPage({
                     {formatMonto(c.valor_contratado, c.divisa || p.divisa)}
                   </span>
                   {c.url_contrato && (
-                    <Button asChild variant="secondary" size="sm">
+                    <Button asChild variant="secondary" size="sm" className="h-10 sm:h-9">
                       <a href={c.url_contrato} target="_blank" rel="noopener noreferrer">
                         Ver contrato ↗
                       </a>
@@ -641,7 +739,7 @@ function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) 
         href={urlDeLectura(d.url_documento)}
         target="_blank"
         rel="noopener noreferrer"
-        className={`flex items-start gap-3 rounded-lg border py-2.5 pl-3 pr-9 text-sm ${
+        className={`flex min-h-12 items-start gap-3 rounded-lg border py-2.5 pl-3 pr-12 text-sm ${
           clave
             ? "border-brand-200 bg-brand-50/50 hover:bg-brand-50"
             : "border-hairline hover:border-brand-400 hover:bg-brand-50"
@@ -661,14 +759,20 @@ function DocumentoItem({ d, clave = false }: { d: Documento; clave?: boolean }) 
           </span>
         </span>
       </a>
+      {/*
+        El atajo al original medía 22 px de lado dentro de la esquina de una
+        fila: un objetivo que en el teléfono se falla, y al fallarlo se abre el
+        enlace grande de debajo, que lleva a otro sitio. Ahora ocupa los 44 px
+        del borde derecho, con el icono centrado en ellos.
+      */}
       <a
         href={d.url_documento}
         target="_blank"
         rel="noopener noreferrer"
         title="Abrir en Compras Dominicanas"
-        className="absolute right-2 top-2 rounded p-1 text-ink-soft transition-colors hover:bg-canvas hover:text-brand-600"
+        className="absolute inset-y-0 right-0 grid w-11 place-items-center rounded-r-lg text-ink-soft transition-colors hover:bg-canvas hover:text-brand-600"
       >
-        <IconExternal className="h-3.5 w-3.5" />
+        <IconExternal className="h-4 w-4" />
         <span className="sr-only">Abrir en el origen</span>
       </a>
     </li>

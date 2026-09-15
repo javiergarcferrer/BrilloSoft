@@ -108,7 +108,13 @@ export default async function PlanesPage() {
                   )}
                 </div>
               </div>
-              <Button asChild variant="secondary" size="sm" className="shrink-0">
+              {/* 40 px de alto en el teléfono: es la acción de la fila. */}
+              <Button
+                asChild
+                variant="secondary"
+                size="sm"
+                className="h-10 shrink-0 sm:h-9"
+              >
                 <a href={p.url} target="_blank" rel="noopener noreferrer">
                   Ver el plan
                   <IconExternal className="h-3.5 w-3.5" />

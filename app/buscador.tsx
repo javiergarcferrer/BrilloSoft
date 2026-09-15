@@ -349,6 +349,22 @@ export default function Buscador() {
 
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  /**
+   * Devuelve la búsqueda a los filtros con los que abre. No es «limpiar»: la
+   * etapa y la ventana de treinta días **vuelven a ponerse**, porque son los
+   * valores de entrada y quitarlos sería otra búsqueda distinta. Lo usan el
+   * enlace de escritorio y la pantalla de «sin resultados», donde en un
+   * teléfono los chips quedaron fuera de pantalla.
+   */
+  const limpiarFiltros = useCallback(() => {
+    setEtapa(ETAPA_INICIAL);
+    setModalidad("");
+    setUnidadTexto("");
+    setMipyme(false);
+    setStartdate(hoyMenosDias(30));
+    setEnddate("");
+  }, []);
+
   /*
     Todos los filtros puestos, incluidos los que vienen por defecto.
     Emitir un chip solo cuando el valor difiere del inicial deja invisibles
@@ -458,8 +474,20 @@ export default function Buscador() {
         </div>
       </Card>
 
-      {/* Barra de control en móvil: filtros + conteo + chips activos */}
-      <div className="sticky top-[60px] z-30 -mx-4 border-b border-hairline bg-canvas px-4 py-2.5 lg:hidden">
+      {/*
+        Barra de control en móvil: filtros + conteo + chips activos.
+
+        Se pega justo debajo del header, y ese «justo» es literal: el header
+        mide 64 px de caja más su filete de un píxel, más el recorte superior
+        del teléfono (`app/layout.tsx`), y la barra decía 60. Los cinco píxeles
+        de diferencia metían su borde bajo la banda de tinta —el header va en
+        z-50 y esta en z-30—, así que los chips aparecían recortados por arriba
+        en cuanto se desplazaba.
+      */}
+      <div
+        className="sticky z-30 -mx-4 border-b border-hairline bg-canvas px-4 py-2.5 lg:hidden"
+        style={{ top: "calc(65px + env(safe-area-inset-top, 0px))" }}
+      >
         <div className="flex items-center gap-2">
           <Button variant="secondary" onClick={() => setSheetOpen(true)}>
             <IconSliders className="h-4 w-4 text-brand-600" />
@@ -476,17 +504,24 @@ export default function Buscador() {
             encima del que sí declara su base es justo cómo una muestra acaba
             usándose de censo.
           */}
-          <span className="ml-auto text-xs text-ink-soft">
+          <span className="ml-auto text-right text-xs text-ink-soft">
             {data
               ? `${data.totalResults.toLocaleString("es-DO")} ${enBusqueda ? "coincid." : "procesos"}${esMuestra ? " (muestra)" : ""}`
               : ""}
           </span>
         </div>
         {chips.length > 0 && (
-          <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto">
+          <div className="no-scrollbar -mb-0.5 mt-2 flex gap-2 overflow-x-auto">
+            {/*
+              En el teléfono el chip mide 40 px de alto con 8 px de aire entre
+              chips: es el mínimo con el que un pulgar acierta el aspa de
+              quitar el filtro. En escritorio, donde hay puntero, se queda
+              compacto —la fila de abajo, `hidden lg:flex`, pasa su propia
+              medida.
+            */}
             {chips.map((c) => (
-              <Chip key={c.key} chip={c} className="shrink-0">
-                <span className="max-w-[8.5rem] truncate">{c.label}</span>
+              <Chip key={c.key} chip={c} className="h-10 shrink-0 px-3">
+                <span className="max-w-[11rem] truncate">{c.label}</span>
               </Chip>
             ))}
           </div>
@@ -523,14 +558,7 @@ export default function Buscador() {
             <Button
               variant="link"
               size="sm"
-              onClick={() => {
-                setEtapa(ETAPA_INICIAL);
-                setModalidad("");
-                setUnidadTexto("");
-                setMipyme(false);
-                setStartdate(hoyMenosDias(30));
-                setEnddate("");
-              }}
+              onClick={limpiarFiltros}
               className="ml-1 h-auto px-0 text-xs font-medium text-ink-soft hover:text-brand-700"
             >
               Limpiar todo
@@ -544,94 +572,92 @@ export default function Buscador() {
           `atomic` lee la frase entera («384 procesos») y no solo el número que
           cambió.
         */}
-        <div
-          aria-live="polite"
-          aria-atomic="true"
-          className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-ink-soft"
-        >
-          {loading ? (
-            <span className="inline-flex items-center gap-2">
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand-500/30 border-t-brand-600" />
-              Consultando la DGCP…
-            </span>
-          ) : error ? (
-            <span className="text-alerta-700">{error}</span>
-          ) : data ? (
-            <span>
-              <strong className="text-ink">
-                {data.totalResults.toLocaleString("es-DO")}
-              </strong>{" "}
-              {enBusqueda ? "coincidencias" : "procesos"}
-              {/*
-                La base se declara siempre que el conteo salga del barrido, no
-                solo al buscar texto: filtrar por etapa u ordenar por monto
-                también cuenta sobre la muestra, y un número sin su base invita
-                a usarlo de denominador.
-              */}
-              {esMuestra && data.scanned
-                ? ` · entre ${data.scanned.toLocaleString("es-DO")} registros del rango`
-                : ""}
-              {esMuestra && data.truncated
-                ? " — rango amplio: acota las fechas para contarlos todos"
-                : ""}
-            </span>
-          ) : null}
-          {!loading && lista.length > 0 && (
-            <span className="flex items-center gap-2">
-              {/*
-                El botón dice cuántas filas baja. Antes ponía «CSV» a secas
-                junto a un encabezado que anuncia miles de procesos, y el
-                archivo trae solo las de esta página: quien lo abre cree tener
-                el conjunto y cita veinticuatro filas. Es el peor error de esta
-                casa —silencioso y citable—, y se cierra diciendo el alcance en
-                el propio control.
-              */}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={exportarCsv}
-                title={`Descarga las ${lista.length} filas de esta página, con los filtros puestos`}
-              >
-                <IconDownload className="h-4 w-4" /> CSV ({lista.length})
-              </Button>
-              <Button asChild variant="secondary" size="sm">
-                <a
-                  href={feedHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Suscríbete a esta búsqueda con cualquier lector RSS y entérate de los procesos nuevos"
+        <div className="mb-3 space-y-2.5">
+          {/*
+            En el teléfono el conteo va en su propia línea y los dos botones
+            debajo. Compartiendo fila, la frase que declara la base —«entre
+            6,000 registros del rango — rango amplio: acota las fechas»— caía
+            en una columna de ciento cincuenta píxeles y cuatro renglones al
+            lado de dos botones. Y esa frase es justo lo que impide usar una
+            muestra como censo: no puede ser lo que se estrangula.
+          */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-3">
+            <div
+              aria-live="polite"
+              aria-atomic="true"
+              className="min-w-0 text-sm text-ink-soft sm:flex-1"
+            >
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand-500/30 border-t-brand-600" />
+                  Consultando la DGCP…
+                </span>
+              ) : error ? (
+                <span className="text-alerta-700">{error}</span>
+              ) : data ? (
+                <span>
+                  <strong className="text-ink">
+                    {data.totalResults.toLocaleString("es-DO")}
+                  </strong>{" "}
+                  {enBusqueda ? "coincidencias" : "procesos"}
+                  {/*
+                    La base se declara siempre que el conteo salga del barrido,
+                    no solo al buscar texto: filtrar por etapa u ordenar por
+                    monto también cuenta sobre la muestra, y un número sin su
+                    base invita a usarlo de denominador.
+                  */}
+                  {esMuestra && data.scanned
+                    ? ` · entre ${data.scanned.toLocaleString("es-DO")} registros del rango`
+                    : ""}
+                  {esMuestra && data.truncated
+                    ? " — rango amplio: acota las fechas para contarlos todos"
+                    : ""}
+                </span>
+              ) : null}
+            </div>
+            {!loading && lista.length > 0 && (
+              <span className="flex shrink-0 items-center gap-2">
+                {/*
+                  El botón dice cuántas filas baja. Antes ponía «CSV» a secas
+                  junto a un encabezado que anuncia miles de procesos, y el
+                  archivo trae solo las de esta página: quien lo abre cree tener
+                  el conjunto y cita veinticuatro filas. Es el peor error de
+                  esta casa —silencioso y citable—, y se cierra diciendo el
+                  alcance en el propio control.
+                */}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={exportarCsv}
+                  title={`Descarga las ${lista.length} filas de esta página, con los filtros puestos`}
+                  className="h-10 sm:h-9"
                 >
-                  <IconRss className="h-4 w-4" /> RSS
-                </a>
-              </Button>
-            </span>
-          )}
+                  <IconDownload className="h-4 w-4" /> CSV ({lista.length})
+                </Button>
+                <Button asChild variant="secondary" size="sm" className="h-10 sm:h-9">
+                  <a
+                    href={feedHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Suscríbete a esta búsqueda con cualquier lector RSS y entérate de los procesos nuevos"
+                  >
+                    <IconRss className="h-4 w-4" /> RSS
+                  </a>
+                </Button>
+              </span>
+            )}
+          </div>
           {/*
             El paginador ya vale también en modo búsqueda: la capa pagina de
             verdad las coincidencias en vez de recortarlas a 300.
           */}
           {data && data.pages > 1 && (
-            <span className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1 || loading}
-              >
-                <IconChevronLeft className="h-4 w-4" /> Anterior
-              </Button>
-              <span className="tabular-nums">
-                Página {data.page} de {data.pages}
-              </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page >= data.pages || loading}
-              >
-                Siguiente <IconChevronRight className="h-4 w-4" />
-              </Button>
-            </span>
+            <Paginador
+              page={data.page}
+              pages={data.pages}
+              loading={loading}
+              onPage={setPage}
+            />
           )}
         </div>
 
@@ -645,7 +671,7 @@ export default function Buscador() {
           <div className="grid gap-3 md:grid-cols-2" role="status" aria-busy="true">
             <span className="sr-only">Consultando la DGCP…</span>
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-44 rounded-lg border border-hairline" />
+              <Skeleton key={i} className="h-52 rounded-lg border border-hairline" />
             ))}
           </div>
         ) : error ? (
@@ -668,7 +694,20 @@ export default function Buscador() {
             </Button>
           </Alert>
         ) : lista.length === 0 ? (
-          <EstadoVacio titulo="Sin resultados con estos filtros">
+          <EstadoVacio
+            titulo="Sin resultados con estos filtros"
+            /*
+              En el teléfono los filtros que recortaron la búsqueda quedaron
+              arriba, fuera de pantalla: sin esta acción hay que desplazarse de
+              vuelta a la barra y quitarlos de uno en uno. La acción devuelve
+              la búsqueda a como abre.
+            */
+            accion={
+              <Button variant="secondary" onClick={limpiarFiltros}>
+                Volver a los filtros de entrada
+              </Button>
+            }
+          >
             {/*
               Pedir una etapa cerrada dentro de una ventana corta devuelve poco
               o nada, y la razón no se adivina: la ventana corre sobre la fecha
@@ -693,8 +732,80 @@ export default function Buscador() {
             ))}
           </div>
         )}
+
+        {/*
+          Y el paginador otra vez al pie. En escritorio la rejilla son dos
+          columnas y el de arriba queda siempre cerca; en un teléfono son
+          veinticuatro tarjetas en una sola columna, y al llegar al final el
+          único control para seguir estaba a seis pantallas de desplazamiento
+          hacia atrás.
+        */}
+        {!error && lista.length > 0 && data && data.pages > 1 && (
+          <Paginador
+            page={data.page}
+            pages={data.pages}
+            loading={loading}
+            onPage={setPage}
+            className="mt-4"
+          />
+        )}
       </section>
     </div>
+  );
+}
+
+/**
+ * Anterior · dónde estoy · siguiente.
+ *
+ * Fila propia y no un trozo más de la línea del conteo: ahí dentro, en un
+ * teléfono, los tres controles caían en cualquier orden según lo largo que
+ * fuera el texto de la muestra. Con `justify-between` los dos botones quedan
+ * en los bordes —donde el pulgar llega sin recolocar la mano— y la posición
+ * en medio. Los botones suben a 40 px de alto en el teléfono.
+ */
+function Paginador({
+  page,
+  pages,
+  loading,
+  onPage,
+  className,
+}: {
+  page: number;
+  pages: number;
+  loading: boolean;
+  onPage: (f: (p: number) => number) => void;
+  className?: string;
+}) {
+  return (
+    <nav
+      aria-label="Paginación de los resultados"
+      className={cn(
+        "flex items-center justify-between gap-2 text-sm text-ink-soft",
+        className,
+      )}
+    >
+      <Button
+        variant="secondary"
+        size="sm"
+        className="h-10 sm:h-9"
+        onClick={() => onPage((p) => Math.max(1, p - 1))}
+        disabled={page <= 1 || loading}
+      >
+        <IconChevronLeft className="h-4 w-4" /> Anterior
+      </Button>
+      <span className="tabular-nums">
+        Página {page} de {pages}
+      </span>
+      <Button
+        variant="secondary"
+        size="sm"
+        className="h-10 sm:h-9"
+        onClick={() => onPage((p) => p + 1)}
+        disabled={page >= pages || loading}
+      >
+        Siguiente <IconChevronRight className="h-4 w-4" />
+      </Button>
+    </nav>
   );
 }
 
@@ -756,6 +867,17 @@ function FiltrosControles({
           list="lista-unidades"
           value={unidadTexto}
           onChange={(e) => setUnidadTexto(e.target.value)}
+          /*
+            El teclado del teléfono no tiene que corregir el nombre de una
+            institución ni ofrecer su propio autocompletado encima del de la
+            lista, y la tecla de envío dice «listo» porque aquí no se envía
+            nada: el filtro se aplica al elegir de la lista.
+          */
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="words"
+          spellCheck={false}
+          enterKeyHint="done"
           placeholder={
             unidades.length
               ? "Todas — escribe para filtrar por institución…"
@@ -773,7 +895,7 @@ function FiltrosControles({
           ))}
         </datalist>
         {unidadTexto && !unidadSel && (
-          <span className="mt-1 block text-[11px] text-alerta-600">
+          <span className="mt-1 block text-xs text-alerta-600">
             Selecciona una institución de la lista para aplicar el filtro.
           </span>
         )}
@@ -809,7 +931,11 @@ function FiltrosControles({
             ))}
           </SelectContent>
         </Select>
-        <span className="mt-1 block text-[11px] leading-snug text-ink-soft">
+        {/*
+          La traducción de la jerga al lado del control, y a 12 px: es lo que
+          dice qué recoge exactamente la etapa elegida, no una nota al pie.
+        */}
+        <span className="mt-1 block text-xs leading-snug text-ink-soft">
           {etapaSel?.ayuda ?? "Abiertos y cerrados, en cualquier punto de su trámite."}
         </span>
       </div>
@@ -891,13 +1017,22 @@ function FiltrosControles({
         </Select>
       </div>
 
-      <div className="flex items-center gap-2 lg:col-span-12">
+      {/*
+        La casilla mide 16 px y su etiqueta veinte: en un teléfono eso es una
+        línea de texto, no un objetivo de toque. La fila entera pasa a medir
+        44 px y la etiqueta la ocupa completa, así que se acierta en cualquier
+        punto de ella.
+      */}
+      <div className="flex min-h-11 items-center lg:col-span-12">
         <Checkbox
           id="f-mipyme"
           checked={mipyme}
           onCheckedChange={(v) => setMipyme(v === true)}
         />
-        <Label htmlFor="f-mipyme" className="font-normal">
+        <Label
+          htmlFor="f-mipyme"
+          className="flex min-h-11 flex-1 cursor-pointer items-center pl-2 font-normal"
+        >
           Solo dirigidos a MIPYMES
         </Label>
       </div>

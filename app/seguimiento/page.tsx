@@ -75,9 +75,15 @@ export default function SeguimientoPage() {
       </Card>
 
       {cargando ? (
-        <div className="grid gap-3 md:grid-cols-2">
+        /*
+          La silueta mide lo que mide una tarjeta de proceso en un teléfono
+          —unos 208 px—, no los 176 de antes: con la altura corta, la lista
+          daba un tirón hacia abajo al llegar los datos.
+        */
+        <div className="grid gap-3 md:grid-cols-2" role="status" aria-busy="true">
+          <span className="sr-only">Cargando los procesos que sigues…</span>
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-44 rounded-lg border border-hairline" />
+            <Skeleton key={i} className="h-52 rounded-lg border border-hairline" />
           ))}
         </div>
       ) : procesos.length === 0 ? (

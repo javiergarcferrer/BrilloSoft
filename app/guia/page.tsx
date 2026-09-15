@@ -65,13 +65,14 @@ export default function GuiaPage() {
           <strong>rubros</strong> (categorías de bienes/servicios) en los que vas a
           ofertar — solo puedes participar en procesos de tus rubros.
         </p>
+        {/* Dos salidas al trámite real: 44 px de alto en el teléfono. */}
         <div className="mt-3 flex flex-wrap gap-2 text-sm">
-          <Button asChild size="sm">
+          <Button asChild>
             <a href="https://www.dgcp.gob.do/servicios/registro-de-proveedores/" target="_blank" rel="noopener noreferrer">
               Inscribirse en el RPE (DGCP) ↗
             </a>
           </Button>
-          <Button asChild variant="secondary" size="sm">
+          <Button asChild variant="secondary">
             <a
               href="https://comunidad.comprasdominicana.gob.do/"
               target="_blank"
@@ -126,11 +127,24 @@ export default function GuiaPage() {
 
       <Card as="section" className="p-6">
         <CardTitle className="text-[15px]">4 · Qué significa cada estado</CardTitle>
+        {/*
+          En el teléfono el término va **encima** de su explicación.
+
+          Estaba en una fila con el término fijo (`shrink-0`) y la explicación
+          en lo que sobrara: a 390 px, «Sobres estan abriendose / abiertos»
+          dejaba unos setenta píxeles para el resto, y la explicación bajaba a
+          una columna de una o dos palabras por línea. Ilegible justo en el
+          panel que existe para traducir la jerga. Desde `sm`, donde el término
+          cabe sin estrangular lo demás, vuelve la fila.
+        */}
         <dl className="mt-3 space-y-2 text-sm">
           {ESTADOS.map(([e, d]) => (
-            <div key={e} className="flex items-start gap-3 rounded-lg bg-canvas px-4 py-2.5">
-              <dt className="shrink-0 font-semibold">{e}</dt>
-              <dd className="text-ink-soft">{d}</dd>
+            <div
+              key={e}
+              className="rounded-lg bg-canvas px-4 py-2.5 sm:flex sm:items-start sm:gap-3"
+            >
+              <dt className="font-semibold sm:w-56 sm:shrink-0">{e}</dt>
+              <dd className="mt-0.5 text-ink-soft sm:mt-0">{d}</dd>
             </div>
           ))}
         </dl>

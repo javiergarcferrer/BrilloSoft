@@ -57,11 +57,11 @@ function SubclaseEsqueleto({ subclase }: { subclase: { codigo: string; descripci
   return (
     <Card aria-busy="true" className="bg-transparent p-4">
       <Cabecera subclase={subclase} />
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton
             key={i}
-            className="h-14 rounded-lg border border-hairline bg-canvas"
+            className="h-10 rounded-lg border border-hairline bg-canvas sm:h-14"
           />
         ))}
       </div>
@@ -95,14 +95,22 @@ async function SubclaseStats({
         </p>
       ) : (
         <>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-lg bg-canvas px-2 py-2">
+          {/*
+            Tres casillas en fila cabían en escritorio y no en un teléfono: a
+            390 px cada una medía unos 98 px y «RD$1,250,000» necesita 117, así
+            que la cifra se salía de su caja y la hoja, que recorta contra la
+            esquina, se comía el final. Aquí abajo son tres renglones de
+            etiqueta y valor —que es como se lee un rango, uno debajo de otro—
+            y desde `sm` vuelven las tres casillas centradas.
+          */}
+          <div className="mt-3 grid gap-2 sm:grid-cols-3 sm:text-center">
+            <div className="flex items-baseline justify-between gap-2 rounded-lg bg-canvas px-3 py-2 sm:block sm:px-2">
               <div className="text-xs text-ink-soft">Mínimo</div>
               <div className="font-mono text-sm font-semibold tabular-nums">
                 {formatMonto(stats.min, divisa)}
               </div>
             </div>
-            <div className="rounded-lg bg-brand-50 px-2 py-2 ring-1 ring-brand-100">
+            <div className="flex items-baseline justify-between gap-2 rounded-lg bg-brand-50 px-3 py-2 ring-1 ring-brand-100 sm:block sm:px-2">
               <div className="text-xs text-ink-soft">
                 Mediana · {stats.muestras} contratos
               </div>
@@ -110,7 +118,7 @@ async function SubclaseStats({
                 {formatMonto(stats.mediana, divisa)}
               </div>
             </div>
-            <div className="rounded-lg bg-canvas px-2 py-2">
+            <div className="flex items-baseline justify-between gap-2 rounded-lg bg-canvas px-3 py-2 sm:block sm:px-2">
               <div className="text-xs text-ink-soft">Máximo</div>
               <div className="font-mono text-sm font-semibold tabular-nums">
                 {formatMonto(stats.max, divisa)}
@@ -132,15 +140,20 @@ async function SubclaseStats({
                 {stats.ejemplos.map((e, i) => (
                   <li
                     key={i}
-                    className="flex items-start justify-between gap-3 rounded-lg bg-canvas px-3 py-2 text-xs"
+                    /* La fila entera abre el proceso: el código en mono a 12 px
+                       no es un objetivo de toque. */
+                    className="relative flex items-start justify-between gap-3 rounded-lg bg-canvas px-3 py-2 text-xs transition-colors hover:bg-brand-50"
                   >
                     <span className="min-w-0">
-                      <span className="block truncate font-medium">
+                      <span
+                        className="block truncate font-medium"
+                        title={e.descripcion_usuario || e.descripcion_articulo}
+                      >
                         {e.descripcion_usuario || e.descripcion_articulo}
                       </span>
                       <Link
                         href={`/procesos/${encodeURIComponent(e.codigo_proceso)}`}
-                        className="font-mono text-brand-700 hover:underline"
+                        className="font-mono text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
                       >
                         {e.codigo_proceso}
                       </Link>{" "}

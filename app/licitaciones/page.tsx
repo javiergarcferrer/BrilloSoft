@@ -37,9 +37,16 @@ function BuscadorEsqueleto() {
         <Skeleton className="h-8 w-3/4 max-w-lg bg-hairline/70" />
         <Skeleton className="h-3 w-56 bg-hairline/70" />
       </div>
+      {/*
+        Las alturas son las de lo que llega: la barra de control del teléfono
+        mide 64 px con su relleno —no 44, que era la del botón suelto— y una
+        tarjeta de proceso a 390 px mide entre 200 y 230. Con `h-44` la
+        silueta encogía cincuenta píxeles por tarjeta y la página daba un
+        tirón hacia abajo justo cuando el ojo empezaba a leer.
+      */}
       <Esqueleto className="hidden h-56 lg:block" />
-      <Esqueleto className="h-11 lg:hidden" />
-      <EsqueletoTarjetas n={6} />
+      <Esqueleto className="h-16 lg:hidden" />
+      <EsqueletoTarjetas n={6} alto="h-52" />
     </Cargando>
   );
 }

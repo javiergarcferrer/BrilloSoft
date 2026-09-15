@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { dgcpFetch, type Proceso } from "@/lib/dgcp";
-import { formatMonto } from "@/lib/format";
+import { formatMonto, formatPesos } from "@/lib/format";
 import { estadoMeta } from "@/lib/estados";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
-import { IconArrowRight, IconChartBar } from "@/components/icons";
+import { IconArrowRight } from "@/components/icons";
 
 export const revalidate = 1800;
 
@@ -133,8 +133,17 @@ export default async function EstadisticasPage() {
       destacar: true,
     },
     {
+      /*
+        `formatPesos` y no `formatMonto`: a 390 px las casillas de la portada
+        son dos columnas de unos 160 px, y «RD$1,986,088,831» es una cadena de
+        dieciséis caracteres sin un solo sitio por donde partir — se salía de su
+        casilla y la banda de tinta, que recorta, se comía el final de la cifra
+        más grande de la página. La forma larga («RD$ 1.9 mil millones») cabe,
+        se lee en voz alta como se dice y **nombra la magnitud**, que es la
+        regla: «MM» se lee millones en el uso dominicano y aquí son miles.
+      */
       etiqueta: "Monto estimado",
-      valor: formatMonto(montoTotal, "DOP"),
+      valor: formatPesos(montoTotal),
       base: `muestra de ${escaneados}`,
     },
     {

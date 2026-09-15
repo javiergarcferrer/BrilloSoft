@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import SeguirButton from "./seguir-button";
 import { IconExternal, IconShare } from "./icons";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,23 @@ export default function AccionesProceso({
   titulo: string;
   url?: string;
 }) {
+  /*
+    Tres afordancias flotantes se disputan el borde inferior del teléfono: la
+    tab bar (72 px desde abajo), esta barra (de 72 a 144) y el botón de «volver
+    arriba», que se pone a 84 px y mide 44 — o sea, **dentro** de esta barra,
+    encima del botón de ofertar. Se marca la raíz igual que hace el aviso de
+    instalación con `data-oferta-instalar`, y `app/globals.css` sube el botón
+    por encima de la barra mientras esta está en pantalla (solo por debajo de
+    `lg`, que es donde la barra se pinta).
+  */
+  useEffect(() => {
+    const raiz = document.documentElement;
+    raiz.dataset.barraAcciones = "1";
+    return () => {
+      delete raiz.dataset.barraAcciones;
+    };
+  }, []);
+
   const compartir = async () => {
     const link = window.location.href;
     if (typeof navigator !== "undefined" && navigator.share) {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Suspense, cache } from "react";
+import { Suspense, cache, type ReactNode } from "react";
 import type { Metadata } from "next";
 import {
   buscarProveedores,
@@ -14,6 +14,8 @@ import { titulizar } from "@/lib/capitulos";
 import { formatFecha, formatMonto, formatPesos, hace } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { Cifra, Rotulo, TiraDeCifras } from "@/components/papel";
+import Antiguedad from "@/components/antiguedad";
+import Plegable from "@/components/plegable";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -242,16 +244,26 @@ async function RankingPorMonto() {
         </div>
         <CardAction>{`${top.length} de ${formatInt(m.proveedores.length)}`}</CardAction>
       </CardHeader>
-      <ol className="divide-y divide-hairline">
-        {top.map((p, i) => (
-          <li key={p.rpe} className="cv-auto px-5 py-3" style={{ "--cv-alto": "5rem" } as React.CSSProperties}>
+      <RankingPlegado
+        filas={top.map((p, i) => (
+          <li
+            key={p.rpe}
+            /*
+              La fila entera lleva a la ficha del proveedor: el nombre solo son
+              diecisiete píxeles de alto dentro de una fila de ochenta, y en
+              una lista de veinte eso es fallar el toque una de cada tres.
+            */
+            className="cv-auto relative px-5 py-3 transition-colors hover:bg-brand-50/40"
+            style={{ "--cv-alto": "5rem" } as React.CSSProperties}
+          >
             <div className="flex items-baseline gap-2.5">
               <span className="w-5 shrink-0 font-mono text-xs tabular-nums text-ink-soft">
                 {i + 1}
               </span>
               <Link
                 href={`/proveedores/${p.rpe}`}
-                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 hover:underline"
+                title={p.razonSocial}
+                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
               >
                 {p.razonSocial}
               </Link>
@@ -272,14 +284,41 @@ async function RankingPorMonto() {
               {p.ultima && (
                 <>
                   <Sep />
-                  <span className="tabular-nums">{hace(p.ultima) ?? formatFecha(p.ultima)}</span>
+                  <Antiguedad iso={p.ultima} />
                 </>
               )}
             </p>
           </li>
         ))}
-      </ol>
+      />
     </Card>
+  );
+}
+
+/**
+ * Las primeras ocho, y el resto a un toque.
+ *
+ * Veinte filas por ranking y dos rankings uno debajo del otro son cuarenta
+ * filas antes de llegar a la sección siguiente: en escritorio son dos columnas
+ * a la vista y en un teléfono son cinco pantallas de desplazamiento por algo
+ * que se mira para saber **quién encabeza**. La revelación progresiva de la
+ * casa lo resuelve sin perder nada, y su botón dice cuántas quedan
+ * (docs/IDENTIDAD.md §5).
+ */
+function RankingPlegado({ filas, cabeza = 8 }: { filas: ReactNode[]; cabeza?: number }) {
+  const primeras = filas.slice(0, cabeza);
+  const resto = filas.slice(cabeza);
+  if (resto.length === 0) {
+    return <ol className="divide-y divide-hairline">{primeras}</ol>;
+  }
+  return (
+    <Plegable
+      resumen={<ol className="divide-y divide-hairline">{primeras}</ol>}
+      etiqueta={`Ver los ${resto.length} siguientes`}
+      etiquetaCerrar={`Ocultar los ${resto.length} siguientes`}
+    >
+      <ol className="divide-y divide-hairline">{resto}</ol>
+    </Plegable>
   );
 }
 
@@ -301,16 +340,26 @@ async function RankingPorContratos() {
         </div>
         <CardAction>Otra foto distinta</CardAction>
       </CardHeader>
-      <ol className="divide-y divide-hairline">
-        {top.map((p, i) => (
-          <li key={p.rpe} className="cv-auto px-5 py-3" style={{ "--cv-alto": "5rem" } as React.CSSProperties}>
+      <RankingPlegado
+        filas={top.map((p, i) => (
+          <li
+            key={p.rpe}
+            /*
+              La fila entera lleva a la ficha del proveedor: el nombre solo son
+              diecisiete píxeles de alto dentro de una fila de ochenta, y en
+              una lista de veinte eso es fallar el toque una de cada tres.
+            */
+            className="cv-auto relative px-5 py-3 transition-colors hover:bg-brand-50/40"
+            style={{ "--cv-alto": "5rem" } as React.CSSProperties}
+          >
             <div className="flex items-baseline gap-2.5">
               <span className="w-5 shrink-0 font-mono text-xs tabular-nums text-ink-soft">
                 {i + 1}
               </span>
               <Link
                 href={`/proveedores/${p.rpe}`}
-                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 hover:underline"
+                title={p.razonSocial}
+                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
               >
                 {p.razonSocial}
               </Link>
@@ -334,7 +383,7 @@ async function RankingPorContratos() {
             </p>
           </li>
         ))}
-      </ol>
+      />
     </Card>
   );
 }
@@ -380,13 +429,13 @@ async function QuienesSon() {
           return (
             <li
               key={p.rpe}
-              className="cv-auto px-5 py-3.5"
+              className="cv-auto relative px-5 py-3.5 transition-colors hover:bg-brand-50/40"
               style={{ "--cv-alto": "7rem" } as React.CSSProperties}
             >
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <Link
                   href={`/proveedores/${p.rpe}`}
-                  className="text-sm font-medium text-brand-700 hover:underline"
+                  className="text-sm font-medium text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
                 >
                   {f.razonSocial}
                 </Link>
@@ -621,11 +670,14 @@ function FichaEncontrada({
 
 function FilaCoincidencia({ p }: { p: ProveedorEnMercado }) {
   return (
-    <li className="cv-auto px-5 py-3" style={{ "--cv-alto": "4.5rem" } as React.CSSProperties}>
+    <li
+      className="cv-auto relative px-5 py-3 transition-colors hover:bg-brand-50/40"
+      style={{ "--cv-alto": "4.5rem" } as React.CSSProperties}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <Link
           href={`/proveedores/${p.rpe}`}
-          className="text-sm font-medium text-brand-700 hover:underline"
+          className="text-sm font-medium text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
         >
           {p.razonSocial}
         </Link>
@@ -642,7 +694,7 @@ function FilaCoincidencia({ p }: { p: ProveedorEnMercado }) {
         {p.ultima && (
           <>
             <Sep />
-            {hace(p.ultima) ?? formatFecha(p.ultima)}
+            <Antiguedad iso={p.ultima} />
           </>
         )}
       </p>
