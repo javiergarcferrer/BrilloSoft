@@ -110,8 +110,16 @@ export function Cargando({ children, className }: { children: React.ReactNode; c
 export function EsqueletoPagina() {
   return (
     <Cargando className="space-y-5">
+      {/*
+        En un teléfono de 390 px ninguna pregunta de esta plataforma cabe en un
+        renglón: el titular de cada vertical ocupa dos o tres líneas, así que la
+        silueta reserva dos. Con una sola, la página entera subía 40 px al
+        llegar el título —en cada navegación, en todas las rutas que usan esta
+        silueta—.
+      */}
       <div className="space-y-2 pt-1">
-        <Skeleton className="h-8 w-2/3 max-w-md bg-hairline/70" />
+        <Skeleton className="h-8 w-full max-w-md bg-hairline/70 sm:w-2/3" />
+        <Skeleton className="h-8 w-3/5 max-w-xs bg-hairline/70 sm:hidden" />
         <Skeleton className="h-3 w-1/2 max-w-xs bg-hairline/70" />
       </div>
       <Esqueleto className="h-56" />

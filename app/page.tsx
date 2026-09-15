@@ -18,7 +18,8 @@ import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { diasHasta, formatMagnitud, formatMonto, formatPesos } from "@/lib/format";
 import { SECCIONES } from "@/lib/secciones";
-import { Esqueleto, EsqueletoLineas } from "@/components/esqueleto";
+import { cn } from "@/lib/cn";
+import { Esqueleto } from "@/components/esqueleto";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +38,7 @@ import {
   IconSearch,
   IconTrendingUp,
 } from "@/components/icons";
+import { MarcaEstado } from "@/components/marca-estado";
 import { Portada } from "@/components/portada";
 
 export const revalidate = 1800;
@@ -140,8 +142,12 @@ export default function Panorama() {
         </Suspense>
       </section>
 
-      {/* Indicadores macro del Estado */}
-      <Suspense fallback={<Esqueleto className="h-44" />}>
+      {/*
+        Indicadores macro del Estado. La silueta lleva dos alturas: en teléfono
+        la tarjeta apila sus tres casillas y mide más que en la fila de tres de
+        escritorio.
+      */}
+      <Suspense fallback={<Esqueleto className="h-[404px] sm:h-[200px]" />}>
         <SeccionDeuda />
       </Suspense>
 
@@ -171,7 +177,8 @@ export default function Panorama() {
         </Suspense>
       </section>
 
-      <p className="px-1 text-xs leading-relaxed text-ink-soft">
+      {/* El pie del panorama declara los límites: a 12 px en un teléfono nadie lo lee. */}
+      <p className="px-1 text-[13px] leading-relaxed text-ink-soft sm:text-xs">
         Herramienta independiente y no oficial. Los datos se muestran tal como los
         publican sus fuentes y se leen en vivo, sin base de datos intermedia. Las
         cifras del Congreso marcadas “de {PAGINAS_CONGRESO * SIL_PAGE_SIZE}” salen
@@ -353,7 +360,13 @@ async function SeccionDeuda() {
             Sector Público No Financiero · saldo a {deuda.periodo}
           </p>
         </div>
-        <Button asChild variant="link" size="sm" className="h-auto px-0 text-xs">
+        {/*
+          El enlace al origen medía 100 × 16 px: en un teléfono eso no se
+          acierta. Toma la altura de la primitiva y los márgenes negativos
+          devuelven el bloque a su sitio, así que el objetivo crece sin que el
+          diseño se mueva.
+        */}
+        <Button asChild variant="link" className="-my-2 -mr-2 px-2 text-xs">
           <a
             href="https://www.creditopublico.gob.do/inicio/estadisticas"
             target="_blank"
@@ -363,7 +376,15 @@ async function SeccionDeuda() {
           </a>
         </Button>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-4">
+      {/*
+        A 390 px las tres casillas en fila de tres partían «US$ 61.5 mil
+        millones» en cuatro líneas y la última se recortaba contra el filete:
+        la cifra más grande de la página quedaba ilegible. En teléfono las tres
+        se apilan y cada una pone su etiqueta a la izquierda y su cifra a la
+        derecha —la fila completa da los 326 px que el monto necesita—; desde
+        `sm`, donde caben, vuelven a la fila de tres con la etiqueta encima.
+      */}
+      <div className="mt-4 grid gap-2 sm:grid-cols-3 sm:gap-4">
         <IndicadorDeuda
           etiqueta="Deuda total"
           valor={formatMagnitud(deuda.saldoTotal)}
@@ -428,7 +449,10 @@ async function PanelCierran() {
           ))}
         </ul>
       ) : compras === null ? (
-        <Vacio texto="La DGCP no respondió. Los datos vuelven solos cuando el origen se restablece." />
+        <Vacio
+          caida
+          texto="La DGCP no respondió. Los datos vuelven solos cuando el origen se restablece."
+        />
       ) : (
         <Vacio texto="Ningún proceso abierto cierra en los próximos 7 días." />
       )}
@@ -528,7 +552,14 @@ function Dominio({
         <dl className="mt-4 flex-1 space-y-2.5">
           {cifras.map((c) => (
             <div key={c.etiqueta} className="flex items-baseline justify-between gap-3">
-              <dt className="text-xs text-ink-soft">{c.etiqueta}</dt>
+              {/*
+                En teléfono la tarjeta ocupa el ancho entero y la etiqueta
+                puede respirar a 13 px; desde `sm` la rejilla la estrecha a un
+                cuarto de pantalla y vuelve a 12 px para no partirse.
+              */}
+              <dt className="text-[13px] leading-snug text-ink-soft sm:text-xs">
+                {c.etiqueta}
+              </dt>
               <dd
                 className={
                   c.destacar
@@ -542,17 +573,28 @@ function Dominio({
           ))}
         </dl>
       ) : (
-        <p className="mt-4 flex-1 text-sm leading-relaxed text-ink-soft">
-          La fuente no respondió. Los datos vuelven solos cuando el origen se
-          restablece.
-        </p>
+        /*
+          Una fuente caída no se puede leer como un dato: la marca en ocre dice
+          en una palabra que no pudimos mirar —no que no haya nada— y el párrafo
+          añade lo que sigue en pie. La acción útil es la misma de abajo: entrar
+          a la vertical, que conserva lo que sí cargó.
+        */
+        <div className="mt-4 flex-1">
+          <MarcaEstado tono="aviso">Sin respuesta</MarcaEstado>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+            La fuente no respondió. Los datos vuelven solos cuando el origen se
+            restablece.
+          </p>
+        </div>
       )}
 
-      <Button
-        asChild
-        variant="link"
-        className="mt-5 h-auto justify-start gap-1.5 px-0 font-semibold"
-      >
+      {/*
+        La llamada de la tarjeta es el objetivo táctil principal del panorama:
+        con `h-auto` medía 20 px de alto. Ahora toma la altura de la primitiva
+        —44 px en teléfono, 40 desde `sm`— y `px-0` la mantiene a ras del
+        margen de la tarjeta.
+      */}
+      <Button asChild variant="link" className="mt-3 justify-start gap-1.5 px-0 font-semibold">
         <Link href={href}>
           {cta}
           <IconArrowRight className="h-4 w-4" />
@@ -582,21 +624,28 @@ function DominioEsqueleto({
           <p className="mt-0.5 text-xs text-ink-soft">{s.descriptor}</p>
         </div>
       </div>
-      <div className="mt-4 flex-1 space-y-3">
-        <div className="flex items-baseline justify-between gap-3">
+      {/*
+        Las tres filas y la llamada miden aquí exactamente lo que miden llenas
+        —28 px la cifra destacada, 20 px las otras dos, 44 px el enlace—, que
+        es lo único que evita que la tarjeta dé un salto al llegar el dato.
+      */}
+      <div className="mt-4 flex-1 space-y-2.5">
+        <div className="flex h-7 items-center justify-between gap-3">
           <Skeleton className="h-3 w-28 bg-hairline/70" />
           <Skeleton className="h-5 w-16 bg-hairline/70" />
         </div>
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex h-5 items-center justify-between gap-3">
           <Skeleton className="h-3 w-24 bg-hairline/70" />
           <Skeleton className="h-3.5 w-20 bg-hairline/70" />
         </div>
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex h-5 items-center justify-between gap-3">
           <Skeleton className="h-3 w-32 bg-hairline/70" />
           <Skeleton className="h-3.5 w-12 bg-hairline/70" />
         </div>
       </div>
-      <span className="mt-5 text-sm text-ink-soft">Consultando la fuente…</span>
+      <span className="mt-3 flex h-11 items-center text-sm text-ink-soft sm:h-10">
+        Consultando la fuente…
+      </span>
     </Card>
   );
 }
@@ -621,8 +670,14 @@ function Panel({
           <Icon className="h-4 w-4 text-ink-soft" />
           {titulo}
         </CardTitle>
-        <CardAction>
-          <Button asChild variant="link" size="sm" className="h-auto px-0 text-xs">
+        {/*
+          «Se archivan al cerrar la legislatura» no deja sitio para el enlace a
+          390 px y la cabecera envuelve: `ml-auto` lo manda igualmente al
+          margen derecho en el renglón de abajo, en vez de dejarlo alineado con
+          el titular como si fuera un subtítulo.
+        */}
+        <CardAction className="ml-auto">
+          <Button asChild variant="link" className="-my-1.5 -mr-2 px-2 text-xs">
             <Link href={href}>Ver todas</Link>
           </Button>
         </CardAction>
@@ -637,19 +692,45 @@ function PanelEsqueleto({ titulo, href, Icon }: { titulo: string; href: string; 
   return (
     <div aria-busy="true">
       <Panel titulo={titulo} nota="" href={href} Icon={Icon}>
-        <div className="space-y-4 px-5 py-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <EsqueletoLineas key={i} n={2} />
+        {/*
+          Cinco filas de 82 px con su filete: exactamente las que va a haber y
+          exactamente lo que miden llenas —sello, dos líneas de titular y la
+          línea de registro—. El bloque de párrafos genérico que había antes
+          medía 160 px contra los 410 del contenido, y el panorama entero daba
+          un tirón de un cuarto de pantalla al llegar el dato.
+        */}
+        <ul aria-hidden className="divide-y divide-hairline">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <li key={i} className="flex h-[82px] items-start gap-3 px-5 py-3">
+              <Skeleton className="h-[18px] w-11 shrink-0 bg-hairline/70" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-3.5 w-11/12 bg-hairline/70" />
+                <Skeleton className="h-3.5 w-2/3 bg-hairline/70" />
+                <Skeleton className="h-3 w-1/3 bg-hairline/70" />
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </Panel>
     </div>
   );
 }
 
-function Vacio({ texto }: { texto: string }) {
+/**
+ * El hueco de un panel. `caida` lo separa de «no hay nada»: con la marca en
+ * ocre delante, el lector sabe que no pudimos mirar —no que el Estado no tenga
+ * nada que cerrar esta semana—, que es la distinción que manda la ergonomía.
+ * El texto sube a 14 px: a 12 px centrados en medio de un panel vacío parecía
+ * una nota al pie de algo que no estaba.
+ */
+function Vacio({ texto, caida = false }: { texto: string; caida?: boolean }) {
   return (
-    <p className="px-5 py-10 text-center text-xs leading-relaxed text-ink-soft">{texto}</p>
+    <div className="px-5 py-8 text-center">
+      {caida && <MarcaEstado tono="aviso">Sin respuesta</MarcaEstado>}
+      <p className={`text-sm leading-relaxed text-ink-soft ${caida ? "mt-2" : ""}`}>
+        {texto}
+      </p>
+    </div>
   );
 }
 
@@ -662,9 +743,20 @@ function IndicadorDeuda({
   valor: string;
   destacar?: boolean;
 }) {
+  /*
+    La destacada se queda apilada también en teléfono: «US$ 61.5 mil millones»
+    a 18 px necesita los 326 px de la fila entera, y compartiéndola con su
+    etiqueta se partía en dos. Externa e interna van a 16 px y sí caben al lado
+    de la suya, que es lo que las deja leerse como el desglose de la de arriba.
+  */
   return (
-    <Card className="bg-canvas/60 px-4 py-3">
-      <div className="text-xs text-ink-soft">{etiqueta}</div>
+    <Card
+      className={cn(
+        "bg-canvas/60 px-4 py-3",
+        destacar ? "block" : "flex items-baseline justify-between gap-3 sm:block",
+      )}
+    >
+      <div className="shrink-0 text-[13px] text-ink-soft sm:text-xs">{etiqueta}</div>
       {/*
         Las tres cifras son comparables entre sí, así que las tres van en mono
         tabular: lo único que distingue a la destacada es el tamaño. Con una
@@ -675,7 +767,7 @@ function IndicadorDeuda({
         className={
           destacar
             ? "mt-0.5 font-mono text-lg font-semibold tabular-nums tracking-tight text-ink"
-            : "mt-0.5 font-mono text-base font-semibold tabular-nums text-ink"
+            : "font-mono text-base font-semibold tabular-nums text-ink sm:mt-0.5"
         }
       >
         {valor}

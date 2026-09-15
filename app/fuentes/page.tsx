@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { getCountIniciativas, getPeriodos } from "@/lib/congreso";
 import { contarProveedoresRegistrados } from "@/lib/dgcp";
@@ -32,19 +34,22 @@ export default async function FuentesPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
-      >
-        <IconArrowLeft className="h-3.5 w-3.5" />
-        Panorama
-      </Link>
+      {/*
+        La vuelta al panorama medía 76 × 16 px. Con la primitiva toma 44 px de
+        alto en teléfono y los márgenes negativos dejan el texto en su sitio.
+      */}
+      <Button asChild variant="ghost" className="-mx-2 -my-2 px-2 text-xs font-medium text-ink-soft">
+        <Link href="/">
+          <IconArrowLeft className="h-3.5 w-3.5" />
+          Panorama
+        </Link>
+      </Button>
 
       <header className="mb-6 mt-3">
         <h1 className="font-display text-3xl text-ink sm:text-4xl">
           ¿De dónde sale cada dato?
         </h1>
-        <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
+        <p className="mt-1.5 text-[15px] leading-relaxed text-ink-soft sm:text-sm">
           Qué alimenta esta plataforma, qué no, y por qué. Sin maquillarlo: una
           herramienta de inteligencia que oculta sus huecos de cobertura no sirve
           para decidir.
@@ -58,7 +63,7 @@ export default async function FuentesPage() {
             Públicas. Alimenta el buscador de licitaciones, los precios históricos
             de adjudicación y el panel de mercado.
           </p>
-          <p className="mt-2">
+          <p className="mt-3">
             El buscador filtra por <strong>etapa</strong> —abiertos a ofertar,
             ya cerrada la recepción, en evaluación, adjudicados, desiertos o
             cancelados— y no solo por lo que está abierto. Dos límites que
@@ -74,7 +79,7 @@ export default async function FuentesPage() {
             cerrado. Ese conteo es <strong>una muestra</strong>, y el buscador
             lo dice junto al número en vez de presentarlo como el censo.
           </p>
-          <p className="mt-2">
+          <p className="mt-3">
             Los pliegos y actas de cada proceso son públicos, pero
             comprasdominicana los manda como descarga forzada y prohíbe
             incrustarlos: bajar un archivo para saber qué dice no es acceso a la
@@ -82,7 +87,7 @@ export default async function FuentesPage() {
             —los mismos bytes, sin editar— y los enlaces de abrir y descargar
             siguen apuntando al original.
           </p>
-          <p className="mt-2">
+          <p className="mt-3">
             De la misma API se leen otras cuatro cosas que antes no
             aprovechábamos: las <strong>ofertas</strong> de cada proceso (quién
             compitió, no solo quién ganó), el <strong>registro de
@@ -90,7 +95,7 @@ export default async function FuentesPage() {
             de constitución de cada empresa—, el <strong>catálogo UNSPSC</strong>{" "}
             y los <strong>planes anuales de compra</strong> de cada institución.
           </p>
-          <p className="mt-2">
+          <p className="mt-3">
             El registro de proveedores tiene su propio índice en{" "}
             <Link
               href="/proveedores"
@@ -106,7 +111,7 @@ export default async function FuentesPage() {
             <strong>por nombre</strong> solo se puede buscar entre quienes
             ganaron contratos en las últimas semanas.
           </p>
-          <p className="mt-2 text-xs text-ink-soft">
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
             Las búsquedas por texto escanean hasta 6 páginas de 1000 registros
             dentro del rango de fechas; cuando el barrido no cubre todo, la
             interfaz lo advierte en vez de fingir un resultado completo. Cuatro
@@ -152,7 +157,7 @@ export default async function FuentesPage() {
               />
             </dl>
           )}
-          <p className="mt-3 text-xs text-ink-soft">
+          <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Por qué es una instantánea y no lectura en vivo: el origen calcula el
             año en curso al vuelo y tarda entre 20 y 97 segundos por consulta, más
             de lo que puede esperar una página. Se consolidan las tres secciones
@@ -187,7 +192,7 @@ export default async function FuentesPage() {
               valor={periodos.length > 0 ? periodos.map((p) => p.description).join(", ") : "—"}
             />
           </dl>
-          <p className="mt-3 text-xs text-ink-soft">
+          <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             No es una API pública documentada: es un contrato interno que puede
             cambiar sin aviso. Toda la lectura es GET y valida{" "}
             <code className="rounded bg-canvas px-1 py-0.5 font-mono">content-type</code>,
@@ -215,7 +220,7 @@ export default async function FuentesPage() {
               <Metrica etiqueta="Foto más reciente" valor={nomina.periodoReciente} />
             </dl>
           )}
-          <p className="mt-3 text-xs text-ink-soft">
+          <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Cobertura parcial declarada: es lo publicado en CSV procesable, no
             todo el Estado. La nómina estatal completa (con nombres) vive en el
             tablero oficial del{" "}
@@ -251,13 +256,13 @@ export default async function FuentesPage() {
             </Link>
             , donde se ve el conteo en vivo por año.
           </p>
-          <p className="mt-2">
+          <p className="mt-3">
             Sus PDF sí traen capa de texto —no son escaneos— y el origen los
             sirve incrustables, así que cada norma se lee entera dentro de la
             plataforma, con el buscador del propio visor. Es también la vía al
             articulado de las piezas del Congreso ya promulgadas.
           </p>
-          <p className="mt-3 text-xs text-ink-soft">
+          <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Toda la lectura es GET/POST de consulta y se acota por año: el origen
             no pagina y cuelga si se le pide todo el histórico de una vez. Los
             operadores de fecha son numéricos, no el signo igual.
@@ -296,7 +301,7 @@ export default async function FuentesPage() {
               />
             </dl>
           )}
-          <p className="mt-3 text-xs text-ink-soft">
+          <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Sin clave ni WAF. El saldo viene en millones de dólares; la
             plataforma lo lee de la fila «Deuda Pública Total del SPNF» de la
             hoja de saldo-evolución.
@@ -313,7 +318,7 @@ export default async function FuentesPage() {
             —depósito, modificaciones sucesivas, texto aprobado—, que es
             exactamente lo que necesita una comparación entre lecturas.
           </p>
-          <p className="mt-2">
+          <p className="mt-3">
             Pero viven en un servidor on-premise en RD que rechaza la conexión en
             el handshake TLS desde fuera del país. Los enlaces “Abrir” de cada
             ficha apuntan al origen real y funcionan desde una red dominicana; la
@@ -348,7 +353,7 @@ export default async function FuentesPage() {
               valor={`${CUATRIENIOS[CUATRIENIOS.length - 1].etiqueta.slice(0, 4)}–hoy`}
             />
           </dl>
-          <p className="mt-3 text-xs text-ink-soft">
+          <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Los textos que publica son escaneos: PDF de imágenes, sin capa de
             texto, así que se pueden leer y descargar pero no buscar por
             palabra. Su búsqueda es literal y distingue tildes, muestra 50 filas por consulta y cada
@@ -376,7 +381,7 @@ export default async function FuentesPage() {
 
       <Card as="section" className="mt-8 p-5">
         <CardTitle>Límites de cobertura</CardTitle>
-        <ul className="mt-2.5 space-y-2 text-sm leading-relaxed text-ink-soft">
+        <ul className="mt-2.5 space-y-3 text-[15px] leading-relaxed text-ink-soft sm:text-sm">
           <li>
             El listado de <strong>Diputados</strong> cubre el registro vigente. Las
             piezas que siguen vivas se arrastran conservando su fecha de depósito
@@ -399,7 +404,7 @@ export default async function FuentesPage() {
             instantáneas llega con esa capa.
           </li>
         </ul>
-        <p className="mt-4 text-xs text-ink-soft">
+        <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
           Herramienta independiente y no oficial. Para efectos legales, verificar
           contra la institución correspondiente.
         </p>
@@ -408,11 +413,19 @@ export default async function FuentesPage() {
   );
 }
 
+/**
+ * El estado de una fuente traducido al oficio del color que ya conoce toda la
+ * plataforma: conectada es lo cumplido, bloqueada es el sello, caída es el
+ * ocre del plazo y descartada no dice nada. El sello iba escrito a mano aquí
+ * con sus propios colores —un `<span>` con relleno, filete y versalitas, que es
+ * exactamente `Badge forma="sello"`—, que es cómo se abre la segunda tabla de
+ * colores que `lib/estados.ts` documenta como la forma de romper un sistema.
+ */
 const ESTADOS = {
-  activa: "bg-valido-50 text-valido-700 ring-valido-500/20",
-  bloqueada: "bg-sello-50 text-sello-700 ring-sello-600/20",
-  descartada: "bg-hairline text-ink-soft ring-hairline",
-  caida: "bg-alerta-50 text-alerta-600 ring-alerta-600/20",
+  activa: { variant: "valido", ring: "ring-valido-500/20" },
+  bloqueada: { variant: "sello", ring: "ring-sello-600/20" },
+  descartada: { variant: "neutro", ring: "ring-hairline" },
+  caida: { variant: "alerta", ring: "ring-alerta-600/20" },
 } as const;
 
 function Fuente({
@@ -430,13 +443,23 @@ function Fuente({
     <Card as="section" className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <CardTitle className="text-base">{nombre}</CardTitle>
-        <span
-          className={`inline-flex items-center rounded-[3px] px-2 py-0.5 rotulo ring-1 ring-inset ${ESTADOS[estado]}`}
+        <Badge
+          forma="sello"
+          variant={ESTADOS[estado].variant}
+          className={`px-2 py-0.5 ring-1 ring-inset ${ESTADOS[estado].ring}`}
         >
           {etiqueta}
-        </span>
+        </Badge>
       </div>
-      <div className="mt-2.5 text-sm leading-relaxed text-ink-soft">{children}</div>
+      {/*
+        `/fuentes` es una página larga de lectura y se consulta en el teléfono:
+        el cuerpo sube a 15 px, que es el mínimo cómodo para leer seguido, y
+        vuelve a 14 desde `sm`, donde la columna ya es más ancha de lo que pide
+        el ojo.
+      */}
+      <div className="mt-2.5 text-[15px] leading-relaxed text-ink-soft sm:text-sm">
+        {children}
+      </div>
     </Card>
   );
 }

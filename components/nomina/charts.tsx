@@ -156,7 +156,16 @@ export type BarItem = {
   sub?: string;
 };
 
-/** Horizontal ranked bars (top localidades / cargos). Rows are clickable. */
+/**
+ * Ranking de barras horizontales (instituciones, áreas, cargos). Las filas
+ * son pulsables cuando hay `onSelect`.
+ *
+ * En teléfono la fila lleva **dos líneas**: nombre y cifra arriba, la base
+ * —plazas y período— debajo. En una sola línea la base se comía el nombre
+ * («Ministerio de Salud Pública 7,0…») y la fila medía 36 px, por debajo del
+ * objetivo táctil. Con dos líneas el nombre se lee entero, la base deja de
+ * competir con él y la fila pasa de 36 a 52 px sin añadir un solo control.
+ */
 export function BarList({
   items,
   format = formatInt,
@@ -180,7 +189,7 @@ export function BarList({
             <Tag
               {...(onSelect ? { type: "button" as const, onClick: () => onSelect(it.id) } : {})}
               className={cn(
-                "group relative block w-full overflow-hidden rounded-lg px-3 py-2 text-left",
+                "group relative block min-h-11 w-full overflow-hidden rounded-lg px-3 py-2 text-left",
                 onSelect && "cursor-pointer hover:ring-1 hover:ring-brand-200",
                 selected && "ring-1 ring-brand-500",
               )}
@@ -191,15 +200,17 @@ export function BarList({
                 style={{ width: `${pct}%` }}
                 aria-hidden
               />
-              <span className="relative flex items-center justify-between gap-3">
-                <span className="min-w-0 flex-1 truncate text-sm text-ink">
-                  {it.label}
-                  {it.sub && <span className="ml-2 text-xs text-ink-soft">{it.sub}</span>}
-                </span>
+              <span className="relative flex items-baseline justify-between gap-3">
+                <span className="min-w-0 flex-1 truncate text-sm text-ink">{it.label}</span>
                 <span className="shrink-0 font-mono text-sm font-medium text-brand-700">
                   {format(it.value)}
                 </span>
               </span>
+              {it.sub && (
+                <span className="relative mt-0.5 block truncate text-xs text-ink-soft">
+                  {it.sub}
+                </span>
+              )}
             </Tag>
           </li>
         );
@@ -208,26 +219,39 @@ export function BarList({
   );
 }
 
-/** Vertical histogram for the salary distribution. */
+/**
+ * Histograma vertical de la distribución salarial.
+ *
+ * Las columnas se estiran a la altura del bloque (`items-stretch`), no al
+ * contenido. Con `items-end` la columna medía lo que medían sus dos rótulos
+ * —36 px—, el riel interior heredaba altura `auto` y el `height: N%` de cada
+ * barra se resolvía contra cero: el panel entero se servía en blanco. La pista
+ * tiene que tener altura definida para que un porcentaje signifique algo.
+ *
+ * El tramo de rótulos se reserva aparte (`h-9`) para que las barras midan
+ * siempre lo mismo aunque una etiqueta se parta en dos líneas.
+ */
 export function Histogram({ bins }: { bins: { label: string; count: number }[] }) {
   const max = Math.max(1, ...bins.map((b) => b.count));
   return (
-    <div className="flex h-48 items-end gap-2">
+    <div className="flex h-48 items-stretch gap-1 sm:gap-2">
       {bins.map((b) => {
         const pct = (b.count / max) * 100;
         return (
           <div key={b.label} className="flex min-w-0 flex-1 flex-col items-center">
-            <div className="flex w-full flex-1 items-end">
+            <div className="flex w-full min-h-0 flex-1 items-end">
               <div
                 className="w-full rounded-t-md bg-ink-soft/70 transition-[height] hover:bg-ink"
                 style={{ height: `${Math.max(pct, 1)}%` }}
                 title={`${b.label}: ${formatInt(b.count)} plazas`}
               />
             </div>
-            <div className="mt-1.5 text-center text-[11px] leading-tight text-ink-soft">
-              {b.label}
+            <div className="mt-1.5 flex h-9 flex-col items-center justify-start text-center">
+              <span className="font-mono text-xs font-semibold tabular-nums leading-tight text-ink">
+                {compactCount(b.count)}
+              </span>
+              <span className="text-xs leading-tight text-ink-soft">{b.label}</span>
             </div>
-            <div className="text-[11px] font-medium text-ink">{compactCount(b.count)}</div>
           </div>
         );
       })}

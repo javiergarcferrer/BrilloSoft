@@ -84,16 +84,27 @@ export function Explorer() {
     return (
       <div role="status" aria-busy="true" className="space-y-5">
         <span className="sr-only">Cargando la nómina consolidada…</span>
-        <Skeleton className="h-20 rounded-lg border border-hairline bg-surface" />
+        {/*
+          Las alturas son las del contenido real a cada ancho: hasta `lg` la
+          barra de filtros apila tres controles de 44 px (188 px) y solo en una
+          sola fila mide 76; cada indicador crece cuando su rótulo se parte en
+          dos líneas, que es lo normal a 390 px. Con las alturas de escritorio
+          la página daba un tirón de media pantalla al llegar el JSON.
+        */}
+        <Skeleton className="h-[188px] rounded-lg border border-hairline bg-surface lg:h-20" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton
               key={i}
-              className="h-24 rounded-lg border border-hairline bg-surface"
+              className="h-[123px] rounded-lg border border-hairline bg-surface lg:h-28"
             />
           ))}
         </div>
-        <Skeleton className="h-72 rounded-lg border border-hairline bg-surface" />
+        <div className="space-y-2">
+          <Skeleton className="h-11 w-56 rounded-lg bg-hairline/70" />
+          <Skeleton className="h-4 w-40 bg-hairline/70" />
+        </div>
+        <Skeleton className="h-[845px] rounded-lg border border-hairline bg-surface lg:h-[36rem]" />
       </div>
     );
   }
@@ -320,6 +331,12 @@ function ExplorerReady({ data }: { data: NominaData }) {
             </SelectContent>
           </Select>
 
+          {/*
+            En teléfono los dos campos de sueldo reparten el ancho entero: con
+            anchos fijos de 28 y 24 dejaban un tercio de la fila en blanco y
+            parecían un resto de la versión de escritorio. Desde `lg`, donde la
+            barra vuelve a ser una sola fila, recuperan su medida corta.
+          */}
           <div className="flex items-center gap-2">
             <Input
               type="number"
@@ -328,9 +345,9 @@ function ExplorerReady({ data }: { data: NominaData }) {
               onChange={(e) => setSalMin(e.target.value)}
               placeholder="Sueldo mín."
               aria-label="Sueldo mínimo"
-              className="w-28 bg-canvas"
+              className="w-full bg-canvas lg:w-28"
             />
-            <span aria-hidden className="text-ink-soft">
+            <span aria-hidden className="shrink-0 text-ink-soft">
               –
             </span>
             <Input
@@ -340,7 +357,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
               onChange={(e) => setSalMax(e.target.value)}
               placeholder="máx."
               aria-label="Sueldo máximo"
-              className="w-24 bg-canvas"
+              className="w-full bg-canvas lg:w-24"
             />
           </div>
 
@@ -348,11 +365,10 @@ function ExplorerReady({ data }: { data: NominaData }) {
             <Button
               type="button"
               variant="ghost"
-              size="sm"
               onClick={reset}
               className="self-start text-brand-700 lg:self-auto"
             >
-              <IconX className="h-3.5 w-3.5" /> Limpiar
+              <IconX className="h-4 w-4" /> Limpiar
             </Button>
           )}
         </div>
@@ -393,7 +409,13 @@ function ExplorerReady({ data }: { data: NominaData }) {
 
       {/* ---------- vistas ---------- */}
       <Tabs value={view} onValueChange={(v) => setView(v as View)}>
-        <div className="flex items-center justify-between gap-3">
+        {/*
+          A 390 px las dos pestañas y el conteo no caben en una fila: el conteo
+          se partía en dos renglones pegado al borde de la última pestaña. Con
+          `flex-wrap` baja entero a su propia línea y las pestañas quedan
+          intactas.
+        */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <TabsList className="w-auto">
             <TabsTrigger value="resumen">
               <IconChartBar className="h-4 w-4" />
@@ -434,7 +456,17 @@ function ExplorerReady({ data }: { data: NominaData }) {
                     ["avg", "Promedio"],
                   ] as [Metric, string][]
                 ).map(([m, lbl]) => (
-                  <ToggleGroupItem key={m} value={m} className="px-2.5 py-1 text-xs">
+                  /*
+                    El control segmentado se queda en los 36 px de la primitiva
+                    en escritorio, pero en teléfono es el único modo de cambiar
+                    lo que mide el ranking: sube a 44 px, que es el objetivo
+                    táctil, y ensancha el relleno para acompañarlo.
+                  */
+                  <ToggleGroupItem
+                    key={m}
+                    value={m}
+                    className="min-h-11 px-3 text-xs sm:min-h-9 sm:px-2.5"
+                  >
                     {lbl}
                   </ToggleGroupItem>
                 ))}
@@ -492,7 +524,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
         </TabsContent>
 
         <TabsContent value="tabla" className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-ink-soft">
               Ordenado por <span className="font-medium text-ink">{sortLabel(sortKey)}</span> (
               {sortDir === "asc" ? "asc" : "desc"})
@@ -513,7 +545,8 @@ function ExplorerReady({ data }: { data: NominaData }) {
         </TabsContent>
       </Tabs>
 
-      <p className="pt-1 text-xs leading-relaxed text-ink-soft">
+      {/* La declaración de cobertura es lectura, no metadato: 13 px en teléfono. */}
+      <p className="pt-1 text-[13px] leading-relaxed text-ink-soft sm:text-xs">
         Foto transversal: el último mes publicado por cada una de las{" "}
         {data.instituciones.length} instituciones cubiertas ({formatInt(data.rows.length)}{" "}
         plazas). Cada fila es una plaza con su sueldo bruto; no hay nombres ni datos
@@ -570,12 +603,18 @@ function Kpi({
 }) {
   return (
     <Card className="p-3.5">
-      <div className="flex items-center gap-1.5 text-ink-soft">
-        <Icon className="h-3.5 w-3.5" />
+      {/*
+        El icono se alinea con la primera línea del rótulo, no con su centro:
+        a 390 px «MASA SALARIAL MENSUAL» ocupa dos líneas y el icono centrado
+        quedaba flotando entre las dos.
+      */}
+      <div className="flex items-start gap-1.5 text-ink-soft">
+        <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span className="rotulo">{label}</span>
       </div>
       <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums text-ink">{value}</p>
-      {base && <p className="mt-1 text-[11px] leading-snug text-ink-soft">{base}</p>}
+      {/* La base de la cifra no es adorno: a 11 px no se lee en un teléfono. */}
+      {base && <p className="mt-1 text-xs leading-snug text-ink-soft">{base}</p>}
     </Card>
   );
 }

@@ -22,7 +22,7 @@ export default function SeguridadPlataformaPage() {
         <h1 className="font-display mt-2 text-3xl text-ink sm:text-4xl">
           ¿Cómo cuidamos los datos y a quién le rendimos cuentas?
         </h1>
-        <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
+        <p className="mt-1.5 text-[15px] leading-relaxed text-ink-soft sm:text-sm">
           Socrático.do es una herramienta independiente y no oficial, pero se
           construye con los estándares que una institución del Estado exigiría.
           Esta página declara la postura de seguridad, privacidad y cumplimiento
@@ -99,10 +99,15 @@ export default function SeguridadPlataformaPage() {
         </Medida>
       </div>
 
+      {/*
+        La hoja entera es el enlace, así que el objetivo táctil es la tarjeta:
+        `items-start` mantiene el sello arriba cuando el título se parte en dos
+        líneas a 390 px, donde `items-center` lo dejaba a media altura.
+      */}
       <Card asChild className="mt-6 transition-colors hover:bg-canvas/60">
         <Link
           href="/democracia/seguridad"
-          className="flex items-center gap-4 px-5 py-4"
+          className="flex items-start gap-4 px-5 py-4 sm:items-center"
         >
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
           <IconShield className="h-5 w-5" />
@@ -116,11 +121,11 @@ export default function SeguridadPlataformaPage() {
             Democracia Legislativa.
           </p>
         </div>
-          <IconArrowRight className="h-4 w-4 shrink-0 text-ink-soft" />
+          <IconArrowRight className="mt-1 h-4 w-4 shrink-0 text-ink-soft sm:mt-0" />
         </Link>
       </Card>
 
-      <p className="mt-6 text-xs leading-relaxed text-ink-soft">
+      <p className="mt-6 text-[13px] leading-relaxed text-ink-soft sm:text-xs">
         Herramienta independiente y no oficial, sin afiliación con el Estado
         dominicano. Marco normativo de referencia: Ley 172-13 (protección de
         datos personales), Ley 200-04 (libre acceso a la información pública) y
@@ -144,7 +149,8 @@ function Marco({
     <Card className="p-4">
       <div className="font-mono text-xs font-semibold text-ink">{norma}</div>
       <div className="mt-1.5 text-sm font-semibold text-ink">{titulo}</div>
-      <p className="mt-1 text-xs leading-relaxed text-ink-soft">{children}</p>
+      {/* En teléfono las tres tarjetas se apilan a ancho completo: cabe a 13 px. */}
+      <p className="mt-1 text-[13px] leading-relaxed text-ink-soft sm:text-xs">{children}</p>
     </Card>
   );
 }
@@ -158,7 +164,15 @@ function Medida({ titulo, children }: { titulo: string; children: React.ReactNod
         </span>
         {titulo}
       </CardTitle>
-      <p className="mt-2 pl-7 text-sm leading-relaxed text-ink-soft">{children}</p>
+      {/*
+        Página larga de lectura: el cuerpo sube a 15 px en teléfono. La sangría
+        bajo el sello se suelta a 390 px —28 px de los 326 disponibles son casi
+        un diez por ciento de la columna— y vuelve desde `sm`, donde alinear el
+        párrafo con el titular sí sobra ancho.
+      */}
+      <p className="mt-2 text-[15px] leading-relaxed text-ink-soft sm:pl-7 sm:text-sm">
+        {children}
+      </p>
     </Card>
   );
 }

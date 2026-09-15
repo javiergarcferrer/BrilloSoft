@@ -76,7 +76,7 @@ export default async function FinanzasPage() {
       </Portada>
 
       <div className="grid gap-5 lg:grid-cols-5">
-        <Card as="section" className="p-6 lg:col-span-3">
+        <Card as="section" className="p-5 sm:p-6 lg:col-span-3">
           <CardTitle>Gasto devengado mes a mes</CardTitle>
           <p className="mt-1 text-xs text-ink-soft">
             Todo el Estado, {fiscal.anio}. Cada barra es un mes cerrado.
@@ -103,7 +103,7 @@ export default async function FinanzasPage() {
           </ul>
         </Card>
 
-        <Card as="section" className="p-6 lg:col-span-2">
+        <Card as="section" className="p-5 sm:p-6 lg:col-span-2">
           <CardTitle>Y lo que debe</CardTitle>
           {deuda ? (
             <>
@@ -140,7 +140,7 @@ export default async function FinanzasPage() {
         </Card>
       </div>
 
-      <Card as="section" className="p-6">
+      <Card as="section" className="p-5 sm:p-6">
         <CardTitle>Institución por institución</CardTitle>
         <p className="mt-1 text-xs text-ink-soft">
           Ordenadas por gasto devengado en {fiscal.anio}. El porcentaje es cuánto
@@ -148,7 +148,13 @@ export default async function FinanzasPage() {
         </p>
         <ul className="mt-4 space-y-2">
           {fiscal.instituciones.map((i) => (
-            <li key={i.codigo} className="cv-auto [--cv-alto:5.5rem]">
+            /*
+              `--cv-alto` es lo que el navegador reserva por fila sin pintarla:
+              a 390 px el nombre de la institución ocupa dos líneas y la fila
+              mide unos 120 px, no los 88 de escritorio. Con la estimación corta
+              la barra de desplazamiento saltaba al pintar cada tramo.
+            */
+            <li key={i.codigo} className="cv-auto [--cv-alto:7.5rem] sm:[--cv-alto:5.5rem]">
               <Link
                 href={`/finanzas/${i.codigo}`}
                 className="block rounded-lg border border-hairline px-4 py-3 transition hover:border-v-finanzas"
@@ -165,10 +171,20 @@ export default async function FinanzasPage() {
                   indicadorClassName="bg-v-finanzas"
                   className="mt-1.5"
                 />
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-soft">
-                  <span className="font-mono">Capítulo {i.codigo}</span>
-                  <span>· {pct(i.ejecucion)} de su presupuesto vigente</span>
-                  <span className="hidden sm:inline">· {i.seccionNombre}</span>
+                {/*
+                  Los dos metadatos van a los extremos, no en una fila que se
+                  parte: con `flex-wrap` y un «·» al principio del segundo, a
+                  390 px la línea se rompía y dejaba el punto huérfano abriendo
+                  el renglón. Anclados a izquierda y derecha caben los dos en
+                  una sola línea, y la sección —que solo cabe en pantalla
+                  ancha— se cuela en medio desde `sm`.
+                */}
+                <div className="mt-1.5 flex items-baseline justify-between gap-x-3 text-xs text-ink-soft">
+                  <span className="shrink-0 font-mono">Capítulo {i.codigo}</span>
+                  <span className="hidden min-w-0 truncate sm:block">{i.seccionNombre}</span>
+                  <span className="shrink-0 text-right">
+                    {pct(i.ejecucion)} de su presupuesto vigente
+                  </span>
                 </div>
               </Link>
             </li>
@@ -176,7 +192,7 @@ export default async function FinanzasPage() {
         </ul>
       </Card>
 
-      <Card as="section" className="p-6">
+      <Card as="section" className="p-5 sm:p-6">
         <CardTitle>Cómo leer estas cifras</CardTitle>
         <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
           <div>
@@ -210,7 +226,7 @@ export default async function FinanzasPage() {
         </dl>
         <p className="mt-4 text-xs leading-relaxed text-ink-soft">
           Fuente: API de datos abiertos del SIGEF (Ministerio de Hacienda),{" "}
-          <span className="font-mono">{fiscal.fuente}</span>. La API calcula el
+          <span className="break-all font-mono">{fiscal.fuente}</span>. La API calcula el
           año en curso en vivo y tarda minutos, así que la plataforma consolida
           las tres secciones institucionales en una instantánea
           {hace(fiscal.generadoEn) ? ` (generada ${hace(fiscal.generadoEn)})` : ""}{" "}
