@@ -180,11 +180,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <ul className="mt-2 space-y-0.5 sm:mt-3 sm:space-y-1.5">
                       {seccion.vistas.map((vista) => (
                         <li key={vista.href}>
-                          {/* En el teléfono cada enlace lleva su propio aire:
-                              una lista de renglones a 20 px se pulsa a ciegas. */}
+                          {/*
+                            En el teléfono cada enlace es una fila de 40 px, no
+                            un renglón de texto: medidos daban 32, y el pie es
+                            justo donde se navega con el pulgar cansado al final
+                            de una página larga. Desde `sm` vuelve a ser una
+                            lista compacta, que es donde hay puntero.
+                          */}
                           <Link
                             href={vista.href}
-                            className="inline-block py-1.5 hover:text-brand-700 sm:py-0"
+                            className="flex min-h-10 items-center hover:text-brand-700 sm:block sm:min-h-0"
                           >
                             {vista.label}
                           </Link>

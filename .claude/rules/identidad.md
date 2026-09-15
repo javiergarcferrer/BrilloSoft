@@ -88,8 +88,14 @@ registers the finding instead of fixing it.
   the text → vote. Aggregates are never shown before the reader answers.
 - Defaults are visible as chips; disabled controls explain why before the tap;
   "no results" and "the source did not answer" are two different screens.
-- Mobile first: the citizen consults on a phone between two other things.
-  Tables collapse to two lines per row at 390 px; nothing depends on hover.
+- Mobile first (docs/IDENTIDAD.md §8, all of it inherited from the primitives):
+  44 px is the touch target on a phone (40 from `sm`); fields are 16 px or iOS
+  zooms on focus; a card or listing row that leads to one place stretches its
+  link over the whole sheet with `::after` (anything else inside goes `z-10`);
+  nothing depends on hover; essential text never below 12 px, reading text 15;
+  a wide table stacks into cards below `sm`; a loading silhouette is measured
+  against the real content at 390 px. Floating pieces share the bottom edge
+  through `data-barra-acciones`, they do not invent their own offsets.
 - All copy in Spanish (es-DO). Dates through `formatFecha` (fixed
   `America/Santo_Domingo`), amounts through `formatMonto`, age through
   `<Antiguedad>` in listing rows and `hace()` elsewhere — both count Dominican

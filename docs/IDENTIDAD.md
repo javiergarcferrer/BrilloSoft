@@ -209,7 +209,41 @@ segunda dice qué pasó, qué sigue en pie y ofrece la única acción útil.
   una alineación no la produce**, y que una segunda tabla es la forma concreta
   en que esta regla se rompe.
 
-### 8. Dónde vive el sistema
+### 8. El teléfono es la pantalla, no una adaptación
+
+«El ciudadano no estudia esta plataforma: la *consulta*, en el teléfono, entre
+otras dos cosas.» Eso obliga a cosas concretas, y todas están ya en las
+primitivas: lo que sigue se hereda, no se repite en cada página.
+
+- **44 px es la medida de lo que se pulsa** en teléfono —la que recomiendan las
+  guías de iOS y Android—, y 40 desde `sm`, donde hay puntero. Botón, campo,
+  selector, opción y pestaña llevan los mismos saltos, así que un botón junto a
+  un campo se alinea solo. Un control de 36 px solo es legítimo dentro de una
+  fila, y entonces necesita 8 px de aire alrededor.
+- **Un campo se escribe a 16 px.** Por debajo, Safari en iOS hace zoom al
+  enfocarlo y la página se queda desplazada al soltarlo.
+- **Prefiere la fila entera al enlace de tres palabras.** Una tarjeta o una fila
+  de listado que lleva a un solo sitio se estira con un `::after`: el objetivo
+  pasa de 320 × 20 px a la hoja completa. Lo que quede dentro y sea otro
+  destino se eleva con `z-10`.
+- **Un dedo no tiene `hover`.** La respuesta al toque es el `active`; el `hover`
+  es un refuerzo para quien tiene puntero y nunca la única señal.
+- **El texto esencial no baja de 12 px**, y la lectura principal va a 15.
+  El único texto más pequeño de la casa es el `.rotulo`, que va en versalitas
+  espaciadas para compensarlo.
+- **Nada se lee en una tabla ancha**: por debajo de `sm` un cuadro de datos se
+  apila en fichas y vuelve a ser cuadro desde `sm`.
+- **Un enlace dentro de una frase es la excepción** y se queda a la altura de su
+  línea: darle altura de mando rompería el párrafo.
+- **Lo que flota se reparte el borde inferior.** Tab bar, barra de acciones de
+  una ficha y botón de volver arriba se pisaban entre sí; ahora la barra marca
+  la raíz con `data-barra-acciones` y `globals.css` aparta al botón. Cualquier
+  pieza nueva que flote abajo se suma a ese reparto, no se inventa el suyo.
+- **Una silueta de carga miente si no mide lo que va a llegar.** Se calibra con
+  la altura real medida a 390 px, donde ninguna pregunta de esta plataforma cabe
+  en un solo renglón.
+
+### 9. Dónde vive el sistema
 
 Desde la pasada de **shadcn/ui**, en dos capas:
 
@@ -247,7 +281,7 @@ Desde la pasada de **shadcn/ui**, en dos capas:
 propósito — dos nombres para una misma cosa es la «segunda tabla» que
 `lib/estados.ts` documenta como la forma concreta en que un sistema se rompe.
 
-### 9. Cómo se sostiene esto
+### 10. Cómo se sostiene esto
 
 > «Un rojo aquí es un problema de enrutamiento, no de regla. Subir un piso,
 > ampliar una lista de excepciones o relajar un emparejador **registra** el
@@ -261,7 +295,7 @@ pasada de shadcn/ui lo confirmó midiéndolo: `papel.tsx` existía y lo importab
 **dos** archivos, mientras el resto del árbol dibujaba a mano cuatro campos de
 búsqueda con tres alturas, seis pantallas de «la fuente no contestó», dos marcas
 de estado sobre la misma tabla de colores y siete portadas con dos tamaños de
-titular. Por eso el sistema vive en las dos capas de §8 y no en cuarenta
+titular. Por eso el sistema vive en las dos capas de §9 y no en cuarenta
 archivos que hay que acertar uno por uno.
 
 Y por eso una pieza nueva se añade **donde ya está su familia**: si es genérica,
