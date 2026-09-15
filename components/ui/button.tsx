@@ -20,7 +20,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/cn";
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:pointer-events-none disabled:opacity-55 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  [
+    "inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold",
+    // Un dedo no tiene `hover`: la respuesta al toque es el `active`. Sin él
+    // un botón en el teléfono parece no haber oído, y se pulsa dos veces.
+    "transition-[color,background-color,border-color,transform,opacity] duration-150 active:scale-[0.98]",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas",
+    "disabled:pointer-events-none disabled:opacity-55 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  ].join(" "),
   {
     variants: {
       variant: {
@@ -47,17 +54,19 @@ const buttonVariants = cva(
         destructive: "bg-sello-600 text-canvas hover:bg-sello-700",
       },
       /*
-        La altura por defecto es 40 px, la misma de `Input` y `SelectTrigger`:
-        un botón junto a un campo se alinea sin que nadie tenga que corregirlo
-        en el sitio de uso, y 40 px es además un objetivo táctil decente para
-        quien consulta con el pulgar.
+        En el teléfono la altura por defecto es 44 px —el objetivo táctil que
+        recomiendan las guías de iOS y Android— y baja a 40 px desde `sm`,
+        donde hay puntero. `Input` y `SelectTrigger` llevan exactamente los
+        mismos saltos, así que un botón junto a un campo se alinea solo. `sm`
+        se queda en 36 px: es para acciones secundarias dentro de una fila, y
+        lleva su propio margen de toque alrededor.
       */
       size: {
-        sm: "h-8 px-3 text-xs",
-        default: "h-10 px-4",
-        lg: "h-11 rounded-lg px-5",
-        icon: "h-10 w-10",
-        "icon-sm": "h-8 w-8",
+        sm: "h-9 px-3 text-xs",
+        default: "h-11 px-4 sm:h-10",
+        lg: "h-12 rounded-lg px-5 text-[15px] sm:h-11 sm:text-sm",
+        icon: "h-11 w-11 sm:h-10 sm:w-10",
+        "icon-sm": "h-9 w-9",
       },
     },
     defaultVariants: {

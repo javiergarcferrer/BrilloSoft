@@ -15,7 +15,9 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        "flex h-10 w-full rounded-md border border-hairline bg-surface px-3 py-2 text-sm text-ink transition-colors",
+        // 16 px en teléfono a propósito: por debajo de eso Safari en iOS hace zoom
+        // al enfocar el campo y la página se queda desplazada al soltarlo.
+        "flex h-11 w-full rounded-md border border-hairline bg-surface px-3 py-2 text-base text-ink transition-colors sm:h-10 sm:text-sm",
         "placeholder:text-ink-soft/80",
         "focus-visible:border-brand-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
         "disabled:cursor-not-allowed disabled:opacity-55",

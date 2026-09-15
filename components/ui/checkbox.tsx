@@ -20,7 +20,7 @@ function Checkbox({
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        "peer h-[18px] w-[18px] shrink-0 rounded-[3px] border border-hairline bg-surface transition-colors",
+        "peer h-5 w-5 shrink-0 rounded-[3px] border border-hairline bg-surface transition-colors sm:h-[18px] sm:w-[18px]",
         "hover:border-brand-400",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-canvas",
         "disabled:cursor-not-allowed disabled:opacity-55",

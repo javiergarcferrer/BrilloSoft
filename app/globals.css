@@ -189,6 +189,31 @@
     font-family: var(--font-display);
     font-weight: 400;
     letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+
+  /*
+    Párrafos sin viuda: en un teléfono la columna es estrecha y una palabra
+    sola en la última línea es la norma, no la excepción. `pretty` reparte las
+    últimas líneas; donde el navegador no lo conoce, no pasa nada.
+  */
+  p,
+  li,
+  dd {
+    text-wrap: pretty;
+  }
+
+  /*
+    Sin puntero no hay `hover`: la respuesta al toque es el `active` de cada
+    control. Lo único que se apaga aquí es el globo de vista previa que iOS
+    abre al mantener pulsado un enlace, que en la tab bar y en las filas de un
+    listado salta cuando el dedo solo quería desplazarse.
+  */
+  @media (hover: none) {
+    a,
+    button {
+      -webkit-touch-callout: none;
+    }
   }
 
   h3 {
