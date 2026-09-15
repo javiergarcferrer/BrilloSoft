@@ -81,7 +81,7 @@ export function CampoBusqueda({
             aria-label={etiqueta}
             aria-describedby={ayuda ? ayudaId : undefined}
             enterKeyHint="search"
-            className={cn("pl-9", onLimpiar && valor ? "pr-10" : "pr-3")}
+            className={cn("pl-9", onLimpiar && valor ? "pr-12 sm:pr-10" : "pr-3")}
           />
           {onLimpiar && valor && (
             <Button
@@ -89,15 +89,33 @@ export function CampoBusqueda({
               variant="ghost"
               size="icon-sm"
               onClick={onLimpiar}
-              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-ink-soft"
+              // El campo mide 44 px en el teléfono, así que el aspa cabe entera
+              // dentro: a 32 × 32 se fallaba y se acababa borrando a mano.
+              className="absolute right-0.5 top-1/2 h-11 w-11 -translate-y-1/2 text-ink-soft sm:right-1 sm:h-8 sm:w-8"
             >
               <IconX className="h-4 w-4" />
               <span className="sr-only">Limpiar la búsqueda</span>
             </Button>
           )}
         </div>
-        <Button type="submit" disabled={pendiente} className="shrink-0">
-          {pendiente ? "Buscando…" : textoBoton}
+        {/*
+          A 390 px el botón con su palabra dejaba el campo en 190 px y el
+          marcador de posición salía cortado —«Buscar en el texto de las inic»—,
+          justo la línea que dice qué se va a buscar. En el teléfono el botón se
+          queda en el icono (44 × 44, y su nombre sigue ahí para el lector de
+          pantalla y para quien lo mantenga pulsado) y recupera la palabra desde
+          `sm`, donde el ancho da para las dos cosas.
+        */}
+        <Button
+          type="submit"
+          disabled={pendiente}
+          title={pendiente ? "Buscando…" : textoBoton}
+          className="w-11 shrink-0 px-0 sm:w-auto sm:px-4"
+        >
+          <IconSearch aria-hidden className="h-4 w-4 sm:hidden" />
+          <span className="sr-only sm:not-sr-only">
+            {pendiente ? "Buscando…" : textoBoton}
+          </span>
         </Button>
       </div>
       {ayuda && (

@@ -50,6 +50,12 @@ export function Portada({
       )}
     >
       <div className="absolute inset-0 app-grid-dark" aria-hidden />
+      {/*
+        24 px de margen en el teléfono contra los 32/36 de pantalla ancha. A
+        390 px eso deja 310 px de caja de texto: por debajo, la pregunta en
+        serif empieza a partirse en tres renglones y deja de leerse como una
+        frase.
+      */}
       <div className={cn("relative p-6", principal ? "sm:p-9" : "sm:p-8")}>
         <p className="rotulo inline-flex items-start gap-2 text-canvas/70">
           <span
@@ -59,11 +65,21 @@ export function Portada({
           <span>{rotulo}</span>
         </p>
 
+        {/*
+          El aviso iba en `text-alerta-200` con el punto en `bg-alerta-400`, y
+          **ninguno de los dos tonos existe**: la paleta ocre de
+          `app/globals.css` tiene 50, 100, 500, 600 y 700. Tailwind no genera la
+          utilidad que no tiene token, así que la línea heredaba el papel del
+          resto de la portada y el punto no se pintaba nunca — el aviso llevaba
+          meses sin ser ocre y sin tener punto. Con `alerta-100` (#f0e0bc) sobre
+          la tinta el contraste pasa de 12:1 y el matiz se lee como lo que es:
+          una anotación al margen.
+        */}
         {aviso && (
-          <p className="rotulo mt-3 flex items-start gap-2 text-alerta-200">
+          <p className="rotulo mt-3 flex items-start gap-2 text-alerta-100">
             <span
               aria-hidden
-              className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-alerta-400"
+              className="mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full bg-alerta-100"
             />
             <span>{aviso}</span>
           </p>
@@ -98,8 +114,16 @@ export function PortadaCifras({
   children: ReactNode;
   className?: string;
 }) {
+  /*
+    `auto-rows-fr` iguala la altura de **todas** las filas, no solo la de las
+    casillas de una misma fila. A 390 px cada casilla tiene 117 px de texto
+    útil y un monto formateado («RD$ 1.15 billones») cae en dos líneas: sin
+    esto, la fila de arriba crecía y la de abajo no, y la tira —que existe
+    justamente para que las cifras se comparen entre sí— se leía como dos
+    bloques distintos.
+  */
   return (
-    <dl className={cn("grid grid-cols-2 gap-3 sm:grid-cols-4", className)}>
+    <dl className={cn("grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-4", className)}>
       {children}
     </dl>
   );
@@ -113,20 +137,36 @@ export function PortadaCifra({
   etiqueta,
   valor,
   destacar = false,
+  className,
 }: {
   etiqueta: ReactNode;
   valor: ReactNode;
   destacar?: boolean;
+  /**
+   * Para el ajuste fino que solo la página conoce: un valor excepcionalmente
+   * largo que pide un cuerpo menor, un tramo que quiere ocupar dos columnas.
+   * La talla normal la decide la primitiva; esto es la excepción, no la vía.
+   */
+  className?: string;
 }) {
   return (
+    /*
+      `min-w-0` y `break-words` no son celo: en dos columnas de 173 px, una
+      casilla de la tira mide 141 px de texto útil, y un monto formateado
+      («RD$ 1,234,567,890») pasa de 190 px en mono a 18 px. Sin esto, la
+      casilla se estira, arrastra la rejilla y la página entera se desplaza en
+      horizontal. El número no se recorta —recortar una cifra es mentir—: se
+      parte en dos renglones y baja un punto de cuerpo en el teléfono.
+    */
     <div
       className={cn(
-        "rounded-lg px-4 py-3",
+        "h-full min-w-0 rounded-lg px-4 py-3",
         destacar ? "bg-canvas/10" : "bg-canvas/5",
+        className,
       )}
     >
       <dt className="text-xs text-canvas/60">{etiqueta}</dt>
-      <dd className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
+      <dd className="mt-0.5 break-words font-mono text-base font-semibold tabular-nums sm:text-lg">
         {valor}
       </dd>
     </div>

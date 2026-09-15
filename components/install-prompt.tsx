@@ -79,7 +79,16 @@ export default function InstallPrompt() {
     <Card
       role="complementary"
       aria-label="Instalar la aplicación"
-      className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[60] p-3.5 shadow-card lg:inset-x-auto lg:bottom-4 lg:right-4 lg:max-w-sm"
+      /*
+        Tercera pieza en la misma esquina. La ficha de un proceso marca la raíz
+        con `data-barra-acciones` mientras su barra fija está montada —seguir,
+        compartir, ofertar, de 72 a 145 px sobre el borde— y este aviso sube por
+        encima de ella, con el mismo desplazamiento que `globals.css` aplica al
+        botón de «volver arriba». Se lee de la raíz y no de la ruta: el mecanismo
+        es el atributo, y así solo hay un camino. Solo por debajo de `lg`, que es
+        donde esa barra se pinta.
+      */
+      className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[60] p-3.5 shadow-card max-lg:[[data-barra-acciones]_&]:bottom-[calc(10.25rem+env(safe-area-inset-bottom))] lg:inset-x-auto lg:bottom-4 lg:right-4 lg:max-w-sm"
     >
       <div className="flex items-center gap-3">
         <SelloCompacto className="h-11 w-11 shrink-0" />

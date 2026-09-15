@@ -370,7 +370,9 @@ export default function Registro() {
                 : "Registro por cédula y correo · sin verificar"}
             </p>
           )}
-          <Button asChild size="lg" className="mt-4 bg-brand-600 hover:bg-brand-700">
+          {/* Pantalla de una sola acción: en el teléfono el botón ocupa el
+              ancho, porque no compite con nada. */}
+          <Button asChild size="lg" className="mt-4 w-full bg-brand-600 hover:bg-brand-700 sm:w-auto">
             <Link href="/congreso">Ir a las iniciativas</Link>
           </Button>
         </Alert>
@@ -406,29 +408,47 @@ export default function Registro() {
             hint={cedula && !cedulaOk ? "Cédula inválida" : "11 dígitos"}
             hintError={!!cedula && !cedulaOk}
           >
+            {/*
+              El teclado del teléfono es parte del formulario: `inputMode`
+              numérico abre el teclado de cifras, y `autoComplete="off"` con
+              `autoCorrect`/`autoCapitalize` apagados impiden que iOS «corrija»
+              una cédula a medio teclear. El formato se pone solo.
+            */}
             <Input
               inputMode="numeric"
               value={formatearCedula(cedula)}
               onChange={(e) => setCedula(limpiarCedula(e.target.value).slice(0, 11))}
               placeholder="001-0000000-0"
               autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
               className="h-11 bg-canvas font-mono tabular-nums"
             />
           </Campo>
           <Campo etiqueta="Correo electrónico" hint="Te enviaremos un código de un solo uso">
+            {/*
+              `inputMode="email"` pone la arroba en el teclado, y sin
+              `autoCapitalize="off"` iOS escribe «Tu@correo.do» y el envío
+              falla por una mayúscula que el visitante no tecleó.
+            */}
             <Input
               type="email"
+              inputMode="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@correo.do"
               autoComplete="email"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
               className="h-11 bg-canvas"
             />
           </Campo>
           {error && (
-            <p role="alert" className="text-xs font-medium text-alerta-700">
+            <Alert variant="aviso" className="px-3.5 py-2.5 text-xs leading-relaxed">
               {error}
-            </p>
+            </Alert>
           )}
           <Button
             type="submit"
@@ -468,13 +488,17 @@ export default function Registro() {
               value={formatearCedula(cedula)}
               onChange={(e) => setCedula(limpiarCedula(e.target.value).slice(0, 11))}
               placeholder="000-0000000-0"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
               className="mt-1.5 h-11 bg-canvas font-mono tabular-nums"
             />
           </div>
           {error && (
-            <p role="alert" className="text-xs font-medium text-alerta-700">
+            <Alert variant="aviso" className="px-3.5 py-2.5 text-xs leading-relaxed">
               {error}
-            </p>
+            </Alert>
           )}
           <Button
             type="submit"
@@ -519,19 +543,29 @@ export default function Registro() {
               </span>
             </li>
           </ul>
+          {/*
+            `one-time-code` es lo que hace que iOS ofrezca el código del SMS o
+            del correo encima del teclado, que es la diferencia entre teclear
+            seis cifras y tocar una vez. Y sin `autoCapitalize`/`autoCorrect`
+            apagados, iOS pone en mayúscula la primera letra de una dirección
+            pegada y la deja inservible.
+          */}
           <Textarea
             rows={codigo.length > 40 ? 3 : 1}
             value={codigo}
             onChange={(e) => setCodigo(e.target.value)}
             placeholder="000000 — o pega aquí la dirección del correo"
             autoComplete="one-time-code"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             aria-label="Código de verificación o enlace del correo"
-            className="min-h-0 resize-none bg-canvas px-3 py-3 font-mono tabular-nums"
+            className="min-h-11 resize-none bg-canvas px-3 py-3 font-mono tabular-nums"
           />
           {error && (
-            <p role="alert" className="text-xs font-medium text-alerta-700">
+            <Alert variant="aviso" className="px-3.5 py-2.5 text-xs leading-relaxed">
               {error}
-            </p>
+            </Alert>
           )}
           <Button
             type="submit"
@@ -548,7 +582,8 @@ export default function Registro() {
             type="button"
             variant="link"
             onClick={() => { setPaso("datos"); setCodigo(""); setError(null); }}
-            className="h-auto w-full text-xs font-medium text-ink-soft hover:text-ink"
+            // Es la puerta de atrás del paso más frágil del registro: 44 px.
+            className="h-11 w-full text-xs font-medium text-ink-soft hover:text-ink"
           >
             Cambiar cédula o correo
             </Button>
@@ -610,11 +645,17 @@ function CuentaUnica({
   );
 }
 
+/**
+ * La salida del formulario. Era un enlace de 16 px de alto pegado al borde
+ * superior del contenido: el objetivo táctil de una migaja de pan cuenta
+ * tanto como el de un botón, porque es lo que se pulsa cuando uno se arrepiente
+ * a mitad del registro. El texto no crece; crece su área.
+ */
 function VolverCongreso() {
   return (
     <Link
       href="/democracia"
-      className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+      className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink sm:min-h-0 sm:px-0"
     >
       <IconArrowLeft className="h-3.5 w-3.5" />
       Democracia Legislativa
@@ -633,9 +674,16 @@ function Campo({
   hintError?: boolean;
   children: React.ReactNode;
 }) {
+  /*
+    La etiqueta y la pista compartían línea con `justify-between`, y a 390 px
+    «Correo electrónico» y «Te enviaremos un código de un solo uso» no caben:
+    las dos se partían en dos renglones cruzados y el campo quedaba debajo de
+    un revoltijo. Con `flex-wrap` la pista baja entera a su propio renglón
+    cuando no cabe, y comparte línea cuando sí.
+  */
   return (
     <label className="block">
-      <div className="mb-1.5 flex items-baseline justify-between">
+      <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <span className="text-xs font-semibold text-ink">{etiqueta}</span>
         {hint && (
           <span className={cn("text-xs", hintError ? "text-alerta-700" : "text-ink-soft")}>{hint}</span>

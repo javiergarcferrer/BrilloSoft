@@ -24,9 +24,25 @@ export default function GlobalNav() {
   const pathname = usePathname();
   const actual = seccionDe(pathname);
 
+  /*
+    El header tiene un presupuesto fijo —1.152 px de columna (`max-w-6xl`)— y
+    tres inquilinos. Medido: la marca ocupa 124 px y este nav, con las siete
+    preguntas, 836; al buscador de licitaciones le quedaban **76 px**, un campo
+    en el que no cabe ni su propio marcador de posición. Con los sustantivos el
+    nav baja a 679 y el campo sube a ~285, que sí se usa.
+
+    Así que donde el header lleva buscador —solo licitaciones— manda el
+    sustantivo. No se pierde vocabulario: es el mismo que la barra de sección y
+    la tab bar ya usan, y sale del mismo `lib/secciones`. La pregunta vuelve en
+    cuanto el campo no está compitiendo por el sitio.
+  */
+  const conBuscador = !!actual?.conBuscadorGlobal;
+
   const item = cn(
     buttonVariants({ variant: "tinta", size: "sm" }),
-    "h-8 gap-1.5 px-3 text-[13px] font-medium",
+    // El acolchado crece con la pantalla: a 1024 px cada píxel que el nav no
+    // gasta se lo queda el buscador, que es el que lo necesita.
+    "h-8 gap-1.5 px-2 text-[13px] font-medium xl:px-2.5 2xl:px-3",
   );
 
   return (
@@ -58,8 +74,14 @@ export default function GlobalNav() {
                 activa ? "opacity-100" : "opacity-40",
               )}
             />
-            <span className="xl:hidden">{seccion.nombre}</span>
-            <span className="hidden xl:inline">{seccion.pregunta}</span>
+            {conBuscador ? (
+              seccion.nombre
+            ) : (
+              <>
+                <span className="xl:hidden">{seccion.nombre}</span>
+                <span className="hidden xl:inline">{seccion.pregunta}</span>
+              </>
+            )}
           </Link>
         );
       })}

@@ -27,7 +27,10 @@ export function NavFiltros({
   className?: string;
 }) {
   return (
-    <nav aria-label={etiqueta} className={cn("flex flex-wrap gap-1.5", className)}>
+    // 6 px de separación entre dos objetivos táctiles contiguos es poco: en una
+    // rejilla envuelta de ocho filtros el pulgar acierta el de al lado. 8 px en
+    // el teléfono, los 6 de siempre desde `sm`, donde hay puntero.
+    <nav aria-label={etiqueta} className={cn("flex flex-wrap gap-2 sm:gap-1.5", className)}>
       {children}
     </nav>
   );
@@ -53,6 +56,10 @@ export function FiltroEnlace({
       variant={activo ? "default" : "secondary"}
       size="sm"
       className={cn(
+        // `size="sm"` son 36 px, que es la talla de una acción dentro de una
+        // fila. Aquí cada enlace es **una página distinta** y se pulsa con el
+        // pulgar: 40 px en el teléfono.
+        "h-10 sm:h-9",
         mono && "font-mono tabular-nums",
         activo
           ? "bg-brand-600 hover:bg-brand-700"

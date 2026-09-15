@@ -113,18 +113,18 @@ export default function Callback() {
     <div className="mx-auto max-w-lg">
       <Link
         href="/democracia/registro"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink sm:min-h-0 sm:px-0"
       >
         <IconArrowLeft className="h-3.5 w-3.5" />
         Registro
       </Link>
 
-      <header className="mb-5 mt-4">
+      <header className="mb-5 mt-3 sm:mt-4">
         <div className="flex items-center gap-2 rotulo text-ink-soft">
-          <IconShield className="h-4 w-4" />
+          <IconShield className="h-4 w-4 shrink-0" />
           Cuenta Única · OGTIC
         </div>
-        <h1 className="font-display mt-2 text-3xl text-ink sm:text-4xl">
+        <h1 className="font-display mt-2 text-3xl leading-[1.1] text-ink sm:text-4xl">
           Verificación con Cuenta Única
         </h1>
       </header>
@@ -152,17 +152,21 @@ export default function Callback() {
             Guardamos solo un código irreversible: de tu cédula si Cuenta Única la
             incluyó, y si no, de tu identificador. Nunca la cédula en claro.
           </p>
-          <Button asChild size="lg" className="mt-4 bg-brand-600 hover:bg-brand-700">
+          <Button asChild size="lg" className="mt-4 w-full bg-brand-600 hover:bg-brand-700 sm:w-auto">
             <Link href="/congreso">Ir a las iniciativas</Link>
           </Button>
         </Alert>
       )}
 
+      {/*
+        Pantalla de una sola acción: el botón ocupa el ancho en el teléfono
+        porque no compite con nada, y desde `sm` vuelve a su tamaño natural.
+      */}
       {estado.fase === "error" && (
         <Alert variant="aviso" className="border-alerta-100/60 bg-alerta-50/60 p-5">
           <p className="text-sm font-medium text-ink">No se completó la verificación</p>
           <p className="mt-1 text-sm leading-relaxed text-ink-soft">{estado.mensaje}</p>
-          <Button asChild variant="secondary" className="mt-4">
+          <Button asChild variant="secondary" size="lg" className="mt-4 w-full sm:w-auto">
             <Link href="/democracia/registro">Volver al registro</Link>
           </Button>
         </Alert>

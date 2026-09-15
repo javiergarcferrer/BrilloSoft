@@ -45,7 +45,13 @@ export default async function DemocraciaPage() {
           </p>
         }
       >
-        <div className="flex flex-wrap gap-2.5">
+        {/*
+          En el teléfono los dos botones ocupan el ancho: puestos en fila a su
+          tamaño natural quedaban dos cajas desiguales arrimadas a la izquierda,
+          y la acción principal de la vertical —registrarse— no merece un
+          objetivo de 200 px en una pantalla de 390.
+        */}
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
           <Button asChild size="lg" className="bg-brand-600 hover:bg-brand-700">
             <Link href="/democracia/registro">Regístrate para votar</Link>
           </Button>
@@ -78,8 +84,13 @@ export default async function DemocraciaPage() {
 
       {/* Ranking */}
       <section>
-        <div className="mb-3 flex items-end justify-between gap-3">
-          <div>
+        {/*
+          A 390 px el titular y el enlace no caben en la misma línea: el
+          titular se partía en dos para dejarle el hueco. Apilados, el enlace
+          gana además su propio objetivo táctil de 44 px.
+        */}
+        <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+          <div className="min-w-0">
             <CardTitle className="text-lg tracking-tight">
               ¿Qué dice la ciudadanía?
             </CardTitle>
@@ -89,7 +100,10 @@ export default async function DemocraciaPage() {
                 : "Aún no hay votos — sé quien empiece"}
             </p>
           </div>
-          <Link href="/congreso" className="shrink-0 text-xs font-medium text-brand-700 hover:underline">
+          <Link
+            href="/congreso"
+            className="-ml-1 inline-flex min-h-11 shrink-0 items-center px-1 text-xs font-medium text-brand-700 hover:underline sm:ml-0 sm:min-h-0 sm:px-0"
+          >
             Buscar iniciativas →
           </Link>
         </div>
@@ -143,14 +157,22 @@ export default async function DemocraciaPage() {
   );
 }
 
+/**
+ * Los tres pasos. En el teléfono las tarjetas se apilan y el número deja de
+ * ser una fila propia: puesto al lado del título, cada paso ocupa dos
+ * renglones en vez de cuatro y los tres caben de una mirada. Desde `sm`
+ * vuelven a ser tres columnas y el número encabeza su tarjeta.
+ */
 function Paso({ n, titulo, children }: { n: number; titulo: string; children: React.ReactNode }) {
   return (
-    <Card className="p-5">
-      <span className="grid h-7 w-7 place-items-center rounded-full bg-alerta-100 text-xs font-bold text-alerta-600">
+    <Card className="flex gap-3 p-4 sm:block sm:p-5">
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-alerta-100 text-xs font-bold text-alerta-600">
         {n}
       </span>
-      <h3 className="mt-3 text-sm font-semibold text-ink">{titulo}</h3>
-      <p className="mt-1 text-xs leading-relaxed text-ink-soft">{children}</p>
+      <div className="min-w-0 sm:mt-3">
+        <h3 className="text-sm font-semibold text-ink">{titulo}</h3>
+        <p className="mt-1 text-xs leading-relaxed text-ink-soft">{children}</p>
+      </div>
     </Card>
   );
 }

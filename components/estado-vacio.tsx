@@ -42,7 +42,13 @@ export function EstadoVacio({
           <CardTitle>{rotulo}</CardTitle>
         </CardHeader>
       )}
-      <div className="px-5 py-14 text-center">
+      {/*
+        `py-14` (56 px arriba y abajo) se diseñó mirando una pantalla ancha. En
+        un teléfono esa caja se come media pantalla para decir tres renglones, y
+        lo que hay debajo —los filtros, el siguiente panel— queda fuera de
+        vista. 36 px en el teléfono, los 56 desde `sm`.
+      */}
+      <div className="px-5 py-9 text-center sm:py-14">
         <p
           className={cn(
             "text-sm font-medium",

@@ -19,7 +19,14 @@ import { Progress } from "@/components/ui/progress";
  * privacidad del voto) vive en la base; aquí solo se llama a los RPC.
  */
 
-type Estado = "cargando" | "anon" | "sin-registro" | "listo";
+/**
+ * `caido` es el estado que faltaba: si la base no contesta —se cae la red, el
+ * proyecto duerme—, el efecto se quedaba en `cargando` para siempre y los dos
+ * botones quedaban apagados **sin decir por qué**, que es justo lo que la
+ * ergonomía de la casa prohíbe (un control apagado explica su motivo antes del
+ * toque). Ahora ese caso tiene nombre y su propio aviso encima del control.
+ */
+type Estado = "cargando" | "anon" | "sin-registro" | "listo" | "caido";
 
 export default function VotoWidget({
   camara,
@@ -45,28 +52,34 @@ export default function VotoWidget({
   useEffect(() => {
     let vivo = true;
     (async () => {
-      const { data: sesion } = await supabase().auth.getSession();
-      if (!vivo) return;
-      if (!sesion.session) {
-        setEstado("anon");
-        return;
+      try {
+        const { data: sesion } = await supabase().auth.getSession();
+        if (!vivo) return;
+        if (!sesion.session) {
+          setEstado("anon");
+          return;
+        }
+        // ¿Tiene registro de votante? (RLS: solo ve su propia fila.)
+        const { data: votante } = await db().from("votantes").select("id").maybeSingle();
+        if (!vivo) return;
+        if (!votante) {
+          setEstado("sin-registro");
+          return;
+        }
+        const { data: voto } = await db()
+          .from("votos")
+          .select("valor")
+          .eq("camara", camara)
+          .eq("ref", refId)
+          .maybeSingle();
+        if (!vivo) return;
+        setMiVoto((voto?.valor as -1 | 1 | undefined) ?? null);
+        setEstado("listo");
+      } catch {
+        // Sin esto el widget se quedaba en «cargando» para siempre: botones
+        // apagados y ni una palabra de por qué.
+        if (vivo) setEstado("caido");
       }
-      // ¿Tiene registro de votante? (RLS: solo ve su propia fila.)
-      const { data: votante } = await db().from("votantes").select("id").maybeSingle();
-      if (!vivo) return;
-      if (!votante) {
-        setEstado("sin-registro");
-        return;
-      }
-      const { data: voto } = await db()
-        .from("votos")
-        .select("valor")
-        .eq("camara", camara)
-        .eq("ref", refId)
-        .maybeSingle();
-      if (!vivo) return;
-      setMiVoto((voto?.valor as -1 | 1 | undefined) ?? null);
-      setEstado("listo");
     })();
     return () => {
       vivo = false;
@@ -134,18 +147,25 @@ export default function VotoWidget({
   const pctFavor = total > 0 ? Math.round((agg.a_favor / total) * 100) : 0;
 
   return (
-    <Card as="section" className="border-brand-100 bg-brand-50/50 p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+    <Card as="section" className="border-brand-100 bg-brand-50/50 p-4 sm:p-5">
+      {/*
+        En el teléfono el titular y el recuento se estorbaban: «¿Apoyas esta
+        iniciativa?» se partía en dos líneas para dejarle sitio a «142 personas
+        ya opinaron», que además quedaba alineado a la derecha contra el borde.
+        Apilados, cada uno ocupa su renglón entero y se leen en el orden en que
+        importan: primero la pregunta, después cuánta gente la contestó.
+      */}
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <div className="min-w-0">
           <h2 className="font-sans flex items-center gap-2 text-sm font-semibold text-ink">
-            <span aria-hidden className="h-2 w-2 rounded-full bg-sello-600" />
+            <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-sello-600" />
             ¿Apoyas esta iniciativa?
           </h2>
           <p className="mt-0.5 text-xs text-ink-soft">
             Voto ciudadano · piloto independiente, no oficial
           </p>
         </div>
-        <span className="font-mono text-right text-xs tabular-nums text-ink-soft">
+        <span className="font-mono shrink-0 text-xs tabular-nums text-ink-soft sm:text-right">
           {miVoto === null
             ? `${total.toLocaleString("es-DO")} ${total === 1 ? "persona ya opinó" : "personas ya opinaron"}`
             : `${total.toLocaleString("es-DO")} ${total === 1 ? "voto" : "votos"}`}
@@ -183,6 +203,24 @@ export default function VotoWidget({
         lector tiene que saber por qué **antes** de intentar pulsarlos, no
         después de un error.
       */}
+      {estado === "cargando" && (
+        <p className="mt-4 text-xs leading-relaxed text-ink-soft" aria-live="polite">
+          Comprobando si tu sesión puede votar…
+        </p>
+      )}
+
+      {estado === "caido" && (
+        <Alert
+          variant="aviso"
+          className="mt-4 px-3.5 py-2.5 text-xs leading-relaxed"
+        >
+          No pudimos comprobar tu registro ahora mismo, así que los botones
+          quedan apagados: no vamos a contar un voto que no sabemos si podemos
+          guardar. Vuelve a cargar la página en un momento; lo que ya votaste
+          sigue contado.
+        </Alert>
+      )}
+
       {(estado === "anon" || estado === "sin-registro") && (
         <Alert
           variant="neutro"
@@ -237,7 +275,11 @@ export default function VotoWidget({
       </div>
 
       {error && (
-        <Alert variant="sello" className="mt-3 px-3.5 py-2.5 text-xs font-medium">
+        <Alert
+          variant="sello"
+          role="alert"
+          className="mt-3 px-3.5 py-2.5 text-xs font-medium"
+        >
           {error}
         </Alert>
       )}
@@ -270,8 +312,15 @@ function BotonVoto({
         parece pulsable y no responde es la regla «un control apagado explica
         por qué» fallando en silencio.
       */
+      /*
+        `h-auto px-3 py-2.5` dejaba el botón en 40 px de alto: por debajo del
+        objetivo táctil de 44, y en el control más importante de la vertical.
+        Ahora la altura mínima es de 56 px y el recuento baja a su propio
+        renglón — en dos columnas de 155 px, «A favor 1,234» en una sola línea
+        se salía de la caja.
+      */
       className={cn(
-        "h-auto px-3 py-2.5",
+        "h-auto min-h-14 flex-col gap-0.5 px-2 py-2.5 sm:min-h-12",
         activo && favor && "border-brand-500 bg-brand-500 text-canvas hover:bg-brand-600",
         activo && !favor && "border-ink bg-ink text-canvas hover:bg-ink/90",
         !activo && favor && "text-brand-600 hover:border-brand-400 hover:bg-brand-50",
@@ -279,10 +328,12 @@ function BotonVoto({
       )}
       {...props}
     >
-      <Pulgar arriba={favor} />
-      {children}
+      <span className="flex items-center gap-2">
+        <Pulgar arriba={favor} />
+        {children}
+      </span>
       {conteo !== null && (
-        <span className="font-mono tabular-nums opacity-80">
+        <span className="font-mono text-xs tabular-nums opacity-80">
           {conteo.toLocaleString("es-DO")}
         </span>
       )}

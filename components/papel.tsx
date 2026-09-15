@@ -95,8 +95,15 @@ export function Cifra({
       <span className={cn("font-mono text-xl font-semibold tabular-nums", tono)}>
         {valor}
       </span>
+      {/*
+        12 px y no 11: esta línea es la que declara **la base del número** —si
+        es un censo, una muestra o una instantánea— y es lo único que impide
+        leer una muestra como un total. Lo esencial no se pone en cuerpo de
+        pie de página; el único texto de la casa por debajo de 12 px es el
+        `.rotulo`, que va en versalitas y espaciado para compensarlo.
+      */}
       {contexto && (
-        <span className="text-[11px] leading-snug text-ink-soft">{contexto}</span>
+        <span className="text-xs leading-snug text-ink-soft">{contexto}</span>
       )}
     </div>
   );

@@ -20,13 +20,21 @@ export default function HeaderSearch() {
 
   if (!seccion?.conBuscadorGlobal) return null;
 
+  /*
+    `data-buscador` es el marcador que el header lee con `:has()` para apartar
+    el logotipo en el teléfono: el campo necesita esos 88 px y la marca los
+    tiene. Va en el envoltorio y no en el `input` para que el esqueleto de
+    `Suspense` también cuente — si no, la marca parpadearía al hidratar.
+  */
   return (
-    <Suspense
-      fallback={
-        <div className="h-10 w-full max-w-xl rounded-lg bg-canvas/10 ring-1 ring-inset ring-canvas/20" />
-      }
-    >
-      <TopSearch />
-    </Suspense>
+    <div data-buscador className="flex w-full justify-center">
+      <Suspense
+        fallback={
+          <div className="h-10 w-full max-w-xl rounded-lg bg-canvas/10 ring-1 ring-inset ring-canvas/20" />
+        }
+      >
+        <TopSearch />
+      </Suspense>
+    </div>
   );
 }

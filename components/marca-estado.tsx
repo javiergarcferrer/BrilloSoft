@@ -34,24 +34,41 @@ export function MarcaEstado({
   title?: string;
   className?: string;
 }) {
+  /*
+    La marca **nunca parte su texto en dos líneas**. Un estado dicho en
+    palabras —«Ya cerró la recepción», «Pendiente de promulgación»— envuelto a
+    dos renglones rompe la altura de la fila que lo lleva, y en un listado de
+    veinte filas eso es veinte alturas distintas: el ojo deja de barrer.
+    `whitespace-nowrap` lo impide. Y el `shrink-0` que trae `Badge` se cambia
+    aquí por `shrink` + `min-w-0`: con el sello rígido, un estado largo se
+    salía de la fila y arrastraba el desbordamiento horizontal a la página
+    entera; pudiendo encoger, el reparto de flex le quita ancho primero al
+    titular —que es el que tiene de sobra— y solo recorta la marca cuando de
+    verdad no queda sitio. El literal completo sigue disponible en `title`
+    cuando el origen lo trae.
+  */
   return (
     <Badge
       forma="etiqueta"
       title={title}
-      className={cn("gap-1.5 ring-1 ring-inset", TONOS[tono].badge, className)}
+      className={cn(
+        "min-w-0 max-w-full shrink gap-1.5 whitespace-nowrap ring-1 ring-inset",
+        TONOS[tono].badge,
+        className,
+      )}
     >
       {conPunto && (
         <span
           aria-hidden
           className={cn(
-            "relative inline-block h-1.5 w-1.5 rounded-full",
+            "relative inline-block h-1.5 w-1.5 shrink-0 rounded-full",
             TONOS[tono].dot,
           )}
         >
           {vivo && <span className="live-dot text-brand-500" />}
         </span>
       )}
-      {children}
+      <span className="truncate">{children}</span>
     </Badge>
   );
 }

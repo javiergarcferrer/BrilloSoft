@@ -99,13 +99,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           className="sticky top-0 z-50 bg-ink text-canvas"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          <div className="mx-auto flex min-h-[64px] max-w-6xl items-center gap-4 px-4 py-2">
+          {/*
+            `group/header` existe para una sola regla: el logotipo se aparta
+            cuando —y solo cuando— el slot de búsqueda trae campo. Se resuelve
+            con `:has()` sobre el marcador que pone `HeaderSearch`, así que la
+            marca no necesita saber en qué vertical está.
+          */}
+          <div className="group/header mx-auto flex min-h-[64px] max-w-6xl items-center gap-2.5 px-4 py-2 sm:gap-4">
             <Link
               href="/"
               className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-90"
             >
               <SelloCompacto className="h-9 w-9" fondo="#f7f3ea" trazo="#171d2e" />
-              <Logotipo sobreTinta className="text-[19px] max-[380px]:hidden" />
+              {/*
+                A 390 px el logotipo y el campo se disputaban la fila y el campo
+                quedaba en 166 px, menos de lo que mide su propio marcador de
+                posición. El sello solo ya identifica la plataforma —es la
+                marca, no una viñeta, y es el icono con el que se instala—, así
+                que cede el sitio mientras hay buscador y vuelve desde `sm`.
+              */}
+              <Logotipo
+                sobreTinta
+                className="text-[19px] max-[380px]:hidden max-sm:group-has-[[data-buscador]]/header:hidden"
+              />
             </Link>
 
             <div className="flex min-w-0 flex-1 justify-center">
@@ -128,11 +144,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <InstallPrompt />
 
         <footer className="mt-10 border-t border-hairline bg-surface">
-          <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-ink-soft">
+          <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-ink-soft sm:py-10">
             <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
               <div className="shrink-0 lg:w-60">
-                <div className="flex flex-col items-start gap-3">
-                  <Sello className="h-20 w-20" />
+                <div className="flex items-center gap-3 sm:flex-col sm:items-start">
+                  <Sello className="h-14 w-14 shrink-0 sm:h-20 sm:w-20" />
                   <Logotipo className="text-[19px] text-ink" />
                 </div>
                 <p className="mt-4 max-w-xs text-xs leading-relaxed">
@@ -142,17 +158,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </p>
               </div>
 
-              <div className="grid flex-1 grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
+              {/*
+                Columnas de texto y no una rejilla. Las verticales tienen entre
+                una y siete vistas, y con `grid-cols-2` la altura de cada fila
+                la fijaba la columna más larga: «Finanzas», con una sola vista,
+                abría un hueco de seis renglones al lado de «Licitaciones». En
+                columnas los bloques fluyen y se reparten solos; cada uno se
+                mantiene entero con `break-inside-avoid`.
+              */}
+              <div className="flex-1 columns-2 gap-x-6 sm:columns-3 lg:columns-5">
                 {SECCIONES.map((seccion) => (
-                  <nav key={seccion.id} aria-label={seccion.nombre}>
+                  <nav
+                    key={seccion.id}
+                    aria-label={seccion.nombre}
+                    className="mb-6 break-inside-avoid"
+                  >
                     <p className="rotulo flex items-center gap-2 text-ink">
-                      <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${seccion.hue.punto}`} />
+                      <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${seccion.hue.punto}`} />
                       {seccion.nombre}
                     </p>
-                    <ul className="mt-3 space-y-1.5">
+                    <ul className="mt-2 space-y-0.5 sm:mt-3 sm:space-y-1.5">
                       {seccion.vistas.map((vista) => (
                         <li key={vista.href}>
-                          <Link href={vista.href} className="hover:text-brand-700">
+                          {/* En el teléfono cada enlace lleva su propio aire:
+                              una lista de renglones a 20 px se pulsa a ciegas. */}
+                          <Link
+                            href={vista.href}
+                            className="inline-block py-1.5 hover:text-brand-700 sm:py-0"
+                          >
                             {vista.label}
                           </Link>
                         </li>
@@ -168,7 +201,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               toda la plataforma, con el marco normativo dominicano nombrado.
               La credibilidad institucional se declara página por página.
             */}
-            <Card className="mt-10 bg-canvas p-5 sm:p-6">
+            <Card className="mt-8 bg-canvas p-5 sm:mt-10 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="rotulo flex items-center gap-2 text-ink">
                   <span
@@ -185,9 +218,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </Link>
               </div>
 
-              <div className="mt-4 grid gap-x-8 gap-y-4 text-xs leading-relaxed sm:grid-cols-3">
+              {/*
+                En el teléfono los tres bloques se apilan, y apilados necesitan
+                un filete y aire entre ellos: sin separación, «Ley 172-13» se
+                leía como el último renglón del bloque anterior. Desde `sm`
+                vuelven a ser tres columnas y el filete sobra.
+              */}
+              <div className="mt-4 grid gap-x-8 divide-y divide-hairline text-xs leading-relaxed sm:grid-cols-3 sm:gap-y-4 sm:divide-y-0 [&>*]:pt-4 sm:[&>*]:pt-0 [&>*:first-child]:pt-0">
                 <div>
-                  <p className="font-mono text-[11px] font-semibold text-ink">
+                  <p className="font-mono text-xs font-semibold text-ink">
                     Ley 172-13
                   </p>
                   <p className="mt-1 font-semibold text-ink">Protección de datos personales</p>
@@ -198,7 +237,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </p>
                 </div>
                 <div>
-                  <p className="font-mono text-[11px] font-semibold text-ink">
+                  <p className="font-mono text-xs font-semibold text-ink">
                     Ley 200-04
                   </p>
                   <p className="mt-1 font-semibold text-ink">Acceso a la información pública</p>
@@ -209,7 +248,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </p>
                 </div>
                 <div>
-                  <p className="font-mono text-[11px] font-semibold text-ink">
+                  <p className="font-mono text-xs font-semibold text-ink">
                     NORTIC · OGTIC
                   </p>
                   <p className="mt-1 font-semibold text-ink">Estándares web del Estado</p>
@@ -221,16 +260,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </Card>
 
-            <div className="mt-6 flex flex-col gap-2 border-t border-hairline pt-5 text-xs sm:flex-row sm:items-center sm:justify-between">
+            {/*
+              El pie legal es lo último que se lee y suele ser lo primero que se
+              encoge. Aquí no: 12 px, interlínea holgada, y los tres enlaces con
+              48 px de alto de toque en el teléfono, que es donde se pulsan.
+            */}
+            <div className="mt-6 flex flex-col gap-2 border-t border-hairline pt-5 text-xs leading-relaxed sm:flex-row sm:items-center sm:justify-between">
               <p>
                 Fuentes: DGCP, los SIL de ambas cámaras del Congreso, la
                 Consultoría Jurídica del Poder Ejecutivo, Crédito Público y las
                 nóminas de transparencia institucional.
               </p>
-              <nav className="flex shrink-0 gap-x-4">
-                <Link href="/" className="hover:text-brand-700">Panorama</Link>
-                <Link href="/seguridad" className="hover:text-brand-700">Seguridad</Link>
-                <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
+              <nav className="-mx-1 flex shrink-0 flex-wrap gap-x-2 sm:mx-0 sm:gap-x-4">
+                <Link href="/" className="inline-flex min-h-11 items-center px-1 hover:text-brand-700 sm:min-h-0 sm:px-0">Panorama</Link>
+                <Link href="/seguridad" className="inline-flex min-h-11 items-center px-1 hover:text-brand-700 sm:min-h-0 sm:px-0">Seguridad</Link>
+                <Link href="/fuentes" className="inline-flex min-h-11 items-center px-1 font-medium text-brand-700 hover:underline sm:min-h-0 sm:px-0">
                   Estado de las fuentes
                 </Link>
               </nav>

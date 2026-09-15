@@ -189,7 +189,15 @@ export default function TopSearch() {
               }}
               placeholder="Buscar licitaciones…"
               aria-label="Buscar licitaciones"
-              className="h-10 w-full bg-transparent text-[15px] text-canvas outline-none placeholder:text-canvas/55 focus:text-ink focus:placeholder:text-ink-soft"
+              /*
+                16 px en el teléfono y 15 desde `sm`. Es la misma regla que ya
+                llevan `Input` y `SelectTrigger`: por debajo de 16 px Safari de
+                iOS **hace zoom** al enfocar el campo y deja la página
+                desencuadrada, con el header y la tab bar fuera de sitio. Este
+                era el único campo crudo de la plataforma y se había quedado sin
+                la regla.
+              */
+              className="h-10 w-full bg-transparent text-base text-canvas outline-none placeholder:text-canvas/55 focus:text-ink focus:placeholder:text-ink-soft sm:text-[15px]"
             />
             {text && (
               <Button
@@ -210,11 +218,25 @@ export default function TopSearch() {
         </div>
       </PopoverAnchor>
 
+      {/*
+        Tres medidas gobiernan este panel en el teléfono y las tres se midieron
+        a 390 px:
+
+         · `collisionPadding` 12: sin él, Radix empujaba el panel contra el
+           borde derecho —quedaba con 32 px de aire a la izquierda y 0 a la
+           derecha—, y un panel pegado a un lado se lee como cortado.
+         · El ancho descuenta 1,5 rem para que los dos márgenes existan.
+         · `100dvh` y no `vh`: al enfocar el campo, el teclado de iOS reduce la
+           altura visible y `vh` sigue midiendo la pantalla entera, así que el
+           panel se metía debajo del teclado. Los 13 rem que se restan son el
+           header (4 rem), la tab bar (4,5 rem) y el aire de arriba y abajo.
+      */}
       <PopoverContent
         align="start"
         sideOffset={8}
+        collisionPadding={12}
         onOpenAutoFocus={(e) => e.preventDefault()}
-        className="w-[min(36rem,calc(100vw-2rem))] p-0 shadow-pop"
+        className="flex max-h-[min(32rem,calc(100dvh-13rem))] w-[min(36rem,calc(100vw-1.5rem))] flex-col overflow-y-auto overscroll-contain p-0 shadow-pop"
       >
         <div className="border-b border-hairline p-2">
           <p className="rotulo px-2 pb-1 pt-1 text-ink-soft">Filtros rápidos</p>
@@ -229,7 +251,9 @@ export default function TopSearch() {
                   p.run();
                   setOpen(false);
                 }}
-                className="bg-canvas font-medium hover:bg-brand-50 hover:text-brand-700"
+                // Los 36 px de `size="sm"` son para una fila con puntero; aquí
+                // se pulsan con el pulgar, así que 40 en el teléfono.
+                className="h-10 bg-canvas font-medium hover:bg-brand-50 hover:text-brand-700 sm:h-9"
               >
                 <p.Icon className="h-3.5 w-3.5" />
                 {p.label}
@@ -248,7 +272,7 @@ export default function TopSearch() {
                   e.preventDefault();
                   aplicarTermino(t);
                 }}
-                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-canvas"
+                className="flex min-h-11 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-canvas sm:min-h-0"
               >
                 <IconClock className="h-4 w-4 shrink-0 text-ink-soft" />
                 <span className="truncate">{t}</span>
@@ -267,7 +291,9 @@ export default function TopSearch() {
                 e.preventDefault();
                 guardarActual();
               }}
-              className="h-auto gap-1 px-0 text-[11px]"
+              // Era un enlace de 16 px de alto: imposible de acertar con el
+              // pulgar. El texto no crece; crece el área que lo rodea.
+              className="-mr-2 h-11 gap-1 px-2 text-[11px] sm:h-8"
             >
               <IconBookmark className="h-3.5 w-3.5" />
               Guardar actual
@@ -278,7 +304,13 @@ export default function TopSearch() {
               Aún no tienes búsquedas guardadas.
             </p>
           ) : (
-            <ul className="max-h-56 overflow-y-auto">
+            /*
+              La lista ya no lleva su propio `max-h`: con el panel entero
+              desplazándose, un segundo marco de desplazamiento dentro del
+              primero es una trampa táctil —el dedo mueve uno u otro según
+              dónde caiga— y nunca se sabe cuál.
+            */
+            <ul>
               {busquedas.map((b) => (
                 <li key={b.id} className="flex items-center gap-1">
                   <button
@@ -286,7 +318,7 @@ export default function TopSearch() {
                       e.preventDefault();
                       aplicarGuardada(b);
                     }}
-                    className="flex min-w-0 flex-1 items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-canvas"
+                    className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-canvas sm:min-h-0"
                   >
                     <IconBookmark className="h-4 w-4 shrink-0 text-brand-600" filled />
                     <span className="truncate font-medium">{b.nombre}</span>
@@ -298,7 +330,9 @@ export default function TopSearch() {
                       e.preventDefault();
                       setBusquedas(removeBusqueda(b.id));
                     }}
-                    className="shrink-0 text-ink-soft hover:bg-canvas hover:text-ink"
+                    // Borrar es irreversible: si el objetivo es pequeño se
+                    // acierta por accidente. 44 px en el teléfono.
+                    className="h-11 w-11 shrink-0 text-ink-soft hover:bg-canvas hover:text-ink sm:h-9 sm:w-9"
                   >
                     <IconTrash className="h-4 w-4" />
                     <span className="sr-only">Eliminar «{b.nombre}»</span>

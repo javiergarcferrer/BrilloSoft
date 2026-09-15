@@ -58,6 +58,19 @@ export interface Seccion {
   rutas: string[];
   /** Vistas internas (subnav). Una sola vista ⇒ la barra no pinta tabs. */
   vistas: VistaSeccion[];
+  /**
+   * Rutas que pertenecen a la vertical pero **a ninguna de sus vistas**: un
+   * trámite, un retorno de OAuth, un formulario. Ahí la barra no enciende
+   * nada.
+   *
+   * Existe porque la ruta sola no distingue dos casos opuestos. `/procesos/ABC`
+   * es la **ficha** de lo que un listado lista: viene de «Buscar» y encender
+   * «Buscar» dice la verdad. `/democracia/registro` es un **trámite** que no
+   * cuelga de ninguna vista, y encender «Consenso» —que además es `exact`— le
+   * dice al visitante que está en una página en la que no está. Como no se
+   * puede deducir del camino, se declara.
+   */
+  sinVista?: string[];
   /** ¿El buscador de licitaciones del header aplica en esta vertical? */
   conBuscadorGlobal: boolean;
   hue: {
@@ -185,6 +198,9 @@ export const SECCIONES: Seccion[] = [
       { href: "/democracia", label: "Consenso", exact: true },
       { href: "/democracia/seguridad", label: "Seguridad" },
     ],
+    // El registro por cédula y la vuelta de Cuenta Única son trámites: se
+    // llega a ellos desde cualquier ficha y no son ninguna de las dos vistas.
+    sinVista: ["/democracia/registro", "/democracia/cuenta-unica"],
     conBuscadorGlobal: false,
     hue: {
       activo: "text-v-democracia",
@@ -221,9 +237,17 @@ export function vistaActiva(vista: VistaSeccion, pathname: string): boolean {
  * «Iniciativas», sin que ambas compitan.
  */
 export function vistaActivaDe(seccion: Seccion, pathname: string): VistaSeccion | null {
+  // Un trámite declarado no enciende ninguna vista: ver `sinVista`.
+  if (
+    seccion.sinVista?.some(
+      (ruta) => pathname === ruta || pathname.startsWith(`${ruta}/`),
+    )
+  ) {
+    return null;
+  }
   const candidatas = seccion.vistas.filter((v) => vistaActiva(v, pathname));
   if (candidatas.length === 0) {
-    // Rutas de detalle que no cuelgan de una vista (/procesos/x) → la raíz.
+    // Rutas de detalle que sí cuelgan de una vista (/procesos/x) → la raíz.
     return seccion.vistas[0] ?? null;
   }
   return candidatas.sort((a, b) => b.href.length - a.href.length)[0];

@@ -18,18 +18,23 @@ export default function SeguridadPage() {
     <div className="mx-auto max-w-3xl">
       <Link
         href="/democracia"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-soft transition-colors hover:text-ink"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink sm:min-h-0 sm:px-0"
       >
         <IconArrowLeft className="h-3.5 w-3.5" />
         Democracia Legislativa
       </Link>
 
-      <header className="mb-6 mt-3">
+      <header className="mb-6 mt-2 sm:mt-3">
         <div className="flex items-center gap-2 rotulo text-alerta-600">
-          <IconShield className="h-4 w-4" />
+          <IconShield className="h-4 w-4 shrink-0" />
           Dossier de seguridad y privacidad
         </div>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+        {/*
+          El titular va en serif como el resto de los h1 de la plataforma: era
+          el único de la vertical escrito en sans, y una página que promete
+          rigor no puede desafinar en su primera línea.
+        */}
+        <h1 className="font-display mt-2 text-3xl leading-[1.1] text-ink sm:text-4xl">
           Cómo protegemos tu identidad y tu voto
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
@@ -126,16 +131,22 @@ export default function SeguridadPage() {
   );
 }
 
+/**
+ * Una medida del dossier. En el teléfono el párrafo **no** se sangra bajo el
+ * título: los 28 px de `pl-7` se comían casi el 10 % del ancho de línea y el
+ * texto largo se descosía en renglones de cinco palabras. La marca de verificado
+ * ya alinea la columna; la sangría solo sirve donde sobra ancho.
+ */
 function Medida({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <Card as="section" className="p-5">
+    <Card as="section" className="p-4 sm:p-5">
       <CardTitle className="flex items-start gap-2.5 text-base">
         <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-valido-600 text-canvas">
           <IconCheck className="h-3.5 w-3.5" />
         </span>
         {titulo}
       </CardTitle>
-      <p className="mt-2 pl-7 text-sm leading-relaxed text-ink-soft">{children}</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink-soft sm:pl-7">{children}</p>
     </Card>
   );
 }
