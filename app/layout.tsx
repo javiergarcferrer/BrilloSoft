@@ -7,6 +7,8 @@ import InstallPrompt from "@/components/install-prompt";
 import ScrollTop from "@/components/scroll-top";
 import HeaderSearch from "@/components/header-search";
 import GlobalNav from "@/components/global-nav";
+import Paleta from "@/components/paleta";
+import Rastro from "@/components/rastro";
 import SectionBar from "@/components/section-bar";
 import { SECCIONES } from "@/lib/secciones";
 import { Logotipo, Sello, SelloCompacto } from "@/components/marca";
@@ -129,6 +131,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
 
             <GlobalNav />
+
+            {/*
+              La paleta —«¿a dónde vas?»— vive en el borde derecho, que es donde
+              llega el pulgar de la mano que sostiene el teléfono. Por debajo de
+              `lg` cede su sitio cuando el header trae el campo de licitaciones:
+              los dos no caben a 390 px y ahí el campo es la búsqueda que el
+              lector vino a hacer. El atajo de teclado la sigue abriendo.
+            */}
+            <div className="shrink-0 max-lg:group-has-[[data-buscador]]/header:hidden">
+              <Paleta />
+            </div>
           </div>
           <div className="h-px bg-canvas/20" />
         </header>
@@ -141,6 +154,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <MobileTabBar />
         <ScrollTop />
+        <Rastro />
         <InstallPrompt />
 
         <footer className="mt-10 border-t border-hairline bg-surface">

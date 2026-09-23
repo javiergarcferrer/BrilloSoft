@@ -25,8 +25,9 @@ import {
 import { MarcaEstado } from "@/components/marca-estado";
 import SeguirButton from "@/components/seguir-button";
 import AccionesProceso from "@/components/acciones-proceso";
-import { IconArrowLeft, IconDoc, IconExternal, IconStar } from "@/components/icons";
+import { IconDoc, IconExternal, IconStar } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
+import { Ruta } from "@/components/ruta";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -134,12 +135,7 @@ export default async function ProcesoPage({
         de alto del botón.
       */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button asChild variant="link" className="gap-1 px-0 text-brand-600">
-          <Link href="/licitaciones">
-            <IconArrowLeft className="h-4 w-4" />
-            Volver al buscador
-          </Link>
-        </Button>
+        <Ruta seccion="licitaciones" actual={`Proceso ${p.codigo_proceso}`} />
         <div className="hidden items-center gap-2 lg:flex">
           <SeguirButton codigo={p.codigo_proceso} />
           <Compartir titulo={p.titulo} />

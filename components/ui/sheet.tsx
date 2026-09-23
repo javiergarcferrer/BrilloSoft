@@ -190,7 +190,12 @@ function SheetHeader({
       />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">{children}</div>
-        <SheetPrimitive.Close className="-mr-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-ink-soft transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        {/*
+          Cerrar es el mando que más se busca en una hoja y medía 32 px: en el
+          teléfono sube a 44, con márgenes negativos para que el aspa no se
+          mueva de donde se la ve. Desde `sm`, con puntero, vuelve a 32.
+        */}
+        <SheetPrimitive.Close className="-my-2 -mr-2.5 inline-flex h-11 w-11 shrink-0 sm:my-0 sm:-mr-1 sm:h-8 sm:w-8 items-center justify-center rounded-md text-ink-soft transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <IconX className="h-4 w-4" />
           <span className="sr-only">Cerrar</span>
         </SheetPrimitive.Close>

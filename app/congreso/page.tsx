@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { Paginador } from "@/components/paginador";
 import BuscadorCongreso from "./buscador-congreso";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import {
@@ -16,7 +17,7 @@ import {
   legislaturaVigente,
   diffDias,
 } from "@/lib/congreso";
-import { IconArrowLeft, IconArrowRight, IconClock } from "@/components/icons";
+import { IconArrowRight, IconClock } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Cámara de Diputados",
@@ -225,41 +226,13 @@ function Paginacion({
     return `/congreso${qs ? `?${qs}` : ""}`;
   };
 
-  /*
-    Paginar es la acción más repetida de esta vista y se hace con el pulgar:
-    los dos mandos van a la talla por defecto —44 px en el teléfono— en vez de
-    la talla `sm` de 36 px con la que estaban.
-  */
   return (
-    <nav
-      aria-label="Paginación de iniciativas"
-      className="mt-5 flex items-center justify-between gap-3"
-    >
-      {pagina > 1 ? (
-        <Button asChild variant="secondary">
-          <Link href={href(pagina - 1)} rel="prev">
-            <IconArrowLeft className="h-4 w-4" />
-            Anterior
-          </Link>
-        </Button>
-      ) : (
-        <span />
-      )}
-
-      <span className="font-mono text-xs tabular-nums text-ink-soft">
-        Página {pagina.toLocaleString("es-DO")} de {totalPaginas.toLocaleString("es-DO")}
-      </span>
-
-      {pagina < totalPaginas ? (
-        <Button asChild variant="secondary">
-          <Link href={href(pagina + 1)} rel="next">
-            Siguiente
-            <IconArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
-      ) : (
-        <span />
-      )}
-    </nav>
+    <Paginador
+      pagina={pagina}
+      paginas={totalPaginas}
+      href={href}
+      etiqueta="Paginación de iniciativas"
+      className="mt-5"
+    />
   );
 }

@@ -1,12 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { etiquetaCorte, getFiscal, getInstitucionFiscal } from "@/lib/fiscal";
 import { formatMonto, formatPesos } from "@/lib/format";
 
-import { IconArrowLeft } from "@/components/icons";
-import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Ruta } from "@/components/ruta";
 
 export async function generateStaticParams() {
   const fiscal = await getFiscal();
@@ -51,17 +49,7 @@ export default async function InstitucionFiscalPage({
 
   return (
     <div className="space-y-5">
-      {/*
-        La vuelta atrás es el control que más se pulsa en una ficha y medía
-        20 px de alto. Con la primitiva toma 44 px en teléfono; los márgenes
-        negativos dejan el texto donde estaba.
-      */}
-      <Button asChild variant="link" className="-mx-2 -my-2 px-2 font-medium">
-        <Link href="/finanzas">
-          <IconArrowLeft className="h-4 w-4" />
-          Volver a la ejecución
-        </Link>
-      </Button>
+      <Ruta seccion="finanzas" actual={`Capítulo ${i.codigo}`} />
 
       <Card as="section" className="p-5 sm:p-6">
         <div className="rotulo text-ink-soft">

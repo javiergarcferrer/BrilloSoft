@@ -252,3 +252,63 @@ export function vistaActivaDe(seccion: Seccion, pathname: string): VistaSeccion 
   }
   return candidatas.sort((a, b) => b.href.length - a.href.length)[0];
 }
+
+/**
+ * Dónde se puede buscar por texto, y **con qué alcance**.
+ *
+ * La paleta (`components/paleta.tsx`) ofrece «Buscar “x” en…» una fila por
+ * destino, y cada fila dice debajo qué recorre esa búsqueda. Es la misma
+ * frase que el campo de cada superficie pone bajo sí mismo: los alcances de
+ * esta plataforma son muy distintos —el Senado distingue tildes, un nombre de
+ * proveedor solo se busca entre quienes ganaron algo hace poco— y quien elige
+ * a dónde mandar su texto necesita saberlo antes, no después de leer «sin
+ * resultados». Un destino nuevo con `?q=` se declara aquí y aparece solo.
+ */
+export interface DestinoBusqueda {
+  seccion: SeccionId;
+  /** Nombre corto del destino: «Diputados», «Proveedores». */
+  etiqueta: string;
+  /** La ruta que recibe `?q=`. */
+  href: string;
+  /** Qué recorre la búsqueda, en llano. */
+  alcance: string;
+}
+
+export const BUSQUEDAS: DestinoBusqueda[] = [
+  {
+    seccion: "licitaciones",
+    etiqueta: "Licitaciones",
+    href: "/licitaciones",
+    alcance:
+      "Título, descripción, institución, área o código de los procesos de la DGCP, leyendo hasta 6.000 por consulta —el buscador dice cuántos leyó—; abre con los abiertos a ofertar.",
+  },
+  {
+    seccion: "licitaciones",
+    etiqueta: "Proveedores",
+    href: "/proveedores",
+    alcance:
+      "Un RNC, cédula o RPE busca en el registro completo; un nombre, solo entre quienes ganaron contratos en las últimas semanas.",
+  },
+  {
+    seccion: "congreso",
+    etiqueta: "Diputados",
+    href: "/congreso",
+    alcance: "Dentro de la descripción de las iniciativas de la Cámara, no solo en el título.",
+  },
+  {
+    seccion: "congreso",
+    etiqueta: "Senado",
+    href: "/congreso/senado",
+    alcance: "Expedientes del Senado del cuatrienio vigente. Literal: distingue tildes.",
+  },
+];
+
+/**
+ * Las páginas de la plataforma que no pertenecen a ninguna vertical. El pie y
+ * la paleta las nombran; aquí se declaran una vez.
+ */
+export const PAGINAS_PLATAFORMA: { href: string; label: string; descriptor: string }[] = [
+  { href: "/", label: "Panorama", descriptor: "Las verticales en una sola página" },
+  { href: "/fuentes", label: "Estado de las fuentes", descriptor: "Qué alimenta la plataforma y qué está bloqueado" },
+  { href: "/seguridad", label: "Seguridad y cumplimiento", descriptor: "Postura de datos, Ley 172-13 y 200-04" },
+];

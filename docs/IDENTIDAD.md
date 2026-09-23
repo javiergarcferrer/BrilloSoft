@@ -249,7 +249,8 @@ Desde la pasada de **shadcn/ui**, en dos capas:
 
 - **`components/ui/*`** — las piezas genéricas: `Card`, `Button`, `Badge`,
   `Input`, `Textarea`, `Label`, `Checkbox`, `Select`, `Tabs`, `ToggleGroup`,
-  `Sheet`, `Popover`, `Collapsible`, `Table`, `Progress`, `Skeleton` y `Alert`.
+  `Sheet`, `Dialog`, `Command`, `Breadcrumb`, `Popover`, `Collapsible`,
+  `Table`, `Progress`, `Skeleton` y `Alert`.
   Es código del repositorio —no una dependencia de componentes—, con Radix por
   debajo. **Entraron por el teclado y el foco, no por el aspecto**: foco
   atrapado en una hoja modal, recorrido con flechas, Escape, y el foco de vuelta
@@ -273,6 +274,7 @@ Desde la pasada de **shadcn/ui**, en dos capas:
   `components/marca-estado.tsx`, `components/campo-busqueda.tsx`,
   `components/nav-filtros.tsx`, `components/marca.tsx`,
   `components/plegable.tsx`, `components/antiguedad.tsx`,
+  `components/paleta.tsx`, `components/ruta.tsx`, `components/paginador.tsx`,
   `components/esqueleto.tsx`, `lib/estados.ts`, `lib/cifras.ts` y
   `lib/glosario.ts`.
 

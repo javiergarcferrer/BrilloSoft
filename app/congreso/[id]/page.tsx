@@ -23,8 +23,9 @@ import Plegable from "@/components/plegable";
 import ListaPlegada from "../lista-plegada";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
-import { IconArrowLeft, IconExternal } from "@/components/icons";
+import { IconExternal } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
+import { Ruta } from "@/components/ruta";
 
 export const revalidate = 300;
 
@@ -97,18 +98,7 @@ export default async function IniciativaPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl">
-      {/*
-        Volver es la única salida de una ficha en un teléfono y era un renglón
-        de 16 px: se le da la altura de un mando (44 px) con un margen negativo
-        que deja el texto donde estaba ópticamente.
-      */}
-      <Link
-        href="/congreso"
-        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink sm:min-h-0 sm:py-1"
-      >
-        <IconArrowLeft className="h-3.5 w-3.5" />
-        Congreso
-      </Link>
+      <Ruta seccion="congreso" actual={`Iniciativa ${ini.numero?.completo ?? ini.id}`} />
 
       <header className="mt-1 sm:mt-3">
         <div className="flex flex-wrap items-center gap-2">

@@ -19,8 +19,6 @@ import ProcesoCard from "@/components/proceso-card";
 import { cn } from "@/lib/cn";
 import { BottomSheet } from "@/components/bottom-sheet";
 import {
-  IconChevronLeft,
-  IconChevronRight,
   IconDownload,
   IconFilter,
   IconRss,
@@ -42,6 +40,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { Paginador } from "@/components/paginador";
 
 interface FiltrosProps {
   etapa: EtapaFiltro;
@@ -653,9 +652,9 @@ export default function Buscador() {
           */}
           {data && data.pages > 1 && (
             <Paginador
-              page={data.page}
-              pages={data.pages}
-              loading={loading}
+              pagina={data.page}
+              paginas={data.pages}
+              pendiente={loading}
               onPage={setPage}
             />
           )}
@@ -742,70 +741,15 @@ export default function Buscador() {
         */}
         {!error && lista.length > 0 && data && data.pages > 1 && (
           <Paginador
-            page={data.page}
-            pages={data.pages}
-            loading={loading}
+            pagina={data.page}
+            paginas={data.pages}
+            pendiente={loading}
             onPage={setPage}
             className="mt-4"
           />
         )}
       </section>
     </div>
-  );
-}
-
-/**
- * Anterior · dónde estoy · siguiente.
- *
- * Fila propia y no un trozo más de la línea del conteo: ahí dentro, en un
- * teléfono, los tres controles caían en cualquier orden según lo largo que
- * fuera el texto de la muestra. Con `justify-between` los dos botones quedan
- * en los bordes —donde el pulgar llega sin recolocar la mano— y la posición
- * en medio. Los botones suben a 40 px de alto en el teléfono.
- */
-function Paginador({
-  page,
-  pages,
-  loading,
-  onPage,
-  className,
-}: {
-  page: number;
-  pages: number;
-  loading: boolean;
-  onPage: (f: (p: number) => number) => void;
-  className?: string;
-}) {
-  return (
-    <nav
-      aria-label="Paginación de los resultados"
-      className={cn(
-        "flex items-center justify-between gap-2 text-sm text-ink-soft",
-        className,
-      )}
-    >
-      <Button
-        variant="secondary"
-        size="sm"
-        className="h-10 sm:h-9"
-        onClick={() => onPage((p) => Math.max(1, p - 1))}
-        disabled={page <= 1 || loading}
-      >
-        <IconChevronLeft className="h-4 w-4" /> Anterior
-      </Button>
-      <span className="tabular-nums">
-        Página {page} de {pages}
-      </span>
-      <Button
-        variant="secondary"
-        size="sm"
-        className="h-10 sm:h-9"
-        onClick={() => onPage((p) => p + 1)}
-        disabled={page >= pages || loading}
-      >
-        Siguiente <IconChevronRight className="h-4 w-4" />
-      </Button>
-    </nav>
   );
 }
 
