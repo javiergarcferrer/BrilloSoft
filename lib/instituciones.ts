@@ -14,6 +14,7 @@
  */
 
 import datos from "@/public/data/instituciones.json";
+import { unstable_cache } from "next/cache";
 import { dgcpFetch, normalize, type Contrato, type Proceso } from "@/lib/dgcp";
 
 export interface Institucion {
@@ -154,19 +155,45 @@ function isoDia(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * El resumen de compras de una institución, cacheado una hora **ya calculado**.
+ * Las respuestas crudas de un ministerio grande pasan de 2 MB (MINERD:
+ * 1.000 procesos del año ≈ 2,2 MB) y el caché de datos de Next no guarda
+ * nada por encima de eso: sin este envoltorio, cada visita volvía a pedir a
+ * la DGCP. El resumen pesa unos kilobytes. Un fallo no se cachea.
+ */
+const comprasCacheadas = unstable_cache(
+  async (id: number) => {
+    const r = await calcularCompras(id);
+    if (!r) throw new Error("la DGCP no respondió");
+    return r;
+  },
+  ["compras-de-institucion"],
+  { revalidate: 3600 },
+);
+
 export async function getComprasDeInstitucion(id: number): Promise<ComprasDeInstitucion | null> {
+  try {
+    return await comprasCacheadas(id);
+  } catch (err) {
+    console.error(`[instituciones] compras ${id}: ${String(err)}`);
+    return null;
+  }
+}
+
+async function calcularCompras(id: number): Promise<ComprasDeInstitucion | null> {
   const hoy = new Date();
   const haceUnAnio = new Date(hoy);
   haceUnAnio.setFullYear(hoy.getFullYear() - 1);
 
   const [contratos, procesos] = await Promise.all([
-    dgcpFetch<Contrato>("/contratos", { unidad_compra: id, page: 1, limit: 1000 }, 3600).catch(
+    dgcpFetch<Contrato>("/contratos", { unidad_compra: id, page: 1, limit: 1000 }, 0).catch(
       () => null,
     ),
     dgcpFetch<Proceso>(
       "/procesos",
       { unidad_compra: id, startdate: isoDia(haceUnAnio), enddate: isoDia(hoy), limit: 1000 },
-      3600,
+      0,
     ).catch(() => null),
   ]);
   if (!contratos && !procesos) return null;
