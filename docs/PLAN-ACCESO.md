@@ -119,15 +119,38 @@ entre esfuerzo. Todas respetan la invariante (sin llave, instantánea en build).
 1. **MapaInversiones** (§A.4, fase 8): obra ↔ SNIP ↔ proceso ↔ proveedor ↔
    territorio, con avance físico y financiero. `Proceso` ya trae `codigo_snip`.
    Responde «¿existe la obra y avanza?» y alimenta 2.4.
+   ✅ 2026-09-23: `/obras` (filtros por estado, provincia, institución y texto)
+   y `/obras/[snip]`, `lib/obras.ts` sobre `scripts/build-obras.py`; enlazada
+   desde la ficha de proceso (`ObraDelProceso`) y la de institución
+   (`ObrasDeInstitucion`). El avance físico y el financiero son el mismo número
+   en la fuente: se muestra uno, declarado. `/provincias/[slug]` (2.4) puede
+   reutilizar `filtrarObras({ provincia })`.
 2. **Padrón RNC de la DGII** (§A.2, fase 9): actividad, estado y fecha de
    inicio del proveedor; hace comprobable «empresa creada semanas antes de
    ganar». Instantánea acotada a los RNC que aparecen en compras.
+   ✅ 2026-09-23: `lib/rnc.ts` + `scripts/build-rnc.py`; la lista de RNC sale
+   de la tabla completa del RPE, que la DGCP sí sirve como archivo (AUDITORIA
+   §A.12, añadido). `FichaRnc` en `/proveedores/[rpe]` dice actividad, estado,
+   régimen e «inició operaciones N días antes de su primer contrato».
 3. **Nómina por datos.gob.do** (§A.8, fase 10): de 11 a decenas de
    instituciones; trabajo de manifiesto en `scripts/build-nomina.py`.
+   ✅ 2026-09-23: 23 instituciones y 29,673 plazas (antes 11 y 13,668); los
+   códigos nuevos están atados a su ficha en `scripts/build-instituciones.py`
+   salvo el Poder Judicial, que no tiene unidad de compra. Descartes y
+   bloqueos en AUDITORIA §A.8.
 4. **SISMAP y SISMAP Municipal** (§A.7, fase 10): calidad de gestión por
    institución y por ayuntamiento; tablas HTML, lo más barato.
+   ✅ 2026-09-23: `/gestion` (instituciones, ayuntamientos y juntas de distrito,
+   con búsqueda) y `SismapDeInstitucion` en la ficha; `lib/sismap.ts` sobre
+   `scripts/build-sismap.py`. El SISMAP no publica fecha de corte: se declara
+   el día de la consulta.
 5. **Combustibles del MICM** (§A.5, fase 7) y **tasa del BCRD por CDN**
    (§A.6, fase 11): indicadores del bolsillo en la portada.
+   ✅ 2026-09-23 (capa e indicadores; colocarlos en `/` queda a quien edite el
+   panorama): `lib/combustibles.ts` y `lib/tasa.ts`, en vivo con caché de 1 h;
+   `<SeccionBolsillo />` de `components/fuentes-nuevas/indicadores-bolsillo.tsx`
+   trae los dos con su `Suspense`. La tasa sale del `.xlsx` del CDN: el `.xls`
+   que citaba la auditoría está congelado desde 2022.
 
 ## 5. Horizonte 4 — lo que solo desbloquea el dueño
 

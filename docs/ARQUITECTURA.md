@@ -100,6 +100,48 @@ Transparency Portal's own form — Hacienda publishes the taxonomy nowhere else)
 plus `titulizar`, which puts official ALL-CAPS names into reading case while
 preserving the acronyms in parentheses.
 
+## Horizonte 3 snapshots — `lib/obras.ts` (y sus hermanas)
+Sources too large to read per request (`docs/PLAN-ACCESO.md` §4), built by a
+`scripts/build-*.py` into `public/data/*.json` and read from disk with
+`node:fs` (server-only, like `lib/nomina-server.ts`), memoised per instance.
+Every UI that shows them states the source's cut date.
+- **`lib/obras.ts`** — MapaInversiones (`docs/AUDITORIA.md` §A.4).
+  `scripts/build-obras.py` joins four open CSVs (~21 MB) by SNIP into
+  `obras.json` (3,609 projects: estado, valor, avance, sector, entidad
+  ejecutora, provincias, totals) and `obras-detalle.json` (top-12 contracts and
+  processes per project), plus an index **proceso → SNIP** so
+  `/procesos/[codigo]` finds the project even when the DGCP omits `codigo_snip`.
+  `obrasDeProceso` returns each project with **who says so** (DGCP, MapaInversiones
+  or both) because the two disagree. The executing entity is joined to the DGCP
+  purchasing unit by normalised name plus the curated `EJECUTORAS` table.
+  `AvanceFisico == AvanceFinanciero` in every row of the source, so the layer
+  exposes one `avance` and the UI calls it «avance declarado».
+  Self-contained server components for other pages live in
+  `components/fuentes-nuevas/` (`ObraDelProceso`, `ObrasDeInstitucion`, `FilaObra`).
+- **`lib/rnc.ts`** — DGII taxpayer register joined to the DGCP supplier register
+  (`docs/AUDITORIA.md` §A.2, §A.12). `scripts/build-rnc.py` downloads the full
+  supplier table (`/api-dgcp/v1/tablas/proveedores?Type=csv`, reading only RPE
+  and document — contacts never leave the script) and the DGII ZIP (cp1252),
+  keeps the 9-digit RNCs (legal persons) and writes ten shards
+  `public/data/rnc/{0..9}.json` keyed by the RPE's last digit, each with its own
+  dictionary of activities and states. `getRegistroTributario(rpe)` reads one
+  shard; `FichaRnc` (in `/proveedores/[rpe]`) shows activity, state, regime and
+  the days between «inicio de operaciones» and the oldest contract the API returns.
+- **`lib/sismap.ts`** — MAP's SISMAP ranking (`docs/AUDITORIA.md` §A.7), three
+  server-rendered tables (181 institutions, 160 ayuntamientos, 233 juntas) read
+  by `scripts/build-sismap.py`, which also joins each row to a purchasing unit
+  by normalised words (exact set, else Jaccard ≥ 0.85 with a unique best; an
+  ayuntamiento never matches the junta of the same place; duplicate targets are
+  dropped). No cut date is published upstream, so the snapshot carries
+  `consultado`. `/gestion` shows the full ranking; `SismapDeInstitucion` the
+  institution's row.
+- **`lib/combustibles.ts`** and **`lib/tasa.ts`** are *live* sources, not
+  snapshots (fetch `revalidate: 3600`, 25 s, one retry, content-type checked):
+  the MICM front page (six prices + the week, parsed from its markup) and the
+  BCRD reference-rate `.xlsx` on its CDN (daily sheet, only the tail parsed with
+  `leerZip` exported from `lib/deuda.ts`). The panorama indicators live in
+  `components/fuentes-nuevas/indicadores-bolsillo.tsx` (`SeccionBolsillo`).
+
 ## API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return
 `502` on upstream failure: `procesos` (search/list; `procesos/csv` the whole
@@ -325,6 +367,11 @@ sources impose:
   governments: only the capital's ayuntamiento (and Santo Domingo's seven
   municipalities), hand-mapped by DGCP code. Legislators: link to
   `/congreso/legisladores?provincia=<SIL name>`.
+- `/obras` → «¿Existe la obra y avanza?»: the investment snapshot, filtered
+  server-side by `?q=`, `?estado=`, `?provincia=` (slug) and `?uc=` (purchasing
+  unit); `/obras/[snip]` → one project with its contracts and processes, linked
+  to `/procesos/*` and `/proveedores/*`.
+- `/gestion` → SISMAP ranking, `?tabla=instituciones|ayuntamientos|juntas` and `?q=`.
 
 ## Client state — `lib/seguimiento.ts`
 Followed items in `localStorage` (key `lrd:seguimiento`) as typed entries

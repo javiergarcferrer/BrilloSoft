@@ -13,6 +13,12 @@ import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
 import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { IconArrowLeft } from "@/components/icons";
+import {
+  ResumenCombustibles,
+  ResumenObras,
+  ResumenRnc,
+  ResumenTasa,
+} from "@/components/fuentes-nuevas/resumen-fuentes";
 
 export const metadata: Metadata = {
   title: "Fuentes",
@@ -241,7 +247,11 @@ export default async function FuentesPage() {
           )}
           <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Cobertura parcial declarada: es lo publicado en CSV procesable, no
-            todo el Estado. La nómina estatal completa (con nombres) vive en el
+            todo el Estado. De las nóminas que indexa datos.gob.do, la de
+            Migración y la del Ayuntamiento de Santiago rechazan la descarga
+            (403), y la del TSE, la del IDECOOP y la de la Comisión de Defensa
+            Comercial vienen en formatos que no se pueden leer sin adivinar
+            columnas; quedan fuera en vez de entrar mal. La nómina estatal completa (con nombres) vive en el
             tablero oficial del{" "}
             <a
               href="https://transparencia.gob.do/2025/12/17/nomina/"
@@ -433,15 +443,117 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="MapaInversiones — obra pública" estado="activa" etiqueta="Instantánea local">
+          <p>
+            Los datos abiertos de MapaInversiones (Ministerio de Hacienda y
+            Economía, sobre el Banco de Proyectos del SNIP y la DGCP) alimentan{" "}
+            <Link href="/obras" className="font-medium text-brand-700 hover:underline">
+              ¿Existe la obra y avanza?
+            </Link>
+            : cada proyecto de inversión con su estado, valor, avance, provincia y
+            los procesos y contratos de compras que lo ejecutan. Son cuatro CSV
+            descargables sin clave (unos 21 MB) que se consolidan al construir, no
+            en cada visita. <ResumenObras />
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            Límites que la interfaz dice donde tocan: la fuente publica el mismo
+            número como avance físico y como financiero en todas las obras, así que
+            se muestra uno solo, «avance declarado», que reporta la propia
+            institución y no es una inspección. De cada obra se guardan los 12
+            contratos y procesos de mayor monto, con el total de todos. La
+            institución ejecutora se une a su ficha por nombre, y la que no casa se
+            queda sin enlace. Un proceso puede tener un SNIP en la DGCP y otro en
+            MapaInversiones: se muestran los dos, cada uno con su origen.
+            Regenerar con{" "}
+            <code className="rounded bg-canvas px-1 py-0.5 font-mono">scripts/build-obras.py</code>.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="DGII — padrón de contribuyentes (RNC)" estado="activa" etiqueta="Instantánea local">
+          <p>
+            La consulta web de RNC de la DGII rechaza a los programas, pero la DGII
+            publica el padrón completo como un ZIP descargable. Se cruza al
+            construir con el Registro de Proveedores del Estado —que la DGCP también
+            ofrece como archivo— y la ficha de cada proveedor muestra su actividad
+            económica declarada, su estado ante la DGII, su régimen y la fecha en que
+            inició operaciones, con la distancia hasta su primer contrato. <ResumenRnc />
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            Solo personas jurídicas (RNC de 9 dígitos): el padrón lista también a
+            personas físicas por cédula y no se cruzan. La fecha de inicio la declara
+            el contribuyente, y el «primer contrato» es el más antiguo que devuelve
+            la API de la DGCP. Del registro de proveedores solo se leen el RPE y el
+            documento; sus teléfonos y correos no se descargan a la plataforma.
+            Regenerar con{" "}
+            <code className="rounded bg-canvas px-1 py-0.5 font-mono">scripts/build-rnc.py</code>.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="SISMAP — calidad de la gestión pública" estado="activa" etiqueta="Instantánea local">
+          <p>
+            El ranking del Sistema de Monitoreo de la Administración Pública
+            (Ministerio de Administración Pública) alimenta{" "}
+            <Link href="/gestion" className="font-medium text-brand-700 hover:underline">
+              ¿Qué tan bien se gestiona?
+            </Link>{" "}
+            y el recuadro de gestión de cada ficha de institución. Son tres tablas
+            que el SISMAP sirve como páginas normales: instituciones del Gobierno
+            central, ayuntamientos y juntas de distrito municipal.
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            El SISMAP no publica fecha de corte en esas páginas: se declara el día en
+            que se consultó. Mide cumplimiento de indicadores de gestión con
+            evidencias que remite cada organismo; no es una auditoría. El enlace a la
+            ficha de institución es por nombre, y la que no casa se queda sin enlace
+            (sobre todo juntas de distrito). Regenerar con{" "}
+            <code className="rounded bg-canvas px-1 py-0.5 font-mono">scripts/build-sismap.py</code>.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="MICM — precios de los combustibles" estado="activa" etiqueta="Conectada">
+          <p>
+            El Ministerio de Industria, Comercio y Mipymes pone en su portada los
+            precios de la semana. Se leen de ahí, con caché de una hora, para el
+            indicador del panorama. <ResumenCombustibles />
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            Son los precios de la portada, no el aviso completo: el aviso semanal se
+            publica con el cuerpo vacío y su API está cerrada, así que otros
+            productos (kerosene, fuel oil) no se pueden leer. La portada no escribe
+            unidades; se dice «por galón» solo para gasolinas y gasoil.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Banco Central — tasa de cambio de referencia" estado="activa" etiqueta="Conectada">
+          <p>
+            La tasa del dólar del mercado spot, día a día desde 1991, sale del
+            archivo público que el Banco Central deja en su CDN; se lee con caché de
+            una hora. <ResumenTasa />
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            La API del Banco Central exige credenciales y no se usa: pedirlas es una
+            decisión pendiente del dueño. El archivo <code className="rounded bg-canvas px-1 py-0.5 font-mono">.xls</code>{" "}
+            con el mismo nombre sigue en línea pero dejó de actualizarse en julio de
+            2022; el vigente es el <code className="rounded bg-canvas px-1 py-0.5 font-mono">.xlsx</code>. El
+            resto de las series del Banco Central no se puede enumerar sin
+            navegador: su índice se arma con JavaScript.
+          </p>
+        </Fuente>
+
         <Fuente
           nombre="Portal de datos abiertos (datos.gob.do)"
-          estado="descartada"
-          etiqueta="Sin datos útiles"
+          estado="activa"
+          etiqueta="Solo como índice"
         >
           <p>
             Su <code className="rounded bg-canvas px-1 py-0.5 font-mono">robots.txt</code>{" "}
-            prohíbe <code className="rounded bg-canvas px-1 py-0.5 font-mono">/api/</code>, y
-            la búsqueda de conjuntos del Congreso no devolvió resultados. No se usa.
+            prohíbe <code className="rounded bg-canvas px-1 py-0.5 font-mono">/api/</code>, así
+            que no se consulta su API. Se usa como lo que es: un índice. Su búsqueda
+            y sus fichas, que son páginas normales, dan los enlaces directos a las
+            nóminas que cada institución publica en su propio portal, y de ahí salió
+            la ampliación de la nómina. Las fichas se leen a mano al regenerar, a una
+            petición cada diez segundos como pide el portal, nunca en una visita.
+            Del Congreso no tiene conjuntos útiles.
           </p>
         </Fuente>
       </div>

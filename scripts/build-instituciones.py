@@ -31,12 +31,16 @@ SALIDA = RAIZ / "public" / "data" / "instituciones.json"
 DGCP = "https://datosabiertos.dgcp.gob.do/api-dgcp/v1/unidades_compra?limit=1000"
 UA = "Socratico-Inteligencia/1.0 (cruce de instituciones; herramienta independiente)"
 
-# Código de nómina (lib/nomina.ts) → código de unidad de compra (DGCP).
+# Código de nómina (scripts/build-nomina.py) → código de unidad de compra (DGCP).
 # El Consejo del Café (CCDF) queda fuera: el catálogo solo tiene INDOCAFE, que
 # es otra entidad.
 NOMINA = {
     "CESAC": 811, "MSP": 240, "MESCYT": 264, "MINC": 259, "MEM": 916,
     "DIGEIG": 720, "CND": 893, "DEFCIVIL": 904, "JAC": 554, "ICM": 158,
+    # Ampliación del 2026-09-23. El Poder Judicial (PJ) queda fuera: no tiene
+    # unidad de compra con ese nombre en el catálogo de la DGCP.
+    "DGCP": 7, "IDEICE": 869, "IAD": 724, "CGR": 139, "TSS": 545, "MIREX": 1,
+    "S911": 887, "INABIMA": 812, "SVSP": 181, "DIGEPRES": 217, "LOTERIA": 655,
 }
 
 ETIQUETA_NOMBRAMIENTOS = "camara de cuentas"

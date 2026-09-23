@@ -44,7 +44,7 @@ MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
 MANIFEST = {
     "CESAC": ("Cuerpo Especializado en Seguridad Aeroportuaria (CESAC)", None),
     "MSP": ("Ministerio de Salud Pública",
-            "https://www.msp.gob.do/web/Transparencia/documentos_oai/748/nomina-de-empleados-del-msp/34592/nomina-de-empleados-mispas-2017-2026-6.csv"),
+            "https://www.msp.gob.do/web/Transparencia/documentos_oai/748/nomina-de-empleados-del-msp/34685/nomina-de-empleados-mispas-2017-2026-2.csv"),
     "MESCYT": ("Ministerio de Educación Superior, Ciencia y Tecnología",
                "https://mescyt.gob.do/transparencia/download/3954/nomina-de-empleados-fijos/15746/da-nomina-de-empleados-fijos-mescyt-2018-2025-en-cvs.csv"),
     "MINC": ("Ministerio de Cultura",
@@ -63,6 +63,36 @@ MANIFEST = {
             "https://jac.gob.do/wp-content/uploads/2026/04/Nomina-personal-fijo-y-contratado-2026.csv"),
     "ICM": ("Instituto Cartográfico Militar",
             "https://datos.gob.do/dataset/de850f20-9770-4409-88d6-32d78fe1098b/resource/9847ec68-e7c4-40af-acbf-2c95206eabec/download/nomina-fija-icm-202"),
+    # Ampliación del 2026-09-23 (PLAN-ACCESO §4.3, AUDITORIA §A.8): enlaces
+    # directos sacados de las fichas HTML de datos.gob.do (su /api/ lo veta el
+    # robots), bajados con el UA de arriba. Probados y descartados ese día:
+    # Migración y Ayuntamiento de Santiago (403), UNADE (202 con página HTML),
+    # TSE (CSV sin cabecera), IDECOOP (sin mes ni año) y CDC (mes y año en una
+    # sola columna «Mes / año»).
+    "DGCP": ("Dirección General de Contrataciones Públicas",
+             "https://www.dgcp.gob.do/new_dgcp/documentos/da/N%C3%B3mina%20de%20Empleados,%20DGCP,%202022%20-%202026.csv"),
+    "IDEICE": ("Instituto Dominicano de Evaluación e Investigación de la Calidad Educativa",
+               "https://ideice.gob.do/descargas/datos-abiertos/nomina-de-empleados.csv"),
+    "IAD": ("Instituto Agrario Dominicano",
+            "https://iad.gob.do/wp-content/uploads/2026/08/Nomina-de-Empleados-IAD-2020-2026-Formato-CSV.csv"),
+    "CGR": ("Contraloría General de la República",
+            "https://contraloria.gob.do/wp-content/uploads/2025/09/Nomina-empleados-fijos-y-contratados-CSV-2018-%E2%80%93-2026-9.csv"),
+    "TSS": ("Tesorería de la Seguridad Social",
+            "https://tss.gob.do/descargar/2046/nominas-de-empleados-2017-2026/17730/nominas-de-empleados-2017-2026-2.csv"),
+    "MIREX": ("Ministerio de Relaciones Exteriores",
+              "https://mirex.gob.do/transparencia/descargar/335/2018-2026/19579/nomina-personal-mirex-2018-2026.csv"),
+    "PJ": ("Poder Judicial (servidores fijos)",
+           "https://transparencia.poderjudicial.gob.do/documentos/DatosAbiertos/DA_NominaServidoresFijos.csv"),
+    "S911": ("Sistema Nacional de Atención a Emergencias y Seguridad 9-1-1",
+             "https://911.gob.do/wp-content/uploads/2026/09/Nomina-de-Empleados-Sistema911-2017-2026.csv"),
+    "INABIMA": ("Instituto Nacional de Bienestar Magisterial",
+                "https://transparencia.inabima.gob.do/Descarga/Datos%20Abiertos/N%C3%B3mina%20de%20Empleados,%202018%20-%202025/N%C3%B3mina%20de%20Empleados,%20INABIMA,%202018%20-%202025.csv"),
+    "SVSP": ("Superintendencia de Vigilancia y Seguridad Privada",
+             "https://datos.gob.do/dataset/ffbef324-a8b7-4c4c-9455-94567087df79/resource/5e008605-81f8-4e9c-90e0-fd05cc6cc774/download/nomina-de-sueldo-por-cargo-2025-2026-act.csv"),
+    "DIGEPRES": ("Dirección General de Presupuesto",
+                 "https://digepres.gob.do/transparencia/wp-content/uploads/2026/09/NOMINA-DATOS-ABIERTOS-2018-2026.xlsxf_.csv"),
+    "LOTERIA": ("Lotería Nacional",
+                "https://loterianacional.gob.do/transparencia/archivos/datos-abiertos/archivo/Nomina%20de%20Empleados,%20Agosto%202026.csv"),
 }
 
 
@@ -121,9 +151,12 @@ def col_map(header):
         if m["sueldo"] is None and "APORT" not in k and (
                 "SUELDOBRUTO" in k or "INGRESOBRUTO" in k or "SUELDOFIJO" in k
                 or "SUELDOBASE" in k or k in ("SUELDO", "SBASE")
-                or k.startswith("SUELDO") or "INGRESO" in k):
+                or k.startswith("SUELDO") or "INGRESO" in k
+                or k in ("SALARIOBRUTO", "SALARIO")):
             m["sueldo"] = i
-        if m["cargo"] is None and ("CARGO" in k or "FUNCI" in k or k == "RANGO"):
+        # «PUESTO» / «NOMBRE DEL PUESTO»: DIGEPRES y Lotería Nacional (2026-09-23).
+        if m["cargo"] is None and ("CARGO" in k or "FUNCI" in k or k == "RANGO"
+                                   or k in ("PUESTO", "NOMBREDELPUESTO")):
             m["cargo"] = i
         if m["area"] is None and ("DEPARTAMENTO" in k or "OFICINA" in k
                 or k == "AREA" or "NOMBREAREA" in k or "LUGAR" in k

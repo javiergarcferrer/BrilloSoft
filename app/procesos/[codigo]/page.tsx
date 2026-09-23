@@ -31,6 +31,7 @@ import { Ruta } from "@/components/ruta";
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import { Termino } from "@/components/termino";
 import { huellaDe } from "@/lib/seguimiento";
+import { ObraDelProceso } from "@/components/fuentes-nuevas/obra-del-proceso";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -237,6 +238,8 @@ export default async function ProcesoPage({
           </p>
         )}
       </Card>
+
+      <ObraDelProceso codigo={p.codigo_proceso} snip={p.codigo_snip} />
 
       <Card as="section" className="p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

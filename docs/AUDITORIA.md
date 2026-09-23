@@ -642,6 +642,26 @@ ruta), y su sección de estadísticas responde 403. Pero:
 - ❌ `DGII_RNC.zip` (el nombre antiguo) da 403. El robots de la DGII solo veta
   rutas de SharePoint (`/_layouts/`, `/_vti_bin/`, `/_catalogs/`).
 
+**Integrado el 2026-09-23** (`scripts/build-rnc.py` → `public/data/rnc/{0..9}.json`,
+`lib/rnc.ts`, ficha de proveedor). Verificación de campo de ese día:
+
+- ✅ El ZIP sigue en la misma URL: 200 `application/x-zip-compressed`,
+  26,878,229 bytes, `last-modified: 19-sep-2026`; dentro,
+  `RNC_Contribuyentes_Actualizado_19_Sep_2026.csv` (115.6 MB, **791,384**
+  contribuyentes). El nombre del archivo cambia con cada corte: el script lo
+  lee del ZIP y de ahí saca la fecha.
+- ⚠️ **Corrección: la codificación es Windows-1252, no cp850.** Leído como
+  cp850, «RAZÓN» sale «RAZËN» y «EMPEÑO», «EMPEÐO» (cp850 decodifica cualquier
+  byte, así que no falla: miente). Coma como separador, todo entre comillas,
+  fechas `DD/MM/AAAA`, 67 mil filas sin fecha de inicio.
+- ✅ `robots.txt` de `dgii.gov.do` solo veta rutas de SharePoint.
+- La lista de RNC a cruzar sale de la **tabla completa del RPE** (ver §A.12,
+  añadido del 2026-09-23): 137,817 proveedores, 81,092 con RNC de 9 dígitos,
+  **80,877 presentes en el padrón**. Se acota a personas jurídicas (el padrón
+  lista también personas físicas por cédula; no se cruzan) y se guarda solo
+  RNC, actividad, inicio de operaciones, estado y régimen: 3.7 MB en diez
+  archivos por el último dígito del RPE.
+
 **Qué habilita**: cruzar cada proveedor del Estado con su registro tributario —
 actividad económica declarada, estado, antigüedad. La señal clásica de riesgo
 («RNC creado semanas antes de ganar el contrato») deja de ser inverificable.
@@ -695,6 +715,34 @@ Misma API que ya integra `lib/dgcp.ts`, mismo adaptador, **cero hosts nuevos**:
 `SNIP → proyecto → proceso → contrato → proveedor → territorio`. `Proceso` ya
 tiene `es_snip`/`codigo_snip`: la unión es directa.
 
+**Integrado el 2026-09-23** (`scripts/build-obras.py` → `public/data/obras.json`
++ `obras-detalle.json`, `lib/obras.ts`, `/obras`, `/obras/[snip]`). Verificación
+de campo de ese día, UA identificable, 4 descargas + 1 ficha:
+
+- ✅ `/robots.txt` → 404 (sin política). `/DatosAbiertos` → 200 HTML con los
+  enlaces `/opendata/*.csv` y sus diccionarios `_Diccionario.xlsx`.
+- ✅ Los cuatro CSV usados responden 200 `text/csv`, UTF-8 con BOM, coma y
+  comillas, `last-modified` del mismo día (se regeneran a diario):
+  `ProyectosDeInversion` 4.2 MB / **3,611 filas**, `…XTerritorio` 7.2 MB /
+  26,606 (proyecto × municipio), `ProcesosXProyectosInv` 2.0 MB / 3,399,
+  `ContratosXProyectosInv` 7.8 MB / 14,957. `FechaCorteFuente` 2026-09-22.
+- ✅ `CodigoProveedor` de los contratos **es el RPE** de la DGCP (comprobado:
+  `17` → Delta Comercial, SA en `/proveedores?rpe=17`).
+- ✅ La ficha pública es `/projectprofile/{IdProyecto}` (200, server-rendered).
+- ⚠️ **`AvanceFisico` y `AvanceFinanciero` son idénticos en 3,611 de 3,611
+  proyectos.** La fuente no distingue las dos medidas: la interfaz muestra un
+  solo «avance declarado» y lo dice.
+- ⚠️ Dos `CodigoSNIP` repetidos (3,609 distintos); se conserva el primero.
+- ⚠️ Estados: 2,350 en ejecución, 655 en reevaluación, 562 paralizados, 44 por
+  reprogramar. Solo 716 SNIP tienen contratos; 1,003 tienen procesos.
+- ⚠️ La DGCP y MapaInversiones **pueden asociar un mismo proceso a SNIP
+  distintos** (visto: `MOPC-CCC-LPN-2026-0013` → 4795 en la DGCP, 12080 en
+  MapaInversiones). La ficha de proceso muestra ambas obras con su origen.
+- La entidad ejecutora (134 distintas) casa con la unidad de compra de
+  `instituciones.json` por nombre normalizado más 8 equivalencias curadas:
+  3,299 de 3,609 obras atadas. Queda fuera «Dirección de Desarrollo
+  Provincial» (189 obras), sin unidad de compra con ese nombre en la DGCP.
+
 ### A.5 MICM — precios de combustibles, semanales
 
 - ✅ `micm.gob.do` con robots Yoast abierto (`Disallow:` vacío).
@@ -709,6 +757,21 @@ tiene `es_snip`/`codigo_snip`: la unión es directa.
   `wp-json` está deshabilitado. Solo hay cuatro precios en portada; el aviso
   completo (GLP, gas natural, kerosene, fuel oil) no es legible por máquina.
   La fecha de vigencia se deriva del título del último aviso del sitemap.
+
+**Integrado el 2026-09-23** (`lib/combustibles.ts`, fuente viva con caché de
+1 h; indicador `IndicadorCombustibles` para el panorama). Re-verificación:
+
+- ✅ La portada responde 200 `text/html` (934 KB, 1.5 s) y ahora trae **seis**
+  precios, no cuatro: Gasolina Premium 350.10, Gasoil Óptimo 302.10, GLP
+  135.20, Gasolina Regular 315.50, Gasoil Regular 267.80 y Gas Natural
+  (GNL-GNC) 43.97, más la vigencia en texto: «semana del 19 a 25 de septiembre
+  del 2026». Ya no hace falta el sitemap para la fecha.
+- ⚠️ Cada precio va como `$350.10<br><p>Nombre</p>`, con el bloque repetido
+  para el teléfono (se deduplica por nombre) y el `<p>` del GLP sin cerrar.
+- ⚠️ La portada **no escribe unidades**. Se dice «por galón» solo para
+  gasolinas y gasoil; GLP y gas natural se muestran sin unidad.
+- ❌ `combustibles.micm.gob.do` («Portal de Combustibles») está parado en la
+  semana del 27-sep-2025: no sirve.
 
 ### A.6 BCRD — CORRECCIÓN: el CDN sí sirve las series
 
@@ -729,6 +792,19 @@ La primera pasada dio por muertos los archivos estadísticos. No lo están:
 - ⚠️ La API con credenciales (`api.bancentral.gov.do`) sigue igual: el dilema
   de §8.3 se **reduce**, no desaparece — el tipo de cambio ya no la necesita.
 
+**Integrado el 2026-09-23** (`lib/tasa.ts`, fuente viva con caché de 1 h;
+indicador `IndicadorTasa` para el panorama). Re-verificación:
+
+- ⚠️ **El `.xls` citado arriba está congelado**: 200, 915 KB, pero
+  `last-modified: 19-jul-2022` (formato OLE2/BIFF). Leerlo habría mostrado una
+  tasa de hace cuatro años como si fuera de hoy.
+- ✅ **`TASA_DOLAR_REFERENCIA_MC.xlsx`** (misma ruta, extensión nueva) → 200
+  `application/octet-stream`, 357 KB, `last-modified: 21-sep-2026`. Siete
+  hojas; la primera, «Diaria», trae Año | Mes | Día | Compra | Venta desde el
+  2-ene-1991 (8,967 filas); último dato 21-sep-2026: compra 59.1740, venta
+  59.4618. Se lee con el mini-lector de XLSX de `lib/deuda.ts`, sin
+  dependencias, y solo la cola de la hoja.
+
 ### A.7 SISMAP — no hay SPA: las tablas vienen servidas
 
 - ✅ `/GestionPublica/Ranking/RankingView` devuelve **181 organismos** en tabla
@@ -740,6 +816,27 @@ La primera pasada dio por muertos los archivos estadísticos. No lo están:
   desglose gestión interna / servicios.
 - La primera pasada supuso una API interna que hay que extraer del bundle: no
   hace falta. Es parseo de tabla, el patrón más barato de la casa.
+
+**Integrado el 2026-09-23** (`scripts/build-sismap.py` → `public/data/sismap.json`,
+`lib/sismap.ts`, `/gestion`, ficha de institución). Verificación de ese día:
+
+- ✅ `sismap.gob.do/robots.txt` → 404 (sin política).
+- ✅ `/GestionPublica/Ranking/RankingView` → 200 `text/html`, 228 KB en 5.7 s:
+  **181 organismos** (1º Ministerio de Energía y Minas 99.09 %; los dos últimos,
+  Dirección General de Persecución del Ministerio Público e Instituto Nacional
+  de Ciencias Forenses, 0.00 %). Cada fila enlaza a
+  `/GestionPublica/CargaEvidencia/Index/{id}`.
+- ⚠️ `/Municipal/Ranking` ya **no trae la tabla** en el HTML (la monta por JS);
+  su propio menú apunta a `/Municipal/Ranking/RankingView?tipoOrganismoID=17`
+  (**160 ayuntamientos**, 1º Santiago de los Caballeros 87.30 %) y `=16`
+  (**233 juntas de distrito**), ambas servidas. La portada `/Municipal` solo
+  trae los diez primeros de cada una.
+- ⚠️ **Ninguna de las tres páginas declara fecha de corte ni período.** La
+  instantánea guarda el día de la consulta y la interfaz lo dice así.
+- El cruce por nombre con `instituciones.json` ata 136 de 181 organismos,
+  135 de 160 ayuntamientos y 62 de 233 juntas (el catálogo de la DGCP nombra
+  las juntas de muchas formas). Un ayuntamiento nunca casa con la junta del
+  mismo lugar, y dos filas que apunten a la misma ficha se sueltan las dos.
 
 ### A.8 datos.gob.do — dimensionado
 
@@ -762,6 +859,30 @@ La primera pasada dio por muertos los archivos estadísticos. No lo están:
 
 **Ampliar `/nomina` más allá de las 11 instituciones actuales es hoy trabajo de
 manifiesto, no de ingeniería: el índice ya ofrece 159 candidatos.**
+
+**Ampliado el 2026-09-23: de 11 a 23 instituciones** (29,673 plazas, RD$1,066
+millones de masa mensual). Recorrido de ese día, con el robots respetado
+(`/api/` vetado, `Crawl-Delay: 10` entre peticiones):
+
+- ✅ `/dataset?q=nomina&page=1..9` sigue dando **159** conjuntos (19–20 por
+  página, 6 en la novena). Las fichas `/dataset/{slug}` son HTML servido y
+  traen los enlaces directos al CSV/ODS/XLSX en el portal de cada institución.
+- ✅ Integradas (CSV real, cabecera mapeable, último mes 2026-06 a 2026-08):
+  DGCP, IDEICE, IAD, Contraloría, TSS, MIREX, Poder Judicial (solo el archivo
+  de servidores fijos; el de contratados va aparte), Sistema 9-1-1, INABIMA,
+  Superintendencia de Vigilancia y Seguridad Privada, DIGEPRES y Lotería
+  Nacional. Las dos últimas exigieron sinónimos nuevos en el parser
+  (`PUESTO`/`NOMBRE DEL PUESTO`, `SALARIO BRUTO`). El archivo del 9-1-1 bajó con
+  200 desde `911.gob.do/wp-content/`, aunque la portada del 9-1-1 dio 470 en la
+  segunda pasada (§B.2).
+- ⚠️ La URL de nómina del **MSP** cambió (la vieja responde un CSV de una línea:
+  «La url de descarga no es correcta»); la nueva salió de su ficha en
+  datos.gob.do. Las URLs versionadas (`-6.csv`, `-2.csv`) se mueven: al
+  regenerar, un error de columnas suele ser eso.
+- ❌ **Migración** y **Ayuntamiento de Santiago**: 403 al UA identificable (no
+  se insistió). **UNADE**: 202 con una página HTML en vez del CSV.
+- ⚠️ Descartados por formato: **TSE** (CSV sin fila de cabecera), **IDECOOP**
+  (sin mes ni año), **CDC** (mes y año en una sola columna «Mes / año»).
 
 ### A.9 311 — lectura pública, y un hallazgo de seguridad que reportar
 
@@ -867,6 +988,21 @@ el servidor con el UA identificable, GET y pocas peticiones:
    que la ausencia. Si algún día hiciera falta el padrón completo, la vía es el
    RNC de la DGII (§A.2), no este endpoint.
 
+**Añadido el 2026-09-23 — la tabla entera sí se descarga.** La sección
+«Tablas» del portal de datos abiertos de la DGCP no pagina la API: su JS
+(`TablasPage-*.js`) llama a
+`GET https://datosabiertos.dgcp.gob.do/api-dgcp/v1/tablas/proveedores?Type=csv&inhabilitados=false`,
+que responde **200 `text/csv`, 80 MB en 3 s**, `content-disposition:
+attachment; filename=Proveedores.csv`, con cabeceras `x-ratelimit-limit: 60`
+(por minuto). Son **137,817 filas y 42 columnas** —más que los 127,896 que
+declara `totalResults` de la API; la diferencia no está explicada y se
+anota ⚠️—, incluidos teléfonos, correos y personas de contacto que la
+plataforma **no lee** (el script solo toma `RPE`, `NUMERO_DOCUMENTO` y
+`TIPO_DOCUMENTO`). Existen tablas hermanas para procesos y contratos
+(`/tablas/procesos`, `/tablas/contratos` con año y semestre), no exploradas.
+Esto no cambia la búsqueda en vivo de `/proveedores`; habilita cruces en build
+como el del padrón RNC (§A.2).
+
 ## B. Bloqueos confirmados
 
 ### B.1 Sin cambios desde la primera pasada
@@ -935,11 +1071,11 @@ Las fases 1 y 2 (deuda, normativa) siguen implementadas. Estas se ordenan por
 |---|---|---|---|
 | **5** ✅ | **DGCP: `/ofertas`, `/proveedores`, `/catalogo`, `/pacc`** | **bajo** | Mismo host, mismo `dgcpFetch`, mismas ventanas de caché. Es la mejor relación valor/esfuerzo de toda la auditoría |
 | **6** ✅ | **SIGEF: `lib/fiscal.ts` + vertical de finanzas públicas** | medio | `unstable_cache` diario, consulta **por institución**, timeout ≥120 s, precalentar el mes vigente, degradar al mes cerrado anterior |
-| **7** | **MICM: indicador de combustibles** | bajo | Portada + título del último aviso; declarar que son 4 precios, no el aviso completo |
-| **8** | **MapaInversiones: obra pública** | medio | CSV grandes → instantánea en build (patrón nómina), unión por `codigo_snip` con procesos |
-| **9** | **RNC (DGII) en fichas de proveedor** | medio | Instantánea en build restringida a los RNC presentes en compras; nunca descarga en request |
-| **10** | **Nómina ampliada (159 candidatos) + SISMAP** | bajo | Añadir líneas al manifiesto de `scripts/build-nomina.py`; SISMAP es parseo de tabla |
-| **11** | BCRD (tipo de cambio) | bajo | Solo si el XLS del CDN se parsea sin dependencia pesada; el resto de series, tras pedir el índice |
+| **7** ✅ | **MICM: indicador de combustibles** | bajo | Portada + título del último aviso; declarar que son 4 precios, no el aviso completo |
+| **8** ✅ | **MapaInversiones: obra pública** | medio | CSV grandes → instantánea en build (patrón nómina), unión por `codigo_snip` con procesos |
+| **9** ✅ | **RNC (DGII) en fichas de proveedor** | medio | Instantánea en build restringida a los RNC presentes en compras; nunca descarga en request |
+| **10** ✅ | **Nómina ampliada (159 candidatos) + SISMAP** | bajo | Añadir líneas al manifiesto de `scripts/build-nomina.py`; SISMAP es parseo de tabla |
+| **11** ✅ | BCRD (tipo de cambio) | bajo | Solo si el XLS del CDN se parsea sin dependencia pesada; el resto de series, tras pedir el índice |
 
 **Regla que impone la fase 6**: la plataforma necesita una segunda clase de
 adaptador — *fuente lenta, consolidada en instantánea* — junto a la actual

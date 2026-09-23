@@ -13,6 +13,7 @@ import Antiguedad from "@/components/antiguedad";
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import AccionesFicha from "@/components/acciones-ficha";
 import { Termino } from "@/components/termino";
+import { FichaRnc } from "@/components/fuentes-nuevas/ficha-rnc";
 
 export async function generateMetadata({
   params,
@@ -266,6 +267,8 @@ export default async function ProveedorPage({
           </p>
         </Card>
       )}
+
+      <FichaRnc rpe={rpe} primerContrato={primeraAdjudicacion} />
 
       {historial.porAnio.length > 1 && (
         <Card as="section" className="p-6">
