@@ -46,9 +46,18 @@ export default async function ObrasPage({ searchParams }: { searchParams: Promis
   const datos = await getObras();
   if (!datos) {
     return (
-      <EstadoVacio className="mx-auto max-w-2xl" titulo="La instantánea de obras no está disponible">
-        Se genera con <span className="font-mono">python3 scripts/build-obras.py</span>, que
-        descarga los datos abiertos de MapaInversiones.
+      <EstadoVacio
+        variante="caida"
+        className="mx-auto max-w-2xl"
+        titulo="No pudimos leer las obras"
+        accion={
+          <Link href="/fuentes" className="text-sm font-medium text-brand-700 hover:underline">
+            Ver el estado de las fuentes
+          </Link>
+        }
+      >
+        La copia de los datos abiertos de MapaInversiones no está disponible en
+        este momento. No es que no haya obras: es que no pudimos mirar.
       </EstadoVacio>
     );
   }
@@ -96,15 +105,17 @@ export default async function ObrasPage({ searchParams }: { searchParams: Promis
         titulo="¿Existe la obra y avanza?"
         descripcion={
           <>
-            Cada proyecto de inversión del Banco de Proyectos del Estado, con su
-            estado, su valor, el avance que declara la institución que lo ejecuta y
-            los contratos de compras que lo materializan. Es una instantánea de los
-            datos abiertos de MapaInversiones, no una consulta en vivo.
+            Los proyectos de inversión que MapaInversiones publica en ejecución,
+            paralizados, en reevaluación o por reprogramar —las obras terminadas no
+            están en estos datos—, con su estado, su valor, el avance que declara la
+            institución que los ejecuta y los contratos de compras que los
+            materializan. Es una instantánea de sus datos abiertos, no una consulta
+            en vivo.
           </>
         }
       >
         <PortadaCifras>
-          <PortadaCifra etiqueta={filtrado ? "Obras que coinciden" : "Obras registradas"} valor={formatInt(obras.length)} destacar />
+          <PortadaCifra etiqueta={filtrado ? "Obras que coinciden" : "Obras publicadas, sin las terminadas"} valor={formatInt(obras.length)} destacar />
           <PortadaCifra etiqueta="Valor de esos proyectos" valor={formatPesos(valor)} />
           <PortadaCifra etiqueta="Paralizadas" valor={formatInt(paralizadas)} />
           <PortadaCifra etiqueta="Con contratos en compras" valor={formatInt(conContratos)} />
@@ -180,7 +191,10 @@ export default async function ObrasPage({ searchParams }: { searchParams: Promis
 
       {visibles.length === 0 ? (
         <EstadoVacio titulo="Ninguna obra coincide con esa búsqueda">
-          Prueba con otra palabra del nombre, con el código SNIP o quitando un filtro.
+          Prueba con otra palabra del nombre, con el código SNIP o quitando un
+          filtro. Si buscas una obra ya terminada, no estará aquí: MapaInversiones
+          solo publica las que están en ejecución, paralizadas, en reevaluación o
+          por reprogramar.
         </EstadoVacio>
       ) : (
         <Card as="section">

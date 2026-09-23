@@ -39,8 +39,18 @@ export default async function GestionPage({
   const d = await getSismap();
   if (!d) {
     return (
-      <EstadoVacio className="mx-auto max-w-2xl" titulo="La instantánea del SISMAP no está disponible">
-        Se genera con <span className="font-mono">python3 scripts/build-sismap.py</span>.
+      <EstadoVacio
+        variante="caida"
+        className="mx-auto max-w-2xl"
+        titulo="No pudimos leer el ranking del SISMAP"
+        accion={
+          <Link href="/fuentes" className="text-sm font-medium text-brand-700 hover:underline">
+            Ver el estado de las fuentes
+          </Link>
+        }
+      >
+        La copia del ranking no está disponible en este momento. No es que no haya
+        datos de gestión: es que no pudimos mirar.
       </EstadoVacio>
     );
   }

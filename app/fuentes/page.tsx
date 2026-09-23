@@ -251,7 +251,10 @@ export default async function FuentesPage() {
             Migración y la del Ayuntamiento de Santiago rechazan la descarga
             (403), y la del TSE, la del IDECOOP y la de la Comisión de Defensa
             Comercial vienen en formatos que no se pueden leer sin adivinar
-            columnas; quedan fuera en vez de entrar mal. La nómina estatal completa (con nombres) vive en el
+            columnas; quedan fuera en vez de entrar mal. Por lo mismo sale el
+            Instituto Cartográfico Militar, que escribe unos sueldos sin el punto
+            decimal. De la Cancillería solo entran las plazas pagadas en pesos:
+            el personal en el exterior cobra en dólares y no se mezclan monedas. La nómina estatal completa (con nombres) vive en el
             tablero oficial del{" "}
             <a
               href="https://transparencia.gob.do/2025/12/17/nomina/"
@@ -322,7 +325,7 @@ export default async function FuentesPage() {
             unidades de compra de la DGCP (739 activas) trae el capítulo
             presupuestario de cada una, y con él se ata al SIGEF sin emparejar
             nombres. La nómina se ata a mano donde la correspondencia es
-            inequívoca (21 de 23 instituciones: el Consejo del Café y el Poder Judicial no tienen unidad de compra en la DGCP) y los decretos por la etiqueta de
+            inequívoca (20 de 22 instituciones: el Consejo del Café y el Poder Judicial no tienen unidad de compra en la DGCP) y los decretos por la etiqueta de
             institución de la Consultoría Jurídica. Alimenta las{" "}
             <Link href="/instituciones" className="font-medium text-brand-700 hover:underline">
               fichas de institución
@@ -450,8 +453,10 @@ export default async function FuentesPage() {
             <Link href="/obras" className="font-medium text-brand-700 hover:underline">
               ¿Existe la obra y avanza?
             </Link>
-            : cada proyecto de inversión con su estado, valor, avance, provincia y
-            los procesos y contratos de compras que lo ejecutan. Son cuatro CSV
+            : los proyectos de inversión que publica en ejecución, paralizados, en
+            reevaluación o por reprogramar (las obras terminadas no están en estos
+            datos), con su estado, valor, avance, provincia y los procesos y
+            contratos de compras que los ejecutan. Son cuatro CSV
             descargables sin clave (unos 21 MB) que se consolidan al construir, no
             en cada visita. <ResumenObras />
           </p>
@@ -479,8 +484,9 @@ export default async function FuentesPage() {
             inició operaciones, con la distancia hasta su primer contrato. <ResumenRnc />
           </p>
           <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
-            Solo personas jurídicas (RNC de 9 dígitos): el padrón lista también a
-            personas físicas por cédula y no se cruzan. La fecha de inicio la declara
+            Solo se cruzan los RNC de 9 dígitos —casi todos empresas; unos pocos
+            parecen de personas físicas inscritas con RNC—: quien se inscribió en
+            el registro de proveedores con su cédula no se cruza. La fecha de inicio la declara
             el contribuyente, y el «primer contrato» es el más antiguo que devuelve
             la API de la DGCP. Del registro de proveedores solo se leen el RPE y el
             documento; sus teléfonos y correos no se descargan a la plataforma.

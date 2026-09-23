@@ -134,7 +134,7 @@ entre esfuerzo. Todas respetan la invariante (sin llave, instantánea en build).
    régimen e «inició operaciones N días antes de su primer contrato».
 3. **Nómina por datos.gob.do** (§A.8, fase 10): de 11 a decenas de
    instituciones; trabajo de manifiesto en `scripts/build-nomina.py`.
-   ✅ 2026-09-23: 23 instituciones y 29,673 plazas (antes 11 y 13,668); los
+   ✅ 2026-09-23: 22 instituciones y 28,720 plazas (antes 11 y 13,668; corregido tras la segunda revisión: ver AUDITORIA §A.8); los
    códigos nuevos están atados a su ficha en `scripts/build-instituciones.py`
    salvo el Poder Judicial, que no tiene unidad de compra. Descartes y
    bloqueos en AUDITORIA §A.8.

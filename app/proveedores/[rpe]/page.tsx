@@ -14,6 +14,14 @@ import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import AccionesFicha from "@/components/acciones-ficha";
 import { Termino } from "@/components/termino";
 import { FichaRnc } from "@/components/fuentes-nuevas/ficha-rnc";
+import { diasEntre, getRegistroTributario } from "@/lib/rnc";
+
+/** Días o años, en llano. */
+function plazoDias(dias: number): string {
+  const n = Math.abs(dias);
+  if (n < 730) return `${n.toLocaleString("es-DO")} ${n === 1 ? "día" : "días"}`;
+  return `${Math.floor(n / 365.25)} años`;
+}
 
 export async function generateMetadata({
   params,
@@ -32,9 +40,10 @@ export default async function ProveedorPage({
   const { rpe } = await params;
   if (!/^\d{1,10}$/.test(rpe)) notFound();
 
-  const [historial, registro] = await Promise.all([
+  const [historial, registro, tributario] = await Promise.all([
     getHistorialProveedor(rpe),
     getProveedorRegistro(rpe),
+    getRegistroTributario(rpe),
   ]);
   if (!historial) notFound();
 
@@ -73,10 +82,18 @@ export default async function ProveedorPage({
   // Distancia entre la constitución de la empresa y su primer contrato con el
   // Estado. No acusa a nadie: es el dato que el registro permite comprobar y
   // que hasta ahora había que creerse.
-  const primeraAdjudicacion = contratos
-    .map((c) => (c.fecha_adjudicacion ?? "").slice(0, 10))
-    .filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f))
-    .sort()[0];
+  //
+  // Si el proveedor tiene más contratos de los que la API devuelve (tope de
+  // 1.000), la adjudicación más antigua leída no es la primera de su historia:
+  // no se calcula ninguna distancia en vez de calcular una falsa.
+  const historiaCompleta = contratos.length >= total;
+  const primeraAdjudicacion = historiaCompleta
+    ? contratos
+        .map((c) => (c.fecha_adjudicacion ?? "").slice(0, 10))
+        .filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f))
+        .sort()[0]
+    : undefined;
+  const inicioDgii = tributario?.inicio ?? null;
   const mesesHastaPrimerContrato =
     registro?.fechaCreacion && primeraAdjudicacion
       ? Math.round(
@@ -242,20 +259,44 @@ export default async function ProveedorPage({
             </ul>
           )}
 
-          {mesesHastaPrimerContrato !== null && (
+          {primeraAdjudicacion && (registro?.fechaCreacion || inicioDgii) && (
             <p className="mt-4 text-sm text-ink-soft">
-              Entre su constitución y el primer contrato con el Estado que consta
-              en este registro pasaron{" "}
-              <span className="font-semibold text-ink">
-                {mesesHastaPrimerContrato <= 0
-                  ? "menos de un mes"
-                  : mesesHastaPrimerContrato < 24
-                    ? `${mesesHastaPrimerContrato} ${mesesHastaPrimerContrato === 1 ? "mes" : "meses"}`
-                    : `${Math.floor(mesesHastaPrimerContrato / 12)} años`}
-              </span>
-              . El dato compara la fecha de constitución del registro con la
-              adjudicación más antigua que devuelve la API; no significa por sí
-              solo nada más que eso.
+              Su primer contrato con el Estado que consta en el registro es del{" "}
+              <span className="font-semibold text-ink">{formatFecha(primeraAdjudicacion)}</span>
+              {registro?.fechaCreacion && mesesHastaPrimerContrato !== null && (
+                <>
+                  ;{" "}
+                  <span className="font-semibold text-ink">
+                    {mesesHastaPrimerContrato <= 0
+                      ? "menos de un mes"
+                      : mesesHastaPrimerContrato < 24
+                        ? `${mesesHastaPrimerContrato} ${mesesHastaPrimerContrato === 1 ? "mes" : "meses"}`
+                        : `${Math.floor(mesesHastaPrimerContrato / 12)} años`}
+                  </span>{" "}
+                  después de la constitución que anota el Registro de Proveedores (
+                  {formatFecha(registro.fechaCreacion)})
+                </>
+              )}
+              {inicioDgii && (
+                <>
+                  {registro?.fechaCreacion ? " y " : "; "}
+                  <span className="font-semibold text-ink">
+                    {plazoDias(diasEntre(inicioDgii, primeraAdjudicacion))}
+                  </span>{" "}
+                  {diasEntre(inicioDgii, primeraAdjudicacion) >= 0 ? "después" : "antes"} del inicio
+                  de operaciones que declara a la DGII ({formatFecha(inicioDgii)})
+                </>
+              )}
+              . Son dos fechas públicas que no siempre coinciden, restadas de la
+              adjudicación más antigua que devuelve la API; no significan por sí
+              solas nada más que eso.
+            </p>
+          )}
+          {!historiaCompleta && (
+            <p className="mt-4 text-xs text-ink-soft">
+              Tiene {total.toLocaleString("es-DO")} contratos y la API devuelve{" "}
+              {contratos.length.toLocaleString("es-DO")}: el primero de su historia
+              puede ser anterior, así que no se calcula cuánto tardó en contratar.
             </p>
           )}
 
@@ -268,7 +309,7 @@ export default async function ProveedorPage({
         </Card>
       )}
 
-      <FichaRnc rpe={rpe} primerContrato={primeraAdjudicacion} />
+      <FichaRnc rpe={rpe} />
 
       {historial.porAnio.length > 1 && (
         <Card as="section" className="p-6">

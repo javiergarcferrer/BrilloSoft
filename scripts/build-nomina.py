@@ -79,7 +79,7 @@ MANIFEST = {
             "https://contraloria.gob.do/wp-content/uploads/2025/09/Nomina-empleados-fijos-y-contratados-CSV-2018-%E2%80%93-2026-9.csv"),
     "TSS": ("Tesorería de la Seguridad Social",
             "https://tss.gob.do/descargar/2046/nominas-de-empleados-2017-2026/17730/nominas-de-empleados-2017-2026-2.csv"),
-    "MIREX": ("Ministerio de Relaciones Exteriores",
+    "MIREX": ("Ministerio de Relaciones Exteriores (personal pagado en pesos)",
               "https://mirex.gob.do/transparencia/descargar/335/2018-2026/19579/nomina-personal-mirex-2018-2026.csv"),
     "PJ": ("Poder Judicial (servidores fijos)",
            "https://transparencia.poderjudicial.gob.do/documentos/DatosAbiertos/DA_NominaServidoresFijos.csv"),
@@ -148,24 +148,38 @@ def col_map(header):
     m = dict.fromkeys(("sueldo", "cargo", "area", "mes", "anio"), None)
     for i, h in enumerate(header):
         k = hkey(h)
-        if m["sueldo"] is None and "APORT" not in k and (
+        # «FECHA DE INGRESO» (Poder Judicial) contiene «INGRESO» y va antes que
+        # «SUELDO»: una fecha leída como sueldo daba 6.897 plazas en RD$0.
+        if m["sueldo"] is None and "APORT" not in k and "FECHA" not in k and (
                 "SUELDOBRUTO" in k or "INGRESOBRUTO" in k or "SUELDOFIJO" in k
                 or "SUELDOBASE" in k or k in ("SUELDO", "SBASE")
                 or k.startswith("SUELDO") or "INGRESO" in k
                 or k in ("SALARIOBRUTO", "SALARIO")):
             m["sueldo"] = i
         # «PUESTO» / «NOMBRE DEL PUESTO»: DIGEPRES y Lotería Nacional (2026-09-23).
-        if m["cargo"] is None and ("CARGO" in k or "FUNCI" in k or k == "RANGO"
+        # «LUGAR DE FUNCIONES» (Cultura) es un sitio, no un puesto.
+        if m["cargo"] is None and "LUGAR" not in k and ("CARGO" in k or "FUNCI" in k or k == "RANGO"
                                    or k in ("PUESTO", "NOMBREDELPUESTO")):
             m["cargo"] = i
         if m["area"] is None and ("DEPARTAMENTO" in k or "OFICINA" in k
                 or k == "AREA" or "NOMBREAREA" in k or "LUGAR" in k
-                or k == "REGION" or "UNIDAD" in k or "DIRECCION" in k):
+                or k == "REGION" or "UNIDAD" in k or "DIRECCION" in k
+                or k in ("DEPENDENCIA", "UBICACION")):
             m["area"] = i
         if m["mes"] is None and (k == "MES" or "PERIODOMES" in k or k.endswith("MES")):
             m["mes"] = i
         if m["anio"] is None and (k in ("ANO", "AO", "ANIO", "PERIODO") or "ANO" in k):
             m["anio"] = i
+    # Una columna exacta de cargo gana a la primera que solo lo contenga.
+    for i, h in enumerate(header):
+        if hkey(h) in ("CARGO", "CARGOTITULAR"):
+            m["cargo"] = i
+            break
+    # Una columna exacta de sueldo gana a la primera que solo lo contenga.
+    for i, h in enumerate(header):
+        if hkey(h) in ("SUELDO", "SUELDOBRUTO", "SALARIO", "SALARIOBRUTO"):
+            m["sueldo"] = i
+            break
     return m
 
 
@@ -201,6 +215,63 @@ def read_rows(path):
     return rows, enc
 
 
+# Qué parece el nombre de una dependencia y no el de un puesto.
+DEPENDENCIA = re.compile(
+    r"^(DIRECCI|SUB-?DIRECCI|DEPARTAMENTO|DEPTO|DIVISI|SECCI|OFICINA|UNIDAD|"
+    r"GERENCIA|VICEMINISTERIO|DESPACHO|REGIONAL|CONSULTOR[IÍ]A)", re.I)
+TOTAL = re.compile(r"^(MONTO\s+)?TOTAL\b", re.I)
+SEXO = {"M", "F", "MASCULINO", "FEMENINO"}
+# Instituciones donde un sueldo 0 no es un error del parser sino otra moneda.
+# MIREX paga en US$ al personal en el exterior (columna «SUELDO BRUTO US$»):
+# no se mezclan monedas, así que esas plazas se dejan fuera y se declara.
+SOLO_PESOS = {"MIREX"}
+# Fuentes que no se pueden leer sin adivinar, con el porqué. Quedan fuera de
+# la instantánea y lo dice /fuentes.
+EXCLUIDAS = {
+    # Escribe unos sueldos con decimales («13500») y otros sin el punto
+    # («1335219» por 13,352.19): no hay forma segura de saber cuál es cuál.
+    "ICM": "sueldos sin separador decimal, ilegibles sin adivinar",
+}
+
+
+def sanear(code, rows):
+    """Arregla lo que la fuente cambió a mitad del archivo y falla si queda
+    algo imposible. Cada regla viene de un defecto visto el 2026-09-23."""
+    # La fila de total que algunas fuentes cuelan como una plaza (SVSP).
+    rows = [r for r in rows if not (TOTAL.match(r[3]) or TOTAL.match(r[2]))]
+    if code in SOLO_PESOS:
+        rows = [r for r in rows if r[4] > 0]
+    n = len(rows) or 1
+    # Cargo y área cambiados de columna en los meses recientes (IAD, CGR): la
+    # cabecera no cambió, las filas sí.
+    cargo_dep = sum(1 for r in rows if DEPENDENCIA.match(r[3])) / n
+    area_dep = sum(1 for r in rows if DEPENDENCIA.match(r[2])) / n
+    if cargo_dep > 0.5 and area_dep < 0.2:
+        rows = [(a, m, cargo, area, s) for (a, m, area, cargo, s) in rows]
+        print(f"  ~ {code}: cargo y área venían cambiados; se corrigen")
+    # Una columna de área que en realidad trae el sexo (INABIMA): se vacía.
+    con_area = [r for r in rows if r[2]]
+    if con_area and sum(1 for r in con_area if r[2].upper() in SEXO) / len(con_area) > 0.8:
+        rows = [(a, m, "", c, s) for (a, m, _, c, s) in rows]
+        print(f"  ~ {code}: el área traía el sexo; se descarta")
+    # Controles: si fallan, la instantánea no se escribe.
+    ceros = sum(1 for r in rows if r[4] <= 0) / n
+    if ceros > 0.05:
+        raise SystemExit(f"{code}: {ceros:.0%} de las plazas del mes en RD$0 — ¿columna de sueldo equivocada?")
+    total = sum(r[4] for r in rows) or 1
+    mayor = max(rows, key=lambda r: r[4]) if rows else None
+    if mayor and len(rows) > 5 and mayor[4] / total > 0.4:
+        raise SystemExit(f"{code}: una fila ({mayor[3]}) es el {mayor[4] / total:.0%} de la masa — ¿un total colado?")
+    if len(rows) > 5:
+        sueldos = sorted(r[4] for r in rows)
+        mediana = sueldos[len(sueldos) // 2] or 1
+        if sueldos[-1] / mediana > 40:
+            raise SystemExit(f"{code}: un sueldo es {sueldos[-1] / mediana:.0f} veces la mediana — ¿decimales perdidos?")
+    if sum(1 for r in rows if DEPENDENCIA.match(r[3])) / n > 0.5:
+        raise SystemExit(f"{code}: la mayoría de los «cargos» parecen dependencias")
+    return rows
+
+
 def ultimo_mes(rows):
     """El período más reciente que no esté en el futuro (hay filas mal fechadas)."""
     hoy = datetime.date.today()
@@ -213,15 +284,32 @@ def ultimo_mes(rows):
 
 
 def descargar():
+    """Baja cada CSV: UA identificable, un reintento, `content-type` validado
+    (un 200 puede ser una página HTML) y, en datos.gob.do, la pausa de diez
+    segundos que pide su `Crawl-Delay`."""
+    import time
     os.makedirs(DIR, exist_ok=True)
     for code, (_, url) in MANIFEST.items():
         if not url:
             continue
         dest = os.path.join(DIR, f"{code}.csv")
+        if "datos.gob.do" in url:
+            time.sleep(10)
         print(f"  ↓ {code} ← {url[:80]}…")
-        req = urllib.request.Request(url, headers={"User-Agent": UA})
-        with urllib.request.urlopen(req, timeout=90) as r, open(dest, "wb") as f:
-            f.write(r.read())
+        for intento in (1, 2):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": UA})
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    tipo = r.headers.get("Content-Type", "")
+                    if "html" in tipo.lower():
+                        raise ValueError(f"respondió {tipo}, no un CSV")
+                    datos = r.read()
+                with open(dest, "wb") as f:
+                    f.write(datos)
+                break
+            except Exception as err:  # noqa: BLE001 — se reporta y se sigue
+                if intento == 2:
+                    print(f"  ! {code}: {err}")
 
 
 def main():
@@ -239,6 +327,9 @@ def main():
         return d[v]
 
     for code, (nombre, _) in MANIFEST.items():
+        if code in EXCLUIDAS:
+            print(f"  - {code}: fuera — {EXCLUIDAS[code]}")
+            continue
         path = os.path.join(DIR, f"{code}.csv")
         if not os.path.exists(path):
             print(f"  ! {code}: falta {path} (correr con --descargar)")
@@ -249,6 +340,7 @@ def main():
             print(f"  ! {code}: sin filas válidas")
             continue
         a, m, mrows = lt
+        mrows = sanear(code, mrows)
         ii = len(inst_meta)
         masa = sum(r[4] for r in mrows)
         inst_meta.append({"codigo": code, "nombre": nombre, "anio": a, "mes": m,

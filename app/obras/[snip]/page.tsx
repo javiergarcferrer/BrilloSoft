@@ -143,9 +143,9 @@ export default async function ObraPage({ params }: Props) {
           <>
             {o.nContratos === 0 ? (
               <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-                Todavía no tiene contratos asociados: MapaInversiones le vincula{" "}
+                MapaInversiones no le asocia contratos: le vincula{" "}
                 {o.nProcesos === 1 ? "un proceso de compra" : `${formatInt(o.nProcesos)} procesos de compra`}, sin
-                contrato firmado en sus datos.
+                contrato enlazado en sus datos.
               </p>
             ) : (
             <TiraDeCifras className="mt-4">

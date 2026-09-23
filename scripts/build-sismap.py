@@ -111,9 +111,16 @@ def main() -> None:
         """Institución, ayuntamiento o junta: «ayuntamiento», «junta» y «distrito»
         son palabras vacías para comparar, así que la clase se decide aparte y
         un ayuntamiento nunca casa con la junta de distrito del mismo nombre."""
-        if tipo != "Gobierno local" and not re.search(r"(?i)ayuntamiento|junta", nombre):
+        # «Junta» sola no hace gobierno local: la Junta de Aviación Civil y la
+        # Junta Central Electoral son instituciones. Solo la junta de distrito.
+        local = r"(?i)ayuntamiento|junta (de )?distrito|junta municipal|distrito municipal"
+        if tipo != "Gobierno local" and not re.search(local, nombre):
             return "instituciones"
-        return "juntas" if re.search(r"(?i)junta|distrito municipal", nombre) else "ayuntamientos"
+        return (
+            "juntas"
+            if re.search(r"(?i)junta (de )?distrito|junta municipal|distrito municipal", nombre)
+            else "ayuntamientos"
+        )
 
     def unidad(nombre: str, tabla: str):
         p = palabras(nombre)

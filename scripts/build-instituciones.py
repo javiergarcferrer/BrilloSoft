@@ -36,7 +36,7 @@ UA = "Socratico-Inteligencia/1.0 (cruce de instituciones; herramienta independie
 # es otra entidad.
 NOMINA = {
     "CESAC": 811, "MSP": 240, "MESCYT": 264, "MINC": 259, "MEM": 916,
-    "DIGEIG": 720, "CND": 893, "DEFCIVIL": 904, "JAC": 554, "ICM": 158,
+    "DIGEIG": 720, "CND": 893, "DEFCIVIL": 904, "JAC": 554,
     # Ampliación del 2026-09-23. El Poder Judicial (PJ) queda fuera: no tiene
     # unidad de compra con ese nombre en el catálogo de la DGCP.
     "DGCP": 7, "IDEICE": 869, "IAD": 724, "CGR": 139, "TSS": 545, "MIREX": 1,

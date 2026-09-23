@@ -860,9 +860,32 @@ indicador `IndicadorTasa` para el panorama). Re-verificación:
 **Ampliar `/nomina` más allá de las 11 instituciones actuales es hoy trabajo de
 manifiesto, no de ingeniería: el índice ya ofrece 159 candidatos.**
 
-**Ampliado el 2026-09-23: de 11 a 23 instituciones** (29,673 plazas, RD$1,066
+**Ampliado el 2026-09-23: de 11 a 22 instituciones** (28,720 plazas, RD$1,527
 millones de masa mensual). Recorrido de ese día, con el robots respetado
-(`/api/` vetado, `Crawl-Delay: 10` entre peticiones):
+(`/api/` vetado, `Crawl-Delay: 10` entre peticiones).
+
+❌→✅ **Corregido tras la segunda revisión, el mismo día.** La primera versión
+publicaba 29,673 plazas y RD$1,066 millones porque el parser se equivocaba de
+columna, y los defectos eran de la fuente o del parser, no del Estado:
+- Poder Judicial: «FECHA DE INGRESO» casaba como sueldo (contiene «INGRESO») y
+  6,897 plazas salían en RD$0. Ahora una columna exacta `SUELDO` gana y nada
+  con «FECHA» es sueldo.
+- Cultura: «LUGAR DE FUNCIONES» casaba como cargo (contiene «FUNCI») antes que
+  `CARGO`; sus «cargos» eran dependencias **desde antes de esta ampliación**.
+- IAD y Contraloría cambiaron cargo y área de columna en los meses recientes
+  sin cambiar la cabecera; MESCYT e INABIMA traen el sexo donde la cabecera dice
+  área. `sanear()` los detecta y corrige o descarta.
+- SVSP cuela una fila «MONTO TOTAL» como plaza: se filtra.
+- MIREX paga en US$ al personal en el exterior: se publican solo las plazas en
+  pesos (1,239 de 2,157) y el nombre lo dice.
+- ❌ Instituto Cartográfico Militar: escribe unos sueldos con decimales y otros
+  sin el punto («1335219» por 13,352.19). **Fuera** hasta que la fuente se
+  corrija: no se adivina.
+`scripts/build-nomina.py` ahora **no escribe** la instantánea si una institución
+tiene más de 5 % de plazas en RD$0, una fila de más del 40 % de su masa, un
+sueldo de más de 40 veces su mediana o una mayoría de «cargos» que parecen
+dependencias; y la descarga valida `content-type`, reintenta una vez y espera
+diez segundos antes de cada petición a datos.gob.do.
 
 - ✅ `/dataset?q=nomina&page=1..9` sigue dando **159** conjuntos (19–20 por
   página, 6 en la novena). Las fichas `/dataset/{slug}` son HTML servido y

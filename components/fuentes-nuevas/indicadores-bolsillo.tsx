@@ -5,6 +5,7 @@ import { formatFecha } from "@/lib/format";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Esqueleto } from "@/components/esqueleto";
+import { Cifra, TiraDeCifras } from "@/components/papel";
 import { IconCoins, IconTrendingUp } from "@/components/icons";
 
 /**
@@ -57,21 +58,21 @@ export async function IndicadorCombustibles() {
       </div>
       {c ? (
         <>
-          <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <TiraDeCifras className="-mx-5 mt-4 sm:grid-cols-2 lg:grid-cols-3">
             {c.precios.map((p) => (
-              <div key={p.nombre} className="min-w-0 rounded-lg bg-canvas px-3 py-2">
-                <dt className="text-xs leading-tight text-ink-soft">{p.nombre}</dt>
-                <dd className="mt-0.5 font-mono text-base font-semibold tabular-nums">
-                  {pesos(p.precio)}
-                  {p.unidad && <span className="ml-1 text-xs font-normal text-ink-soft">/{p.unidad}</span>}
-                </dd>
-              </div>
+              <Cifra
+                key={p.nombre}
+                etiqueta={p.nombre}
+                valor={pesos(p.precio)}
+                nota={p.unidad ? `por ${p.unidad}` : "unidad no indicada"}
+              />
             ))}
-          </dl>
+          </TiraDeCifras>
           <p className="mt-3 text-xs leading-relaxed text-ink-soft">
             Son los {c.precios.length} precios que el MICM pone en su portada, no el
-            aviso completo (que no publica en texto legible). La portada no indica la
-            unidad del GLP ni del gas natural, y aquí no se supone.
+            aviso completo (que no publica en texto legible). Sin la semana anterior:
+            la portada solo trae la vigente, así que aquí no se compara. La portada
+            no indica la unidad del GLP ni del gas natural, y aquí no se supone.
           </p>
         </>
       ) : (
@@ -107,16 +108,10 @@ export async function IndicadorTasa() {
       </div>
       {t ? (
         <>
-          <dl className="mt-4 grid grid-cols-2 gap-2">
-            <div className="rounded-lg bg-ink px-3 py-2 text-canvas">
-              <dt className="text-xs text-canvas/70">Venta</dt>
-              <dd className="mt-0.5 font-mono text-lg font-semibold tabular-nums">{pesos(t.ultimo.venta, 4)}</dd>
-            </div>
-            <div className="rounded-lg bg-canvas px-3 py-2">
-              <dt className="text-xs text-ink-soft">Compra</dt>
-              <dd className="mt-0.5 font-mono text-lg font-semibold tabular-nums">{pesos(t.ultimo.compra, 4)}</dd>
-            </div>
-          </dl>
+          <TiraDeCifras className="-mx-5 mt-4 sm:grid-cols-2 lg:grid-cols-2">
+            <Cifra etiqueta="Venta" valor={pesos(t.ultimo.venta, 4)} nota={`Al ${formatFecha(t.ultimo.fecha)}`} />
+            <Cifra etiqueta="Compra" valor={pesos(t.ultimo.compra, 4)} nota={`Al ${formatFecha(t.ultimo.fecha)}`} />
+          </TiraDeCifras>
           {diferencia !== null && t.haceUnMes && (
             <p className="mt-3 text-sm text-ink-soft">
               Un mes antes, el {formatFecha(t.haceUnMes.fecha)}, la venta estaba a{" "}

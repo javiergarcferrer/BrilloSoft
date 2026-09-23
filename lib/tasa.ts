@@ -50,8 +50,11 @@ async function bajar(): Promise<ArrayBuffer | null> {
         next: { revalidate: 3600 },
         signal: AbortSignal.timeout(25_000),
       });
+      // Un 5xx se reintenta una vez (el contrato de las capas); un tipo que no
+      // es una hoja no mejora reintentando.
+      if (!res.ok) throw new Error(`el CDN respondió ${res.status}`);
       const tipo = res.headers.get("content-type") ?? "";
-      if (!res.ok || !/octet-stream|spreadsheetml|excel/i.test(tipo)) {
+      if (!/octet-stream|spreadsheetml|excel/i.test(tipo)) {
         console.error(`[tasa] ${res.status} ${tipo}`);
         return null;
       }

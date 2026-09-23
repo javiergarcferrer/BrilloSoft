@@ -1,4 +1,4 @@
-import { diasEntre, getRegistroTributario } from "@/lib/rnc";
+import { getRegistroTributario } from "@/lib/rnc";
 import type { Tono } from "@/lib/estados";
 import { formatFecha } from "@/lib/format";
 import { MarcaEstado } from "@/components/marca-estado";
@@ -16,29 +16,20 @@ function enLlano(estado: string): string {
   return e.charAt(0).toUpperCase() + e.slice(1);
 }
 
-function plazo(dias: number): string {
-  const n = Math.abs(dias);
-  if (n < 730) return `${n.toLocaleString("es-DO")} ${n === 1 ? "día" : "días"}`;
-  return `${Math.floor(n / 365.25)} años (${n.toLocaleString("es-DO")} días)`;
-}
 
 /**
- * El proveedor en el padrón de la DGII: actividad declarada, estado, fecha de
- * inicio de operaciones — y la distancia entre esa fecha y su primer contrato.
+ * El proveedor en el padrón de la DGII: actividad declarada, estado y fecha
+ * de inicio de operaciones. La distancia hasta su primer contrato la dice la
+ * ficha en una sola frase, junto a la de constitución del Registro de
+ * Proveedores, para que dos fechas distintas no se lean como dos verdades.
  *
  * Se pinta en `/proveedores/[rpe]`. Si el proveedor no está en el cruce
  * (persona física, documento extranjero) o la instantánea falta, no pinta
  * nada: la ficha de registro de la DGCP sigue diciendo lo suyo.
- *
- * La distancia se dice como un hecho y con su letra pequeña al lado: la fecha
- * de inicio la declara el contribuyente, y el primer contrato es el más
- * antiguo que devuelve la API de la DGCP, no necesariamente el primero de su
- * historia.
  */
-export async function FichaRnc({ rpe, primerContrato }: { rpe: string; primerContrato?: string | null }) {
+export async function FichaRnc({ rpe }: { rpe: string }) {
   const r = await getRegistroTributario(rpe);
   if (!r) return null;
-  const dias = r.inicio && primerContrato ? diasEntre(r.inicio, primerContrato) : null;
 
   return (
     <Card as="section" className="p-6">
@@ -76,26 +67,6 @@ export async function FichaRnc({ rpe, primerContrato }: { rpe: string; primerCon
           <dd>{r.regimen === "RST" ? "Simplificado (RST)" : r.regimen === "NORMAL" ? "Ordinario" : r.regimen || "—"}</dd>
         </div>
       </dl>
-
-      {dias !== null && (
-        <p className="mt-4 text-sm text-ink-soft">
-          {dias >= 0 ? (
-            <>
-              Inició operaciones ante la DGII{" "}
-              <span className="font-semibold text-ink">{plazo(dias)}</span> antes de su
-              primer contrato con el Estado que consta en el registro.
-            </>
-          ) : (
-            <>
-              Su primer contrato con el Estado que consta en el registro es{" "}
-              <span className="font-semibold text-ink">{plazo(dias)}</span> anterior a
-              la fecha de inicio de operaciones que declara a la DGII.
-            </>
-          )}{" "}
-          Es la resta de dos fechas públicas: la que el contribuyente declara a la
-          DGII y la adjudicación más antigua que devuelve la API de la DGCP.
-        </p>
-      )}
 
       <p className="mt-3 text-xs text-ink-soft">
         Fuente: padrón de contribuyentes de la DGII

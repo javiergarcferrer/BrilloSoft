@@ -16,7 +16,7 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 | Finanzas públicas | `/finanzas` | SIGEF (instantánea) | `lib/fiscal.ts`, `lib/capitulos.ts` |
 | Congreso Nacional | `/congreso` | SIL Diputados + consultante del Senado | `lib/congreso.ts`, `lib/senado.ts` |
 | Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (API JSON + instantánea) | `lib/normativa.ts` |
-| Nómina estatal | `/nomina` | Instantánea de 23 instituciones | `lib/nomina.ts`, `lib/nomina-server.ts` |
+| Nómina estatal | `/nomina` | Instantánea de 22 instituciones | `lib/nomina.ts`, `lib/nomina-server.ts` |
 | Deuda pública | `/deuda` y tarjeta en `/` | Crédito Público (XLSX + instantánea con serie) | `lib/deuda.ts` |
 | Instituciones (transversal) | `/instituciones`, `/buscar` | Cruce versionado DGCP ↔ SIGEF ↔ nómina ↔ Consultoría | `lib/instituciones.ts`, `lib/buscar.ts` |
 | Obra pública | `/obras` | MapaInversiones (instantánea) | `lib/obras.ts` |

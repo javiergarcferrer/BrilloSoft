@@ -14,7 +14,8 @@ import { join } from "node:path";
  * Módulo de servidor (`node:fs`). Cada ficha lee solo el archivo del último
  * dígito de su RPE (~375 KB), y lo memoiza por instancia.
  *
- * Lo que no hay: personas físicas (el cruce se acota a RNC de 9 dígitos) ni
+ * Lo que no hay: proveedores inscritos con cédula (el cruce se acota a RNC de
+ * 9 dígitos, casi todos empresas; unos pocos parecen de personas físicas) ni
  * ningún dato de contacto (el script no los lee).
  */
 

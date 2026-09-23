@@ -54,7 +54,9 @@ export async function getCombustibles(): Promise<Combustibles | null> {
         next: { revalidate: 3600 },
         signal: AbortSignal.timeout(25_000),
       });
-      if (!res.ok || !/text\/html/i.test(res.headers.get("content-type") ?? "")) return null;
+      // Un 5xx se reintenta una vez; un tipo que no es HTML, no.
+      if (!res.ok) throw new Error(`la portada respondió ${res.status}`);
+      if (!/text\/html/i.test(res.headers.get("content-type") ?? "")) return null;
       const html = await res.text();
 
       const vistos = new Map<string, PrecioCombustible>();
