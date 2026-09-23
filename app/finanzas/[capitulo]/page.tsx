@@ -5,6 +5,8 @@ import { formatMonto, formatPesos } from "@/lib/format";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Ruta } from "@/components/ruta";
+import AccionesFicha from "@/components/acciones-ficha";
+import { Termino } from "@/components/termino";
 
 export async function generateStaticParams() {
   const fiscal = await getFiscal();
@@ -50,10 +52,11 @@ export default async function InstitucionFiscalPage({
   return (
     <div className="space-y-5">
       <Ruta seccion="finanzas" actual={`Capítulo ${i.codigo}`} />
+      <AccionesFicha className="mt-2" tipo="capitulo" id={i.codigo} titulo={i.nombreLegible} href={`/finanzas/${i.codigo}`} />
 
       <Card as="section" className="p-5 sm:p-6">
         <div className="rotulo text-ink-soft">
-          Capítulo {i.codigo} · {i.seccionNombre}
+          <Termino clave="capitulo">Capítulo</Termino> {i.codigo} · {i.seccionNombre}
         </div>
         <h1 className="mt-1 font-display text-2xl leading-tight sm:text-3xl">
           {i.nombreLegible}

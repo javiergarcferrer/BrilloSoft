@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { CondicionBadge } from "@/components/iniciativa-card";
+import { Termino } from "@/components/termino";
 import {
   CUATRIENIOS,
   CUATRIENIO_VIGENTE,
@@ -45,7 +46,7 @@ export default async function SenadoPage({
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
           Expedientes en vivo desde el sistema de consulta pública del Senado,
-          con colecciones desde 2002.{" "}
+          con una colección por <Termino clave="cuatrienio">cuatrienio</Termino> desde 2002.{" "}
           <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
             Cómo se lee esta fuente
           </Link>

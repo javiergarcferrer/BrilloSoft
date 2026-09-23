@@ -292,6 +292,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </p>
               <nav className="-mx-1 flex shrink-0 flex-wrap gap-x-2 sm:mx-0 sm:gap-x-4">
                 <Link href="/" className="inline-flex min-h-11 items-center px-1 hover:text-brand-700 sm:min-h-0 sm:px-0">Panorama</Link>
+                <Link href="/seguimiento" className="inline-flex min-h-11 items-center px-1 hover:text-brand-700 sm:min-h-0 sm:px-0">Mi seguimiento</Link>
                 <Link href="/seguridad" className="inline-flex min-h-11 items-center px-1 hover:text-brand-700 sm:min-h-0 sm:px-0">Seguridad</Link>
                 <Link href="/fuentes" className="inline-flex min-h-11 items-center px-1 font-medium text-brand-700 hover:underline sm:min-h-0 sm:px-0">
                   Estado de las fuentes

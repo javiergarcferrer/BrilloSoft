@@ -61,8 +61,9 @@ it and never keeps its own table: that is exactly how congreso ended up
 painting «depositada» in the green that means «already fulfilled»),
 `lib/cifras.ts`
 (a number with its anchor and scope; never invent a comparison, no `+∞ %`,
-percentage deltas in points), `lib/glosario.ts` (jargon translated at the
-point of use), `components/esqueleto.tsx` (the silhouette a page shows while
+percentage deltas in points), `lib/glosario.ts` + `components/termino.tsx`
+(jargon translated at the point of use: `<Termino clave="…">` opens the plain
+definition on tap), `components/esqueleto.tsx` (the silhouette a page shows while
 a source answers: every `loading.tsx` and `Suspense` fallback composes it,
 same heights and grids as the content so nothing jumps). If a primitive is
 missing, add it to the layer it belongs to; do not reimplement

@@ -8,6 +8,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { formatMagnitud, formatPesos, hace } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
+import { Termino } from "@/components/termino";
 
 export const metadata: Metadata = {
   title: "Ejecución del presupuesto",
@@ -58,7 +59,7 @@ export default async function FinanzasPage() {
             El presupuesto no se ejecuta de golpe: se aprueba, se modifica, se
             compromete, se devenga y se paga. Estas son las cifras de cada
             institución en {fiscal.anio}, con el gasto{" "}
-            <span className="font-medium text-canvas">devengado</span> —lo que el
+            <Termino clave="devengado" className="font-medium text-canvas">devengado</Termino> —lo que el
             Estado ya se obligó a pagar— como medida.
           </>
         }
@@ -111,17 +112,17 @@ export default async function FinanzasPage() {
                 {formatMagnitud(deuda.saldoTotal)}
               </p>
               <p className="mt-1 text-xs text-ink-soft">
-                Saldo de la deuda del Sector Público No Financiero · {deuda.periodo}
+                Saldo de la deuda del <Termino clave="spnf">Sector Público No Financiero</Termino> · {deuda.periodo}
               </p>
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex items-baseline justify-between gap-2 rounded-lg bg-canvas px-3 py-2">
-                  <dt className="text-ink-soft">Externa</dt>
+                  <dt className="text-ink-soft"><Termino clave="deudaExterna">Externa</Termino></dt>
                   <dd className="font-mono tabular-nums">
                     {formatMagnitud(deuda.saldoExterna)}
                   </dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-2 rounded-lg bg-canvas px-3 py-2">
-                  <dt className="text-ink-soft">Interna</dt>
+                  <dt className="text-ink-soft"><Termino clave="deudaInterna">Interna</Termino></dt>
                   <dd className="font-mono tabular-nums">
                     {formatMagnitud(deuda.saldoInterna)}
                   </dd>
@@ -131,6 +132,9 @@ export default async function FinanzasPage() {
                 Fuente: Crédito Público (Ministerio de Hacienda).
                 {deuda.desdeInstantanea && " Instantánea local: el origen no responde al egreso de la nube."}
               </p>
+              <Link href="/finanzas/guia/deuda" className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-brand-700 hover:underline sm:min-h-0">
+                ¿Qué es la deuda pública? Lee la guía →
+              </Link>
             </>
           ) : (
             <p className="mt-3 text-sm text-ink-soft">
@@ -193,7 +197,12 @@ export default async function FinanzasPage() {
       </Card>
 
       <Card as="section" className="p-5 sm:p-6">
-        <CardTitle>Cómo leer estas cifras</CardTitle>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <CardTitle>Cómo leer estas cifras</CardTitle>
+          <Link href="/finanzas/guia" className="inline-flex min-h-11 items-center text-sm font-medium text-brand-700 hover:underline sm:min-h-0">
+            Guía: cómo leer el presupuesto →
+          </Link>
+        </div>
         <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="rotulo text-ink-soft">Presupuesto vigente</dt>
@@ -220,12 +229,13 @@ export default async function FinanzasPage() {
             <dt className="rotulo text-ink-soft">Pagado</dt>
             <dd className="text-ink-soft">
               El dinero salió de la cuenta. Puede ir por detrás del devengado:
-              esa distancia es la deuda administrativa del año.
+              esa distancia es lo que se le debe a proveedores, la{" "}
+              <Termino clave="deudaAdministrativa">deuda administrativa</Termino>.
             </dd>
           </div>
         </dl>
         <p className="mt-4 text-xs leading-relaxed text-ink-soft">
-          Fuente: API de datos abiertos del SIGEF (Ministerio de Hacienda),{" "}
+          Fuente: API de datos abiertos del <Termino clave="sigef">SIGEF</Termino> (Ministerio de Hacienda),{" "}
           <span className="break-all font-mono">{fiscal.fuente}</span>. La API calcula el
           año en curso en vivo y tarda minutos, así que la plataforma consolida
           las tres secciones institucionales en una instantánea

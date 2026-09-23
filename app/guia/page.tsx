@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import type { ReactNode } from "react";
+import { Termino } from "@/components/termino";
+import { OtrasGuias } from "@/components/otras-guias";
 
 export const metadata = {
   title: "Guía para ofertar al Estado — Licitaciones RD",
@@ -9,7 +12,7 @@ export const metadata = {
     "Cómo registrarte como proveedor del Estado dominicano, qué documentos suelen pedir y cómo presentar una oferta ganadora.",
 };
 
-const MODALIDADES: [string, string][] = [
+const MODALIDADES: [string, ReactNode][] = [
   [
     "Compras por Debajo del Umbral",
     "Compras pequeñas y rápidas. Plazos muy cortos (días). Ideal para empezar: poca competencia formal y requisitos ligeros.",
@@ -32,16 +35,33 @@ const MODALIDADES: [string, string][] = [
   ],
   [
     "Procesos de Excepción",
-    "Casos especiales previstos por ley (emergencias, proveedor único, etc.). Suelen tener invitación dirigida.",
+    <>
+      Casos especiales previstos por ley —una{" "}
+      <Termino clave="emergencia">emergencia</Termino>, un{" "}
+      <Termino clave="proveedorUnico">proveedor único</Termino>— en los que no
+      hay competencia abierta. Suelen tener invitación dirigida.
+    </>,
   ],
 ];
 
-const ESTADOS: [string, string][] = [
+const ESTADOS: [string, ReactNode][] = [
   ["Proceso publicado", "Abierto: puedes preparar y presentar tu oferta."],
   ["Sobres estan abriendose / abiertos", "Cerró la recepción; la institución está abriendo y comparando ofertas."],
   ["Proceso con etapa cerrada", "En evaluación o entre etapas; espera resultados."],
-  ["Proceso adjudicado y celebrado", "Ya hay ganador y contrato. Revisa quién ganó y a qué precio para aprender."],
-  ["Proceso desierto", "Nadie ganó (sin ofertas válidas). Suele volver a publicarse: una segunda oportunidad."],
+  [
+    "Proceso adjudicado y celebrado",
+    <>
+      Ya está <Termino clave="adjudicado">adjudicado</Termino> y hay contrato.
+      Revisa quién ganó y a qué precio para aprender.
+    </>,
+  ],
+  [
+    "Proceso desierto",
+    <>
+      Quedó <Termino clave="desierto">desierto</Termino>: nadie ganó (sin
+      ofertas válidas). Suele volver a publicarse: una segunda oportunidad.
+    </>,
+  ],
   ["Cancelado", "La institución desistió del proceso."],
 ];
 
@@ -59,9 +79,10 @@ export default function GuiaPage() {
       <Card as="section" className="p-6">
         <CardTitle className="text-[15px]">1 · Regístrate una sola vez: el RPE</CardTitle>
         <p className="mt-2 text-sm text-ink-soft">
-          El <strong>Registro de Proveedores del Estado (RPE)</strong> es el requisito
+          El <strong>Registro de Proveedores del Estado (<Termino clave="rpe">RPE</Termino>)</strong> es el requisito
           de entrada para ofertar en cualquier institución. Necesitas tu RNC activo y
-          estar al día con DGII y TSS. Se solicita en línea y debes registrar los{" "}
+          estar al día con DGII y TSS; tu <Termino clave="rnc">RNC</Termino> activo es
+          el número que te identifica. Se solicita en línea y debes registrar los{" "}
           <strong>rubros</strong> (categorías de bienes/servicios) en los que vas a
           ofertar — solo puedes participar en procesos de tus rubros.
         </p>
@@ -83,13 +104,21 @@ export default function GuiaPage() {
           </Button>
         </div>
         <p className="mt-2 text-xs text-ink-soft">
-          Consejo: si eres MIPYME (y más aún MIPYME liderada por mujeres), certifícalo —
+          Consejo: si eres <Termino clave="mipyme">MIPYME</Termino> (y más aún MIPYME liderada por mujeres), certifícalo —
           hay procesos reservados con menos competencia.
         </p>
       </Card>
 
       <Card as="section" className="p-6">
         <CardTitle className="text-[15px]">2 · Conoce las modalidades (y dónde empezar)</CardTitle>
+        <p className="mt-2 text-sm text-ink-soft">
+          La <Termino clave="modalidad">modalidad</Termino> es el procedimiento
+          de cada compra, y depende sobre todo del monto. La publica la{" "}
+          <Termino clave="unidadCompra">unidad de compra</Termino> de la
+          institución junto al proceso. Los{" "}
+          <Termino clave="procesoExcepcion">procesos de excepción</Termino> son
+          la salida prevista para cuando no se puede competir.
+        </p>
         <dl className="mt-3 space-y-2 text-sm">
           {MODALIDADES.map(([m, d]) => (
             <div key={m} className="rounded-lg bg-canvas px-4 py-2.5">
@@ -120,7 +149,8 @@ export default function GuiaPage() {
           <li>Documentos societarios (registro mercantil, poderes) para personas jurídicas.</li>
         </ul>
         <p className="mt-2 text-xs text-ink-soft">
-          La lista exacta siempre está en el pliego de condiciones de cada proceso — por
+          La lista exacta siempre está en el{" "}
+          <Termino clave="pliego">pliego de condiciones</Termino> de cada proceso — por
           eso es el primer documento que debes leer.
         </p>
       </Card>
@@ -172,6 +202,17 @@ export default function GuiaPage() {
             y prepárate para la segunda ronda.
           </li>
           <li>
+            Mira el <Termino clave="pacc">PACC</Termino> de la institución: lo
+            que planea comprar en el año se anuncia antes de licitarse, y en{" "}
+            <Link href="/planes" className="font-medium underline">Planes</Link>{" "}
+            lo puedes ver.
+          </li>
+          <li>
+            Cuando un proceso termina con un{" "}
+            <Termino clave="oferenteUnico">oferente único</Termino>, no hubo
+            competencia de precio: es una oportunidad para la próxima vez.
+          </li>
+          <li>
             Si un requisito te descalifica injustamente, puedes pedir aclaraciones dentro
             del plazo que fija el pliego.
           </li>
@@ -180,6 +221,8 @@ export default function GuiaPage() {
           <Link href="/licitaciones">Buscar oportunidades abiertas →</Link>
         </Button>
       </Alert>
+
+      <OtrasGuias actual="/guia" />
     </div>
   );
 }
