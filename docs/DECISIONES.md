@@ -42,7 +42,19 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
   Cuenta Única login confirms a cédula someone else typed unverified, the RPC
   refuses with `cedula_declarada_en_uso` and displaces nobody. Decide whether
   verification should win (deleting the unverified row and its votes).
-- **Institutional requests**: ONE whitelist, Cámara de Cuentas and 911 under
+- **Push notifications for «seguimiento»** (docs/PLAN-ACCESO.md §6): following
+  anything is built and lives in the browser (`localStorage`), with «qué
+  cambió desde tu última visita» and RSS per ficha. Push would need stored
+  subscriptions on a server — the first state outside `/democracia`. Until
+  decided: no push.
+- **Scheduled snapshot refresh** (PLAN-ACCESO §6): eight snapshots now feed
+  the platform (`scripts/build-{fiscal,nomina,deuda,normativa,instituciones,
+  obras,rnc,sismap}.py`). Normativa matters most: the Consultoría challenges
+  Vercel, so its snapshot is what production shows and it ages weekly. A
+  scheduled cloud session could regenerate and deliver them through the gate;
+  it costs sessions, so it is the owner's call.
+- **Institutional requests**: Consultoría Jurídica's Cloudflare allowance for
+  `Socratico-Inteligencia/1.0` on its read-only APIs (AUDITORIA §4.1), ONE whitelist, Cámara de Cuentas and 911 under
   Ley 200-04, JCE electoral archive, BCRD file index, report of the exposed
   311 token and the Cuenta Única client request to OGTIC (AUDITORIA §A.9,
   §A.11, §F).
