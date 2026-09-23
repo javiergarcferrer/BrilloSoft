@@ -17,6 +17,15 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { INSTITUCIONES, hrefInstitucion } from "@/lib/instituciones";
 import { normalize } from "@/lib/dgcp";
+import { filtrarObras, getObras, type Obra } from "@/lib/obras";
+
+/** Obras de MapaInversiones por nombre, entidad o SNIP, de mayor valor. */
+export async function buscarObras(q: string, limite = 6): Promise<{ obras: Obra[]; total: number }> {
+  const inst = await getObras();
+  if (!inst) return { obras: [], total: 0 };
+  const todas = filtrarObras(inst.proyectos, { q }).sort((a, b) => b.valor - a.valor);
+  return { obras: todas.slice(0, limite), total: todas.length };
+}
 
 const RUTA_NORMA: Record<string, string> = {
   ley: "ley",

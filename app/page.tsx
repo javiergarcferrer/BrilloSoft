@@ -44,6 +44,7 @@ import {
 } from "@/components/icons";
 import { MarcaEstado } from "@/components/marca-estado";
 import { Portada } from "@/components/portada";
+import { SeccionBolsillo } from "@/components/fuentes-nuevas/indicadores-bolsillo";
 
 export const revalidate = 1800;
 
@@ -187,6 +188,9 @@ export default function Panorama() {
       <Suspense fallback={<Esqueleto className="h-[404px] sm:h-[200px]" />}>
         <SeccionDeuda />
       </Suspense>
+
+      {/* Lo que el Estado fija y se paga de bolsillo: combustibles y dólar. */}
+      <SeccionBolsillo />
 
       {/* Señales que exigen atención */}
       <section className="grid gap-4 lg:grid-cols-2">

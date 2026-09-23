@@ -3,6 +3,7 @@ import { INSTITUCIONES, hrefInstitucion } from "@/lib/instituciones";
 import { CAPITULOS } from "@/lib/capitulos";
 import { PAGINAS_PLATAFORMA, SECCIONES } from "@/lib/secciones";
 import { PROVINCIAS } from "@/lib/provincias";
+import { getObras } from "@/lib/obras";
 
 /**
  * El dominio de producción, escrito aquí y no leído del entorno: las
@@ -17,7 +18,8 @@ export const SITIO = "https://brillo-soft.vercel.app";
  * capítulos del presupuesto—. Las fichas que dependen de una fuente en vivo
  * (procesos, iniciativas, normas) las encuentra el buscador por sus enlaces.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const obras = (await getObras())?.proyectos ?? [];
   const vistas = SECCIONES.flatMap((s) => s.vistas.map((v) => v.href));
   const plataforma = PAGINAS_PLATAFORMA.map((p) => p.href);
   const rutas = [...new Set([...plataforma, ...vistas, "/fuentes"])];
@@ -30,6 +32,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...PROVINCIAS.map((p) => ({
       url: `${SITIO}/provincias/${p.slug}`,
       changeFrequency: "weekly" as const,
+    })),
+    ...obras.map((o) => ({
+      url: `${SITIO}/obras/${o.snip}`,
+      changeFrequency: "monthly" as const,
     })),
     ...CAPITULOS.map((c) => ({
       url: `${SITIO}/finanzas/${c.codigo}`,

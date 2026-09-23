@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { buscarCargos, buscarNormas, rutaDirecta } from "@/lib/buscar";
+import { buscarCargos, buscarNormas, buscarObras, rutaDirecta } from "@/lib/buscar";
+import { formatPesos } from "@/lib/format";
 import { buscarInstituciones, hrefInstitucion } from "@/lib/instituciones";
 import { buscarIniciativas, desdeMayusculas, normalizarIniciativa } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
@@ -36,9 +37,9 @@ export default async function BuscarPage({
     if (directa) redirect(directa);
   }
 
-  const [instituciones, normas, cargos] = q
-    ? await Promise.all([buscarInstituciones(q, 8), buscarNormas(q), buscarCargos(q)])
-    : [[], { normas: [], total: 0, generadoEn: null }, []];
+  const [instituciones, normas, cargos, obras] = q
+    ? await Promise.all([buscarInstituciones(q, 8), buscarNormas(q), buscarCargos(q), buscarObras(q)])
+    : [[], { normas: [], total: 0, generadoEn: null }, [], { obras: [], total: 0 }];
   const sigue = BUSQUEDAS.filter((d) => d.href !== "/buscar");
 
   return (
@@ -87,6 +88,29 @@ export default async function BuscarPage({
                     href={n.href}
                     titulo={desdeMayusculas(n.titulo)}
                     detalle={`${n.tipo} ${n.numero}${n.fecha ? ` · ${formatFecha(n.fecha)}` : ""}`}
+                  />
+                </li>
+              ))}
+            </ul>
+          </Grupo>
+
+          <Grupo
+            titulo="Obras públicas"
+            vacio={obras.obras.length === 0}
+            nota={
+              obras.total > obras.obras.length
+                ? `${formatInt(obras.total)} proyectos de inversión coinciden; estos son los de mayor valor.`
+                : "Proyectos de inversión de MapaInversiones, por nombre, entidad o SNIP."
+            }
+            mas={obras.total > obras.obras.length ? `/obras?q=${encodeURIComponent(q)}` : undefined}
+          >
+            <ul className="divide-y divide-hairline">
+              {obras.obras.map((o) => (
+                <li key={o.snip}>
+                  <Fila
+                    href={`/obras/${o.snip}`}
+                    titulo={desdeMayusculas(o.nombre)}
+                    detalle={`SNIP ${o.snip} · ${o.estado} · ${formatPesos(o.valor)}`}
                   />
                 </li>
               ))}

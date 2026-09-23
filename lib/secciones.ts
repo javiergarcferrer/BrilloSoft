@@ -312,6 +312,11 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
     alcance: "Dentro de la descripción de las iniciativas de la Cámara, no solo en el título.",
   },
   {
+    etiqueta: "Obras públicas",
+    href: "/obras",
+    alcance: "Nombre, entidad o código SNIP de los proyectos de inversión de MapaInversiones (instantánea).",
+  },
+  {
     seccion: "normativa",
     etiqueta: "Normativa",
     href: "/normativa",
@@ -340,6 +345,8 @@ export const PAGINAS_PLATAFORMA: { href: string; label: string; descriptor: stri
   { href: "/instituciones", label: "Instituciones", descriptor: "Presupuesto, compras, nómina y decretos de cada institución" },
   { href: "/buscar", label: "Buscar en todo", descriptor: "Una caja para toda la plataforma" },
   { href: "/provincias", label: "Provincias", descriptor: "El Estado visto desde cada provincia" },
+  { href: "/obras", label: "Obras públicas", descriptor: "¿Existe la obra y avanza? Proyectos de inversión con su avance" },
+  { href: "/gestion", label: "Gestión pública", descriptor: "El ranking SISMAP de instituciones y ayuntamientos" },
   { href: "/seguimiento", label: "Mi seguimiento", descriptor: "Lo que sigues y qué cambió desde tu última visita" },
   { href: "/fuentes", label: "Estado de las fuentes", descriptor: "Qué alimenta la plataforma y qué está bloqueado" },
   { href: "/seguridad", label: "Seguridad y cumplimiento", descriptor: "Postura de datos, Ley 172-13 y 200-04" },

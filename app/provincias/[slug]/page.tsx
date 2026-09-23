@@ -6,9 +6,12 @@ import {
   hrefLegisladores,
   proveedoresPorProvincia,
   provinciaDeSlug,
+  provinciaDeTexto,
   type Provincia,
 } from "@/lib/provincias";
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
+import { getObras, slugProvincia } from "@/lib/obras";
+import { FilaObra } from "@/components/fuentes-nuevas/fila-obra";
 import { formatFecha, formatMonto } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { desdeMayusculas } from "@/lib/congreso";
@@ -87,6 +90,8 @@ export default async function ProvinciaPage({ params }: Props) {
       >
         <Proveedores provincia={p} />
       </Suspense>
+
+      <ObrasDeLaProvincia provincia={p} />
 
       <Card as="section" className="p-5 sm:p-6">
         <CardTitle>Gobiernos locales</CardTitle>
@@ -201,6 +206,53 @@ async function Proveedores({ provincia }: { provincia: Provincia }) {
         ))}
       </ul>
       <p className="mt-4 text-xs leading-relaxed text-ink-soft">{alcance}</p>
+    </Card>
+  );
+}
+
+/**
+ * Las obras de inversión pública que MapaInversiones ubica en la provincia,
+ * de mayor a menor valor. El nombre de la provincia se casa por la misma
+ * tabla de alias que el registro de proveedores («Baoruco» es Bahoruco).
+ */
+async function ObrasDeLaProvincia({ provincia }: { provincia: Provincia }) {
+  const inst = await getObras();
+  if (!inst) return null;
+  const aqui = inst.proyectos.filter((o) =>
+    o.provincias.some((n) => provinciaDeTexto(n)?.slug === provincia.slug),
+  );
+  const nombreFuente = aqui
+    .flatMap((o) => o.provincias)
+    .find((n) => provinciaDeTexto(n)?.slug === provincia.slug);
+  const lista = [...aqui].sort((a, b) => b.valor - a.valor).slice(0, 6);
+  return (
+    <Card as="section">
+      <div className="p-5 pb-0 sm:p-6 sm:pb-0">
+        <CardTitle>Obras públicas</CardTitle>
+        <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+          {aqui.length === 0
+            ? `MapaInversiones no ubica ninguna obra en ${provincia.nombre} (instantánea con corte al ${formatFecha(inst.corte)}).`
+            : `${formatInt(aqui.length)} proyectos de inversión que MapaInversiones ubica en ${provincia.nombre}, los de mayor valor primero. Instantánea con corte al ${formatFecha(inst.corte)}; las obras de alcance nacional no se cuentan aquí.`}
+        </p>
+      </div>
+      {lista.length > 0 && (
+        <>
+          <ul className="mt-3 divide-y divide-hairline border-t border-hairline">
+            {lista.map((o) => (
+              <FilaObra key={o.snip} obra={o} />
+            ))}
+          </ul>
+          {nombreFuente && (
+            <div className="border-t border-hairline p-5 sm:px-6">
+              <Button asChild variant="secondary">
+                <Link href={`/obras?provincia=${slugProvincia(nombreFuente)}`}>
+                  Ver las {formatInt(aqui.length)} obras
+                </Link>
+              </Button>
+            </div>
+          )}
+        </>
+      )}
     </Card>
   );
 }

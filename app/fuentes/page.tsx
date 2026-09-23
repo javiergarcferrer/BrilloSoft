@@ -322,7 +322,7 @@ export default async function FuentesPage() {
             unidades de compra de la DGCP (739 activas) trae el capítulo
             presupuestario de cada una, y con él se ata al SIGEF sin emparejar
             nombres. La nómina se ata a mano donde la correspondencia es
-            inequívoca (10 de 11 instituciones) y los decretos por la etiqueta de
+            inequívoca (21 de 23 instituciones: el Consejo del Café y el Poder Judicial no tienen unidad de compra en la DGCP) y los decretos por la etiqueta de
             institución de la Consultoría Jurídica. Alimenta las{" "}
             <Link href="/instituciones" className="font-medium text-brand-700 hover:underline">
               fichas de institución
