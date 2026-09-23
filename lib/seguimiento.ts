@@ -145,7 +145,7 @@ function normalizar(raw: unknown): Seguido[] {
         id: s.id,
         titulo: typeof s.titulo === "string" && s.titulo ? s.titulo : s.id,
         href:
-          typeof s.href === "string" && s.href.startsWith("/")
+          typeof s.href === "string" && s.href.startsWith("/") && !s.href.startsWith("//")
             ? s.href
             : s.tipo === "proceso"
               ? hrefProceso(s.id)

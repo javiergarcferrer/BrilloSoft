@@ -54,7 +54,8 @@ const cargarLegislador = cache((id: number) => getLegislador(id));
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const l = await cargarLegislador(Number(id));
-  if (!l) return { title: "Legislador no encontrado" };
+  if (l === "caida") return { title: "Legislador" };
+  if (l === "inexistente") return { title: "Legislador no encontrado" };
   return {
     title: l.nombre,
     description: `${[l.funcion, l.provincia, l.partidoSiglas].filter(Boolean).join(" · ")}: qué propuso, cuánto prosperó y cómo votó.`,
@@ -68,7 +69,28 @@ export default async function LegisladorPage({ params, searchParams }: Props) {
   if (!Number.isInteger(id) || id <= 0) notFound();
 
   const l = await cargarLegislador(id);
-  if (!l) notFound();
+  if (l === "caida") {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <Ruta seccion="congreso" padre={{ href: "/congreso/legisladores", label: "Legisladores" }} actual="Legislador" />
+        <EstadoVacio
+          variante="caida"
+          className="mt-4"
+          titulo="El SIL de la Cámara no respondió"
+          accion={
+            <Button asChild variant="secondary">
+              <Link href="/congreso/legisladores">Volver al directorio</Link>
+            </Button>
+          }
+        >
+          No es que este legislador no exista: es que el sistema de información
+          legislativa no contestó. La ficha vuelve sola cuando el origen se
+          restablece.
+        </EstadoVacio>
+      </div>
+    );
+  }
+  if (l === "inexistente") notFound();
 
   const corte: Corte = ver && ver in CORTES ? (ver as Corte) : "todas";
 

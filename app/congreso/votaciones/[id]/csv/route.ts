@@ -18,7 +18,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Votación no válida" }, { status: 400 });
   }
   const detalle = await getVotacion(Number(id));
-  if (!detalle) {
+  if (detalle === "inexistente") {
+    return NextResponse.json({ error: "Esa votación no existe en el SIL" }, { status: 404 });
+  }
+  if (detalle === "caida" || detalle.rollCallFallido) {
     return NextResponse.json({ error: "El SIL de la Cámara no respondió" }, { status: 502 });
   }
   const incompleta =

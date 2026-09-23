@@ -269,10 +269,14 @@ async function PuertaNormativa() {
   return (
     <Card as="article" className="flex flex-col p-5">
       <CardTitle className="text-base tracking-tight">Lo último que decretó el Ejecutivo</CardTitle>
-      {recientes.length === 0 ? (
+      {origen === null ? (
         <p className="mt-1 flex-1 text-sm leading-relaxed text-ink-soft">
           La Consultoría Jurídica no respondió. Los decretos vuelven solos cuando el
           origen se restablece.
+        </p>
+      ) : recientes.length === 0 ? (
+        <p className="mt-1 flex-1 text-sm leading-relaxed text-ink-soft">
+          Todavía no hay decretos publicados este año.
         </p>
       ) : (
         <ul className="mt-2 flex-1 divide-y divide-hairline">
@@ -309,12 +313,12 @@ function PuertaDemocracia() {
       <CardTitle className="text-base tracking-tight">Tu voto sobre lo que se legisla</CardTitle>
       <p className="mt-1 flex-1 text-sm leading-relaxed text-ink-soft">
         Un piloto de voto ciudadano: lee una iniciativa del Congreso y di si estás
-        a favor o en contra. Una cédula, un voto por iniciativa, y el apoyo
-        ciudadano se ve en tiempo real.
+        a favor o en contra. Una cédula, un voto por iniciativa; después de votar
+        ves cuántos opinaron como tú.
       </p>
       <Button asChild variant="link" className="mt-3 justify-start gap-1.5 px-0 font-semibold">
-        <Link href="/democracia">
-          Ver el consenso ciudadano
+        <Link href="/congreso">
+          Elegir una iniciativa para votar
           <IconArrowRight className="h-4 w-4" />
         </Link>
       </Button>

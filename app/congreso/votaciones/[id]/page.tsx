@@ -3,6 +3,8 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
 import { Cifra, TiraDeCifras } from "@/components/papel";
@@ -21,7 +23,9 @@ import {
 import { formatFecha } from "@/lib/format";
 
 // Una votación cerrada no cambia: el SIL se consulta como mucho una vez al día.
-export const revalidate = 86400;
+// Dinámica: el voto nominal ya se cachea un día por `fetch` en
+// `lib/congreso.ts`; con ISR, una caída del SIL quedaba servida un día.
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -32,7 +36,8 @@ const cargarVotacion = cache((id: number) => getVotacion(id));
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const d = await cargarVotacion(Number(id));
-  if (!d) return { title: "Votación no encontrada" };
+  if (d === "caida") return { title: "Votación del pleno" };
+  if (d === "inexistente") return { title: "Votación no encontrada" };
   return {
     title: d.votacion.titulo,
     description: `${d.votacion.si} a favor, ${d.votacion.no} en contra: cómo votó cada diputado.`,
@@ -52,7 +57,28 @@ export default async function VotacionPage({ params }: Props) {
   if (!Number.isInteger(id) || id <= 0) notFound();
 
   const d = await cargarVotacion(id);
-  if (!d) notFound();
+  if (d === "caida") {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <Ruta seccion="congreso" actual="Votación" />
+        <EstadoVacio
+          variante="caida"
+          className="mt-4"
+          titulo="El SIL de la Cámara no respondió"
+          accion={
+            <Button asChild variant="secondary">
+              <Link href="/congreso">Ir al Congreso</Link>
+            </Button>
+          }
+        >
+          No es que esta votación no exista: es que el sistema de información
+          legislativa no contestó. El voto nominal vuelve sola cuando el origen se
+          restablece.
+        </EstadoVacio>
+      </div>
+    );
+  }
+  if (d === "inexistente") notFound();
 
   const { votacion: v, iniciativas, votos, totalVotos } = d;
   const emitidos = v.si + v.no + v.abstencion;
@@ -147,6 +173,19 @@ export default async function VotacionPage({ params }: Props) {
           <Recuento votacion={v} emitidos={emitidos} />
         </div>
       </Card>
+
+      {d.rollCallFallido && (
+        <EstadoVacio
+          variante="caida"
+          className="mt-5"
+          rotulo="¿Quién votó qué?"
+          titulo="El voto nominal no respondió"
+        >
+          El SIL devolvió el recuento de esta votación pero no la lista de quién
+          votó qué. No es que falte: es que no pudimos leerla ahora. El recuento de
+          arriba sigue en pie.
+        </EstadoVacio>
+      )}
 
       {votos.length > 0 && (
         <>

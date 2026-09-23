@@ -71,11 +71,16 @@ export async function EnDiputados({
   titulo: string;
 }) {
   const ley = numeroDeNorma(promulgacion);
-  const ini = numero
-    ? await iniciativaPorNumero(numero)
-    : ley
-      ? ((await proyectosDeNorma("Ley", ley, titulo))?.origen[0] ?? null)
-      : null;
+  const lectura = numero ? await iniciativaPorNumero(numero) : null;
+  // Si el SIL no contestó, el bloque no aparece: decir «no aparece ahí» sería
+  // afirmar una ausencia que no se comprobó.
+  if (lectura === "caida") return null;
+  const ini =
+    lectura && lectura !== "inexistente"
+      ? lectura
+      : !numero && ley
+        ? ((await proyectosDeNorma("Ley", ley, titulo))?.origen[0] ?? null)
+        : null;
   if (!numero && !ini) return null;
 
   return (

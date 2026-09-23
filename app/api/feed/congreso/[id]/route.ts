@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import {
   desdeMayusculas,
-  getHistoricos,
+  leerHistoricos,
   getIniciativa,
   limpiarTexto,
   normalizarIniciativa,
@@ -27,7 +27,7 @@ function esc(s: string): string {
  * suscripciones, que es una decisión abierta del dueño
  * (`docs/PLAN-ACCESO.md` §6).
  *
- * Lee lo mismo que la ficha (`getIniciativa`, `getHistoricos`), con su caché
+ * Lee lo mismo que la ficha (`getIniciativa`, `leerHistoricos`), con su caché
  * de cinco minutos.
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -39,9 +39,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const [raw, historicos] = await Promise.all([
       getIniciativa(Number(id)),
-      getHistoricos(Number(id)),
+      leerHistoricos(Number(id)),
     ]);
-    if (!raw) return new Response("El SIL de la Cámara no contestó", { status: 502 });
+    if (!raw || !historicos) return new Response("El SIL de la Cámara no contestó", { status: 502 });
 
     const ini = normalizarIniciativa(raw);
     const origen = req.nextUrl.origin;

@@ -150,6 +150,23 @@ async function silFetchSafe<T>(path: string, revalidate?: number): Promise<T | n
   }
 }
 
+/**
+ * Una lectura que distingue «no existe» de «no contestó». `silFetchSafe` las
+ * funde en `null`, y para una ficha eso es la diferencia entre un 404 y una
+ * pantalla de caída: decir «no encontrada» de una votación que existe es
+ * afirmar una falsedad sobre el registro.
+ */
+export type Lectura<T> = T | "inexistente" | "caida";
+
+async function silFetchEstado<T>(path: string, revalidate?: number): Promise<T | "caida"> {
+  try {
+    return await silFetch<T>(path, revalidate);
+  } catch (err) {
+    console.error(`[congreso] ${String(err)}`);
+    return "caida";
+  }
+}
+
 /* ----------------------------------------------------------- consultas */
 
 /** Censo de iniciativas del registro vigente. */
@@ -195,10 +212,12 @@ export async function getIniciativa(id: number): Promise<SilIniciativa | null> {
 
 /** Traza de estados. Devuelve intervalos (`inicio`/`fin`), no eventos. */
 export async function getHistoricos(id: number): Promise<SilPage<SilHistorico>> {
-  return (
-    (await silFetchSafe<SilPage<SilHistorico>>(`iniciativa/historicos?page=1&id=${id}`, 300)) ??
-    emptyPage()
-  );
+  return (await leerHistoricos(id)) ?? emptyPage();
+}
+
+/** Como `getHistoricos`, pero `null` si el SIL no contestó (para el RSS). */
+export async function leerHistoricos(id: number): Promise<SilPage<SilHistorico> | null> {
+  return silFetchSafe<SilPage<SilHistorico>>(`iniciativa/historicos?page=1&id=${id}`, 300);
 }
 
 export async function getProponentes(id: number): Promise<SilPage<SilProponente>> {
@@ -862,9 +881,10 @@ export async function getDirectorioLegisladores(): Promise<Directorio | null> {
 }
 
 /** Ficha de un legislador. `null` si no existe (el SIL responde `null`) o no contesta. */
-export async function getLegislador(id: number): Promise<LegisladorFicha | null> {
-  const raw = await silFetchSafe<SilLegislador | null>(`legislador/legislador/${id}`, 86400);
-  if (!raw || !raw.legisladorId) return null;
+export async function getLegislador(id: number): Promise<Lectura<LegisladorFicha>> {
+  const raw = await silFetchEstado<SilLegislador | null>(`legislador/legislador/${id}`, 86400);
+  if (raw === "caida") return "caida";
+  if (!raw || !raw.legisladorId) return "inexistente";
   const base = normalizarLegislador(raw);
   const rep = raw.representacion;
   const nivel = limpiarTexto(rep?.nivelRepresentacion);
@@ -1139,6 +1159,8 @@ export interface VotacionDetalle {
   votos: VotoNominal[];
   /** Filas que declara el SIL; si `votos.length` es menor, faltó alguna página. */
   totalVotos: number;
+  /** La primera página del voto nominal no contestó: no se sabe cuántas filas hay. */
+  rollCallFallido: boolean;
 }
 
 interface SilVotoNominal {
@@ -1157,13 +1179,14 @@ interface SilIniciativaVotada {
  * Una votación con su voto nominal completo: 1 + 1 + 19 peticiones, con un
  * día de caché porque una votación cerrada no cambia.
  */
-export async function getVotacion(id: number): Promise<VotacionDetalle | null> {
+export async function getVotacion(id: number): Promise<Lectura<VotacionDetalle>> {
   const [raw, iniciativas, primera] = await Promise.all([
-    silFetchSafe<SilVotacion | null>(`votacion/votacion/${id}`, 86400),
+    silFetchEstado<SilVotacion | null>(`votacion/votacion/${id}`, 86400),
     silFetchSafe<SilPage<SilIniciativaVotada>>(`votacion/iniciativas/?page=1&id=${id}`, 86400),
     silFetchSafe<SilPage<SilVotoNominal>>(`votacion/legisladores/?page=1&id=${id}`, 86400),
   ]);
-  if (!raw || !raw.id) return null;
+  if (raw === "caida") return "caida";
+  if (!raw || !raw.id) return "inexistente";
 
   const filas = [...(primera?.results ?? [])];
   const paginas = primera ? Math.ceil(primera.total / SIL_PAGE_SIZE) : 0;
@@ -1207,6 +1230,7 @@ export async function getVotacion(id: number): Promise<VotacionDetalle | null> {
       })),
     votos,
     totalVotos: primera?.total ?? 0,
+    rollCallFallido: primera === null,
   };
 }
 
@@ -1215,10 +1239,13 @@ export async function getVotacion(id: number): Promise<VotacionDetalle | null> {
  * buscador del SIL hace match también sobre `numero`, así que basta una
  * consulta; se exige igualdad exacta para no aceptar una subcadena.
  */
-export async function iniciativaPorNumero(numero: string): Promise<Iniciativa | null> {
+export async function iniciativaPorNumero(numero: string): Promise<Lectura<Iniciativa>> {
   const cita = limpiarTexto(numero).toUpperCase();
-  if (!/^\d+-\d{4}-\d{4}-CD$/.test(cita)) return null;
-  const r = await listIniciativas(1, cita, 3600);
+  if (!/^\d+-\d{4}-\d{4}-CD$/.test(cita)) return "inexistente";
+  // `buscarIniciativas` y no `listIniciativas`: esta devuelve una página vacía
+  // cuando el SIL cae, y aquí eso se leería como «la cita no aparece».
+  const r = await buscarIniciativas(cita);
+  if (!r) return "caida";
   const hit = r.results.find((i) => limpiarTexto(i.numero).toUpperCase() === cita);
-  return hit ? normalizarIniciativa(hit) : null;
+  return hit ? normalizarIniciativa(hit) : "inexistente";
 }

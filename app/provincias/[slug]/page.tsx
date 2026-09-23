@@ -3,8 +3,6 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
-  PROVINCIAS,
-  TOPE_PROVEEDORES,
   hrefLegisladores,
   proveedoresPorProvincia,
   provinciaDeSlug,
@@ -21,11 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Cargando, EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
 
-export const revalidate = 86400;
-
-export function generateStaticParams() {
-  return PROVINCIAS.map((p) => ({ slug: p.slug }));
-}
+/*
+  Dinámica: la agrupación cara ya se cachea un día en `lib/provincias.ts` y un
+  fallo no se guarda. Pre-generar las 32 en el build lanzaba 32 lecturas en
+  frío a la vez contra el registro de la DGCP, y una caída durante el build
+  quedaba servida un día.
+*/
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -153,13 +153,14 @@ async function Proveedores({ provincia }: { provincia: Provincia }) {
       los que su ficha del Registro de Proveedores ubica en {provincia.nombre}. El
       registro no se puede filtrar por provincia, así que esto no es el padrón:
       quien no está entre los mayores adjudicatarios recientes no aparece.
+      Respondieron {formatInt(r.conFicha)} de {formatInt(r.consultados)} fichas.
       Calculado el {formatFecha(r.calculadoEn)}.
     </>
   );
 
   if (lista.length === 0) {
     return (
-      <EstadoVacio rotulo="Proveedores del Estado" titulo={`Ninguno de los ${formatInt(TOPE_PROVEEDORES)} mayores adjudicatarios recientes está inscrito en ${provincia.nombre}`}>
+      <EstadoVacio rotulo="Proveedores del Estado" titulo={`Ninguno de los ${formatInt(r.conFicha)} mayores adjudicatarios recientes con ficha está inscrito en ${provincia.nombre}`}>
         {alcance}
       </EstadoVacio>
     );

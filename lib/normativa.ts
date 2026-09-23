@@ -322,9 +322,17 @@ export async function normasDeInstitucion(
   if (!inst) return { docs: [], generadoEn: null };
   const buscadas = new Set(etiquetas.map((e) => e.trim()));
   const docs: Documento[] = [];
+  // El origen repite algunas normas (fe de erratas, la misma ley cargada dos
+  // veces): una norma es su tipo, su número y su fecha.
+  const vistas = new Set<string>();
   for (const filas of Object.values(inst.busquedas)) {
     for (const f of filas) {
-      if (f.Institucion && buscadas.has(f.Institucion.trim())) docs.push(aDocumento(f));
+      if (!f.Institucion || !buscadas.has(f.Institucion.trim())) continue;
+      const d = aDocumento(f);
+      const clave = `${d.tipo}|${d.numero}|${d.fechaIso ?? ""}`;
+      if (vistas.has(clave)) continue;
+      vistas.add(clave);
+      docs.push(d);
     }
   }
   return { docs: ordenar(docs), generadoEn: inst.generadoEn };

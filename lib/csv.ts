@@ -6,8 +6,11 @@
  *
  *  - BOM UTF-8 y fin de línea CRLF, para que Excel en español lea las tildes
  *    sin preguntar.
- *  - Una celda que empieza por `=`, `+`, `-` o `@` se antepone con `'`: un
- *    título del registro no se ejecuta como fórmula en la hoja de nadie.
+ *  - Un **texto** que empieza por `=`, `+`, `-`, `@`, tabulador o retorno
+ *    (la lista de OWASP) se antepone con `'`: un título del registro no se
+ *    ejecuta como fórmula en la hoja de nadie. Los números van tal cual —un
+ *    monto negativo es un número, no una fórmula—. Sin importaciones del
+ *    servidor: la usa también la descarga que se arma en el navegador.
  *  - El alcance viaja en la cabecera `X-Alcance` y en el nombre del archivo;
  *    el contenido es solo la tabla, para que cualquier programa la lea.
  */
@@ -17,9 +20,10 @@ export type ColumnaCsv<T> = [
   valor: (fila: T) => string | number | null | undefined,
 ];
 
-function celda(v: string | number | null | undefined): string {
-  let s = v === null || v === undefined ? "" : String(v);
-  if (/^[=+\-@]/.test(s)) s = `'${s}`;
+export function celda(v: string | number | null | undefined): string {
+  if (typeof v === "number") return Number.isFinite(v) ? String(v) : "";
+  let s = v === null || v === undefined ? "" : v;
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return `"${s.replace(/"/g, '""')}"`;
 }
 

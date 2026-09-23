@@ -154,9 +154,11 @@ async function agrupar(): Promise<ProveedoresPorProvincia | null> {
     top.map((p) => p.rpe),
     8,
   );
-  // Si el registro no contestó a nadie, no hay agrupación que mostrar: una
-  // provincia vacía sería afirmar que no tiene proveedores.
-  if (fichas.size === 0) return null;
+  // Si el registro contestó a menos del 90 % de las consultas, no hay
+  // agrupación que mostrar: una provincia vacía sería afirmar que no tiene
+  // proveedores cuando lo que pasó es que el registro se cayó a medias. No se
+  // cachea; la próxima visita reintenta.
+  if (fichas.size < Math.ceil(top.length * 0.9)) return null;
 
   const porProvincia: Record<string, ProveedorLocal[]> = {};
   let sinProvincia = 0;

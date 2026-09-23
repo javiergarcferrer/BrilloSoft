@@ -138,6 +138,8 @@ export interface ComprasDeInstitucion {
  */
 export interface SenalesDeCompra {
   procesos: number;
+  /** Censo del año que declara el origen. */
+  universo: number;
   /** El censo del origen superó lo leído (más de 1.000 en el año). */
   truncado: boolean;
   excepcion: number;
@@ -196,7 +198,10 @@ async function calcularCompras(id: number): Promise<ComprasDeInstitucion | null>
       0,
     ).catch(() => null),
   ]);
-  if (!contratos && !procesos) return null;
+  // Las dos lecturas o ninguna: con una sola, la ficha diría «0 contratos»
+  // de un ministerio cuya consulta de contratos simplemente falló, y ese
+  // resumen quedaría cacheado una hora.
+  if (!contratos || !procesos) return null;
 
   const lista = contratos?.payload.content ?? [];
   const porProveedor = new Map<string, ProveedorDeInstitucion>();
@@ -227,6 +232,7 @@ async function calcularCompras(id: number): Promise<ComprasDeInstitucion | null>
     const cuenta = (f: (p: Proceso) => boolean) => ps.filter(f).length;
     senales = {
       procesos: ps.length,
+      universo: procesos.totalResults ?? ps.length,
       truncado: (procesos.totalResults ?? ps.length) > ps.length,
       excepcion: cuenta((p) => /excepci/i.test(p.modalidad)),
       emergencia: cuenta((p) => /emergencia|urgencia/i.test(p.tipo_excepcion ?? "")),

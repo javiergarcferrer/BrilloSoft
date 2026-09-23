@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { buscarCargos, buscarNormas, rutaDirecta } from "@/lib/buscar";
 import { buscarInstituciones, hrefInstitucion } from "@/lib/instituciones";
-import { desdeMayusculas, listIniciativas, normalizarIniciativa } from "@/lib/congreso";
+import { buscarIniciativas, desdeMayusculas, normalizarIniciativa } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { BUSQUEDAS } from "@/lib/secciones";
@@ -82,7 +82,7 @@ export default async function BuscarPage({
           >
             <ul className="divide-y divide-hairline">
               {normas.normas.map((n) => (
-                <li key={`${n.tipo}-${n.numero}`}>
+                <li key={`${n.tipo}-${n.numero}-${n.fecha ?? ""}`}>
                   <Fila
                     href={n.href}
                     titulo={desdeMayusculas(n.titulo)}
@@ -139,7 +139,21 @@ export default async function BuscarPage({
 }
 
 async function Diputados({ q }: { q: string }) {
-  const pagina = await listIniciativas(1, q);
+  const pagina = await buscarIniciativas(q, 1, 300);
+  if (!pagina) {
+    return (
+      <Card as="section" className="p-5">
+        <CardTitle>Diputados</CardTitle>
+        <p className="mt-1 text-xs leading-relaxed text-alerta-700">
+          El SIL de la Cámara no respondió: no es que no haya iniciativas, es que
+          no pudimos mirar.{" "}
+          <Link href={`/congreso?q=${encodeURIComponent(q)}`} className="font-medium text-brand-700 hover:underline">
+            Reintentar en Congreso
+          </Link>
+        </p>
+      </Card>
+    );
+  }
   const lista = pagina.results.slice(0, 6).map(normalizarIniciativa);
   return (
     <Grupo

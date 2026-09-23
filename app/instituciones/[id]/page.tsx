@@ -25,9 +25,17 @@ import { Button } from "@/components/ui/button";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { IconExternal } from "@/components/icons";
+import { Cifra, TiraDeCifras } from "@/components/papel";
+import Plegable from "@/components/plegable";
 import AccionesFicha from "@/components/acciones-ficha";
 
-export const revalidate = 3600;
+/*
+  Dinámica a propósito: lo caro —el resumen de compras— ya se cachea una hora
+  en `lib/instituciones.ts`, y un fallo no se guarda. Con ISR, la página que
+  se generó durante una caída de la DGCP quedaba servida una hora diciendo
+  «no respondió».
+*/
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -115,11 +123,11 @@ export default async function InstitucionPage({ params }: Props) {
             Foto de {nomina.periodo}: el último mes que la institución publicó en
             formato procesable. Sin nombres: cargo y sueldo bruto.
           </p>
-          <dl className="mt-4 grid grid-cols-3 gap-3">
-            <Cifra etiqueta="Plazas" valor={formatInt(nomina.plazas)} />
-            <Cifra etiqueta="Masa salarial del mes" valor={formatPesos(nomina.masa)} />
-            <Cifra etiqueta="Sueldo mediano" valor={formatDOP(nomina.mediana)} />
-          </dl>
+          <TiraDeCifras className="mt-4 lg:grid-cols-3">
+            <Cifra etiqueta="Plazas" valor={formatInt(nomina.plazas)} ancla={{ alcance: "instantanea", periodo: nomina.periodo }} />
+            <Cifra etiqueta="Masa salarial del mes" valor={formatPesos(nomina.masa)} ancla={{ alcance: "instantanea", periodo: nomina.periodo }} />
+            <Cifra etiqueta="Sueldo mediano" valor={formatDOP(nomina.mediana)} ancla={{ alcance: "instantanea", periodo: nomina.periodo }} />
+          </TiraDeCifras>
           <ul className="mt-4 divide-y divide-hairline text-sm">
             {nomina.cargos.map((c) => (
               <li key={c.cargo} className="flex items-baseline justify-between gap-3 py-2">
@@ -140,8 +148,10 @@ export default async function InstitucionPage({ params }: Props) {
         <CardTitle>Lo que decreta el Ejecutivo</CardTitle>
         {normas.docs.length === 0 ? (
           <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-            La Consultoría Jurídica no etiqueta con esta institución ninguna norma
-            de los últimos cuatro años.
+            No encontramos normas de los últimos cuatro años con una etiqueta de la
+            Consultoría Jurídica que coincida con este nombre. El cruce es por
+            nombre: si la Consultoría escribe la institución de otra forma, aquí
+            no aparece.
           </p>
         ) : (
           <>
@@ -154,7 +164,7 @@ export default async function InstitucionPage({ params }: Props) {
                 const ruta = RUTA_POR_TIPO[d.tipo];
                 const href = ruta ? `/normativa/${ruta}/${d.numero}` : d.url;
                 return (
-                  <li key={`${d.tipo}-${d.numero}`} className="py-2.5">
+                  <li key={`${d.tipo}-${d.numero}-${d.fechaIso ?? ""}`} className="py-2.5">
                     {href && (
                       <Link href={href} className="group block">
                         <span className="font-mono text-xs font-semibold tabular-nums text-brand-700">
@@ -195,17 +205,6 @@ export default async function InstitucionPage({ params }: Props) {
   );
 }
 
-function Cifra({ etiqueta, valor, tinta }: { etiqueta: string; valor: string; tinta?: boolean }) {
-  return (
-    <div className={`rounded-lg px-4 py-3 ${tinta ? "bg-ink text-canvas" : "bg-canvas"}`}>
-      <dt className={`text-xs ${tinta ? "text-canvas/70" : "text-ink-soft"}`}>{etiqueta}</dt>
-      <dd className="mt-0.5 text-balance font-mono text-base font-bold leading-tight tabular-nums sm:text-lg">
-        {valor}
-      </dd>
-    </div>
-  );
-}
-
 function Cargando({ titulo, texto }: { titulo: string; texto: string }) {
   return (
     <Card as="section" className="p-5 sm:p-6" role="status" aria-busy="true">
@@ -228,6 +227,7 @@ function Presupuesto({
   const { institucion: c, fiscal } = datos;
   const ejecutado = c.ejecucion ?? 0;
   const cambio = c.vigente - c.inicial;
+  const corte = etiquetaCorte(fiscal.mesCorte, fiscal.anio);
   return (
     <Card as="section" className="p-5 sm:p-6">
       <CardTitle>Presupuesto {fiscal.anio}</CardTitle>
@@ -244,12 +244,12 @@ function Presupuesto({
         )}{" "}
         Con corte a {etiquetaCorte(fiscal.mesCorte, fiscal.anio)}.
       </p>
-      <dl className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Cifra etiqueta="Vigente" valor={formatPesos(c.vigente)} />
-        <Cifra etiqueta="Devengado" valor={formatPesos(c.devengado)} tinta />
-        <Cifra etiqueta="Pagado" valor={formatPesos(c.pagado)} />
-        <Cifra etiqueta="Ejecutado" valor={c.ejecucion === null ? "—" : `${(ejecutado * 100).toFixed(1)} %`} />
-      </dl>
+      <TiraDeCifras className="mt-4">
+        <Cifra etiqueta="Vigente" valor={formatPesos(c.vigente)} ancla={{ alcance: "instantanea", periodo: corte }} />
+        <Cifra etiqueta="Devengado" valor={formatPesos(c.devengado)} ancla={{ alcance: "instantanea", periodo: corte }} />
+        <Cifra etiqueta="Pagado" valor={formatPesos(c.pagado)} ancla={{ alcance: "instantanea", periodo: corte }} />
+        <Cifra etiqueta="Ejecutado" valor={c.ejecucion === null ? "—" : `${(ejecutado * 100).toFixed(1)} %`} nota="Devengado sobre vigente" />
+      </TiraDeCifras>
       <Progress
         value={Math.min(100, ejecutado * 100)}
         aria-label={`Ejecutado ${(ejecutado * 100).toFixed(1)} % del presupuesto vigente`}
@@ -269,11 +269,11 @@ function Presupuesto({
         </Button>
       </div>
       {hermanas.length > 0 && (
-        <details className="mt-4 text-sm">
-          <summary className="cursor-pointer text-xs font-medium text-brand-700">
-            Las otras unidades de compra del capítulo
-          </summary>
-          <ul className="mt-2 grid gap-1 sm:grid-cols-2">
+        <Plegable
+          className="-mx-5 mt-4 sm:-mx-6"
+          etiqueta={`Ver las otras ${hermanas.length} unidades de compra del capítulo`}
+        >
+          <ul className="grid gap-1 px-5 py-3 sm:grid-cols-2 sm:px-6">
             {hermanas.map((h) => (
               <li key={h.id}>
                 <Link href={hrefInstitucion(h)} className="text-sm text-ink hover:text-brand-700">
@@ -282,7 +282,7 @@ function Presupuesto({
               </li>
             ))}
           </ul>
-        </details>
+        </Plegable>
       )}
     </Card>
   );
@@ -322,13 +322,18 @@ async function Compras({ institucion: i }: { institucion: Institucion }) {
 
       {compras.proveedores.length > 0 && (
         <>
-          <dl className="mt-4 grid grid-cols-2 gap-3">
-            <Cifra etiqueta="Contratado en pesos" valor={formatPesos(compras.montoDop)} tinta />
+          <TiraDeCifras className="mt-4 lg:grid-cols-2">
+            <Cifra
+              etiqueta="Contratado en pesos"
+              valor={formatPesos(compras.montoDop)}
+              ancla={{ alcance: "muestra", escaneados: compras.leidos, universo: compras.totalContratos }}
+            />
             <Cifra
               etiqueta="Se lleva el primer proveedor"
               valor={compras.concentracion === null ? "—" : `${(compras.concentracion * 100).toFixed(1)} %`}
+              nota={`Del monto en pesos de esos ${formatInt(compras.leidos)} contratos`}
             />
-          </dl>
+          </TiraDeCifras>
           <h3 className="mt-5 text-sm font-semibold">A quién le compra</h3>
           <ul className="mt-2 space-y-2.5 text-sm">
             {compras.proveedores.map((p) => (
@@ -410,9 +415,10 @@ function Senales({ s }: { s: SenalesDeCompra }) {
     <>
       <h3 className="mt-5 text-sm font-semibold">Cómo compra</h3>
       <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-        De sus {formatInt(s.procesos)} procesos publicados en los últimos doce meses
-        {s.truncado ? " (se leyeron los primeros 1.000)" : ""}
-        {s.abiertos > 0 ? `, ${formatInt(s.abiertos)} siguen abiertos` : ""}. La ley
+        {s.truncado
+          ? `Publicó ${formatInt(s.universo)} procesos en los últimos doce meses; la DGCP entrega hasta mil por consulta, así que las proporciones de abajo son sobre los ${formatInt(s.procesos)} leídos, no sobre el año entero`
+          : `De sus ${formatInt(s.procesos)} procesos publicados en los últimos doce meses`}
+        {s.abiertos > 0 ? `; ${formatInt(s.abiertos)} siguen abiertos` : ""}. La ley
         permite cada una de estas vías; lo que se mira es cuánto pesan.
       </p>
       <ul className="mt-2 space-y-2 text-sm">

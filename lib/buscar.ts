@@ -44,11 +44,19 @@ export function rutaDirecta(consulta: string): string | null {
     return `/procesos/${q.toUpperCase()}`;
   }
 
-  // Siglas exactas de una sola institución.
+  // Siglas exactas de una sola institución, solo si son siglas de verdad.
+  // Varias unidades de compra usan una palabra como «acrónimo» —TRABAJO,
+  // CULTURA, PASAPORTES—: quien teclea «trabajo» busca leyes o plazas, no
+  // necesariamente el ministerio. Si las «siglas» son una palabra de su propio
+  // nombre, no se salta: la institución sale primera en los resultados.
   const siglas = INSTITUCIONES.filter(
     (i) => i.acronimo && normalize(i.acronimo) === normalize(q),
   );
-  if (siglas.length === 1 && q.length >= 2) return hrefInstitucion(siglas[0]);
+  const esPalabraDelNombre = (i: (typeof siglas)[number]) =>
+    normalize(i.nombre).split(/[^a-z0-9]+/).includes(normalize(i.acronimo));
+  if (siglas.length === 1 && q.length >= 2 && !esPalabraDelNombre(siglas[0])) {
+    return hrefInstitucion(siglas[0]);
+  }
 
   return null;
 }
@@ -89,11 +97,17 @@ export async function buscarNormas(
       await readFile(path.join(process.cwd(), "public", "data", "normativa.json"), "utf8"),
     ) as { generadoEn: string; busquedas: Record<string, FilaInstantanea[]> };
     const hallazgos: NormaEncontrada[] = [];
+    // El origen repite algunas normas (fe de erratas, la misma ley dos veces):
+    // una norma es su tipo, su número y su fecha.
+    const vistas = new Set<string>();
     for (const filas of Object.values(crudo.busquedas)) {
       for (const f of filas) {
         if (!f.Titulo || !coincide(q, `${f.Titulo} ${f.Numero ?? ""}`)) continue;
         const tipo = TIPO[f.TipoDocumento ?? 0] ?? "Norma";
         const numero = (f.Numero ?? "").trim();
+        const clave = `${tipo}|${numero}|${f.FechaPromulgacion?.slice(0, 10) ?? ""}`;
+        if (vistas.has(clave)) continue;
+        vistas.add(clave);
         const ruta = RUTA_NORMA[normalize(tipo)];
         hallazgos.push({
           tipo,

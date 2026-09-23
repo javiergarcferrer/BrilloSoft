@@ -2,6 +2,7 @@
 
 import { IconDownload } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { celda } from "@/lib/csv";
 
 /**
  * Descarga la tabla que se está viendo, con los filtros ya aplicados.
@@ -24,9 +25,7 @@ export function DescargarCsv({
   etiqueta: string;
 }) {
   const descargar = () => {
-    const celda = (v: string | number) =>
-      typeof v === "number" ? String(v) : `"${v.replace(/"/g, '""')}"`;
-    const texto = [encabezado, ...filas].map((f) => f.map(celda).join(",")).join("\n");
+    const texto = [encabezado, ...filas].map((f) => f.map(celda).join(",")).join("\r\n");
     const blob = new Blob(["﻿" + texto], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

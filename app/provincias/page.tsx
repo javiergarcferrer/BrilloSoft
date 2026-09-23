@@ -19,7 +19,9 @@ export const metadata: Metadata = {
     "El Estado dominicano por provincia: qué proveedores del Estado están inscritos en cada una, sus gobiernos locales y sus legisladores.",
 };
 
-export const revalidate = 86400;
+// Dinámica por la misma razón que cada provincia: lo caro está en
+// `lib/provincias.ts`, cacheado un día, y un fallo no se sirve congelado.
+export const dynamic = "force-dynamic";
 
 /**
  * El directorio del territorio: las 32 demarcaciones y, cuando el registro
