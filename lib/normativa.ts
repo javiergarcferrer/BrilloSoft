@@ -14,8 +14,14 @@
  *     documentos, `GET /api/documents?category=gacetas`, un JSON con todas.
  *  4. El texto de una norma es `GET /api/document/{DocId}`, PDF `inline`.
  *  5. Solo lectura; User-Agent identificable.
+ *  6. **Cloudflare desafía el egreso de Vercel** (403 `cf-mitigated: challenge`,
+ *     verificado 2026-09-23). No se rodea: si la lectura en vivo falla, se cae
+ *     a la instantánea `public/data/normativa.json` (`scripts/build-normativa.py`),
+ *     que la interfaz declara con su fecha.
  */
 
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { unstable_cache } from "next/cache";
 
 const BASE = "https://www.consultoria.gov.do";
@@ -167,7 +173,11 @@ async function gacetas(anio: number): Promise<Documento[]> {
   if (!res.ok) throw new Error(`el repositorio respondió ${motivo(res)}`);
   const datos: unknown = await res.json();
   if (!Array.isArray(datos)) throw new Error("el repositorio no devolvió una lista");
-  return (datos as EntradaRepositorio[])
+  return gacetasDelAnio(datos as EntradaRepositorio[], anio);
+}
+
+function gacetasDelAnio(entradas: EntradaRepositorio[], anio: number): Documento[] {
+  return entradas
     .filter((e) => e.year === anio && (e.status ?? "published") === "published")
     .map((e) => {
       const numero = texto(e.title);
@@ -188,26 +198,81 @@ async function gacetas(anio: number): Promise<Documento[]> {
     .sort((a, b) => Number(b.numero) - Number(a.numero));
 }
 
+/* ------------------------------------------------------------ instantánea */
+
+interface Instantanea {
+  generadoEn: string;
+  /** Filas crudas del buscador por `tipo/año`. */
+  busquedas: Record<string, FilaBuscador[]>;
+  gacetas: EntradaRepositorio[];
+}
+
+let instantanea: Promise<Instantanea | null> | null = null;
+
+/** La instantánea commiteada, leída una vez por instancia. */
+function leerInstantanea(): Promise<Instantanea | null> {
+  instantanea ??= readFile(path.join(process.cwd(), "public", "data", "normativa.json"), "utf8")
+    .then((t) => {
+      const crudo = JSON.parse(t) as Instantanea;
+      return crudo?.generadoEn && crudo.busquedas ? crudo : null;
+    })
+    .catch((err) => {
+      console.error(`[normativa] instantánea: ${String(err)}`);
+      return null;
+    });
+  return instantanea;
+}
+
+function ordenar(docs: Documento[]): Documento[] {
+  return docs.sort((a, b) => (b.fechaIso ?? "").localeCompare(a.fechaIso ?? ""));
+}
+
+export interface ResultadoNormativa {
+  docs: Documento[];
+  /**
+   * De dónde salió la lista: `"vivo"`, la fecha `yyyy-mm-dd` de la
+   * instantánea, o `null` si no contestó nadie —ni el origen ni la
+   * instantánea tienen ese tipo y año—.
+   */
+  origen: "vivo" | string | null;
+}
+
 /**
- * Busca documentos de un tipo dentro de un año. Devuelve la lista ordenada de
- * más reciente a más antigua. Degrada a `[]`.
+ * Documentos de un tipo en un año, de más reciente a más antiguo: en vivo, y
+ * si el origen rechaza la consulta, desde la instantánea. Una lista vacía con
+ * `origen` presente es una respuesta («no hay»); con `origen: null`, un fallo.
  */
+export async function consultarNormativa(
+  tipo: TipoNormativa,
+  anio: number,
+): Promise<ResultadoNormativa> {
+  try {
+    const docs =
+      tipo === "1014"
+        ? await gacetas(anio)
+        : ordenar(await consultar({ DocumentTypeCode: Number(tipo), PublicationYear: String(anio) }));
+    return { docs, origen: "vivo" };
+  } catch (err) {
+    console.error(`[normativa] búsqueda ${tipo}/${anio}: ${String(err)}`);
+  }
+
+  const inst = await leerInstantanea();
+  if (!inst) return { docs: [], origen: null };
+  if (tipo === "1014") {
+    const docs = gacetasDelAnio(inst.gacetas ?? [], anio);
+    return { docs, origen: docs.length > 0 ? inst.generadoEn : null };
+  }
+  const filas = inst.busquedas[`${tipo}/${anio}`];
+  if (!filas) return { docs: [], origen: null };
+  return { docs: ordenar(filas.map(aDocumento)), origen: inst.generadoEn };
+}
+
+/** Solo la lista de `consultarNormativa`. Degrada a `[]`. */
 export async function buscarNormativa(
   tipo: TipoNormativa,
   anio: number,
 ): Promise<Documento[]> {
-  try {
-    if (tipo === "1014") return await gacetas(anio);
-    const docs = await consultar({
-      DocumentTypeCode: Number(tipo),
-      PublicationYear: String(anio),
-    });
-    docs.sort((a, b) => (b.fechaIso ?? "").localeCompare(a.fechaIso ?? ""));
-    return docs;
-  } catch (err) {
-    console.error(`[normativa] búsqueda ${tipo}/${anio}: ${String(err)}`);
-    return [];
-  }
+  return (await consultarNormativa(tipo, anio)).docs;
 }
 
 export interface ResumenNormativa {
@@ -305,6 +370,16 @@ export async function resolverNorma(
     return await normaCached(tipo, numero);
   } catch (err) {
     console.error(`[normativa] cita ${tipo} ${numero}: ${String(err)}`);
-    return null;
   }
+  // El origen no contestó: la instantánea cubre los años recientes.
+  const codigo = CODIGO_POR_TIPO[tipo.toLowerCase()];
+  const inst = codigo ? await leerInstantanea() : null;
+  if (!inst) return null;
+  const normalizado = numero.replace(/\s+/g, "");
+  for (const [clave, filas] of Object.entries(inst.busquedas)) {
+    if (!clave.startsWith(`${codigo}/`)) continue;
+    const fila = filas.find((f) => texto(f.Numero).replace(/\s+/g, "") === normalizado);
+    if (fila) return aDocumento(fila);
+  }
+  return null;
 }

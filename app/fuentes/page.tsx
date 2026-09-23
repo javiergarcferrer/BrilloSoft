@@ -7,6 +7,8 @@ import { getCountIniciativas, getPeriodos } from "@/lib/congreso";
 import { contarProveedoresRegistrados } from "@/lib/dgcp";
 import { CUATRIENIOS, getCensoSenado } from "@/lib/senado";
 import { getDeuda } from "@/lib/deuda";
+import { consultarNormativa } from "@/lib/normativa";
+import { formatFecha } from "@/lib/format";
 import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
 import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
@@ -21,7 +23,7 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function FuentesPage() {
-  const [censo, periodos, censoSenado, nomina, deuda, fiscal, proveedores] =
+  const [censo, periodos, censoSenado, nomina, deuda, fiscal, proveedores, normativa] =
     await Promise.all([
       getCountIniciativas(),
       getPeriodos(),
@@ -30,7 +32,10 @@ export default async function FuentesPage() {
       getDeuda(),
       getResumenFiscal(),
       contarProveedoresRegistrados(),
+      consultarNormativa("3", new Date().getFullYear()),
     ]);
+  const normativaInstantanea =
+    normativa.origen !== null && normativa.origen !== "vivo" ? normativa.origen : null;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -243,8 +248,14 @@ export default async function FuentesPage() {
 
         <Fuente
           nombre="Consultoría Jurídica — normativa del Ejecutivo"
-          estado="activa"
-          etiqueta="Conectada"
+          estado={normativa.origen === null ? "caida" : "activa"}
+          etiqueta={
+            normativa.origen === null
+              ? "Sin respuesta"
+              : normativaInstantanea
+                ? "Instantánea"
+                : "Conectada"
+          }
         >
           <p>
             Consulta pública de la Consultoría Jurídica del Poder Ejecutivo:
@@ -254,13 +265,23 @@ export default async function FuentesPage() {
             <Link href="/normativa" className="font-medium text-brand-700 hover:underline">
               normativa
             </Link>
-            , donde se ve el conteo en vivo por año.
+            , donde se ve el conteo por año.
           </p>
+          {normativaInstantanea && (
+            <p className="mt-3">
+              Desde septiembre de 2026 el portal nuevo pasa por un desafío de
+              Cloudflare que rechaza las consultas desde los servidores de la
+              plataforma. No se rodea: la vertical sirve la instantánea del{" "}
+              {formatFecha(normativaInstantanea)}, generada desde una red que el
+              origen acepta, hasta que la Consultoría admita el acceso
+              automatizado identificado.
+            </p>
+          )}
           <p className="mt-3">
-            Sus PDF sí traen capa de texto —no son escaneos— y el origen los
-            sirve incrustables, así que cada norma se lee entera dentro de la
-            plataforma, con el buscador del propio visor. Es también la vía al
-            articulado de las piezas del Congreso ya promulgadas.
+            Sus PDF traen capa de texto —no son escaneos— y cada norma tiene su
+            ficha, que es también la vía al articulado de las piezas del
+            Congreso ya promulgadas. El visor siempre ofrece abrir el PDF en el
+            sitio oficial, que es la vía mientras el desafío impida traerlo.
           </p>
           <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Toda la lectura es de consulta y se acota por año o por número: el

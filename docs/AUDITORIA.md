@@ -235,6 +235,21 @@ tasas) está a un registro de distancia. El costo no es técnico: es la regla
     2020–2026 (número, mes, año, `fileUrl` = `PDF|portada`). No trae día.
   - ⚠️ Reglamentos casi vacíos en el origen (2020: 11; 2024–2026: 0): la
     mayoría se dicta por decreto. «Sin resultados» es cierto, no un fallo.
+- ❌ **Cloudflare desafía el egreso de Vercel (verificado 2026-09-23).** Desde
+  las funciones de producción, buscador, repositorio y PDF responden `403` con
+  `cf-mitigated: challenge`; desde otra red, 201. Es un bloqueo del WAF y no se
+  rodea (ni cabeceras de navegador, ni proxies). Mitigación vigente:
+  `lib/normativa.ts` intenta en vivo y cae a `public/data/normativa.json`
+  (`scripts/build-normativa.py`: 4 años × leyes, decretos, reglamentos,
+  resoluciones, más todas las gacetas; ~1,1 MB), que `/normativa` y `/fuentes`
+  declaran con su fecha. Las citas del Congreso resuelven contra ella solo en
+  esos 4 años. Regenerar al menos semanal. El visor no puede traer el PDF: el
+  enlace «Abrir en el origen» es la vía.
+  - **Desbloqueo institucional (lo gestiona el dueño):** pedir a la
+    Consultoría (TIC) una regla de Cloudflare que permita el User-Agent
+    `Socratico-Inteligencia/1.0` —o `Verified Bot`— sobre `/api/consultas/*`,
+    `/api/documents` y `/api/document/*`, solo lectura, con el volumen actual
+    (unas decenas de consultas por hora, cacheadas).
 - Es la fuente del vertical **Normativa**: «qué decreta el Ejecutivo» — la
   tercera pata que falta al triángulo legislativo (Diputados ✅, Senado ✅,
   Ejecutivo ⬜).

@@ -4,12 +4,13 @@ import type { Metadata } from "next";
 import {
   RUTA_POR_TIPO,
   TIPOS_NORMATIVA,
-  buscarNormativa,
+  consultarNormativa,
   type Documento,
   type TipoNormativa,
 } from "@/lib/normativa";
 import { IconExternal, IconDoc } from "@/components/icons";
 import { desdeMayusculas } from "@/lib/congreso";
+import { formatFecha } from "@/lib/format";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import Antiguedad from "@/components/antiguedad";
 import { Button } from "@/components/ui/button";
@@ -107,24 +108,39 @@ export default async function NormativaPage({
 }
 
 async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: number }) {
-  const docs = await buscarNormativa(tipo, anio);
+  const { docs, origen } = await consultarNormativa(tipo, anio);
 
   /*
-    «No hay» y «no contestó» dicen cosas opuestas sobre el Ejecutivo, y la
-    Consultoría degrada las dos a una lista vacía. Cuando no hay nada que
-    pintar se sondea el registro más poblado que existe —los decretos del año
-    pasado, que son varios cientos y están cerrados—: si tampoco llega, lo que
-    falló es el servicio, no el año consultado. Es una consulta más, solo en el
-    caso ambiguo, y cacheada una hora como el resto.
+    «No hay» y «no contestó» dicen cosas opuestas sobre el Ejecutivo. La capa
+    ya las separa: una lista con origen es una respuesta, aunque venga vacía;
+    sin origen no contestó nadie. Cloudflare desafía hoy a los servidores de
+    la plataforma, así que el origen suele ser la instantánea, y se dice.
   */
-  const sonda = docs.length === 0 ? await buscarNormativa("3", ANIO_ACTUAL - 1) : [];
-  const consultoriaCaida = docs.length === 0 && sonda.length === 0;
+  const consultoriaCaida = origen === null;
+  const instantanea = origen !== null && origen !== "vivo" ? origen : null;
 
   return (
     <>
       {docs.length > 0 && (
         <p className="mt-4 font-mono text-sm tabular-nums text-ink-soft">
           {`${docs.length.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} en ${anio}`}
+        </p>
+      )}
+
+      {instantanea && (
+        <p className="mt-2 text-xs leading-relaxed text-ink-soft">
+          Instantánea del {formatFecha(instantanea)}: la Consultoría rechaza hoy
+          las consultas desde los servidores de la plataforma, así que lo más
+          reciente puede faltar. Lo publicado después está en{" "}
+          <a
+            href="https://www.consultoria.gov.do/consultas?tab=legislacion"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-brand-700 hover:underline"
+          >
+            el buscador oficial
+          </a>
+          .
         </p>
       )}
 
@@ -153,9 +169,9 @@ async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: numbe
         </EstadoVacio>
       ) : (
         <EstadoVacio titulo="Sin resultados" className="mt-4">
-          La Consultoría respondió, pero no tiene{" "}
-          {TIPOS_NORMATIVA[tipo].toLowerCase()} publicadas para {anio}. Prueba
-          otro año o cambia el tipo de documento.
+          {instantanea ? "La instantánea de la Consultoría" : "La Consultoría respondió, pero"}{" "}
+          no tiene {TIPOS_NORMATIVA[tipo].toLowerCase()} de {anio}.
+          Prueba otro año o cambia el tipo de documento.
         </EstadoVacio>
       )}
 

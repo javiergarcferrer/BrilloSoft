@@ -190,6 +190,9 @@ sources impose:
 - **Consultoría** — `inline`, no CSP, and the PDFs are *digital text*: embedded
   directly, and each norm has its own page at `/normativa/[tipo]/[numero]`
   (`ley|decreto|reglamento|resolucion`), which the Congress dossier links to.
+  Since 2026-09 Cloudflare challenges Vercel's egress to the Consultoría, so
+  listings and citations fall back to `public/data/normativa.json` and the
+  proxy cannot fetch the PDF; «Abrir en el origen» is the path (AUDITORIA §4.1).
 - **Every source goes through `/api/documento?url=`** — none of them sends
   CORS, and `components/lector-pdf.tsx` rasterizes with **pdf.js on a canvas**
   rather than an `<iframe>`, because an iframed PDF renders nothing on mobile

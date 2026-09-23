@@ -15,7 +15,7 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 | Compras públicas | `/licitaciones` | API abierta de la DGCP | `lib/dgcp.ts` |
 | Finanzas públicas | `/finanzas` | SIGEF (instantánea) | `lib/fiscal.ts`, `lib/capitulos.ts` |
 | Congreso Nacional | `/congreso` | SIL Diputados + consultante del Senado | `lib/congreso.ts`, `lib/senado.ts` |
-| Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (API JSON) | `lib/normativa.ts` |
+| Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (API JSON + instantánea) | `lib/normativa.ts` |
 | Nómina estatal | `/nomina` | Instantánea de 11 instituciones | `lib/nomina.ts`, `lib/nomina-server.ts` |
 | Deuda pública | tarjeta en `/` | Crédito Público (XLSX + instantánea) | `lib/deuda.ts` |
 | Democracia | `/democracia` | Supabase, esquema `democracia` — **la excepción** | `lib/democracia.ts`, `lib/supabase.ts` |
@@ -92,6 +92,7 @@ npx tsc --noEmit # solo typecheck
 python3 scripts/build-fiscal.py   # regenera public/data/fiscal.json (SIGEF, ~5 min)
 python3 scripts/build-nomina.py   # regenera public/data/nomina.json
 python3 scripts/build-deuda.py    # regenera public/data/deuda.json
+python3 scripts/build-normativa.py # regenera public/data/normativa.json (semanal)
 ```
 
 No hay suite de pruebas ni ESLint: `next build` es el gate real, envuelto por
