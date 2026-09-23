@@ -265,7 +265,8 @@ export function vistaActivaDe(seccion: Seccion, pathname: string): VistaSeccion 
  * resultados». Un destino nuevo con `?q=` se declara aquí y aparece solo.
  */
 export interface DestinoBusqueda {
-  seccion: SeccionId;
+  /** La vertical del destino; sin ella, es transversal (todo, instituciones). */
+  seccion?: SeccionId;
   /** Nombre corto del destino: «Diputados», «Proveedores». */
   etiqueta: string;
   /** La ruta que recibe `?q=`. */
@@ -275,6 +276,17 @@ export interface DestinoBusqueda {
 }
 
 export const BUSQUEDAS: DestinoBusqueda[] = [
+  {
+    etiqueta: "Toda la plataforma",
+    href: "/buscar",
+    alcance:
+      "Reconoce un RNC, una cita como «Ley 47-20» o un código de proceso y lleva directo; si no, junta instituciones, normativa, cargos de nómina e iniciativas de Diputados, y ofrece seguir en cada vertical.",
+  },
+  {
+    etiqueta: "Instituciones",
+    href: "/instituciones",
+    alcance: "Nombre o siglas de las 739 unidades de compra activas, cada una con su ficha de presupuesto, compras, nómina y decretos.",
+  },
   {
     seccion: "licitaciones",
     etiqueta: "Licitaciones",
@@ -296,6 +308,18 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
     alcance: "Dentro de la descripción de las iniciativas de la Cámara, no solo en el título.",
   },
   {
+    seccion: "normativa",
+    etiqueta: "Normativa",
+    href: "/normativa",
+    alcance: "Títulos de leyes, decretos, reglamentos y resoluciones de la Consultoría Jurídica, del año elegido.",
+  },
+  {
+    seccion: "nomina",
+    etiqueta: "Nómina",
+    href: "/nomina",
+    alcance: "Cargo, área o institución dentro de la foto de nómina de las instituciones que publican en formato procesable.",
+  },
+  {
     seccion: "congreso",
     etiqueta: "Senado",
     href: "/congreso/senado",
@@ -309,6 +333,8 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
  */
 export const PAGINAS_PLATAFORMA: { href: string; label: string; descriptor: string }[] = [
   { href: "/", label: "Panorama", descriptor: "Las verticales en una sola página" },
+  { href: "/instituciones", label: "Instituciones", descriptor: "Presupuesto, compras, nómina y decretos de cada institución" },
+  { href: "/buscar", label: "Buscar en todo", descriptor: "Una caja para toda la plataforma" },
   { href: "/fuentes", label: "Estado de las fuentes", descriptor: "Qué alimenta la plataforma y qué está bloqueado" },
   { href: "/seguridad", label: "Seguridad y cumplimiento", descriptor: "Postura de datos, Ley 172-13 y 200-04" },
 ];

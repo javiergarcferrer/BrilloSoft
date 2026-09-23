@@ -94,6 +94,28 @@ export default function Paleta() {
     setRecientes(getRecientes());
   }, [abierta]);
 
+  // Instituciones que coinciden, pedidas al servidor a medida que se teclea:
+  // el cruce entero no viaja al navegador.
+  const [sugeridas, setSugeridas] = useState<{ href: string; nombre: string; detalle: string }[]>([]);
+  useEffect(() => {
+    const q = texto.trim();
+    if (!abierta || q.length < 2) {
+      setSugeridas([]);
+      return;
+    }
+    const control = new AbortController();
+    const t = setTimeout(() => {
+      fetch(`/api/instituciones?q=${encodeURIComponent(q)}`, { signal: control.signal })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((filas) => setSugeridas(Array.isArray(filas) ? filas : []))
+        .catch(() => {});
+    }, 180);
+    return () => {
+      clearTimeout(t);
+      control.abort();
+    };
+  }, [texto, abierta]);
+
   const ir = (href: string) => {
     setAbierta(false);
     router.push(href);
@@ -111,9 +133,11 @@ export default function Paleta() {
 
   // La búsqueda de la vertical en la que ya está el lector va primero: es la
   // que más probablemente quería.
-  const destinos = [...BUSQUEDAS].sort(
-    (a, b) => Number(b.seccion === actual?.id) - Number(a.seccion === actual?.id),
-  );
+  // «Toda la plataforma» encabeza siempre: es la que no exige saber dónde vive
+  // lo buscado.
+  const peso = (d: DestinoBusqueda) =>
+    d.href === "/buscar" ? 2 : Number(!!actual && d.seccion === actual.id);
+  const destinos = [...BUSQUEDAS].sort((a, b) => peso(b) - peso(a));
 
   return (
     <Dialog open={abierta} onOpenChange={setAbierta}>
@@ -252,6 +276,24 @@ export default function Paleta() {
               ))}
             </CommandGroup>
 
+            {consulta && sugeridas.length > 0 && (
+              <CommandGroup heading="Instituciones">
+                {sugeridas.map((i) => (
+                  <CommandItem
+                    key={i.href}
+                    value={`buscar:inst:${i.href}`}
+                    onSelect={() => ir(i.href)}
+                  >
+                    <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
+                    <span className="min-w-0 flex-1 truncate font-medium">{i.nombre}</span>
+                    <span className="hidden shrink-0 truncate text-xs text-ink-soft sm:inline">
+                      {i.detalle}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
             {/*
               «Buscar en…» va al final y no arriba. Si lo tecleado nombra una
               sección —«nomina», «senado»—, esa sección es la primera fila y es
@@ -317,7 +359,7 @@ function FilaBusqueda({
     <CommandItem value={`buscar:${destino.href}`} onSelect={onElegir} className="items-start">
       <span
         aria-hidden
-        className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", seccion?.hue.punto)}
+        className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", seccion?.hue.punto ?? "bg-ink")}
       />
       <span className="min-w-0 flex-1">
         <span className="block font-medium">{destino.etiqueta}</span>

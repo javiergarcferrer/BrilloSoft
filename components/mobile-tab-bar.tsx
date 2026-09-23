@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { SECCIONES, seccionDe, type Seccion } from "@/lib/secciones";
+import { PAGINAS_PLATAFORMA, SECCIONES, seccionDe, type Seccion } from "@/lib/secciones";
 import {
   IconChartBar,
   IconCheck,
@@ -170,6 +170,30 @@ export default function MobileTabBar() {
                       activa={actual?.id === seccion.id}
                       onNavegar={() => setHojaAbierta(false)}
                     />
+                  </li>
+                ))}
+              </ul>
+              {/*
+                Las páginas transversales —instituciones, buscar en todo, el
+                seguimiento— no son una vertical, pero en el teléfono tienen que
+                estar a dos toques como ellas. Salen de la misma lista que el pie
+                y la paleta.
+              */}
+              <ul className="mt-2 border-t border-hairline pt-2">
+                {PAGINAS_PLATAFORMA.filter((p) => p.href !== "/").map((p) => (
+                  <li key={p.href}>
+                    <Link
+                      href={p.href}
+                      onClick={() => setHojaAbierta(false)}
+                      aria-current={pathname === p.href ? "page" : undefined}
+                      className="flex min-h-12 items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-canvas/70 active:bg-canvas/70"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold text-ink">{p.label}</span>
+                        <span className="block truncate text-xs text-ink-soft">{p.descriptor}</span>
+                      </span>
+                      <IconChevronRight className="h-4 w-4 shrink-0 text-ink-soft" />
+                    </Link>
                   </li>
                 ))}
               </ul>

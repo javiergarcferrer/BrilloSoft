@@ -16,12 +16,16 @@ import { getDeuda } from "@/lib/deuda";
 import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
-import { diasHasta, formatMagnitud, formatMonto, formatPesos } from "@/lib/format";
+import { diasHasta, formatFecha, formatMagnitud, formatMonto, formatPesos } from "@/lib/format";
 import { SECCIONES } from "@/lib/secciones";
+import { INSTITUCIONES, hrefInstitucion } from "@/lib/instituciones";
+import { consultarNormativa } from "@/lib/normativa";
+import { desdeMayusculas } from "@/lib/congreso";
 import { cn } from "@/lib/cn";
 import { Esqueleto } from "@/components/esqueleto";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardAction,
@@ -100,6 +104,29 @@ export default function Panorama() {
           </p>
         }
       >
+        {/*
+          Una sola caja para toda la plataforma: quien llega con una pregunta
+          concreta —«MINERD», «Ley 47-20», un RNC— no tiene que saber antes en
+          qué vertical vive. Es un formulario GET a /buscar: funciona sin
+          JavaScript y la búsqueda queda en la URL.
+        */}
+        <form action="/buscar" method="get" role="search" className="mb-4 flex max-w-xl gap-2">
+          <label htmlFor="buscar-portada" className="sr-only">
+            Buscar en toda la plataforma
+          </label>
+          <Input
+            id="buscar-portada"
+            name="q"
+            type="search"
+            enterKeyHint="search"
+            placeholder="Una institución, una ley, un RNC, un tema…"
+            className="border-canvas/25 bg-canvas text-ink"
+          />
+          <Button type="submit" size="lg" className="shrink-0 bg-canvas text-ink hover:bg-surface">
+            <IconSearch className="h-4 w-4" />
+            <span className="sr-only sm:not-sr-only">Buscar</span>
+          </Button>
+        </form>
         <div className="flex flex-wrap gap-2.5">
           {/*
             Sobre la banda de tinta la llamada principal se invierte: papel
@@ -140,6 +167,16 @@ export default function Panorama() {
         <Suspense fallback={<DominioEsqueleto seccion="nomina" Icon={IconChartBar} />}>
           <DominioNomina />
         </Suspense>
+      </section>
+
+      {/* Las puertas que no son un dominio con cifras: la institución, lo que
+          decreta el Ejecutivo y el voto ciudadano. */}
+      <section className="grid gap-4 lg:grid-cols-3">
+        <PuertaInstituciones />
+        <Suspense fallback={<Esqueleto className="h-[220px]" />}>
+          <PuertaNormativa />
+        </Suspense>
+        <PuertaDemocracia />
       </section>
 
       {/*
@@ -189,6 +226,99 @@ export default function Panorama() {
         .
       </p>
     </div>
+  );
+}
+
+/* ---------------------------------------------------------------- puertas */
+
+/** Seis ministerios que casi todo el mundo busca, como atajo a su ficha. */
+function PuertaInstituciones() {
+  const atajos = ["MINERD", "MISPAS", "MOPC", "MIREX", "MIDE", "MIP"]
+    .map((siglas) => INSTITUCIONES.find((i) => i.acronimo === siglas))
+    .filter((i): i is NonNullable<typeof i> => Boolean(i));
+  return (
+    <Card as="article" className="flex flex-col p-5">
+      <CardTitle className="text-base tracking-tight">Instituciones</CardTitle>
+      <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+        Cada ministerio, dirección, hospital y ayuntamiento en una página: su
+        presupuesto, lo que compra y a quién, su nómina y lo que se decreta sobre él.
+      </p>
+      <ul className="mt-3 flex flex-1 flex-wrap content-start gap-x-4 gap-y-1.5 text-sm">
+        {atajos.map((i) => (
+          <li key={i.id}>
+            <Link href={hrefInstitucion(i)} className="font-medium text-brand-700 hover:underline">
+              {i.acronimo}
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <Button asChild variant="link" className="mt-3 justify-start gap-1.5 px-0 font-semibold">
+        <Link href="/instituciones">
+          Todas las instituciones
+          <IconArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </Card>
+  );
+}
+
+/** Los decretos más recientes, del año en curso. */
+async function PuertaNormativa() {
+  const { docs, origen } = await consultarNormativa("3", new Date().getFullYear());
+  const recientes = docs.slice(0, 3);
+  return (
+    <Card as="article" className="flex flex-col p-5">
+      <CardTitle className="text-base tracking-tight">Lo último que decretó el Ejecutivo</CardTitle>
+      {recientes.length === 0 ? (
+        <p className="mt-1 flex-1 text-sm leading-relaxed text-ink-soft">
+          La Consultoría Jurídica no respondió. Los decretos vuelven solos cuando el
+          origen se restablece.
+        </p>
+      ) : (
+        <ul className="mt-2 flex-1 divide-y divide-hairline">
+          {recientes.map((d) => (
+            <li key={d.numero} className="py-2">
+              <Link href={`/normativa/decreto/${d.numero}`} className="group block">
+                <span className="font-mono text-xs font-semibold tabular-nums text-brand-700">
+                  Decreto {d.numero}
+                </span>
+                <span className="mt-0.5 line-clamp-2 block text-sm leading-snug text-ink group-hover:text-brand-700">
+                  {desdeMayusculas(d.titulo)}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {origen && origen !== "vivo" && (
+        <p className="mt-1 text-xs text-ink-soft">Instantánea del {formatFecha(origen)}.</p>
+      )}
+      <Button asChild variant="link" className="mt-3 justify-start gap-1.5 px-0 font-semibold">
+        <Link href="/normativa">
+          Toda la normativa
+          <IconArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </Card>
+  );
+}
+
+function PuertaDemocracia() {
+  return (
+    <Card as="article" className="flex flex-col p-5">
+      <CardTitle className="text-base tracking-tight">Tu voto sobre lo que se legisla</CardTitle>
+      <p className="mt-1 flex-1 text-sm leading-relaxed text-ink-soft">
+        Un piloto de voto ciudadano: lee una iniciativa del Congreso y di si estás
+        a favor o en contra. Una cédula, un voto por iniciativa, y el apoyo
+        ciudadano se ve en tiempo real.
+      </p>
+      <Button asChild variant="link" className="mt-3 justify-start gap-1.5 px-0 font-semibold">
+        <Link href="/democracia">
+          Ver el consenso ciudadano
+          <IconArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    </Card>
   );
 }
 
