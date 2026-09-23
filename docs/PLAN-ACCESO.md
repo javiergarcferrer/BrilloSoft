@@ -48,7 +48,7 @@ El esqueleto. Nada de esto toca una fuente nueva ni la invariante.
 | 1.4 | **Enlaces de ida y vuelta**: norma → proyecto que la originó; Diputados ↔ Senado para la misma pieza; proceso y capítulo → institución | Diagnóstico 1 | Ninguna ficha es un callejón sin salida. ✅ Lado compras: proceso, `/contratos`, `/estadisticas`, `/planes`, clientes de `/proveedores/[rpe]` y `/licitaciones?uc=` enlazan a la ficha de institución |
 | | ✅ **Lado Congreso (2026-09-23):** ley → proyecto de Diputados que la originó y proyectos que la citan (`proyectosDeNorma`, confirmado por número de promulgación); Diputados ↔ Senado por la cita de expediente o, si el Senado la dejó vacía, por la misma ley (`gemeloEnSenado`). ✅ Texto de una pieza → institución: solo por nombre completo de 18 letras o más, sin hospitales ni ayuntamientos (`institucionesNombradasEn`) | `docs/RECON.md` §14.5 | |
 | 1.5 ✅ | **Seguir cualquier cosa**: `lib/seguimiento.ts` pasa a tipos (proceso, proyecto, proveedor, institución); `/seguimiento` sale de Licitaciones; «qué cambió desde tu última visita», calculado en el navegador; compartir y RSS en toda ficha | Diagnóstico 4, sin servidor ni cuenta (sigue en `localStorage`) | Se sigue un proyecto de ley y la página marca su cambio de estado |
-| 1.6 | **Estado en la URL y frescura visible**: filtros de `/nomina` en `searchParams`; marca de antigüedad por institución cuando el mes publicado tenga más de 3 meses | Diagnóstico 7 | Un enlace a `/nomina?inst=MSP&cargo=chofer` reproduce la vista; Defensa Civil muestra su fecha |
+| 1.6 ✅ | **Estado en la URL y frescura visible**: filtros de `/nomina` en `searchParams`; marca de antigüedad por institución cuando el mes publicado tenga más de 3 meses | Diagnóstico 7 | Un enlace a `/nomina?inst=MSP&cargo=chofer` reproduce la vista; Defensa Civil muestra su fecha |
 | 1.7 | **Portada y navegación**: tarjetas de Normativa y Democracia; buscador en la portada; en el teléfono, «Buscar» y «Seguimiento» como pestañas fijas; `app/sitemap.ts` con las fichas | Diagnóstico 3 y 8 del recorrido: Finanzas y Normativa quedan a dos toques y los buscadores externos no encuentran las fichas | Toda vertical a un toque o una búsqueda desde la portada |
 
 **Entregado (2026-09-23):**
@@ -83,13 +83,21 @@ legible. El resto se apoya en esas tres.
 | # | Entrega | Datos ya en mano |
 |---|---|---|
 | 2.1 | ✅ **Fichas de legislador** `/congreso/legisladores/[id]`: qué propuso, cuánto prosperó, por provincia y partido — entregado 2026-09-23 con directorio `/congreso/legisladores`, voto nominal por diputado y `/congreso/votaciones/[id]` con el voto de los 190 | `legislador/*` y `votacion/*` verificados en `docs/RECON.md` §14 |
-| 2.2 | **Finanzas legible**: buscar, ordenar y filtrar capítulos; «quién ganó o perdió presupuesto en el año» (`vigente − inicial`); «a quién se le debe» (`devengado − pagado`); ranking de ejecución | `public/data/fiscal.json` |
+| 2.2 ✅ | **Finanzas legible**: buscar, ordenar y filtrar capítulos; «quién ganó o perdió presupuesto en el año» (`vigente − inicial`); «a quién se le debe» (`devengado − pagado`); ranking de ejecución | `public/data/fiscal.json` |
 | 2.3 | **Señales por institución en compras**: tasa de oferente único, compras por excepción o emergencia, procesos fuera del PACC | `oferenteUnico`, `tipo_excepcion`, `adquisicion_planeada` en `lib/dgcp.ts` |
 | 2.4 | ✅ **Territorio** `/provincias/[slug]`: proveedores del Estado y legisladores de la provincia; más tarde, obras (3.1) | Provincia en `ProveedorRegistro` y en los proponentes. Entregado: `lib/provincias.ts`; el registro no filtra por provincia (500), así que es la muestra declarada de los 200 mayores adjudicatarios de la ventana; ayuntamientos solo los ciertos (cabecera + municipios de Santo Domingo); legisladores por enlace a `/congreso/legisladores?provincia=` |
-| 2.5 | **Nómina comparada**: el mismo cargo entre instituciones y los puestos mejor pagados del Estado | Filas de `public/data/nomina.json` |
+| 2.5 ✅ | **Nómina comparada**: el mismo cargo entre instituciones y los puestos mejor pagados del Estado | Filas de `public/data/nomina.json` |
 | 2.6 | ✅ **Normativa buscable**: texto sobre los títulos; designaciones del mes por cargo | Instantánea de normativa. Entregado: `/normativa?q=` (número y título del tipo y año, en vivo o instantánea) y «Designaciones del mes» (etiqueta «Cámara de Cuentas», cargo leído del título, declarado) |
 | 2.7 | ⚠️ **Descargar**: CSV en finanzas, contratos, normativa y congreso; en licitaciones, el barrido entero y no solo la página | Lo que cada página ya calcula. Hecho: licitaciones (`/api/procesos/csv`, el barrido de hasta 6000), contratos (`/contratos/csv`, la muestra) y normativa (`/normativa/csv`). Falta: finanzas y congreso |
-| 2.8 | **Deuda en el tiempo**: serie mensual, no tres cifras sueltas | XLSX con URL predecible (`lib/deuda.ts`) |
+| 2.8 ✅ | **Deuda en el tiempo**: serie, no tres cifras sueltas | Entregado en `/deuda` con lo que el origen conserva: cierre anual desde 2000 con % del PIB y trimestral desde 2015 (los meses intermedios de años pasados ya no están publicados; ver `docs/AUDITORIA.md` §3.3) |
+
+**Entregado (2026-09-23).** 1.6: `/nomina?inst=MSP&cargo=chofer&vista=comparar`
+reproduce la vista (`q`, `inst`, `cargo`, `vista` en la URL); CESAC, JAC y
+Defensa Civil llevan la marca ocre «foto de hace…». 2.2: búsqueda, sección y
+cuatro órdenes en `/finanzas`, tres rankings y CSV de la tabla filtrada (la
+parte de finanzas de 2.7); cada capítulo lista sus unidades de compra. 2.5:
+pestaña «Comparar» con la mediana por institución de un cargo normalizado y
+los 15 puestos mejor pagados, declarando las 11 instituciones. 2.8: `/deuda`.
 
 ## 4. Horizonte 3 — fuentes nuevas ya verificadas
 

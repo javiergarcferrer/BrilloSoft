@@ -138,3 +138,117 @@ export function median(values: number[]): number {
   const m = s.length >> 1;
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
+
+/* ------------------------------------------------------------ frescura */
+
+/**
+ * Cuántos meses tiene una foto que se deja de llamar «reciente». Cada
+ * institución publica su nómina a su ritmo: el conjunto mezcla julio de 2026
+ * con diciembre de 2021, y quien compara sueldos entre las dos tiene que
+ * saberlo en la fila, no en una nota al pie (docs/PLAN-ACCESO.md, 1.6).
+ */
+export const ATRASO_MAX_MESES = 3;
+
+/** Año y mes de hoy en Santo Domingo, la misma regla que `formatFecha`. */
+function mesDeHoy(hoy: Date): { anio: number; mes: number } {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santo_Domingo",
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(hoy);
+  const valor = (t: string) => Number(partes.find((p) => p.type === t)?.value);
+  return { anio: valor("year"), mes: valor("month") };
+}
+
+/** Meses completos entre el mes publicado y el mes en curso. */
+export function mesesDeAtraso(anio: number, mes: number, hoy = new Date()): number {
+  const h = mesDeHoy(hoy);
+  return (h.anio - anio) * 12 + (h.mes - mes);
+}
+
+/** La foto de esta institución tiene más de tres meses. */
+export function estaAtrasada(i: { anio: number; mes: number }, hoy = new Date()): boolean {
+  return mesesDeAtraso(i.anio, i.mes, hoy) > ATRASO_MAX_MESES;
+}
+
+/** «hace 4 meses», «hace 4 años y 9 meses»: la antigüedad de una foto. */
+export function textoAtraso(anio: number, mes: number, hoy = new Date()): string {
+  const m = mesesDeAtraso(anio, mes, hoy);
+  if (m <= 0) return "del mes en curso";
+  const a = Math.floor(m / 12);
+  const r = m % 12;
+  const meses = (n: number) => `${n} ${n === 1 ? "mes" : "meses"}`;
+  if (a === 0) return `de hace ${meses(r)}`;
+  const anios = `${a} ${a === 1 ? "año" : "años"}`;
+  return r ? `de hace ${anios} y ${meses(r)}` : `de hace ${anios}`;
+}
+
+/* ------------------------------------------------------ cargos comparables */
+
+/*
+  Cada institución escribe el mismo puesto a su manera: «CHOFER», «Chofer I»,
+  «CHOFER NIVEL 2 (VEHICULOS LIVIANOS)», «SECRETARIO (A)». Para comparar el
+  mismo cargo entre instituciones se lleva cada nombre a una base —sin tildes,
+  sin paréntesis, sin «nivel N» ni grado romano al final, con las
+  abreviaturas desplegadas— y se busca la palabra al **principio** de esa
+  base: «director» recoge «Director de Recursos Humanos» y «Directora», pero
+  no «Subdirector», que es otro puesto.
+*/
+const ABREVIATURAS: [RegExp, string][] = [
+  [/^enc\b\.?/, "encargado"],
+  [/^aux\b\.?/, "auxiliar"],
+  [/^coord\b\.?/, "coordinador"],
+  [/^asist\b\.?/, "asistente"],
+  [/^tec\b\.?/, "tecnico"],
+];
+
+const sinTildes = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+/** La base comparable de un nombre de cargo. */
+export function cargoBase(cargo: string): string {
+  let s = sinTildes(cargo)
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\bnivel\s*\d+/g, " ")
+    .replace(/[^a-z0-9. ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  for (const [re, pleno] of ABREVIATURAS) s = s.replace(re, pleno);
+  return s
+    .replace(/\./g, " ")
+    .replace(/\s+(i|ii|iii|iv|v)$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * El patrón de un cargo escrito por el lector. Cada palabra admite su femenino
+ * y su plural: «secretaria» encuentra «Secretario (A)», «director» encuentra
+ * «Directora». `null` si no hay nada que buscar.
+ */
+export function patronCargo(texto: string): RegExp | null {
+  const palabras = cargoBase(texto).split(" ").filter(Boolean);
+  if (palabras.length === 0) return null;
+  const partes = palabras.map((p) => {
+    const w = p.replace(/[^a-z0-9]/g, "");
+    if (/[oa]$/.test(w)) return `${w.slice(0, -1)}[oa]s?`;
+    if (/[^aeiou]$/.test(w)) return `${w}(?:a|es|as)?`;
+    return `${w}s?`;
+  });
+  return new RegExp(`^${partes.join(" ")}\\b`);
+}
+
+/** Cargos que aparecen en casi todas las instituciones de la foto. */
+export const CARGOS_COMPARABLES = [
+  "Chofer",
+  "Conserje",
+  "Mensajero",
+  "Secretaria",
+  "Recepcionista",
+  "Vigilante",
+  "Técnico",
+  "Analista",
+  "Abogado",
+  "Director",
+  "Médico",
+];

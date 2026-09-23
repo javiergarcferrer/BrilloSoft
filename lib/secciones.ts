@@ -123,9 +123,10 @@ export const SECCIONES: Seccion[] = [
     pregunta: "¿En qué gasta?",
     href: "/finanzas",
     descriptor: "Ejecución del presupuesto · SIGEF",
-    rutas: ["/finanzas"],
+    rutas: ["/finanzas", "/deuda"],
     vistas: [
       { href: "/finanzas", label: "Ejecución" },
+      { href: "/deuda", label: "Deuda" },
       { href: "/finanzas/guia", label: "Guías" },
     ],
     conBuscadorGlobal: false,

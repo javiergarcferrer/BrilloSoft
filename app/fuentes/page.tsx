@@ -364,7 +364,14 @@ export default async function FuentesPage() {
           <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Sin clave ni WAF. El saldo viene en millones de dólares; la
             plataforma lo lee de la fila «Deuda Pública Total del SPNF» de la
-            hoja de saldo-evolución.
+            hoja de saldo-evolución, en la columna del saldo de cierre. La
+            serie de{" "}
+            <Link href="/deuda" className="font-medium text-brand-700 hover:underline">
+              /deuda
+            </Link>{" "}
+            es lo que el origen conserva publicado: el cierre de cada año desde
+            2000, con su peso en el PIB, y cada trimestre desde 2015. Los meses
+            intermedios de años pasados ya no están en su servidor.
           </p>
         </Fuente>
 

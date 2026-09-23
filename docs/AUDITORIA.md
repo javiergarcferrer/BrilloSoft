@@ -168,6 +168,24 @@ tasas) está a un registro de distancia. El costo no es técnico: es la regla
   juego por mes. Saldo, evolución interna/externa, desembolsos por fuente.
 - Es el candidato #1 del tablero: indicador de deuda actualizado mensualmente,
   sin clave, sin WAF, con historia.
+- ⚠️ **La URL no es predecible hacia atrás** (verificado el 2026-09-23 desde un
+  sandbox con egreso, UA identificable). El número de la carpeta cambia entre
+  años (`14Al 30 de Junio` en 2021, `16Al 30 de Junio` en 2016) y el origen
+  **retira los meses intermedios**: de cada año cerrado quedan diciembre y los
+  tres trimestres; del año en curso, los dos últimos meses y los trimestres.
+  Una ruta inventada responde **200 con HTML** (32 KB), así que se valida el
+  content-type. El listado de cada año sí se lee por GET:
+  `/inicio/estadisticas?dlAnio=AAAA` (el formulario es POST, pero el GET con el
+  mismo parámetro responde igual). «Saldo Evolución» aparece desde 2015.
+- ⚠️ **La hoja trae dos columnas «Saldo»**: apertura (31-dic del año anterior,
+  col. C) y cierre del período (col. M; col. N antes de 2020, cuando la
+  etiqueta iba en la C), con su fecha como serie de Excel en la fila de
+  debajo. La plataforma leía la C y mostraba como «Jul-26» el saldo del
+  31-dic-2025 (US$ 61,549.9 M); el de julio de 2026 es US$ 67,827.8 M. Varias
+  celdas son fórmulas compartidas (`<f t="shared" …/>`) con su valor en `<v>`.
+- ✅ `scripts/build-deuda.py` recorre los listados 2015→hoy (44 cierres) y el
+  histórico anual `/historico/saldo/01Saldo Deuda Histórico (1970-2025).xlsx`
+  (metodología nueva, 2000–2025, con % del PIB) hacia `public/data/deuda.json`.
 
 ### 3.4 MapaInversiones — ✅ vivo, por mapear
 

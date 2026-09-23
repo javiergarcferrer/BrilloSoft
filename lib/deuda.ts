@@ -3,9 +3,11 @@
  *
  * Mismo contrato que las demás capas: sin base de datos, lectura en vivo con
  * caché. La Dirección General de Crédito Público publica la evolución de la
- * deuda del Sector Público No Financiero (SPNF) como XLSX mensuales con URL
- * predecible; esta capa localiza el más reciente y lee el saldo sin
+ * deuda del Sector Público No Financiero (SPNF) como XLSX mensuales; esta
+ * capa localiza el más reciente en el listado y lee el saldo sin
  * dependencias: un XLSX es un ZIP de XML, y solo necesitamos tres celdas.
+ * La serie en el tiempo (`getSerieDeuda`) sale de la instantánea que arma
+ * `scripts/build-deuda.py` recorriendo el listado de cada año.
  *
  * Reconocimiento en docs/AUDITORIA.md §3.3 y docs/PLAN-DEMOCRACIA.md §1.
  */
@@ -29,8 +31,10 @@ export interface Deuda {
   saldoTotal: number;
   saldoExterna: number;
   saldoInterna: number;
-  /** Etiqueta del período, p. ej. "Jul-26" (de la hoja del XLSX). */
+  /** Etiqueta del período, p. ej. "Jul-26" (de la fecha de cierre). */
   periodo: string;
+  /** Fecha de cierre del saldo (ISO), p. ej. "2026-07-31". */
+  fecha?: string;
   /** URL del XLSX de origen. */
   fuente: string;
   /**
@@ -44,20 +48,36 @@ export interface Deuda {
   generadoEn?: string;
 }
 
-async function fetchBuffer(url: string, revalidate: number): Promise<ArrayBuffer | null> {
-  try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": USER_AGENT },
-      next: { revalidate },
-      signal: AbortSignal.timeout(25_000),
-    });
-    if (!res.ok) return null;
-    return await res.arrayBuffer();
-  } catch (err) {
-    console.error(`[deuda] fetch ${url}: ${String(err)}`);
-    return null;
+/**
+ * GET con el contrato de la casa: User-Agent identificable, 25 s, un
+ * reintento y el content-type validado. El origen devuelve **200 con una
+ * página HTML** para cualquier ruta que no existe, así que un XLSX que no es
+ * XLSX se descarta aquí y no llega al lector.
+ */
+async function fetchBuffer(
+  url: string,
+  revalidate: number,
+  tipo: RegExp,
+): Promise<ArrayBuffer | null> {
+  for (let intento = 0; intento < 2; intento++) {
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": USER_AGENT },
+        next: { revalidate },
+        signal: AbortSignal.timeout(25_000),
+      });
+      if (!res.ok) return null;
+      if (!tipo.test(res.headers.get("content-type") ?? "")) return null;
+      return await res.arrayBuffer();
+    } catch (err) {
+      if (intento === 1) console.error(`[deuda] fetch ${url}: ${String(err)}`);
+    }
   }
+  return null;
 }
+
+const TIPO_HTML = /text\/html/i;
+const TIPO_XLSX = /spreadsheetml|application\/octet-stream/i;
 
 /* ----------------------------------------------------- mini-lector de XLSX */
 
@@ -104,17 +124,43 @@ function texto(xml: string, re: RegExp): string[] {
   return [...xml.matchAll(re)].map((m) => m[1]);
 }
 
+/** Serie de Excel (días desde 1899-12-30) → ISO, o `null` si no es una fecha. */
+function fechaExcel(v: string | undefined): string | null {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 30000 || n > 60000) return null;
+  return new Date(Date.UTC(1899, 11, 30) + Math.trunc(n) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+const MESES_CORTOS = [
+  "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+];
+
+/** «2026-07-31» → «Jul-26», la misma etiqueta que usa la hoja del origen. */
+export function periodoDeFecha(iso: string): string {
+  const [a, m] = iso.split("-");
+  return `${MESES_CORTOS[Number(m) - 1] ?? ""}-${a.slice(2)}`;
+}
+
 /**
- * Lee la fila «Deuda Pública Total del …» de la hoja de saldo-evolución.
- * La columna B trae la etiqueta y la C el saldo; las dos filas siguientes son
- * Externa e Interna (docs/AUDITORIA.md §3.3).
+ * Lee el saldo **de cierre** de la hoja de saldo-evolución.
+ *
+ * La hoja trae dos columnas «Saldo»: la de apertura (31 de diciembre del año
+ * anterior) y la de cierre del período, cada una con su fecha como número de
+ * serie de Excel en la fila de debajo. El saldo del período es la de fecha
+ * mayor. Hasta el 2026-09-23 esta capa leía la primera —la columna C— y
+ * publicaba como «Jul-26» el saldo del 31 de diciembre de 2025
+ * (docs/AUDITORIA.md §3.3). La etiqueta va en la columna B desde 2020 y en
+ * la C antes; y las celdas de fórmula compartida (`<f t="shared" …/>`) traen
+ * su valor calculado igual que las demás.
  */
 function parsearSaldo(
   archivos: ArchivoZip[],
 ): Omit<Deuda, "fuente" | "desdeInstantanea" | "generadoEn"> | null {
   const sheet = archivos.find((a) => a.nombre === "xl/worksheets/sheet1.xml");
   const shared = archivos.find((a) => a.nombre === "xl/sharedStrings.xml");
-  const workbook = archivos.find((a) => a.nombre === "xl/workbook.xml");
   if (!sheet) return null;
 
   const strs = shared
@@ -124,59 +170,52 @@ function parsearSaldo(
     : [];
   const sxml = sheet.datos.toString("utf8");
 
-  const periodo = workbook
-    ? (/<sheet name="([^"]+)"/.exec(workbook.datos.toString("utf8"))?.[1] ?? "")
-        .replace(/^Saldo-Evoluci[oó]n\s*/i, "")
-        .trim()
-    : "";
-
-  // Mapa columna→valor por fila.
-  const filas = [...sxml.matchAll(/<row[^>]*r="(\d+)"[^>]*>(.*?)<\/row>/gs)];
-  function celdasDe(rxml: string): Map<string, string> {
+  const filas = [...sxml.matchAll(/<row[^>]*r="(\d+)"[^>]*>(.*?)<\/row>/gs)].map((f) => {
     const m = new Map<string, string>();
-    for (const c of rxml.matchAll(
-      /<c r="([A-Z]+)\d+"(?:[^>]* t="([a-z]+)")?[^>]*>(?:<f>[^<]*<\/f>)?(?:<v>([^<]*)<\/v>)?/g,
+    for (const c of f[2].matchAll(
+      /<c r="([A-Z]+)\d+"(?:[^>]* t="([a-z]+)")?[^>]*>(?:<f[^>]*\/>|<f[^>]*>[^<]*<\/f>)?(?:<v>([^<]*)<\/v>)?/g,
     )) {
-      const col = c[1];
-      const tipo = c[2];
       let v = c[3];
       if (v == null) continue;
-      if (tipo === "s") v = strs[Number(v)] ?? v;
-      m.set(col, v);
+      if (c[2] === "s") v = strs[Number(v)] ?? v;
+      m.set(c[1], v.trim());
     }
     return m;
-  }
+  });
 
-  const saldoDe = (rxml: string) => {
-    const c = celdasDe(rxml).get("C");
-    const n = c ? Number(c) : NaN;
-    return Number.isFinite(n) ? n : null;
-  };
-
-  // Buscamos la fila cuya etiqueta empieza por "Deuda Pública Total".
-  let idxTotal = -1;
-  for (let k = 0; k < filas.length; k++) {
-    const etiqueta = celdasDe(filas[k][2]).get("B") ?? "";
-    if (/^Deuda\s+P[uú]blica\s+Total/i.test(etiqueta)) {
-      idxTotal = k;
-      break;
+  // La cabecera con dos «Saldo» y, debajo, sus fechas.
+  let col: string | null = null;
+  let fecha: string | null = null;
+  for (let k = 0; k < filas.length - 1; k++) {
+    const cols = [...filas[k]].filter(([, v]) => /^Saldo\b/i.test(v)).map(([c]) => c);
+    if (cols.length < 2) continue;
+    for (const c of cols) {
+      const f = fechaExcel(filas[k + 1].get(c));
+      if (f && (!fecha || f > fecha)) {
+        fecha = f;
+        col = c;
+      }
     }
+    break;
   }
-  if (idxTotal === -1) return null;
+  if (!col || !fecha) return null;
+  const columna = col;
 
-  const saldoTotal = saldoDe(filas[idxTotal][2]);
-  if (saldoTotal == null) return null;
+  const valor = (etiqueta: RegExp): number | null => {
+    const fila = filas.find((f) => etiqueta.test(f.get("B") || f.get("C") || ""));
+    const n = Number(fila?.get(columna));
+    return fila && Number.isFinite(n) ? n : null;
+  };
+  const saldoTotal = valor(/^Deuda\s+P[uú]blica\s+Total/i);
+  if (!saldoTotal) return null;
 
-  // Externa / Interna: las siguientes filas con esas etiquetas.
-  let saldoExterna = 0;
-  let saldoInterna = 0;
-  for (let k = idxTotal + 1; k < Math.min(idxTotal + 5, filas.length); k++) {
-    const et = celdasDe(filas[k][2]).get("B") ?? "";
-    if (/Deuda\s+Externa\s+Total/i.test(et)) saldoExterna = saldoDe(filas[k][2]) ?? 0;
-    if (/Deuda\s+Interna\s+Total/i.test(et)) saldoInterna = saldoDe(filas[k][2]) ?? 0;
-  }
-
-  return { saldoTotal, saldoExterna, saldoInterna, periodo };
+  return {
+    saldoTotal,
+    saldoExterna: valor(/Deuda\s+Externa\s+Total/i) ?? 0,
+    saldoInterna: valor(/Deuda\s+Interna\s+Total/i) ?? 0,
+    periodo: periodoDeFecha(fecha),
+    fecha,
+  };
 }
 
 /* ------------------------------------------------------------- localizador */
@@ -197,23 +236,99 @@ export async function getDeuda(): Promise<Deuda | null> {
   return leerInstantanea();
 }
 
-async function leerInstantanea(): Promise<Deuda | null> {
+/** Un cierre de la serie: saldo al final de un mes, en millones de US$. */
+export interface CierreDeuda {
+  /** ISO, último día del período. */
+  fecha: string;
+  total: number;
+  externa: number;
+  interna: number;
+  fuente?: string;
+}
+
+/** Cierre de un año del histórico, con su peso en la economía. */
+export interface AnioDeuda {
+  anio: number;
+  total: number;
+  externa: number;
+  interna: number;
+  /** Deuda ÷ PIB en por ciento, según el mismo archivo. */
+  pctPib: number | null;
+}
+
+interface DeudaCruda {
+  generadoEn: string;
+  periodo: string;
+  fecha?: string;
+  saldoTotal: number;
+  saldoExterna: number;
+  saldoInterna: number;
+  fuente: string;
+  serie?: CierreDeuda[];
+  anual?: AnioDeuda[];
+}
+
+async function leerCrudo(): Promise<DeudaCruda | null> {
   try {
     const ruta = path.join(process.cwd(), "public", "data", "deuda.json");
-    const crudo = JSON.parse(await readFile(ruta, "utf8")) as {
-      generadoEn: string;
-      periodo: string;
-      saldoTotal: number;
-      saldoExterna: number;
-      saldoInterna: number;
-      fuente: string;
-    };
-    if (!crudo?.saldoTotal || !crudo.periodo) return null;
-    return { ...crudo, desdeInstantanea: true };
+    const crudo = JSON.parse(await readFile(ruta, "utf8")) as DeudaCruda;
+    return crudo?.saldoTotal && crudo.periodo ? crudo : null;
   } catch (err) {
     console.error(`[deuda] instantánea: ${String(err)}`);
     return null;
   }
+}
+
+async function leerInstantanea(): Promise<Deuda | null> {
+  const crudo = await leerCrudo();
+  if (!crudo) return null;
+  return {
+    saldoTotal: crudo.saldoTotal,
+    saldoExterna: crudo.saldoExterna,
+    saldoInterna: crudo.saldoInterna,
+    periodo: crudo.periodo,
+    fecha: crudo.fecha,
+    fuente: crudo.fuente,
+    generadoEn: crudo.generadoEn,
+    desdeInstantanea: true,
+  };
+}
+
+export interface SerieDeuda {
+  /** El último saldo: en vivo si el origen respondió, si no la instantánea. */
+  ultimo: Deuda;
+  /**
+   * Cierres trimestrales desde 2015 y los meses recientes del año en curso:
+   * es lo que el origen **conserva** publicado (docs/AUDITORIA.md §3.3). Si la
+   * lectura en vivo trae un cierre posterior a la instantánea, va al final.
+   */
+  serie: CierreDeuda[];
+  /** Cierre de cada año desde 2000, con % del PIB (histórico del origen). */
+  anual: AnioDeuda[];
+  /** Fecha de la instantánea de la que sale la serie. */
+  generadoEn: string;
+}
+
+/**
+ * La deuda en el tiempo. La serie sale siempre de la instantánea —rehacerla
+ * en vivo son ~45 descargas, fuera de lo que un request puede esperar— y se
+ * completa con el último saldo en vivo cuando el origen contesta.
+ */
+export async function getSerieDeuda(): Promise<SerieDeuda | null> {
+  const [crudo, ultimo] = await Promise.all([leerCrudo(), getDeuda()]);
+  if (!crudo || !ultimo) return null;
+  const serie = [...(crudo.serie ?? [])];
+  const cola = serie[serie.length - 1];
+  if (!ultimo.desdeInstantanea && ultimo.fecha && (!cola || ultimo.fecha > cola.fecha)) {
+    serie.push({
+      fecha: ultimo.fecha,
+      total: ultimo.saldoTotal,
+      externa: ultimo.saldoExterna,
+      interna: ultimo.saldoInterna,
+      fuente: ultimo.fuente,
+    });
+  }
+  return { ultimo, serie, anual: crudo.anual ?? [], generadoEn: crudo.generadoEn };
 }
 
 /**
@@ -222,7 +337,7 @@ async function leerInstantanea(): Promise<Deuda | null> {
  * mes más reciente. Si la página no responde, degradamos a `null`.
  */
 async function getDeudaEnVivo(): Promise<Deuda | null> {
-  const htmlBuf = await fetchBuffer(PAGINA, 21_600);
+  const htmlBuf = await fetchBuffer(PAGINA, 21_600, TIPO_HTML);
   if (!htmlBuf) return null;
   const html = Buffer.from(htmlBuf).toString("utf8");
 
@@ -244,7 +359,7 @@ async function getDeudaEnVivo(): Promise<Deuda | null> {
 
   for (const ruta of enlaces.slice(0, 3)) {
     const url = BASE + encodeURI(ruta);
-    const buf = await fetchBuffer(url, 21_600);
+    const buf = await fetchBuffer(url, 21_600, TIPO_XLSX);
     if (!buf) continue;
     const archivos = await leerZip(buf);
     const saldo = parsearSaldo(archivos);

@@ -1,8 +1,503 @@
 {
- "generadoEn": "2026-09-01",
+ "generadoEn": "2026-09-23",
  "periodo": "Jul-26",
- "saldoTotal": 61549.89,
- "saldoExterna": 45479.27,
- "saldoInterna": 16070.62,
- "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2026/11Julio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+ "fecha": "2026-07-31",
+ "saldoTotal": 67827.83,
+ "saldoExterna": 48115.76,
+ "saldoInterna": 19712.08,
+ "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2026/11Julio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx",
+ "serie": [
+  {
+   "fecha": "2015-12-31",
+   "total": 24153.66,
+   "externa": 16246.1,
+   "interna": 7907.56,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2015/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2016-03-31",
+   "total": 24919.75,
+   "externa": 17027.7,
+   "interna": 7892.05,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2016/22Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2016-06-30",
+   "total": 25719.32,
+   "externa": 16960.08,
+   "interna": 8759.25,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2016/16Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2016-09-30",
+   "total": 26479.26,
+   "externa": 17346.77,
+   "interna": 9132.49,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2016/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2016-12-31",
+   "total": 26757.86,
+   "externa": 17567.11,
+   "interna": 9190.76,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2016/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2017-03-31",
+   "total": 27659.58,
+   "externa": 18638.66,
+   "interna": 9020.93,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2017/20Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2017-06-30",
+   "total": 28972.27,
+   "externa": 19067.41,
+   "interna": 9904.86,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2017/16Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2017-09-30",
+   "total": 29063.35,
+   "externa": 18865.69,
+   "interna": 10197.67,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2017/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2017-12-31",
+   "total": 29543.62,
+   "externa": 18821.27,
+   "interna": 10722.35,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2017/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2018-03-31",
+   "total": 30501.46,
+   "externa": 20415.41,
+   "interna": 10086.04,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2018/22Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2018-06-30",
+   "total": 30169.99,
+   "externa": 20212.97,
+   "interna": 9957.02,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2018/16Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2018-09-30",
+   "total": 31526.69,
+   "externa": 21358.64,
+   "interna": 10168.05,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2018/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2018-12-31",
+   "total": 32158.16,
+   "externa": 21564.56,
+   "interna": 10593.61,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2018/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2019-03-31",
+   "total": 32733.03,
+   "externa": 21417.75,
+   "interna": 11315.27,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2019/22Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2019-06-30",
+   "total": 34626.16,
+   "externa": 23268.6,
+   "interna": 11357.56,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2019/16Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2019-09-30",
+   "total": 34227.85,
+   "externa": 23095.29,
+   "interna": 11132.55,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2019/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2019-12-31",
+   "total": 35942.49,
+   "externa": 23383.15,
+   "interna": 12559.33,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2019/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2020-03-31",
+   "total": 38569.53,
+   "externa": 25900.79,
+   "interna": 12668.73,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2020/22Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2020-06-30",
+   "total": 38574.77,
+   "externa": 25859.21,
+   "interna": 12715.56,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2020/16Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2020-09-30",
+   "total": 43091.12,
+   "externa": 29630.67,
+   "interna": 13460.45,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2020/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2020-12-31",
+   "total": 44622.33,
+   "externa": 30702.53,
+   "interna": 13919.8,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2020/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2021-03-31",
+   "total": 47395.57,
+   "externa": 33145.57,
+   "interna": 14250.0,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2021/20Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2021-06-30",
+   "total": 47418.61,
+   "externa": 32948.76,
+   "interna": 14469.84,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2021/14Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2021-09-30",
+   "total": 47665.2,
+   "externa": 33129.8,
+   "interna": 14535.4,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2021/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2021-12-31",
+   "total": 47672.21,
+   "externa": 33341.33,
+   "interna": 14330.87,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2021/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2022-03-31",
+   "total": 50501.6,
+   "externa": 36390.9,
+   "interna": 14110.69,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2022/20Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2022-06-30",
+   "total": 51804.38,
+   "externa": 36435.26,
+   "interna": 15369.11,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2022/14Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2022-09-30",
+   "total": 52665.3,
+   "externa": 36453.43,
+   "interna": 16211.86,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2022/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2022-12-31",
+   "total": 51854.5,
+   "externa": 36357.56,
+   "interna": 15496.94,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2022/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2023-03-31",
+   "total": 54942.88,
+   "externa": 38473.57,
+   "interna": 16469.31,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2023/20Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2023-06-30",
+   "total": 54820.68,
+   "externa": 38358.81,
+   "interna": 16461.86,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2023/14Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2023-09-30",
+   "total": 55015.16,
+   "externa": 38700.23,
+   "interna": 16314.93,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2023/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2023-12-31",
+   "total": 54828.79,
+   "externa": 38854.09,
+   "interna": 15974.7,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2023/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2024-03-31",
+   "total": 55285.97,
+   "externa": 38996.91,
+   "interna": 16289.06,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2024/20Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2024-06-30",
+   "total": 55730.17,
+   "externa": 38775.58,
+   "interna": 16954.59,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2024/14Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2024-09-30",
+   "total": 57358.79,
+   "externa": 40709.07,
+   "interna": 16649.72,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2024/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2024-12-31",
+   "total": 57587.18,
+   "externa": 40739.98,
+   "interna": 16847.2,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2024/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2025-03-31",
+   "total": 59600.82,
+   "externa": 43843.26,
+   "interna": 15757.56,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2025/20Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2025-06-30",
+   "total": 60950.47,
+   "externa": 44304.96,
+   "interna": 16645.51,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2025/14Al%2030%20de%20Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2025-09-30",
+   "total": 60361.88,
+   "externa": 44085.64,
+   "interna": 16276.25,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2025/08Al%2030%20de%20Septiembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2025-12-31",
+   "total": 61549.89,
+   "externa": 45479.27,
+   "interna": 16070.62,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2025/01Diciembre/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2026-03-31",
+   "total": 66388.49,
+   "externa": 48231.55,
+   "interna": 18156.94,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2026/20Al%2031%20de%20Marzo/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2026-06-30",
+   "total": 67370.71,
+   "externa": 47989.69,
+   "interna": 19381.02,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2026/13Junio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  },
+  {
+   "fecha": "2026-07-31",
+   "total": 67827.83,
+   "externa": 48115.76,
+   "interna": 19712.08,
+   "fuente": "https://www.creditopublico.gob.do/Content/estadisticas/anual/2026/11Julio/08Saldo%20Evoluci%C3%B3n%20Deuda%20del%20Sector%20P%C3%BAblico%20No%20Financiero.xlsx"
+  }
+ ],
+ "anual": [
+  {
+   "anio": 2000,
+   "total": 3243.54,
+   "externa": 2777.87,
+   "interna": 465.67,
+   "pctPib": 13.45
+  },
+  {
+   "anio": 2001,
+   "total": 3957.54,
+   "externa": 3338.53,
+   "interna": 619.01,
+   "pctPib": 15.67
+  },
+  {
+   "anio": 2002,
+   "total": 4402.77,
+   "externa": 3669.52,
+   "interna": 733.25,
+   "pctPib": 17.08
+  },
+  {
+   "anio": 2003,
+   "total": 5744.18,
+   "externa": 5185.58,
+   "interna": 558.6,
+   "pctPib": 27.56
+  },
+  {
+   "anio": 2004,
+   "total": 6584.98,
+   "externa": 5544.11,
+   "interna": 1040.87,
+   "pctPib": 28.4
+  },
+  {
+   "anio": 2005,
+   "total": 6822.0,
+   "externa": 5847.1,
+   "interna": 974.9,
+   "pctPib": 19.0
+  },
+  {
+   "anio": 2006,
+   "total": 7406.8,
+   "externa": 6295.5,
+   "interna": 1111.3,
+   "pctPib": 19.46
+  },
+  {
+   "anio": 2007,
+   "total": 7558.3,
+   "externa": 6555.7,
+   "interna": 1002.6,
+   "pctPib": 17.14
+  },
+  {
+   "anio": 2008,
+   "total": 11219.26,
+   "externa": 7218.84,
+   "interna": 4000.42,
+   "pctPib": 23.28
+  },
+  {
+   "anio": 2009,
+   "total": 13254.01,
+   "externa": 8214.69,
+   "interna": 5039.32,
+   "pctPib": 27.45
+  },
+  {
+   "anio": 2010,
+   "total": 14818.1,
+   "externa": 9946.97,
+   "interna": 4871.14,
+   "pctPib": 27.53
+  },
+  {
+   "anio": 2011,
+   "total": 16593.09,
+   "externa": 11625.56,
+   "interna": 4967.53,
+   "pctPib": 28.61
+  },
+  {
+   "anio": 2012,
+   "total": 19463.33,
+   "externa": 12871.6,
+   "interna": 6591.73,
+   "pctPib": 32.1
+  },
+  {
+   "anio": 2013,
+   "total": 23203.78,
+   "externa": 15159.53,
+   "interna": 8044.25,
+   "pctPib": 37.06
+  },
+  {
+   "anio": 2014,
+   "total": 23809.06,
+   "externa": 16435.73,
+   "interna": 7373.34,
+   "pctPib": 35.49
+  },
+  {
+   "anio": 2015,
+   "total": 24153.66,
+   "externa": 16246.1,
+   "interna": 7907.56,
+   "pctPib": 34.0
+  },
+  {
+   "anio": 2016,
+   "total": 26757.86,
+   "externa": 17567.11,
+   "interna": 9190.76,
+   "pctPib": 35.39
+  },
+  {
+   "anio": 2017,
+   "total": 29543.62,
+   "externa": 18821.27,
+   "interna": 10722.35,
+   "pctPib": 37.35
+  },
+  {
+   "anio": 2018,
+   "total": 32158.16,
+   "externa": 21564.56,
+   "interna": 10593.61,
+   "pctPib": 37.84
+  },
+  {
+   "anio": 2019,
+   "total": 35942.49,
+   "externa": 23383.15,
+   "interna": 12559.33,
+   "pctPib": 40.33
+  },
+  {
+   "anio": 2020,
+   "total": 44622.33,
+   "externa": 30702.53,
+   "interna": 13919.8,
+   "pctPib": 56.86
+  },
+  {
+   "anio": 2021,
+   "total": 47672.21,
+   "externa": 33341.33,
+   "interna": 14330.87,
+   "pctPib": 50.12
+  },
+  {
+   "anio": 2022,
+   "total": 51854.5,
+   "externa": 36357.56,
+   "interna": 15496.94,
+   "pctPib": 45.52
+  },
+  {
+   "anio": 2023,
+   "total": 54828.79,
+   "externa": 38854.09,
+   "interna": 15974.7,
+   "pctPib": 45.4
+  },
+  {
+   "anio": 2024,
+   "total": 57587.18,
+   "externa": 40739.98,
+   "interna": 16847.2,
+   "pctPib": 46.35
+  },
+  {
+   "anio": 2025,
+   "total": 61549.89,
+   "externa": 45479.27,
+   "interna": 16070.62,
+   "pctPib": 48.14
+  }
+ ]
 }

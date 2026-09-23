@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { etiquetaCorte, getFiscal, getInstitucionFiscal } from "@/lib/fiscal";
 import { formatMonto, formatPesos } from "@/lib/format";
+import { hrefInstitucion, institucionesDelCapitulo } from "@/lib/instituciones";
+import Plegable from "@/components/plegable";
 
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -218,6 +221,8 @@ export default async function InstitucionFiscalPage({
         </Card>
       </div>
 
+      <UnidadesDeCompra capitulo={i.codigo} />
+
       <p className="text-xs leading-relaxed text-ink-soft">
         Fuente: API de datos abiertos del SIGEF (Ministerio de Hacienda), sección{" "}
         <span className="font-mono">{i.seccion}</span>, capítulo{" "}
@@ -226,5 +231,64 @@ export default async function InstitucionFiscalPage({
         mensuales, que es como lo publica el origen.
       </p>
     </div>
+  );
+}
+
+/** Cuántas unidades se ven sin abrir: las demás quedan a un toque. */
+const UNIDADES_VISIBLES = 12;
+
+/**
+ * Quién compra con este presupuesto: las unidades de compra de la DGCP que la
+ * propia DGCP adscribe al capítulo (`lib/instituciones.ts`). Es el puente de
+ * vuelta a la ficha de institución, donde están sus compras, su nómina y sus
+ * decretos. Un capítulo como el del Servicio Nacional de Salud agrupa cientos
+ * de hospitales: los ministerios y oficinas centrales van primero, y el resto
+ * se despliega diciendo cuántos son.
+ */
+function UnidadesDeCompra({ capitulo }: { capitulo: string }) {
+  const orden = (tipo: string) => (tipo === "Institución" ? 0 : tipo === "Hospital" ? 2 : 1);
+  const unidades = institucionesDelCapitulo(capitulo).sort(
+    (a, b) => orden(a.tipo) - orden(b.tipo) || a.nombre.localeCompare(b.nombre, "es"),
+  );
+  const fila = (u: (typeof unidades)[number]) => (
+    <li key={u.id}>
+      <Link
+        href={hrefInstitucion(u)}
+        className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm transition-colors hover:text-brand-700"
+      >
+        <span className="min-w-0 leading-snug">{u.nombre}</span>
+        <span className="shrink-0 text-xs text-ink-soft">
+          {[u.acronimo, u.tipo].filter(Boolean).join(" · ")}
+        </span>
+      </Link>
+    </li>
+  );
+
+  return (
+    <Card as="section" className="overflow-hidden">
+      <div className="p-5 sm:p-6">
+        <CardTitle>¿Quién compra con este presupuesto?</CardTitle>
+        <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+          {unidades.length === 0
+            ? "La DGCP no adscribe ninguna unidad de compra activa a este capítulo."
+            : `${unidades.length === 1 ? "La unidad de compra" : `Las ${unidades.length} unidades de compra`} que la DGCP adscribe a este capítulo. Cada una lleva a su ficha de institución, con sus compras.`}
+        </p>
+        {unidades.length > 0 && (
+          <ul className="mt-3 divide-y divide-hairline">
+            {unidades.slice(0, UNIDADES_VISIBLES).map(fila)}
+          </ul>
+        )}
+      </div>
+      {unidades.length > UNIDADES_VISIBLES && (
+        <Plegable
+          etiqueta={`Ver las otras ${unidades.length - UNIDADES_VISIBLES} unidades`}
+          etiquetaCerrar="Ocultar las demás unidades"
+        >
+          <ul className="divide-y divide-hairline px-5 sm:px-6">
+            {unidades.slice(UNIDADES_VISIBLES).map(fila)}
+          </ul>
+        </Plegable>
+      )}
+    </Card>
   );
 }
