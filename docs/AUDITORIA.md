@@ -677,6 +677,34 @@ Misma API que ya integra `lib/dgcp.ts`, mismo adaptador, **cero hosts nuevos**:
 `SNIP → proyecto → proceso → contrato → proveedor → territorio`. `Proceso` ya
 tiene `es_snip`/`codigo_snip`: la unión es directa.
 
+**Integrado el 2026-09-23** (`scripts/build-obras.py` → `public/data/obras.json`
++ `obras-detalle.json`, `lib/obras.ts`, `/obras`, `/obras/[snip]`). Verificación
+de campo de ese día, UA identificable, 4 descargas + 1 ficha:
+
+- ✅ `/robots.txt` → 404 (sin política). `/DatosAbiertos` → 200 HTML con los
+  enlaces `/opendata/*.csv` y sus diccionarios `_Diccionario.xlsx`.
+- ✅ Los cuatro CSV usados responden 200 `text/csv`, UTF-8 con BOM, coma y
+  comillas, `last-modified` del mismo día (se regeneran a diario):
+  `ProyectosDeInversion` 4.2 MB / **3,611 filas**, `…XTerritorio` 7.2 MB /
+  26,606 (proyecto × municipio), `ProcesosXProyectosInv` 2.0 MB / 3,399,
+  `ContratosXProyectosInv` 7.8 MB / 14,957. `FechaCorteFuente` 2026-09-22.
+- ✅ `CodigoProveedor` de los contratos **es el RPE** de la DGCP (comprobado:
+  `17` → Delta Comercial, SA en `/proveedores?rpe=17`).
+- ✅ La ficha pública es `/projectprofile/{IdProyecto}` (200, server-rendered).
+- ⚠️ **`AvanceFisico` y `AvanceFinanciero` son idénticos en 3,611 de 3,611
+  proyectos.** La fuente no distingue las dos medidas: la interfaz muestra un
+  solo «avance declarado» y lo dice.
+- ⚠️ Dos `CodigoSNIP` repetidos (3,609 distintos); se conserva el primero.
+- ⚠️ Estados: 2,350 en ejecución, 655 en reevaluación, 562 paralizados, 44 por
+  reprogramar. Solo 716 SNIP tienen contratos; 1,003 tienen procesos.
+- ⚠️ La DGCP y MapaInversiones **pueden asociar un mismo proceso a SNIP
+  distintos** (visto: `MOPC-CCC-LPN-2026-0013` → 4795 en la DGCP, 12080 en
+  MapaInversiones). La ficha de proceso muestra ambas obras con su origen.
+- La entidad ejecutora (134 distintas) casa con la unidad de compra de
+  `instituciones.json` por nombre normalizado más 8 equivalencias curadas:
+  3,299 de 3,609 obras atadas. Queda fuera «Dirección de Desarrollo
+  Provincial» (189 obras), sin unidad de compra con ese nombre en la DGCP.
+
 ### A.5 MICM — precios de combustibles, semanales
 
 - ✅ `micm.gob.do` con robots Yoast abierto (`Disallow:` vacío).
@@ -913,7 +941,7 @@ Las fases 1 y 2 (deuda, normativa) siguen implementadas. Estas se ordenan por
 | **5** ✅ | **DGCP: `/ofertas`, `/proveedores`, `/catalogo`, `/pacc`** | **bajo** | Mismo host, mismo `dgcpFetch`, mismas ventanas de caché. Es la mejor relación valor/esfuerzo de toda la auditoría |
 | **6** ✅ | **SIGEF: `lib/fiscal.ts` + vertical de finanzas públicas** | medio | `unstable_cache` diario, consulta **por institución**, timeout ≥120 s, precalentar el mes vigente, degradar al mes cerrado anterior |
 | **7** | **MICM: indicador de combustibles** | bajo | Portada + título del último aviso; declarar que son 4 precios, no el aviso completo |
-| **8** | **MapaInversiones: obra pública** | medio | CSV grandes → instantánea en build (patrón nómina), unión por `codigo_snip` con procesos |
+| **8** ✅ | **MapaInversiones: obra pública** | medio | CSV grandes → instantánea en build (patrón nómina), unión por `codigo_snip` con procesos |
 | **9** | **RNC (DGII) en fichas de proveedor** | medio | Instantánea en build restringida a los RNC presentes en compras; nunca descarga en request |
 | **10** | **Nómina ampliada (159 candidatos) + SISMAP** | bajo | Añadir líneas al manifiesto de `scripts/build-nomina.py`; SISMAP es parseo de tabla |
 | **11** | BCRD (tipo de cambio) | bajo | Solo si el XLS del CDN se parsea sin dependencia pesada; el resto de series, tras pedir el índice |

@@ -1,0 +1,221 @@
+import Link from "next/link";
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import {
+  ESTADOS_OBRA,
+  FUENTE_OBRAS,
+  filtrarObras,
+  getObras,
+  provinciasDe,
+  type FiltroObras,
+} from "@/lib/obras";
+import { institucionPorId, hrefInstitucion } from "@/lib/instituciones";
+import { formatFecha, formatPesos } from "@/lib/format";
+import { formatInt } from "@/lib/nomina";
+import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
+import { BuscadorUrl } from "@/components/buscador-url";
+import { NavFiltros, FiltroEnlace } from "@/components/nav-filtros";
+import { Paginador } from "@/components/paginador";
+import { EstadoVacio } from "@/components/estado-vacio";
+import Plegable from "@/components/plegable";
+import { Card } from "@/components/ui/card";
+import { FilaObra } from "@/components/fuentes-nuevas/fila-obra";
+
+export const metadata: Metadata = {
+  title: "Obras públicas",
+  description:
+    "La inversión pública del Estado dominicano proyecto a proyecto: estado, valor, avance declarado, provincia y los contratos de compras que la ejecutan, según los datos abiertos de MapaInversiones.",
+};
+
+export const revalidate = 86400;
+
+const POR_PAGINA = 30;
+
+type Params = { q?: string; estado?: string; provincia?: string; uc?: string; pagina?: string };
+
+/**
+ * ¿Existe la obra y avanza? — el listado de la inversión pública.
+ *
+ * Todo se filtra en el servidor sobre la instantánea (`lib/obras.ts`), y cada
+ * filtro vive en la URL: una búsqueda por provincia se comparte y vuelve con
+ * «atrás». Los estados son los cuatro que publica la fuente; la provincia sale
+ * del CSV de territorio, y una obra que toca varias aparece en cada una.
+ */
+export default async function ObrasPage({ searchParams }: { searchParams: Promise<Params> }) {
+  const sp = await searchParams;
+  const datos = await getObras();
+  if (!datos) {
+    return (
+      <EstadoVacio className="mx-auto max-w-2xl" titulo="La instantánea de obras no está disponible">
+        Se genera con <span className="font-mono">python3 scripts/build-obras.py</span>, que
+        descarga los datos abiertos de MapaInversiones.
+      </EstadoVacio>
+    );
+  }
+
+  const estado = ESTADOS_OBRA.find((e) => e === sp.estado);
+  const provincias = provinciasDe(datos.proyectos);
+  const provincia = provincias.find((p) => p.slug === sp.provincia);
+  const ucNum = /^\d{1,6}$/.test(sp.uc ?? "") ? Number(sp.uc) : undefined;
+  const institucion = ucNum !== undefined ? institucionPorId(ucNum) : null;
+  const filtro: FiltroObras = {
+    q: (sp.q ?? "").slice(0, 80) || undefined,
+    estado,
+    provincia: provincia?.slug,
+    uc: institucion ? institucion.id : undefined,
+  };
+  const obras = filtrarObras(datos.proyectos, filtro);
+  const paginas = Math.max(1, Math.ceil(obras.length / POR_PAGINA));
+  const pagina = Math.min(paginas, Math.max(1, Number(sp.pagina) || 1));
+  const visibles = obras.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+
+  const valor = obras.reduce((s, o) => s + o.valor, 0);
+  const paralizadas = obras.filter((o) => o.estado === "Paralizado").length;
+  const conContratos = obras.filter((o) => o.nContratos > 0).length;
+
+  const href = (cambios: Partial<Params>) => {
+    const u = new URLSearchParams();
+    const todo: Params = {
+      q: filtro.q,
+      estado,
+      provincia: provincia?.slug,
+      uc: institucion ? String(institucion.id) : undefined,
+      ...cambios,
+    };
+    for (const [k, v] of Object.entries(todo)) if (v) u.set(k, v);
+    const s = u.toString();
+    return s ? `/obras?${s}` : "/obras";
+  };
+
+  const filtrado = Boolean(filtro.q || estado || provincia || institucion);
+
+  return (
+    <div className="space-y-5">
+      <Portada
+        rotulo={`Inversión pública · MapaInversiones · corte al ${formatFecha(datos.corte)}`}
+        titulo="¿Existe la obra y avanza?"
+        descripcion={
+          <>
+            Cada proyecto de inversión del Banco de Proyectos del Estado, con su
+            estado, su valor, el avance que declara la institución que lo ejecuta y
+            los contratos de compras que lo materializan. Es una instantánea de los
+            datos abiertos de MapaInversiones, no una consulta en vivo.
+          </>
+        }
+      >
+        <PortadaCifras>
+          <PortadaCifra etiqueta={filtrado ? "Obras que coinciden" : "Obras registradas"} valor={formatInt(obras.length)} destacar />
+          <PortadaCifra etiqueta="Valor de esos proyectos" valor={formatPesos(valor)} />
+          <PortadaCifra etiqueta="Paralizadas" valor={formatInt(paralizadas)} />
+          <PortadaCifra etiqueta="Con contratos en compras" valor={formatInt(conContratos)} />
+        </PortadaCifras>
+      </Portada>
+
+      <Suspense>
+        <BuscadorUrl
+          etiqueta="Buscar una obra"
+          placeholder="Nombre, institución o código SNIP: liceo, acueducto, 12080…"
+          ayuda={`Busca en el nombre, la entidad ejecutora y el código SNIP de las ${formatInt(datos.proyectos.length)} obras de la instantánea, sin distinguir tildes.`}
+        />
+      </Suspense>
+
+      <NavFiltros etiqueta="Estado de la obra">
+        <FiltroEnlace href={href({ estado: undefined, pagina: undefined })} activo={!estado}>
+          Todas
+        </FiltroEnlace>
+        {ESTADOS_OBRA.map((e) => (
+          <FiltroEnlace key={e} href={href({ estado: e, pagina: undefined })} activo={estado === e}>
+            {e}
+          </FiltroEnlace>
+        ))}
+      </NavFiltros>
+
+      <Card>
+        <Plegable
+          resumen={
+            <p className="px-5 pt-4 pb-3 text-sm text-ink">
+              {provincia ? (
+                <>
+                  Obras en <span className="font-semibold">{provincia.nombre}</span>.{" "}
+                  <Link href={href({ provincia: undefined, pagina: undefined })} className="text-brand-700 hover:underline">
+                    Ver todas las provincias
+                  </Link>
+                </>
+              ) : (
+                "Todas las provincias. Una obra que abarca varias aparece en cada una; las de alcance nacional, solo sin filtro."
+              )}
+            </p>
+          }
+          etiqueta={`Elegir entre las ${provincias.length} provincias`}
+        >
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-1 px-5 py-3 text-sm sm:grid-cols-3 lg:grid-cols-4">
+            {provincias.map((p) => (
+              <li key={p.slug}>
+                <Link
+                  href={href({ provincia: p.slug, pagina: undefined })}
+                  aria-current={p.slug === provincia?.slug ? "page" : undefined}
+                  className="inline-flex min-h-11 items-center gap-1.5 text-brand-700 hover:underline sm:min-h-8"
+                >
+                  {p.nombre}
+                  <span className="font-mono text-xs tabular-nums text-ink-soft">{formatInt(p.n)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Plegable>
+      </Card>
+
+      {institucion && (
+        <p className="text-sm text-ink-soft">
+          Solo las obras que ejecuta{" "}
+          <Link href={hrefInstitucion(institucion)} className="font-medium text-brand-700 hover:underline">
+            {institucion.nombre}
+          </Link>
+          .{" "}
+          <Link href={href({ uc: undefined, pagina: undefined })} className="text-brand-700 hover:underline">
+            Quitar este filtro
+          </Link>
+        </p>
+      )}
+
+      {visibles.length === 0 ? (
+        <EstadoVacio titulo="Ninguna obra coincide con esa búsqueda">
+          Prueba con otra palabra del nombre, con el código SNIP o quitando un filtro.
+        </EstadoVacio>
+      ) : (
+        <Card as="section">
+          <ul className="divide-y divide-hairline">
+            {visibles.map((o) => (
+              <FilaObra key={o.snip} obra={o} />
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {paginas > 1 && (
+        <Paginador
+          pagina={pagina}
+          paginas={paginas}
+          href={(n) => href({ pagina: n > 1 ? String(n) : undefined })}
+          etiqueta="Páginas de obras"
+        />
+      )}
+
+      <p className="text-xs leading-relaxed text-ink-soft">
+        Fuente:{" "}
+        <a href={FUENTE_OBRAS} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline">
+          datos abiertos de MapaInversiones
+        </a>{" "}
+        (Ministerio de Hacienda y Economía, sobre el Banco de Proyectos del SNIP y
+        la DGCP), con corte al {formatFecha(datos.corte)}. Ordenadas por valor del
+        proyecto. El «avance» es el que la fuente publica: trae el mismo número
+        como avance físico y como financiero, así que se muestra uno solo. Ver{" "}
+        <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
+          el estado de las fuentes
+        </Link>
+        .
+      </p>
+    </div>
+  );
+}
+

@@ -100,6 +100,25 @@ Transparency Portal's own form — Hacienda publishes the taxonomy nowhere else)
 plus `titulizar`, which puts official ALL-CAPS names into reading case while
 preserving the acronyms in parentheses.
 
+## Horizonte 3 snapshots — `lib/obras.ts` (y sus hermanas)
+Sources too large to read per request (`docs/PLAN-ACCESO.md` §4), built by a
+`scripts/build-*.py` into `public/data/*.json` and read from disk with
+`node:fs` (server-only, like `lib/nomina-server.ts`), memoised per instance.
+Every UI that shows them states the source's cut date.
+- **`lib/obras.ts`** — MapaInversiones (`docs/AUDITORIA.md` §A.4).
+  `scripts/build-obras.py` joins four open CSVs (~21 MB) by SNIP into
+  `obras.json` (3,609 projects: estado, valor, avance, sector, entidad
+  ejecutora, provincias, totals) and `obras-detalle.json` (top-12 contracts and
+  processes per project), plus an index **proceso → SNIP** so
+  `/procesos/[codigo]` finds the project even when the DGCP omits `codigo_snip`.
+  `obrasDeProceso` returns each project with **who says so** (DGCP, MapaInversiones
+  or both) because the two disagree. The executing entity is joined to the DGCP
+  purchasing unit by normalised name plus the curated `EJECUTORAS` table.
+  `AvanceFisico == AvanceFinanciero` in every row of the source, so the layer
+  exposes one `avance` and the UI calls it «avance declarado».
+  Self-contained server components for other pages live in
+  `components/fuentes-nuevas/` (`ObraDelProceso`, `ObrasDeInstitucion`, `FilaObra`).
+
 ## API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return
 `502` on upstream failure: `procesos` (search/list), `precios?subclase=`
@@ -238,6 +257,10 @@ sources impose:
 - `/planes` → annual purchasing plans (PACC) for the current year.
 - `/finanzas` → budget execution across the State, `/finanzas/[capitulo]` per
   institution (SSG from the snapshot, one page per chapter).
+- `/obras` → «¿Existe la obra y avanza?»: the investment snapshot, filtered
+  server-side by `?q=`, `?estado=`, `?provincia=` (slug) and `?uc=` (purchasing
+  unit); `/obras/[snip]` → one project with its contracts and processes, linked
+  to `/procesos/*` and `/proveedores/*`.
 - `/estadisticas` → 30-day market dashboard. `/guia` → static bidder guide.
 - `/seguimiento` → starred processes.
 

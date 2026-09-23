@@ -28,6 +28,7 @@ import AccionesProceso from "@/components/acciones-proceso";
 import { IconDoc, IconExternal, IconStar } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
 import { Ruta } from "@/components/ruta";
+import { ObraDelProceso } from "@/components/fuentes-nuevas/obra-del-proceso";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -227,6 +228,8 @@ export default async function ProcesoPage({
           </p>
         )}
       </Card>
+
+      <ObraDelProceso codigo={p.codigo_proceso} snip={p.codigo_snip} />
 
       <Card as="section" className="p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

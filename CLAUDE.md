@@ -18,6 +18,7 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 | Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (API JSON + instantánea) | `lib/normativa.ts` |
 | Nómina estatal | `/nomina` | Instantánea de 11 instituciones | `lib/nomina.ts`, `lib/nomina-server.ts` |
 | Deuda pública | tarjeta en `/` | Crédito Público (XLSX + instantánea) | `lib/deuda.ts` |
+| Obra pública | `/obras` | MapaInversiones (instantánea) | `lib/obras.ts` |
 | Democracia | `/democracia` | Supabase, esquema `democracia` — **la excepción** | `lib/democracia.ts`, `lib/supabase.ts` |
 
 `lib/secciones.ts` es la fuente única de verticales y navegación. `/` es el
@@ -51,8 +52,7 @@ vertical lee ni escribe la DB. Los hooks lo impiden antes de que se escriba.
 | ¿Qué **decidió el dueño** y qué falta decidir? | `docs/DECISIONES.md` — no se re-preguntan ni se deciden aquí |
 | ¿Qué archivos **moldean una sesión**? | `docs/HARNESS.md` — inventario, orden de carga, dónde va una regla nueva |
 
-Los `.claude/rules/*.md` se cargan solos al tocar rutas que coinciden y condensan
-la página que nombran en su cabecera; nunca la sustituyen.
+Los `.claude/rules/*.md` se cargan solos al tocar rutas que coinciden y condensan la página que nombran en su cabecera; nunca la sustituyen.
 
 ## Cómo opera una sesión
 

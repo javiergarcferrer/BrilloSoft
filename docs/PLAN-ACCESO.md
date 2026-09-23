@@ -75,6 +75,12 @@ entre esfuerzo. Todas respetan la invariante (sin llave, instantánea en build).
 1. **MapaInversiones** (§A.4, fase 8): obra ↔ SNIP ↔ proceso ↔ proveedor ↔
    territorio, con avance físico y financiero. `Proceso` ya trae `codigo_snip`.
    Responde «¿existe la obra y avanza?» y alimenta 2.4.
+   ✅ 2026-09-23: `/obras` (filtros por estado, provincia, institución y texto)
+   y `/obras/[snip]`, `lib/obras.ts` sobre `scripts/build-obras.py`; enlazada
+   desde la ficha de proceso (`ObraDelProceso`) y la de institución
+   (`ObrasDeInstitucion`). El avance físico y el financiero son el mismo número
+   en la fuente: se muestra uno, declarado. `/provincias/[slug]` (2.4) puede
+   reutilizar `filtrarObras({ provincia })`.
 2. **Padrón RNC de la DGII** (§A.2, fase 9): actividad, estado y fecha de
    inicio del proveedor; hace comprobable «empresa creada semanas antes de
    ganar». Instantánea acotada a los RNC que aparecen en compras.

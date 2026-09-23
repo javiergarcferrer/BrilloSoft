@@ -18,6 +18,7 @@ import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha, formatMonto, formatPesos } from "@/lib/format";
 import { formatDOP, formatInt } from "@/lib/nomina";
 import { Ruta } from "@/components/ruta";
+import { ObrasDeInstitucion } from "@/components/fuentes-nuevas/obras-de-institucion";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -98,6 +99,8 @@ export default async function InstitucionPage({ params }: Props) {
       <Suspense fallback={<Cargando titulo="Compras" texto="Consultando sus contratos en la DGCP…" />}>
         <Compras institucion={i} />
       </Suspense>
+
+      <ObrasDeInstitucion uc={i.id} />
 
       {nomina && (
         <Card as="section" className="p-5 sm:p-6">

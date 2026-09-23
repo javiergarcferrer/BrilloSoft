@@ -13,6 +13,7 @@ import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
 import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { IconArrowLeft } from "@/components/icons";
+import { ResumenObras } from "@/components/fuentes-nuevas/resumen-fuentes";
 
 export const metadata: Metadata = {
   title: "Fuentes",
@@ -383,6 +384,32 @@ export default async function FuentesPage() {
             ritmo del resto, así que esta plataforma no rastrea esa web: lee el
             consultante, que no declara restricciones, muy por debajo de ese
             techo.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="MapaInversiones — obra pública" estado="activa" etiqueta="Instantánea local">
+          <p>
+            Los datos abiertos de MapaInversiones (Ministerio de Hacienda y
+            Economía, sobre el Banco de Proyectos del SNIP y la DGCP) alimentan{" "}
+            <Link href="/obras" className="font-medium text-brand-700 hover:underline">
+              ¿Existe la obra y avanza?
+            </Link>
+            : cada proyecto de inversión con su estado, valor, avance, provincia y
+            los procesos y contratos de compras que lo ejecutan. Son cuatro CSV
+            descargables sin clave (unos 21 MB) que se consolidan al construir, no
+            en cada visita. <ResumenObras />
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            Límites que la interfaz dice donde tocan: la fuente publica el mismo
+            número como avance físico y como financiero en todas las obras, así que
+            se muestra uno solo, «avance declarado», que reporta la propia
+            institución y no es una inspección. De cada obra se guardan los 12
+            contratos y procesos de mayor monto, con el total de todos. La
+            institución ejecutora se une a su ficha por nombre, y la que no casa se
+            queda sin enlace. Un proceso puede tener un SNIP en la DGCP y otro en
+            MapaInversiones: se muestran los dos, cada uno con su origen.
+            Regenerar con{" "}
+            <code className="rounded bg-canvas px-1 py-0.5 font-mono">scripts/build-obras.py</code>.
           </p>
         </Fuente>
 
