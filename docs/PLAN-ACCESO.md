@@ -123,8 +123,8 @@ entre esfuerzo. Todas respetan la invariante (sin llave, instantánea en build).
    y `/obras/[snip]`, `lib/obras.ts` sobre `scripts/build-obras.py`; enlazada
    desde la ficha de proceso (`ObraDelProceso`) y la de institución
    (`ObrasDeInstitucion`). El avance físico y el financiero son el mismo número
-   en la fuente: se muestra uno, declarado. `/provincias/[slug]` (2.4) puede
-   reutilizar `filtrarObras({ provincia })`.
+   en la fuente: se muestra uno, declarado. Cada `/provincias/[slug]` lista sus
+   obras (con el alias «Baoruco» → Bahoruco), y `/buscar` las encuentra.
 2. **Padrón RNC de la DGII** (§A.2, fase 9): actividad, estado y fecha de
    inicio del proveedor; hace comprobable «empresa creada semanas antes de
    ganar». Instantánea acotada a los RNC que aparecen en compras.
@@ -146,8 +146,8 @@ entre esfuerzo. Todas respetan la invariante (sin llave, instantánea en build).
    el día de la consulta.
 5. **Combustibles del MICM** (§A.5, fase 7) y **tasa del BCRD por CDN**
    (§A.6, fase 11): indicadores del bolsillo en la portada.
-   ✅ 2026-09-23 (capa e indicadores; colocarlos en `/` queda a quien edite el
-   panorama): `lib/combustibles.ts` y `lib/tasa.ts`, en vivo con caché de 1 h;
+   ✅ 2026-09-23, en la portada debajo de la deuda: `lib/combustibles.ts` y
+   `lib/tasa.ts`, en vivo con caché de 1 h;
    `<SeccionBolsillo />` de `components/fuentes-nuevas/indicadores-bolsillo.tsx`
    trae los dos con su `Suspense`. La tasa sale del `.xlsx` del CDN: el `.xls`
    que citaba la auditoría está congelado desde 2022.
