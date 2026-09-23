@@ -81,6 +81,7 @@ decisiones del dueño vivían dentro del archivo de arranque.
 | `docs/RECON.md` | «¿Cómo se lee el Congreso?» | Mecánica verificada del SIL y del consultante del Senado. | mantener |
 | `docs/AUDITORIA.md` | «¿Y cualquier otra fuente?» | Estado ✅/⚠️/❌ por fuente, familias de acceso, bloqueos y su desbloqueo institucional. | mantener |
 | `docs/PLAN-DEMOCRACIA.md` | «¿Cómo funciona la excepción?» | Esquema, RLS, RPCs, medidas de seguridad, Cuenta Única. | mantener |
+| `docs/PLAN-ACCESO.md` | «¿Qué se construye después?» | Diagnóstico de acceso y plan en cuatro horizontes, con criterio de hecho. | **nuevo** |
 | `docs/DECISIONES.md` | «¿Qué decidió el dueño?» | Abiertas (solo suyas) y cerradas (para que nadie las reabra). | **nuevo** (vivía en T1 y solo crece) |
 | `docs/HARNESS.md` | «¿Qué moldea una sesión?» | Esta página. | **nuevo** |
 | `README.md` | — | Descripción pública y lista de funciones. | mantener |

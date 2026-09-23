@@ -47,6 +47,7 @@ vertical lee ni escribe la DB. Los hooks lo impiden antes de que se escriba.
 | ¿Cómo se lee el **Congreso**? | `docs/RECON.md` — mecánica verificada del SIL, el consultante, cadenas de documentos |
 | ¿Y **cualquier otra fuente** del Estado? | `docs/AUDITORIA.md` — estado ✅/⚠️/❌, familias de acceso, bloqueos y su desbloqueo institucional |
 | ¿Cómo funciona la **excepción** de la DB? | `docs/PLAN-DEMOCRACIA.md` — esquema, RLS, RPCs, seguridad, Cuenta Única (§9) |
+| ¿Qué se construye **después**? | `docs/PLAN-ACCESO.md` — plan de acceso: horizontes, orden, criterio de hecho |
 | ¿Qué **decidió el dueño** y qué falta decidir? | `docs/DECISIONES.md` — no se re-preguntan ni se deciden aquí |
 | ¿Qué archivos **moldean una sesión**? | `docs/HARNESS.md` — inventario, orden de carga, dónde va una regla nueva |
 
