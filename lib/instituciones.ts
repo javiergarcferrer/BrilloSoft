@@ -88,6 +88,23 @@ export function buscarInstituciones(q: string, limite = 30): Institucion[] {
     .slice(0, limite);
 }
 
+/**
+ * Instituciones nombradas **por su nombre completo** en un texto oficial —el
+ * enunciado de un proyecto de ley—. Solo nombres largos (de 18 letras o más)
+ * y sin hospitales ni ayuntamientos, que se repiten entre sí: un puente
+ * adivinado es peor que ninguno, así que «Ministerio de Salud Pública y
+ * Asistencia Social» entra y «Salud» no.
+ */
+export function institucionesNombradasEn(texto: string, limite = 5): Institucion[] {
+  const plano = (v: string) => ` ${normalize(v).replace(/[^a-z0-9]+/g, " ").trim()} `;
+  const heno = plano(texto);
+  return INSTITUCIONES.filter((i) => {
+    if (i.tipo === "Hospital" || i.tipo === "Gobierno local") return false;
+    const aguja = plano(i.nombre.replace(/\([^)]*\)/g, " "));
+    return aguja.trim().length >= 18 && heno.includes(aguja);
+  }).slice(0, limite);
+}
+
 /* --------------------------------------------------------------- compras */
 
 export interface ProveedorDeInstitucion {

@@ -19,7 +19,12 @@
  * redacción oficial, y el título original queda siempre a la vista.
  */
 
-import { limpiarTexto } from "@/lib/congreso";
+import {
+  buscarIniciativas,
+  limpiarTexto,
+  normalizarIniciativa,
+  type Iniciativa,
+} from "@/lib/congreso";
 
 /* ------------------------------------------------------------ referencias */
 
@@ -228,4 +233,115 @@ export function queSigue(condicion: string | null | undefined): string | null {
     return "Aprobada en esta cámara. Todavía necesita el voto de la otra en los mismos términos y la promulgación del Presidente.";
   }
   return null;
+}
+
+/* ------------------------------------------------- cruces entre fuentes */
+
+/** Palabras que no distinguen nada al principio o al final de una frase. */
+const VACIAS = new Set([
+  "que", "de", "del", "la", "las", "el", "los", "y", "e", "o", "en", "a", "al",
+  "por", "para", "con", "se", "su", "sus", "un", "una", "mediante", "cual",
+  "ley", "proyecto", "resolución", "resolucion", "año",
+]);
+
+/**
+ * La frase más distintiva de un título para buscarla en otro origen.
+ *
+ * Los buscadores de ambas cámaras hacen match de **subcadena literal**,
+ * sensible a tildes pero no a mayúsculas (RECON §2.3, §12.2), y cada origen
+ * escribe distinto las cifras y las abreviaturas: «Ley núm.99-25» en uno,
+ * «LEY NÚM. 99-25» en otro. Así que se busca el tramo de texto corrido más
+ * largo sin números ni puntuación, recortado a unas pocas palabras y sin
+ * palabras vacías en los bordes. `null` si no queda una frase de al menos tres
+ * palabras: buscar «ley» no identifica nada.
+ */
+export function fraseDeBusqueda(titulo: string, maxPalabras = 7): string | null {
+  const tramos = limpiarTexto(titulo)
+    .split(/[,.;:()"“”«»\[\]\/\d–-]+|\bn[uú]m\b|\bno\b\.?/i)
+    .map((t) => t.trim().split(/\s+/).filter(Boolean));
+
+  let mejor: string[] = [];
+  for (let palabras of tramos) {
+    while (palabras.length && VACIAS.has(palabras[0].toLowerCase())) palabras = palabras.slice(1);
+    palabras = palabras.slice(0, maxPalabras);
+    while (palabras.length && VACIAS.has(palabras[palabras.length - 1].toLowerCase())) {
+      palabras = palabras.slice(0, -1);
+    }
+    if (palabras.length > mejor.length) mejor = palabras;
+  }
+  return mejor.length >= 3 ? mejor.join(" ") : null;
+}
+
+export interface ProyectosDeNorma {
+  /** La pieza de Diputados que se promulgó con este número. */
+  origen: Iniciativa[];
+  /** Piezas de Diputados cuyo título cita esta norma, sin contar el origen. */
+  citan: Iniciativa[];
+  /** Cuántas filas del buscador se revisaron para `citan`. */
+  revisadas: number;
+}
+
+/**
+ * De una ley a los proyectos del Congreso: el que la originó y los que hoy la
+ * tocan. Solo Diputados —su buscador es JSON y barato; el del Senado es un
+ * postback por consulta— y solo leyes, que son lo único que nace ahí.
+ *
+ * El SIL no busca sobre `numPromulgacion`, así que el origen se encuentra
+ * buscando una frase del título oficial de la ley y se **confirma** por el
+ * número de promulgación: una coincidencia de texto sola nunca se da por
+ * buena. Límite honesto: el SIL solo guarda el registro vigente (2024-2028)
+ * y lo que se arrastró; una ley cuyo proyecto murió o terminó antes no aparece.
+ *
+ * `null` si el SIL no contestó a ninguna consulta: la ficha calla en vez de
+ * afirmar que no hay proyectos.
+ */
+export async function proyectosDeNorma(
+  tipo: string,
+  numero: string,
+  titulo: string | null,
+): Promise<ProyectosDeNorma | null> {
+  if (tipo !== "Ley" || !/^\d{1,4}-\d{2,4}$/.test(numero)) return null;
+
+  // Un número de 2020 («47-20») es subcadena de toda cita de expediente
+  // («06347-2024-2028-CD»); con «núm.» delante deja de serlo.
+  const porNumero = /-20$/.test(numero) ? `núm. ${numero}` : numero;
+  // Dos cortes de la misma frase: el largo acierta cuando el proyecto y la ley
+  // se titulan igual; el corto, cuando la ley añadió una palabra («…del
+  // Estado *Dominicano*…») que el proyecto no tenía.
+  const larga = titulo ? fraseDeBusqueda(titulo) : null;
+  const corta = titulo ? fraseDeBusqueda(titulo, 4) : null;
+
+  const consultas = await Promise.all([
+    buscarIniciativas(porNumero, 1, 86400),
+    larga ? buscarIniciativas(larga, 1, 86400) : Promise.resolve(null),
+    corta && corta !== larga ? buscarIniciativas(corta, 1, 86400) : Promise.resolve(null),
+  ]);
+  if (consultas.every((c) => c === null)) return null;
+
+  const vistas = new Map<number, Iniciativa>();
+  for (const c of consultas) {
+    for (const raw of c?.results ?? []) {
+      if (!vistas.has(raw.id)) vistas.set(raw.id, normalizarIniciativa(raw));
+    }
+  }
+
+  const origen = [...vistas.values()].filter(
+    (i) =>
+      i.numPromulgacion !== null &&
+      /\bley\b/i.test(i.numPromulgacion) &&
+      numeroDeNorma(i.numPromulgacion) === numero,
+  );
+  const deOrigen = new Set(origen.map((i) => i.id));
+
+  const citan = (consultas[0]?.results ?? [])
+    .map((raw) => vistas.get(raw.id)!)
+    .filter(
+      (i) =>
+        !deOrigen.has(i.id) &&
+        referenciasNormativas([i.titulo, i.tituloModificado].filter(Boolean).join(". ")).some(
+          (r) => r.tipo === "Ley" && r.numero === numero,
+        ),
+    );
+
+  return { origen, citan, revisadas: consultas[0]?.results.length ?? 0 };
 }

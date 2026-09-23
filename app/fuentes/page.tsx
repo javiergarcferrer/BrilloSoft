@@ -196,8 +196,9 @@ export default async function FuentesPage() {
         >
           <p>
             API JSON interna del portal SIL Ciudadano, abierta y sin
-            autenticación. Alimenta iniciativas, trámites, proponentes y la alerta
-            de perención.
+            autenticación. Alimenta iniciativas, trámites, proponentes, la alerta
+            de perención, el directorio de legisladores (los 221 que lista el
+            período, por demarcación) y las votaciones nominales del pleno.
           </p>
           <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
             <Metrica

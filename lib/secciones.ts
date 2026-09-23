@@ -146,6 +146,7 @@ export const SECCIONES: Seccion[] = [
     vistas: [
       { href: "/congreso", label: "Diputados" },
       { href: "/congreso/senado", label: "Senado" },
+      { href: "/congreso/legisladores", label: "Legisladores" },
       { href: "/congreso/perencion", label: "Perención", exact: true },
       { href: "/congreso/guia", label: "Guía" },
     ],

@@ -168,9 +168,25 @@ export async function getCountIniciativas(): Promise<number | null> {
 export async function listIniciativas(
   page = 1,
   keyword = "",
+  revalidate = 300,
 ): Promise<SilPage<SilIniciativa>> {
   const q = `iniciativa/getIniciativas?page=${page}&keyword=${encodeURIComponent(keyword)}`;
-  return (await silFetchSafe<SilPage<SilIniciativa>>(q, 300)) ?? emptyPage();
+  return (await silFetchSafe<SilPage<SilIniciativa>>(q, revalidate)) ?? emptyPage();
+}
+
+/**
+ * Como `listIniciativas`, pero distingue «cero resultados» de «el SIL no
+ * contestó»: devuelve `null` en el segundo caso. Para los cruces entre
+ * verticales, que deben callar si no pudieron mirar en vez de afirmar que no
+ * hay nada.
+ */
+export async function buscarIniciativas(
+  keyword: string,
+  page = 1,
+  revalidate = 3600,
+): Promise<SilPage<SilIniciativa> | null> {
+  const q = `iniciativa/getIniciativas?page=${page}&keyword=${encodeURIComponent(keyword)}`;
+  return silFetchSafe<SilPage<SilIniciativa>>(q, revalidate);
 }
 
 export async function getIniciativa(id: number): Promise<SilIniciativa | null> {
@@ -632,4 +648,577 @@ export function resumirIniciativas(iniciativas: Iniciativa[]): ResumenLegislativ
     .sort((a, b) => b.total - a.total);
 
   return { vivas, aprobadas, perimidas, otras, enRiesgo, porGrupo };
+}
+
+/* ------------------------------------------------------------ legisladores */
+
+/*
+  Directorio, ficha, propuestas y voto nominal. Mecánica verificada en
+  docs/RECON.md §14 (2026-09-23):
+
+  · `legislador/legisladores?page=&nivel=` espera en `nivel` el **id de la
+    demarcación**, no el del nivel: el id de una provincia (`Provincias/1`),
+    `2892` para la lista nacional y `3403` para el exterior. `nivel=1` responde
+    0 filas y un `nivel` vacío o `null`, 400. Treinta y cuatro demarcaciones,
+    41 peticiones, 221 personas (189 diputados y 32 senadores).
+  · `legislador/Iniciativas?legisladorId=` son las piezas donde figura como
+    proponente, de la más reciente a la más antigua. Su campo `principal` viene
+    siempre `false` y no se usa.
+  · `legislador/votaciones?legisladorId=&keyword=` filtra `keyword` sobre el
+    número de sesión (`00008-2026-SLO`): con el código de la legislatura se
+    obtienen sus votaciones, de la sesión más reciente hacia atrás.
+  · `votacion/legisladores/?id=` es el voto nominal de una votación: 190 filas,
+    19 páginas. Una votación cerrada no cambia: caché de un día.
+*/
+
+/** Id de las dos demarcaciones que no son provincias (`legislador/Representaciones`). */
+const DEMARCACION_NACIONAL = 2892;
+const DEMARCACION_EXTERIOR = 3403;
+
+/** Tope de páginas por legislador: 200 piezas cubren a casi todos (RECON §14). */
+export const MAX_PAGINAS_PROPUESTAS = 20;
+
+/** Votaciones de la legislatura que se leen por ficha: las 30 más recientes. */
+export const MAX_PAGINAS_VOTOS = 3;
+
+interface SilLegislador {
+  legisladorId: number;
+  nombres: string | null;
+  apellidos: string | null;
+  nombreCompleto: string | null;
+  funcion: string | null;
+  provincia: string | null;
+  circunscripcion: string | null;
+  profesion?: string | null;
+  partido: { id: number; nombre: string | null; siglas: string | null } | null;
+  representacion?: {
+    funcion: string | null;
+    nivelRepresentacion: string | null;
+    provincia: string | null;
+    circunscripcion: string | null;
+    ejercicio: string | null;
+    periodo: string | null;
+  } | null;
+}
+
+export type CamaraLegislador = "diputados" | "senado";
+
+export interface Legislador {
+  id: number;
+  nombre: string;
+  /** «Diputado», «Diputada», «Senador», «Senadora», tal como lo escribe el SIL. */
+  funcion: string | null;
+  camara: CamaraLegislador;
+  /** Provincia, o «Nacional» / «En el exterior» para esas dos listas. */
+  provincia: string | null;
+  circunscripcion: string | null;
+  partidoSiglas: string | null;
+  partidoNombre: string | null;
+}
+
+export interface LegisladorFicha extends Legislador {
+  profesion: string | null;
+  periodo: string | null;
+  ejercicio: string | null;
+}
+
+function sinAplica(valor: string | null | undefined): string | null {
+  const v = limpiarTexto(valor);
+  return !v || /^(n\/a|no aplica)$/i.test(v) ? null : v;
+}
+
+function normalizarLegislador(raw: SilLegislador): Legislador {
+  const funcion = limpiarTexto(raw.funcion ?? raw.representacion?.funcion) || null;
+  const provincia = limpiarTexto(raw.provincia ?? raw.representacion?.provincia) || null;
+  return {
+    id: raw.legisladorId,
+    nombre:
+      limpiarTexto(raw.nombreCompleto) ||
+      limpiarTexto(`${raw.nombres ?? ""} ${raw.apellidos ?? ""}`) ||
+      "(sin nombre)",
+    funcion,
+    camara: /senad/i.test(funcion ?? "") ? "senado" : "diputados",
+    provincia: provincia && /exterior/i.test(provincia) ? "En el exterior" : provincia,
+    circunscripcion: sinAplica(raw.circunscripcion ?? raw.representacion?.circunscripcion),
+    partidoSiglas: limpiarTexto(raw.partido?.siglas) || null,
+    partidoNombre: limpiarTexto(raw.partido?.nombre) || null,
+  };
+}
+
+/** Nombres alternativos de una demarcación → la clave del nombre que usa el SIL. */
+const ALIAS_PROVINCIA: Record<string, string> = {
+  baoruco: "bahoruco",
+  salcedo: "hermanasmirabal",
+  laestrelleta: "eliaspina",
+  santodomingodeguzman: "distritonacional",
+  dn: "distritonacional",
+  santiagodeloscaballeros: "santiago",
+  sanjuandelamaguana: "sanjuan",
+  mao: "valverde",
+  exterior: "enelexterior",
+};
+
+/**
+ * Clave de comparación de una provincia: sin tildes, sin mayúsculas, sin
+ * espacios ni guiones, y con los nombres largos u oficiales reducidos al que
+ * usa el SIL. Así «Monte Cristi», «Montecristi», «Concepción de La Vega» y
+ * «la vega» caen en la misma demarcación — otras vistas enlazan al directorio
+ * con el nombre corriente, no con la grafía del SIL.
+ */
+export function claveProvincia(nombre: string | null | undefined): string {
+  const k = limpiarTexto(nombre)
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/^(provincia( de)?|concepcion de)\s+/, "")
+    .replace(/[^a-z]/g, "");
+  return ALIAS_PROVINCIA[k] ?? k;
+}
+
+/** Enlace a la ficha de un legislador. */
+export function hrefLegislador(id: number): string {
+  return `/congreso/legisladores/${id}`;
+}
+
+export interface Directorio {
+  legisladores: Legislador[];
+  /** Demarcaciones que existen (32 provincias + nacional + exterior). */
+  demarcaciones: number;
+  /** Las que no respondieron: el directorio queda incompleto y lo dice. */
+  fallidas: string[];
+}
+
+interface Demarcacion {
+  id: number;
+  descripcion: string;
+}
+
+/** Todas las páginas de una demarcación. Lanza si el SIL no contesta. */
+async function legisladoresDe(demarcacion: number): Promise<SilLegislador[]> {
+  const primera = await silFetch<SilPage<SilLegislador>>(
+    `legislador/legisladores?page=1&nivel=${demarcacion}`,
+    86400,
+  );
+  const paginas = Math.ceil(primera.total / SIL_PAGE_SIZE);
+  const resto = await Promise.all(
+    Array.from({ length: Math.max(0, paginas - 1) }, (_, i) =>
+      silFetch<SilPage<SilLegislador>>(
+        `legislador/legisladores?page=${i + 2}&nivel=${demarcacion}`,
+        86400,
+      ),
+    ),
+  );
+  return [primera, ...resto].flatMap((p) => p.results);
+}
+
+/**
+ * Directorio completo del período vigente, demarcación por demarcación. Cuesta
+ * unas 41 peticiones y se cachea un día: la composición de la cámara cambia
+ * por sustitución, no por semana. `null` solo si ni la lista de provincias
+ * responde; si cae alguna demarcación, el directorio sale con las demás y
+ * declara cuáles faltan.
+ */
+export async function getDirectorioLegisladores(): Promise<Directorio | null> {
+  const provincias = await silFetchSafe<Demarcacion[]>("legislador/Provincias/1", 86400);
+  if (!provincias || provincias.length === 0) return null;
+
+  const demarcaciones: Demarcacion[] = [
+    ...provincias,
+    { id: DEMARCACION_NACIONAL, descripcion: "Nacional" },
+    { id: DEMARCACION_EXTERIOR, descripcion: "En el exterior" },
+  ];
+
+  const vistos = new Map<number, Legislador>();
+  const fallidas: string[] = [];
+
+  for (let i = 0; i < demarcaciones.length; i += CONCURRENCIA) {
+    const lote = demarcaciones.slice(i, i + CONCURRENCIA);
+    const respuestas = await Promise.all(
+      lote.map((d) =>
+        legisladoresDe(d.id).catch((err) => {
+          console.error(`[congreso] demarcación ${d.id}: ${String(err)}`);
+          return null;
+        }),
+      ),
+    );
+    respuestas.forEach((filas, j) => {
+      if (!filas) {
+        fallidas.push(limpiarTexto(lote[j].descripcion));
+        return;
+      }
+      for (const raw of filas) {
+        if (!vistos.has(raw.legisladorId)) vistos.set(raw.legisladorId, normalizarLegislador(raw));
+      }
+    });
+  }
+
+  if (vistos.size === 0) return null;
+
+  return {
+    legisladores: [...vistos.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
+    demarcaciones: demarcaciones.length,
+    fallidas,
+  };
+}
+
+/** Ficha de un legislador. `null` si no existe (el SIL responde `null`) o no contesta. */
+export async function getLegislador(id: number): Promise<LegisladorFicha | null> {
+  const raw = await silFetchSafe<SilLegislador | null>(`legislador/legislador/${id}`, 86400);
+  if (!raw || !raw.legisladorId) return null;
+  const base = normalizarLegislador(raw);
+  const rep = raw.representacion;
+  const nivel = limpiarTexto(rep?.nivelRepresentacion);
+  return {
+    ...base,
+    provincia: /nacional/i.test(nivel)
+      ? "Nacional"
+      : /exterior/i.test(nivel)
+        ? "En el exterior"
+        : base.provincia,
+    profesion: limpiarTexto(raw.profesion) || null,
+    periodo: limpiarTexto(rep?.periodo) || null,
+    // El SIL escribe «En Curso»; se dice como se diría de una persona.
+    ejercicio: /en curso/i.test(limpiarTexto(rep?.ejercicio))
+      ? "En funciones"
+      : limpiarTexto(rep?.ejercicio) || null,
+  };
+}
+
+/* ---------------------------------------------------- lo que propuso cada uno */
+
+interface SilIniciativaLegislador {
+  id: number;
+  numero: string | null;
+  descripcion: string | null;
+  condicion: string | null;
+  estado: string | null;
+  fechaDeposito: string | null;
+  fechaUltimoCambio: string | null;
+}
+
+/** «Proyecto de ley…» o «Proyecto de resolución…»: el listado no trae `tipo`. */
+export function tipoDesdeTitulo(titulo: string): string | null {
+  const t = titulo.toLowerCase();
+  if (/^proyecto de ley\b/.test(t)) return "Proyecto de Ley";
+  if (/^proyecto de resoluci/.test(t)) return "Proyecto de Resolución";
+  return null;
+}
+
+export interface Propuestas {
+  iniciativas: Iniciativa[];
+  /** Censo que declara el SIL para este proponente. */
+  total: number;
+  /** Cuántas se leyeron: menos que `total` si se alcanzó el tope o cayó una página. */
+  leidas: number;
+}
+
+/**
+ * Las piezas donde el legislador figura como proponente, del registro vigente
+ * (período 2024-2028 más lo arrastrado). Acotado a `MAX_PAGINAS_PROPUESTAS`
+ * páginas: si el censo es mayor, `leidas < total` y la vista lo declara.
+ */
+export async function getPropuestasDeLegislador(id: number): Promise<Propuestas | null> {
+  const ruta = (p: number) => `legislador/Iniciativas?page=${p}&legisladorId=${id}&keyword=`;
+  const primera = await silFetchSafe<SilPage<SilIniciativaLegislador>>(ruta(1), 3600);
+  if (!primera) return null;
+
+  const paginas = Math.min(MAX_PAGINAS_PROPUESTAS, Math.ceil(primera.total / SIL_PAGE_SIZE));
+  const filas = [...primera.results];
+  const numeros = Array.from({ length: Math.max(0, paginas - 1) }, (_, i) => i + 2);
+  for (let i = 0; i < numeros.length; i += CONCURRENCIA) {
+    const respuestas = await Promise.all(
+      numeros
+        .slice(i, i + CONCURRENCIA)
+        .map((p) => silFetchSafe<SilPage<SilIniciativaLegislador>>(ruta(p), 3600)),
+    );
+    for (const r of respuestas) if (r) filas.push(...r.results);
+  }
+
+  const iniciativas = filas.map((f) => {
+    const descripcion = limpiarTexto(f.descripcion);
+    return normalizarIniciativa({
+      id: f.id,
+      tipo: tipoDesdeTitulo(descripcion),
+      camaraInicio: null,
+      numero: f.numero,
+      descripcion,
+      periodoRegistro: null,
+      materia: null,
+      numPromulgacion: null,
+      fechaPromulgacion: null,
+      condicion: f.condicion,
+      estado: f.estado,
+      fechaDeposito: f.fechaDeposito,
+      fechaUltimoCambioPrincipal: f.fechaUltimoCambio,
+      grupoId: null,
+      grupo: null,
+      origen: null,
+      legislatura: null,
+    });
+  });
+
+  return { iniciativas, total: primera.total, leidas: iniciativas.length };
+}
+
+/* ------------------------------------------------------------------ votos */
+
+export type SentidoVoto = "si" | "no" | "abstencion" | "ausente" | "sin-voto" | "otro";
+
+/** Cómo se lee cada sentido. */
+export const ETIQUETA_SENTIDO: Record<SentidoVoto, string> = {
+  si: "A favor",
+  no: "En contra",
+  abstencion: "Abstención",
+  "sin-voto": "Presente, no votó",
+  ausente: "Ausente",
+  otro: "Otro",
+};
+
+/** El orden de la tabla de una votación. */
+export const ORDEN_SENTIDOS: SentidoVoto[] = ["si", "no", "abstencion", "sin-voto", "ausente", "otro"];
+
+/**
+ * Códigos observados en `votoId`: `SI`, `NO`, `AU` («Ausente para esta
+ * votación») y `SV` («No Voto»). La abstención se reconoce también por el
+ * texto, porque el recuento la trae (`cantidadVotosAbastencion`) y su código
+ * no apareció en las votaciones revisadas.
+ */
+export function sentidoDeVoto(codigo: string | null, texto: string | null): SentidoVoto {
+  const c = limpiarTexto(codigo).toUpperCase();
+  const t = limpiarTexto(texto).toLowerCase();
+  if (c === "SI" || t === "si" || t === "sí") return "si";
+  if (c === "NO" || t === "no") return "no";
+  if (c === "AU" || t.startsWith("ausente")) return "ausente";
+  if (c === "SV" || t.includes("no voto") || t.includes("no votó")) return "sin-voto";
+  if (c.startsWith("AB") || t.startsWith("absten")) return "abstencion";
+  return "otro";
+}
+
+interface SilVotacion {
+  id: number;
+  titulo: string | null;
+  mocion: string | null;
+  fecha: string | null;
+  votos: {
+    cantidadTotalVotos: number;
+    cantidadVotosSi: number;
+    cantidadVotosNo: number;
+    cantidadVotosAbastencion: number;
+  } | null;
+  asistencias: { cantidadDelegados: number; cantidadPresentes: number } | null;
+  sesion: { id: number; numero: string | null } | null;
+  numeroSesion: string | null;
+  numeroVotacion: string | null;
+  habilitados?: number | null;
+  votoId: string | null;
+  voto: string | null;
+}
+
+export interface Votacion {
+  id: number;
+  /** «Sesión 049, Votación 014». */
+  titulo: string;
+  /** Qué se sometió, en las palabras del acta. */
+  mocion: string | null;
+  fecha: string | null;
+  sesion: string | null;
+  si: number;
+  no: number;
+  abstencion: number;
+  presentes: number | null;
+  miembros: number | null;
+  /** Cómo votó el legislador, cuando la votación viene de su ficha. */
+  sentido: SentidoVoto | null;
+}
+
+function normalizarVotacion(raw: SilVotacion): Votacion {
+  return {
+    id: raw.id,
+    titulo: limpiarTexto(raw.titulo) || `Votación ${raw.id}`,
+    // El acta arrastra un paréntesis de continuidad —«(Se continúa la
+    // numeración del archivo…)»— que no dice nada sobre lo votado.
+    mocion:
+      limpiarTexto((raw.mocion ?? "").replace(/^\s*\(Se contin[úu]a[^)]*\)\s*/i, "")) || null,
+    fecha: raw.fecha,
+    sesion: limpiarTexto(raw.sesion?.numero ?? raw.numeroSesion) || null,
+    si: raw.votos?.cantidadVotosSi ?? 0,
+    no: raw.votos?.cantidadVotosNo ?? 0,
+    abstencion: raw.votos?.cantidadVotosAbastencion ?? 0,
+    presentes: raw.asistencias?.cantidadPresentes ?? null,
+    miembros: raw.habilitados ?? raw.asistencias?.cantidadDelegados ?? null,
+    sentido: raw.votoId || raw.voto ? sentidoDeVoto(raw.votoId, raw.voto) : null,
+  };
+}
+
+export interface VotosDeLegislador {
+  /** Código de la legislatura leída: `2026-SLO`. */
+  legislatura: string;
+  votaciones: Votacion[];
+  /** Votaciones de esa legislatura según el SIL. */
+  total: number;
+}
+
+/** La legislatura ordinaria más reciente que ya abrió en esa fecha. */
+function legislaturaReciente(hoy: Date): string {
+  const anio = hoy.getUTCFullYear();
+  const candidatas = [`${anio}-SLO`, `${anio}-PLO`, `${anio - 1}-SLO`]
+    .map((c) => parseLegislatura(c))
+    .filter((l): l is Legislatura => l !== null && l.inicio <= hoy);
+  return candidatas[0]?.codigo ?? `${anio - 1}-SLO`;
+}
+
+/** La legislatura anterior a un código: `2026-SLO` → `2026-PLO` → `2025-SLO`. */
+function legislaturaAnterior(codigo: string): string | null {
+  const l = parseLegislatura(codigo);
+  if (!l) return null;
+  return l.tipo === "SLO" ? `${l.anio}-PLO` : `${l.anio - 1}-SLO`;
+}
+
+/**
+ * Cómo votó un legislador en las votaciones más recientes de la legislatura
+ * en curso —o de la anterior, si la actual aún no ha votado—. Solo existe
+ * para diputados: el Senado vota en su propio sistema.
+ */
+export async function getVotosDeLegislador(
+  id: number,
+  hoy: Date = new Date(),
+): Promise<VotosDeLegislador | null> {
+  let codigo: string | null = legislaturaReciente(hoy);
+
+  for (let intento = 0; intento < 2 && codigo; intento++) {
+    const clave: string = codigo;
+    const ruta = (p: number) =>
+      `legislador/votaciones?page=${p}&legisladorId=${id}&keyword=${encodeURIComponent(clave)}`;
+    const primera = await silFetchSafe<SilPage<SilVotacion>>(ruta(1), 3600);
+    if (!primera) return null;
+    if (primera.total > 0) {
+      const paginas = Math.min(MAX_PAGINAS_VOTOS, Math.ceil(primera.total / SIL_PAGE_SIZE));
+      const resto = await Promise.all(
+        Array.from({ length: Math.max(0, paginas - 1) }, (_, i) =>
+          silFetchSafe<SilPage<SilVotacion>>(ruta(i + 2), 3600),
+        ),
+      );
+      return {
+        legislatura: clave,
+        votaciones: [primera, ...resto].flatMap((r) => r?.results ?? []).map(normalizarVotacion),
+        total: primera.total,
+      };
+    }
+    codigo = legislaturaAnterior(clave);
+  }
+  return { legislatura: legislaturaReciente(hoy), votaciones: [], total: 0 };
+}
+
+/** Las votaciones del pleno en las que se sometió una iniciativa. */
+export async function getVotacionesDeIniciativa(id: number): Promise<Votacion[] | null> {
+  const ruta = (p: number) => `iniciativa/votaciones?page=${p}&id=${id}`;
+  const primera = await silFetchSafe<SilPage<SilVotacion>>(ruta(1), 3600);
+  if (!primera) return null;
+  const paginas = Math.min(3, Math.ceil(primera.total / SIL_PAGE_SIZE));
+  const resto = await Promise.all(
+    Array.from({ length: Math.max(0, paginas - 1) }, (_, i) =>
+      silFetchSafe<SilPage<SilVotacion>>(ruta(i + 2), 3600),
+    ),
+  );
+  return [primera, ...resto]
+    .flatMap((r) => r?.results ?? [])
+    .map((v) => ({ ...normalizarVotacion(v), sentido: null }));
+}
+
+export interface VotoNominal {
+  legisladorId: number;
+  nombre: string;
+  partidoSiglas: string | null;
+  sentido: SentidoVoto;
+}
+
+export interface VotacionDetalle {
+  votacion: Votacion;
+  /** Las piezas que se decidieron en esa votación (a veces un grupo de diez). */
+  iniciativas: { id: number; numero: string | null; titulo: string }[];
+  votos: VotoNominal[];
+  /** Filas que declara el SIL; si `votos.length` es menor, faltó alguna página. */
+  totalVotos: number;
+}
+
+interface SilVotoNominal {
+  legislador: SilLegislador | null;
+  votoId: string | null;
+  voto: string | null;
+}
+
+interface SilIniciativaVotada {
+  iniciativaId: number | null;
+  iniciativaNumero: string | null;
+  iniciativaDescripcion: string | null;
+}
+
+/**
+ * Una votación con su voto nominal completo: 1 + 1 + 19 peticiones, con un
+ * día de caché porque una votación cerrada no cambia.
+ */
+export async function getVotacion(id: number): Promise<VotacionDetalle | null> {
+  const [raw, iniciativas, primera] = await Promise.all([
+    silFetchSafe<SilVotacion | null>(`votacion/votacion/${id}`, 86400),
+    silFetchSafe<SilPage<SilIniciativaVotada>>(`votacion/iniciativas/?page=1&id=${id}`, 86400),
+    silFetchSafe<SilPage<SilVotoNominal>>(`votacion/legisladores/?page=1&id=${id}`, 86400),
+  ]);
+  if (!raw || !raw.id) return null;
+
+  const filas = [...(primera?.results ?? [])];
+  const paginas = primera ? Math.ceil(primera.total / SIL_PAGE_SIZE) : 0;
+  const numeros = Array.from({ length: Math.max(0, paginas - 1) }, (_, i) => i + 2);
+  for (let i = 0; i < numeros.length; i += CONCURRENCIA) {
+    const respuestas = await Promise.all(
+      numeros
+        .slice(i, i + CONCURRENCIA)
+        .map((p) =>
+          silFetchSafe<SilPage<SilVotoNominal>>(`votacion/legisladores/?page=${p}&id=${id}`, 86400),
+        ),
+    );
+    for (const r of respuestas) if (r) filas.push(...r.results);
+  }
+
+  const votos: VotoNominal[] = filas
+    .filter((f) => f.legislador?.legisladorId)
+    .map((f) => {
+      const l = f.legislador!;
+      // Aquí el SIL invierte los campos: `nombres` trae los apellidos y
+      // `apellidos` los nombres, todo en versales.
+      const nombre = desdeMayusculas(
+        limpiarTexto(`${l.apellidos ?? ""} ${l.nombres ?? ""}`) || limpiarTexto(l.nombreCompleto),
+      );
+      return {
+        legisladorId: l.legisladorId,
+        nombre: nombre || "(sin nombre)",
+        partidoSiglas: limpiarTexto(l.partido?.siglas) || null,
+        sentido: sentidoDeVoto(f.votoId, f.voto),
+      };
+    });
+
+  return {
+    votacion: { ...normalizarVotacion(raw), sentido: null },
+    iniciativas: (iniciativas?.results ?? [])
+      .filter((i) => i.iniciativaId)
+      .map((i) => ({
+        id: i.iniciativaId!,
+        numero: limpiarTexto(i.iniciativaNumero) || null,
+        titulo: separarTitulo(limpiarTexto(i.iniciativaDescripcion)).titulo,
+      })),
+    votos,
+    totalVotos: primera?.total ?? 0,
+  };
+}
+
+/**
+ * La pieza de Diputados que corresponde a una cita `06099-2024-2028-CD`. El
+ * buscador del SIL hace match también sobre `numero`, así que basta una
+ * consulta; se exige igualdad exacta para no aceptar una subcadena.
+ */
+export async function iniciativaPorNumero(numero: string): Promise<Iniciativa | null> {
+  const cita = limpiarTexto(numero).toUpperCase();
+  if (!/^\d+-\d{4}-\d{4}-CD$/.test(cita)) return null;
+  const r = await listIniciativas(1, cita, 3600);
+  const hit = r.results.find((i) => limpiarTexto(i.numero).toUpperCase() === cita);
+  return hit ? normalizarIniciativa(hit) : null;
 }

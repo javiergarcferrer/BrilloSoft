@@ -11,6 +11,7 @@ import { Esqueleto } from "@/components/esqueleto";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ruta } from "@/components/ruta";
 import AccionesFicha from "@/components/acciones-ficha";
+import { ProyectosDeLaNorma } from "@/components/congreso/cruces";
 
 export const revalidate = 86400;
 
@@ -99,6 +100,11 @@ export default async function NormaPage({ params }: Props) {
           </p>
         )}
       </Card>
+
+      {/* De la ley al proyecto que la originó y a los que hoy la tocan (plan 1.4). */}
+      <Suspense fallback={null}>
+        <ProyectosDeLaNorma tipo={tipo} numero={numero} titulo={norma.titulo} />
+      </Suspense>
 
       <p className="mt-5 text-xs leading-relaxed text-ink-soft">
         Fuente: Consultoría Jurídica del Poder Ejecutivo. Esta plataforma no

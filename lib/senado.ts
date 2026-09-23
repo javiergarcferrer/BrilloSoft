@@ -33,6 +33,7 @@
  */
 
 import { unstable_cache } from "next/cache";
+import { numeroDeNorma } from "@/lib/legislacion";
 import {
   desdeMayusculas,
   limpiarTexto,
@@ -767,4 +768,68 @@ export function documentoPrincipal(docs: DocumentoSenado[]): DocumentoSenado | n
   if (docs.length === 0) return null;
   const texto = docs.find((d) => /proyecto|ley|resoluci/i.test(d.seccion));
   return texto ?? docs[0];
+}
+
+/* ------------------------------------------------ gemelo en Diputados ↔ Senado */
+
+/** Fichas del Senado que se abren, como mucho, para confirmar un gemelo. */
+const MAX_CANDIDATOS_GEMELO = 3;
+
+export interface GemeloSenado {
+  cuatrienio: string;
+  id: number;
+  numero: string | null;
+  estado: string | null;
+  tono: CondicionTono;
+  /** Cómo se confirmó: la ficha del Senado cita la de Diputados, o la misma ley. */
+  confirmadoPor: "cita" | "promulgacion";
+}
+
+/**
+ * El expediente del Senado de una pieza de Diputados.
+ *
+ * La ficha del Senado sí trae el cruce —«Número de Expediente Cámara
+ * Diputados»— cuando el Senado lo llena, y Diputados no guarda el del Senado.
+ * Así que se busca en el consultante una frase del título, en el cuatrienio de
+ * la cita de Diputados, y se abren como mucho tres fichas: solo se acepta la
+ * que **declara** esa misma cita, o la que se promulgó con el **mismo número
+ * de ley** que la pieza de Diputados (RECON §14: el Senado deja el campo de
+ * cruce vacío en piezas que sí pasaron por ambas cámaras). Un título parecido
+ * no basta, porque el Congreso reintroduce piezas con el mismo enunciado.
+ *
+ * Coste: una búsqueda (3 peticiones) y hasta tres fichas (2 cada una), todo
+ * con la caché de una hora de sus funciones. `null` si no se pudo confirmar.
+ */
+export async function gemeloEnSenado(
+  numeroDiputados: string,
+  frase: string | null,
+  /** Número de promulgación en Diputados («Ley núm. 43-26»), si lo tiene. */
+  promulgacion: string | null = null,
+): Promise<GemeloSenado | null> {
+  const ley = numeroDeNorma(promulgacion);
+  const cita = limpiarTexto(numeroDiputados).toUpperCase();
+  const periodo = /^\d+-(\d{4}-\d{4})-CD$/.exec(cita)?.[1];
+  const cuatrienio = periodo ? cuatrienioPorEtiqueta(periodo) : null;
+  if (!cuatrienio || !frase) return null;
+
+  const resultados = await buscarExpedientesSenado(cuatrienio.etiqueta, frase);
+  if (!resultados || resultados.expedientes.length === 0) return null;
+
+  for (const exp of resultados.expedientes.slice(0, MAX_CANDIDATOS_GEMELO)) {
+    const ficha = await getFichaSenado(cuatrienio.etiqueta, exp.id);
+    if (!ficha) continue;
+    const porCita = limpiarTexto(ficha.numeroDiputados).toUpperCase() === cita;
+    const porLey = ley !== null && numeroDeNorma(ficha.numPromulgacion) === ley;
+    if (porCita || porLey) {
+      return {
+        confirmadoPor: porCita ? "cita" : "promulgacion",
+        cuatrienio: cuatrienio.etiqueta,
+        id: ficha.id,
+        numero: ficha.numero?.completo ?? null,
+        estado: ficha.estadoActual ?? ficha.condicion,
+        tono: ficha.tono,
+      };
+    }
+  }
+  return null;
 }
