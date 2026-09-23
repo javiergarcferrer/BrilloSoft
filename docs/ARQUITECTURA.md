@@ -110,6 +110,13 @@ an **RSS 2.0** feed of the last 30 days for a saved search — the alerting
 mechanism).
 **The pattern for any new data capability: add a function in `lib/dgcp.ts`, then
 a force-dynamic route here that wraps it.**
+Two routes serve the follow feature without storing anything: `seguimiento`
+(`?tipo=proyecto&id=` or `?tipo=expediente-senado&id=<cuatrienio>/<id>`) wraps
+`getIniciativa`/`getFichaSenado` and returns only `{huella, titulo}` — the
+existing `congreso`/`senado` routes are listings and cannot return one piece —
+and `feed/congreso/[id]` renders a bill's SIL history as RSS. Processes are
+read through `procesos?proceso=`; an institution's new processes are already
+`feed?uc=`.
 
 ## Congreso data layer — `lib/congreso.ts`
 Same contract as `lib/dgcp.ts`. The SIL is the portal's **internal** API, not a
@@ -239,8 +246,15 @@ sources impose:
 - `/planes` → annual purchasing plans (PACC) for the current year.
 - `/finanzas` → budget execution across the State, `/finanzas/[capitulo]` per
   institution (SSG from the snapshot, one page per chapter).
-- `/estadisticas` → 30-day market dashboard. `/guia` → static bidder guide.
-- `/seguimiento` → starred processes.
+- `/estadisticas` → 30-day market dashboard.
+- Guides, one per vertical, all static and listed once in
+  `components/otras-guias.tsx`: `/guia` (bidding, under Licitaciones),
+  `/congreso/guia` (how a law is made), `/finanzas/guia` (reading the budget),
+  `/finanzas/guia/deuda` (public debt). They live under their vertical so the
+  section bar lights the right one; `/guia` keeps its old URL.
+- `/seguimiento` → platform page (not a vertical, `PAGINAS_PLATAFORMA`):
+  everything followed, grouped by type, and «qué cambió desde tu última
+  visita».
 - **Every purchasing unit links to its institution** (`/instituciones/[id]`,
   `lib/instituciones.ts`): the process ficha, `/contratos` and `/estadisticas`
   rankings (aggregated by `codigo_unidad_compra`, not by name), each PACC row,
@@ -269,9 +283,19 @@ sources impose:
   `/congreso/legisladores?provincia=<SIL name>`.
 
 ## Client state — `lib/seguimiento.ts`
-Starred process codes in `localStorage` (key `lrd:seguimiento`). Cross-tab and
-in-page updates propagate via a custom `lrd:seguimiento-cambio` event plus the
-native `storage` event — subscribe with `onSeguimientoCambio`.
+Followed items in `localStorage` (key `lrd:seguimiento`) as typed entries
+`{tipo, id, titulo, href, huella?, desde?, visto?}`, `tipo` ∈ proceso, proyecto,
+expediente-senado, proveedor, institucion, norma. The old shape (a bare array of
+process codes) is migrated on read. `huella` is the state in words, computed by
+`huellaDe()` — the same function on the ficha (when following, through
+`components/acciones-ficha.tsx`) and in `/api/seguimiento`, so they cannot
+drift. `/seguimiento` fetches today's state for the types in `TIPOS_CON_ESTADO`,
+shows before/after for those whose huella changed, and only then writes the new
+huella (`marcarVistos`). Cross-tab and in-page updates propagate via a custom
+`lrd:seguimiento-cambio` event plus the native `storage` event — subscribe with
+`onSeguimientoCambio`. `getSeguimiento`/`toggleSeguimiento` keep the old
+process-code API for `proceso-card` and `section-bar`. Push notifications are
+an open owner decision (`docs/PLAN-ACCESO.md` §6): not built.
 
 ## Formato — `lib/format.ts`
 Seis funciones, y el listado importa porque tres de ellas son obligatorias por
@@ -343,7 +367,8 @@ del archivo que las lleva:
 | `components/esqueleto.tsx` | Las siluetas de **esta** plataforma —ficha, listado, tira de indicadores— compuestas con `ui/skeleton`, con las alturas del contenido. |
 | `lib/estados.ts` | **La única** tabla de color de estado, nombrada por significado (`accionable`, `contexto`, `cumplido`, `aviso`, `anulado`). Cada fuente traduce a esos cinco y no guarda tabla propia. También las **etapas** de un proceso de compras (`ETAPAS`, `etapaDe`): la otra traducción de `estado_proceso`, por predicado y no por literal, de la que salen tanto el color como `abierto`. |
 | `lib/cifras.ts` | Una cifra con su ancla y su alcance; prohíbe el `+∞ %`, la variación de un porcentaje en por ciento y el denominador sacado de una muestra. |
-| `lib/glosario.ts` | La jerga traducida en el punto de uso, no en un glosario que nadie abre. |
+| `lib/glosario.ts` + `components/termino.tsx` | La jerga traducida en el punto de uso, no en un glosario que nadie abre: `<Termino clave="devengado">` subraya con puntos y abre un `ui/popover` con la frase llana y, si la hay, su guía. Se abre al tocar (un dedo no tiene `hover`), con teclado, y su objetivo de toque mide 44 px sin mover la línea. Una clave nueva va en `glosario.ts` solo si el término aparece en la plataforma. |
+| `components/acciones-ficha.tsx` | Seguir, compartir y RSS de una ficha en una línea: la ficha pasa `tipo`, `id`, `titulo`, `href` y los datos crudos del estado (`situacion`). `components/compartir.tsx` escribe el texto según el tipo —nunca «Mira esta licitación» bajo un decreto—. |
 
 ## Rendimiento percibido — streaming y respuesta
 The sources are slow and outside our control, so the contract is that the

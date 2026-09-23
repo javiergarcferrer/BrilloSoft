@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import SeguirButton from "./seguir-button";
+import { compartirEnlace } from "./compartir";
 import { IconExternal, IconShare } from "./icons";
 import { Button } from "@/components/ui/button";
 
@@ -16,10 +17,13 @@ export default function AccionesProceso({
   codigo,
   titulo,
   url,
+  huella,
 }: {
   codigo: string;
   titulo: string;
   url?: string;
+  /** El estado del proceso, para que `/seguimiento` sepa qué cambió. */
+  huella?: string;
 }) {
   /*
     Tres afordancias flotantes se disputan el borde inferior del teléfono: la
@@ -38,33 +42,17 @@ export default function AccionesProceso({
     };
   }, []);
 
-  const compartir = async () => {
-    const link = window.location.href;
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: titulo, url: link });
-      } catch {
-        /* usuario canceló */
-      }
-    } else {
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(`${titulo} ${link}`)}`,
-        "_blank",
-      );
-    }
-  };
-
   return (
     <div
       className="fixed inset-x-0 z-40 border-t border-hairline bg-surface px-4 py-3 shadow-pop lg:hidden"
       style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto flex max-w-md items-center gap-2">
-        <SeguirButton codigo={codigo} variant="bar" />
+        <SeguirButton codigo={codigo} titulo={titulo} huella={huella} variant="bar" />
         <Button
           variant="secondary"
           size="icon"
-          onClick={compartir}
+          onClick={() => compartirEnlace("proceso", titulo)}
           className="h-12 w-12"
         >
           <IconShare className="h-5 w-5" />

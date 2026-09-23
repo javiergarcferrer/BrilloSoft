@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { preload } from "react-dom";
 import { IconLayers } from "@/components/icons";
 import { Explorer } from "@/components/nomina/explorer";
+import { Termino } from "@/components/termino";
 
 export const metadata: Metadata = {
   title: "¿A quién le paga el Estado?",
@@ -31,10 +32,12 @@ export default function NominaPage() {
           ¿A quién le paga el Estado?
         </h1>
         <p className="mt-2 max-w-3xl text-sm text-ink-soft sm:text-base">
-          Qué paga el Estado por plaza: la foto del último mes publicado por cada
-          institución cubierta, consolidada desde sus nóminas oficiales de
-          transparencia. Filtra por institución, área, cargo y sueldo — sin
-          nombres ni datos personales.
+          Qué paga el Estado por <Termino clave="plaza">plaza</Termino>: la foto
+          del último mes publicado por cada institución cubierta, consolidada
+          desde sus nóminas oficiales de transparencia. Filtra por institución,
+          área, cargo y <Termino clave="sueldoBruto">sueldo bruto</Termino> —sin
+          nombres ni datos personales—; los paneles de gasto suman la{" "}
+          <Termino clave="masaSalarial">masa salarial</Termino> del mes.
         </p>
       </header>
 

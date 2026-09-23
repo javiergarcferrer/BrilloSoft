@@ -11,6 +11,8 @@ import { formatFecha, formatMonto } from "@/lib/format";
 import { IconArrowLeft } from "@/components/icons";
 import Antiguedad from "@/components/antiguedad";
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
+import AccionesFicha from "@/components/acciones-ficha";
+import { Termino } from "@/components/termino";
 
 export async function generateMetadata({
   params,
@@ -102,8 +104,9 @@ export default async function ProveedorPage({
       </Button>
 
       <Card as="section" className="p-6">
-        <Rotulo>Proveedor del Estado · RPE {rpe}</Rotulo>
+        <Rotulo>Proveedor del Estado · <Termino clave="rpe" /> {rpe}</Rotulo>
         <h1 className="mt-2 font-display text-3xl leading-tight text-ink">{nombre}</h1>
+        <AccionesFicha className="mt-3" tipo="proveedor" id={rpe} titulo={nombre ?? `RPE ${rpe}`} href={`/proveedores/${rpe}`} />
         {/*
           Las tres cifras de la ficha pasan a la tira de casillas de la casa.
           Estaban dibujadas a mano —tres cajas, una de ellas de tinta con el

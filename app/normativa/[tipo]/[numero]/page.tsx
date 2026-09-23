@@ -10,6 +10,7 @@ import VisorDocumento from "@/components/visor-documento";
 import { Esqueleto } from "@/components/esqueleto";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ruta } from "@/components/ruta";
+import AccionesFicha from "@/components/acciones-ficha";
 
 export const revalidate = 86400;
 
@@ -56,6 +57,7 @@ export default async function NormaPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl">
       <Ruta seccion="normativa" actual={`${tipo} ${norma.numero}`} />
+      <AccionesFicha className="mt-2" tipo="norma" id={`${slug}/${numero}`} titulo={`${tipo} ${norma.numero}: ${desdeMayusculas(norma.titulo)}`} href={`/normativa/${slug}/${numero}`} />
 
       <header className="mt-1 sm:mt-3">
         <p className="font-mono text-sm font-semibold tabular-nums text-ink">

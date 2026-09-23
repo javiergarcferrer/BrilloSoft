@@ -18,6 +18,7 @@ import {
   diffDias,
 } from "@/lib/congreso";
 import { IconArrowRight, IconClock } from "@/components/icons";
+import { Termino } from "@/components/termino";
 
 export const metadata: Metadata = {
   title: "Cámara de Diputados",
@@ -54,7 +55,7 @@ export default async function CongresoPage({
           Cámara de Diputados
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-          Iniciativas en vivo desde el SIL de la Cámara.{" "}
+          <Termino clave="iniciativa">Iniciativas</Termino> en vivo desde el SIL de la Cámara.{" "}
           <Link
             href="/congreso/senado"
             className="font-medium text-brand-700 hover:underline"
@@ -62,6 +63,10 @@ export default async function CongresoPage({
             El Senado tiene su propia vista
           </Link>
           .
+          {" "}
+          <Link href="/congreso/guia" className="font-medium text-brand-700 hover:underline">
+            ¿Cómo nace una ley?
+          </Link>
         </p>
       </header>
 

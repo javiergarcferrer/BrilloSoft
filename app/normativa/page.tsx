@@ -21,6 +21,7 @@ import Antiguedad from "@/components/antiguedad";
 import { Button } from "@/components/ui/button";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
+import { Termino } from "@/components/termino";
 
 export const metadata: Metadata = {
   title: "Normativa del Ejecutivo",
@@ -66,7 +67,10 @@ export default async function NormativaPage({
           Normativa del Poder Ejecutivo
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-          Decretos, leyes, reglamentos, resoluciones y Gaceta Oficial, en vivo
+          <Termino clave="decreto">Decretos</Termino>, leyes,{" "}
+          <Termino clave="reglamento">reglamentos</Termino>,{" "}
+          <Termino clave="resolucion">resoluciones</Termino> y{" "}
+          <Termino clave="gacetaOficial">Gaceta Oficial</Termino>, en vivo
           desde la Consultoría Jurídica del Poder Ejecutivo. Es la tercera pata
           del triángulo legislativo, junto a{" "}
           <Link href="/congreso" className="font-medium text-brand-700 hover:underline">

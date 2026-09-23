@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { IconExternal } from "@/components/icons";
+import AccionesFicha from "@/components/acciones-ficha";
 
 export const revalidate = 3600;
 
@@ -74,6 +75,14 @@ export default async function InstitucionPage({ params }: Props) {
           reunido aquí: su presupuesto, lo que compra y a quién, su nómina y lo que
           el Ejecutivo decreta sobre ella.
         </p>
+        <AccionesFicha
+          className="mt-3"
+          tipo="institucion"
+          id={String(i.id)}
+          titulo={i.nombre}
+          href={hrefInstitucion(i)}
+          feed={`/api/feed?uc=${i.id}`}
+        />
         <div className="mt-3 flex flex-wrap gap-1.5">
           <Badge variant={i.capitulo ? "firma" : "neutro"}>
             {i.capitulo ? `Presupuesto · capítulo ${i.capitulo}` : "Sin capítulo presupuestario"}

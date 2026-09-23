@@ -99,7 +99,6 @@ export const SECCIONES: Seccion[] = [
       "/estadisticas",
       "/contratos",
       "/planes",
-      "/seguimiento",
       "/guia",
     ],
     vistas: [
@@ -108,7 +107,6 @@ export const SECCIONES: Seccion[] = [
       { href: "/contratos", label: "Contratado" },
       { href: "/proveedores", label: "Proveedores" },
       { href: "/planes", label: "Planes" },
-      { href: "/seguimiento", label: "Seguimiento", seguimiento: true },
       { href: "/guia", label: "Guía" },
     ],
     conBuscadorGlobal: true,
@@ -126,7 +124,10 @@ export const SECCIONES: Seccion[] = [
     href: "/finanzas",
     descriptor: "Ejecución del presupuesto · SIGEF",
     rutas: ["/finanzas"],
-    vistas: [{ href: "/finanzas", label: "Ejecución" }],
+    vistas: [
+      { href: "/finanzas", label: "Ejecución" },
+      { href: "/finanzas/guia", label: "Guías" },
+    ],
     conBuscadorGlobal: false,
     hue: {
       activo: "text-v-finanzas",
@@ -146,6 +147,7 @@ export const SECCIONES: Seccion[] = [
       { href: "/congreso", label: "Diputados" },
       { href: "/congreso/senado", label: "Senado" },
       { href: "/congreso/perencion", label: "Perención", exact: true },
+      { href: "/congreso/guia", label: "Guía" },
     ],
     conBuscadorGlobal: false,
     hue: {
@@ -336,6 +338,7 @@ export const PAGINAS_PLATAFORMA: { href: string; label: string; descriptor: stri
   { href: "/instituciones", label: "Instituciones", descriptor: "Presupuesto, compras, nómina y decretos de cada institución" },
   { href: "/buscar", label: "Buscar en todo", descriptor: "Una caja para toda la plataforma" },
   { href: "/provincias", label: "Provincias", descriptor: "El Estado visto desde cada provincia" },
+  { href: "/seguimiento", label: "Mi seguimiento", descriptor: "Lo que sigues y qué cambió desde tu última visita" },
   { href: "/fuentes", label: "Estado de las fuentes", descriptor: "Qué alimenta la plataforma y qué está bloqueado" },
   { href: "/seguridad", label: "Seguridad y cumplimiento", descriptor: "Postura de datos, Ley 172-13 y 200-04" },
 ];

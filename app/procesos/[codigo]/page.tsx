@@ -29,6 +29,8 @@ import { IconDoc, IconExternal, IconStar } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
 import { Ruta } from "@/components/ruta";
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
+import { Termino } from "@/components/termino";
+import { huellaDe } from "@/lib/seguimiento";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -139,7 +141,7 @@ export default async function ProcesoPage({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Ruta seccion="licitaciones" actual={`Proceso ${p.codigo_proceso}`} />
         <div className="hidden items-center gap-2 lg:flex">
-          <SeguirButton codigo={p.codigo_proceso} />
+          <SeguirButton codigo={p.codigo_proceso} titulo={p.titulo} huella={huellaDe({ estado: p.estado_proceso })} />
           <Compartir titulo={p.titulo} />
         </div>
       </div>
@@ -199,7 +201,7 @@ export default async function ProcesoPage({
         <div className="mt-4 grid gap-4 sm:flex sm:flex-wrap sm:items-center sm:gap-6">
           <div>
             <div className="rotulo text-ink-soft">
-              Monto estimado
+              <Termino clave="montoEstimado">Monto estimado</Termino>
             </div>
             <div className="font-mono text-xl font-semibold tabular-nums text-ink sm:text-2xl">
               {formatMonto(p.monto_estimado, p.divisa)}
@@ -685,7 +687,7 @@ export default async function ProcesoPage({
         )}
       </Card>
 
-      <AccionesProceso codigo={p.codigo_proceso} titulo={p.titulo} url={p.url} />
+      <AccionesProceso codigo={p.codigo_proceso} titulo={p.titulo} url={p.url} huella={huellaDe({ estado: p.estado_proceso })} />
     </div>
   );
 }

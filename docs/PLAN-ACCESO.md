@@ -44,11 +44,34 @@ El esqueleto. Nada de esto toca una fuente nueva ni la invariante.
 |---|---|---|---|
 | 1.1 | **Ficha de institución** `/instituciones/[id]` sobre un cruce estático `lib/instituciones.ts` (capítulo SIGEF ↔ unidad de compra DGCP ↔ código de nómina ↔ nombre en la Consultoría), curado a mano y versionado —no es una DB— | Diagnóstico 1 y 2. Una página por institución: presupuesto y ejecución, compras recientes y principales proveedores, nómina, PACC y decretos que la citan (`Institucion` en la instantánea de normativa) | Las 11 instituciones de nómina y los 20 capítulos de mayor gasto tienen ficha; cada vertical enlaza a ella |
 | 1.2 | **Buscador global** `/buscar` y caja en la cabecera de **todas** las secciones | Diagnóstico 3. Enruta por forma: RNC/RPE → proveedor; «Ley 47-20» → ficha de norma; código de proceso → proceso; nombre de institución → su ficha. Si no hay forma, consulta en paralelo DGCP, SIL, títulos de la instantánea de normativa, cargos de nómina e instituciones, y agrupa los resultados por vertical | Las cinco formas enrutan directo; el resto devuelve resultados agrupados con alcance declarado |
-| 1.3 | **Término explicado**: primitiva `<Termino>` (HoverCard de shadcn) sobre `lib/glosario.ts`, ampliado; y guías por vertical: «Cómo nace una ley», «Cómo leer el presupuesto», «Qué es la deuda del SPNF» | Diagnóstico 5. Explicar en el sitio donde se tropieza | Todo término de `glosario.ts` aparece al menos una vez envuelto; tres guías publicadas y enlazadas desde su vertical |
+| 1.3 ✅ | **Término explicado**: primitiva `<Termino>` (HoverCard de shadcn) sobre `lib/glosario.ts`, ampliado; y guías por vertical: «Cómo nace una ley», «Cómo leer el presupuesto», «Qué es la deuda del SPNF» | Diagnóstico 5. Explicar en el sitio donde se tropieza | Todo término de `glosario.ts` aparece al menos una vez envuelto; tres guías publicadas y enlazadas desde su vertical |
 | 1.4 | **Enlaces de ida y vuelta**: norma → proyecto que la originó; Diputados ↔ Senado para la misma pieza; proceso y capítulo → institución | Diagnóstico 1 | Ninguna ficha es un callejón sin salida. ✅ Lado compras: proceso, `/contratos`, `/estadisticas`, `/planes`, clientes de `/proveedores/[rpe]` y `/licitaciones?uc=` enlazan a la ficha de institución |
-| 1.5 | **Seguir cualquier cosa**: `lib/seguimiento.ts` pasa a tipos (proceso, proyecto, proveedor, institución); `/seguimiento` sale de Licitaciones; «qué cambió desde tu última visita», calculado en el navegador; compartir y RSS en toda ficha | Diagnóstico 4, sin servidor ni cuenta (sigue en `localStorage`) | Se sigue un proyecto de ley y la página marca su cambio de estado |
+| 1.5 ✅ | **Seguir cualquier cosa**: `lib/seguimiento.ts` pasa a tipos (proceso, proyecto, proveedor, institución); `/seguimiento` sale de Licitaciones; «qué cambió desde tu última visita», calculado en el navegador; compartir y RSS en toda ficha | Diagnóstico 4, sin servidor ni cuenta (sigue en `localStorage`) | Se sigue un proyecto de ley y la página marca su cambio de estado |
 | 1.6 | **Estado en la URL y frescura visible**: filtros de `/nomina` en `searchParams`; marca de antigüedad por institución cuando el mes publicado tenga más de 3 meses | Diagnóstico 7 | Un enlace a `/nomina?inst=MSP&cargo=chofer` reproduce la vista; Defensa Civil muestra su fecha |
 | 1.7 | **Portada y navegación**: tarjetas de Normativa y Democracia; buscador en la portada; en el teléfono, «Buscar» y «Seguimiento» como pestañas fijas; `app/sitemap.ts` con las fichas | Diagnóstico 3 y 8 del recorrido: Finanzas y Normativa quedan a dos toques y los buscadores externos no encuentran las fichas | Toda vertical a un toque o una búsqueda desde la portada |
+
+**Entregado (2026-09-23):**
+
+- ✅ **1.3** — `components/termino.tsx` sobre `ui/popover` (no HoverCard: un
+  dedo no tiene `hover`; se abre al tocar y con teclado, 44 px de toque sin
+  mover la línea). `lib/glosario.ts` pasa de 13 a 42 términos, todos envueltos
+  al menos una vez (portadas de vertical, fichas, guías). Guías: `/guia`
+  (compras, se queda donde estaba), `/congreso/guia`, `/finanzas/guia` y
+  `/finanzas/guia/deuda`, enlazadas desde su vertical (pestaña «Guía» en
+  Congreso y Finanzas, tarjeta de deuda) y entre sí (`components/otras-guias.tsx`).
+  Solo afirman lo comprobable de la Constitución de 2015 y la Ley 423-06; los
+  reglamentos de cámara no se resumen.
+- ✅ **1.5** — `lib/seguimiento.ts` con entradas tipadas (proceso, proyecto,
+  expediente del Senado, proveedor, institución, norma) y migración de la lista
+  vieja de códigos. `/seguimiento` es página de plataforma (pie y paleta), agrupa
+  por tipo y marca «qué cambió desde tu última visita» para compras y piezas del
+  Congreso; `/api/seguimiento` da la huella de una pieza del Congreso y
+  `/api/feed/congreso/[id]` su historial en RSS. Seguir y compartir con texto por
+  tipo en las fichas de proceso, Diputados, Senado, proveedor, norma, institución
+  (con el RSS de sus procesos nuevos) y capítulo (este solo compartir: es una
+  instantánea).
+  ⚠️ Proveedores, instituciones y normas se siguen como marcadores, sin
+  comparación de estado: no tienen un estado de una línea que cambie.
 
 **Orden recomendado:** 1.1 → 1.2 → 1.3. La ficha de institución es el nodo al
 que todo enlaza; el buscador la hace alcanzable; el término explicado la hace

@@ -22,6 +22,8 @@ import { Esqueleto } from "@/components/esqueleto";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Ruta } from "@/components/ruta";
+import AccionesFicha from "@/components/acciones-ficha";
+import { Termino } from "@/components/termino";
 
 export const revalidate = 3600;
 
@@ -67,6 +69,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl">
       <Ruta seccion="congreso" padre={{ href: "/congreso/senado", label: "Senado" }} actual={`Expediente ${ficha.numero?.completo ?? ficha.id}`} />
+      <AccionesFicha className="mt-2" tipo="expediente-senado" id={`${ficha.cuatrienio}/${ficha.id}`} titulo={ficha.titulo} href={`/congreso/senado/${ficha.cuatrienio}/${ficha.id}`} situacion={{ condicion: ficha.condicion, estadoActual: ficha.estadoActual, promulgada: ficha.promulgada, perimida: ficha.perimida }} />
 
       <header className="mt-1 sm:mt-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -99,9 +102,8 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
       {ficha.promulgada && (
         <section className="mt-5 rounded-lg border border-valido-500/25 bg-valido-50 px-4 py-3">
           <p className="text-sm font-semibold text-valido-700">
-            {ficha.numPromulgacion
-              ? `Promulgada como Ley ${ficha.numPromulgacion}`
-              : "Promulgada"}
+            <Termino clave="promulgacion">Promulgada</Termino>
+            {ficha.numPromulgacion && ` como Ley ${ficha.numPromulgacion}`}
           </p>
           {/*
             La fecha iba en azul de firma dentro de una tarjeta verde de
@@ -176,7 +178,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
           <Dato etiqueta="Tipo" valor={ficha.tipo} />
           <Dato etiqueta="Cámara inicial" valor={ficha.camaraInicial} />
           <Dato etiqueta="Poder de origen" valor={ficha.poderOrigen} />
-          <Dato etiqueta="Condición" valor={ficha.condicion} />
+          <Dato etiqueta={<Termino clave="condicion" />} valor={ficha.condicion} />
           <Dato etiqueta="Materia" valor={ficha.materia} />
           <Dato etiqueta="Legislatura de inicio" valor={ficha.legislaturaInicio} mono />
           <Dato etiqueta="Cuatrienio" valor={ficha.cuatrienio} mono />
@@ -337,7 +339,7 @@ function Dato({
   nota,
   mono,
 }: {
-  etiqueta: string;
+  etiqueta: import("react").ReactNode;
   valor: string | null;
   /** Antigüedad en llano: «hace 4 meses». Una fecha sola obliga a restar. */
   nota?: string | null;

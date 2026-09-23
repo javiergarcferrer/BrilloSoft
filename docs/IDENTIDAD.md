@@ -275,8 +275,12 @@ Desde la pasada de **shadcn/ui**, en dos capas:
   `components/nav-filtros.tsx`, `components/marca.tsx`,
   `components/plegable.tsx`, `components/antiguedad.tsx`,
   `components/paleta.tsx`, `components/ruta.tsx`, `components/paginador.tsx`,
-  `components/esqueleto.tsx`, `lib/estados.ts`, `lib/cifras.ts` y
-  `lib/glosario.ts`.
+  `components/esqueleto.tsx`, `lib/estados.ts`, `lib/cifras.ts`,
+  `lib/glosario.ts` y `components/termino.tsx` —el término del Estado
+  subrayado con puntos que, al tocarlo, abre su definición llana en un
+  `Popover`; es la forma de cumplir «la jerga se traduce en el punto de uso»
+  (§3), y hereda el color de su frase para vivir igual sobre tinta que sobre
+  papel—.
 
 `Hoja`, `CabeceraHoja`, `Marca` y `Accion` **ya no existen**: son `Card`,
 `CardHeader`, `Badge` y `Button`. No se envolvieron con su nombre viejo a

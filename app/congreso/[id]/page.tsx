@@ -26,6 +26,8 @@ import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconExternal } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
 import { Ruta } from "@/components/ruta";
+import AccionesFicha from "@/components/acciones-ficha";
+import { Termino } from "@/components/termino";
 
 export const revalidate = 300;
 
@@ -99,6 +101,7 @@ export default async function IniciativaPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl">
       <Ruta seccion="congreso" actual={`Iniciativa ${ini.numero?.completo ?? ini.id}`} />
+      <AccionesFicha className="mt-2" tipo="proyecto" id={String(ini.id)} titulo={titulo} href={`/congreso/${ini.id}`} situacion={ini} feed={`/api/feed/congreso/${ini.id}`} />
 
       <header className="mt-1 sm:mt-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -137,8 +140,9 @@ export default async function IniciativaPage({ params }: Props) {
                 : "text-sm font-semibold text-ink"
             }
           >
-            {perencion.estado === "en-riesgo" &&
-              `Perime en ${perencion.diasRestantes} días`}
+            {perencion.estado === "en-riesgo" && (
+              <><Termino clave="perime">Perime</Termino> en {perencion.diasRestantes} días</>
+            )}
             {perencion.estado === "vigente" &&
               `Quedan ${perencion.diasRestantes} días de legislatura`}
             {perencion.estado === "cerrada" && "Su legislatura ya cerró"}
