@@ -11,6 +11,8 @@ import {
   getIniciativa,
   getProponentes,
   getRutaDocumento,
+  getVotacionesDeIniciativa,
+  hrefLegislador,
   normalizarDocumento,
   normalizarIniciativa,
   normalizarProponente,
@@ -26,6 +28,8 @@ import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconExternal } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
 import { Ruta } from "@/components/ruta";
+import { FilaVotacion } from "@/components/congreso/votaciones";
+import { EnElSenado } from "@/components/congreso/cruces";
 
 export const revalidate = 300;
 
@@ -41,6 +45,7 @@ export const revalidate = 300;
 const VISIBLES_DOCS = 4;
 const VISIBLES_TRAMITES = 4;
 const VISIBLES_FIRMANTES = 3;
+const VISIBLES_VOTACIONES = 3;
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -217,6 +222,9 @@ export default async function IniciativaPage({ params }: Props) {
             )}
           </Panel>
 
+          <Suspense fallback={<Esqueleto className="h-48" />}>
+            <VotacionesDelPleno id={id} />
+          </Suspense>
         </div>
 
       {/*
@@ -279,6 +287,16 @@ export default async function IniciativaPage({ params }: Props) {
               </p>
             </div>
           </Panel>
+
+          {ini.numero?.camara === "CD" && puedeEstarEnElSenado(ini) && (
+            <Suspense fallback={null}>
+              <EnElSenado
+                numero={ini.numero.completo}
+                titulo={titulo}
+                promulgacion={ini.numPromulgacion}
+              />
+            </Suspense>
+          )}
         </div>
 
         <Panel titulo="Proponentes" nota={String(proponentes.total)}>
@@ -293,7 +311,21 @@ export default async function IniciativaPage({ params }: Props) {
                   {firmantes.slice(desde, hasta).map((p, i) => (
                     <li key={p.legisladorId ?? desde + i} className="px-5 py-3">
                       <p className="text-sm font-medium text-ink">
-                        {p.nombre}
+                        {/*
+                          Solo diputados y senadores tienen ficha: el Poder
+                          Ejecutivo o la Suprema Corte también firman con un
+                          id de legislador, y su «ficha» no diría nada.
+                        */}
+                        {p.legisladorId && /diputad|senad/i.test(p.funcion ?? "") ? (
+                          <Link
+                            href={hrefLegislador(p.legisladorId)}
+                            className="text-brand-700 hover:underline"
+                          >
+                            {p.nombre}
+                          </Link>
+                        ) : (
+                          p.nombre
+                        )}
                         {p.principal && (
                           <span className="ml-2 rotulo text-brand-700">
                             principal
@@ -358,6 +390,67 @@ export default async function IniciativaPage({ params }: Props) {
         </dl>
       </Plegable>
     </div>
+  );
+}
+
+/**
+ * Solo un proyecto de ley viaja a la otra cámara, y solo si nació en el Senado
+ * o ya salió de esta. Buscar el gemelo de una resolución de la Cámara —que
+ * nunca pasa al Senado— sería gastar tres peticiones al consultante en balde.
+ */
+function puedeEstarEnElSenado(ini: ReturnType<typeof normalizarIniciativa>): boolean {
+  if (!/ley/i.test(ini.tipo ?? "")) return false;
+  return (
+    /senado/i.test(ini.camaraOrigen ?? "") ||
+    ini.tono === "cumplido" ||
+    /senado|despach/i.test(`${ini.estado ?? ""} ${ini.condicion ?? ""}`)
+  );
+}
+
+/** Las votaciones del pleno en que se sometió la pieza, con enlace al voto nominal. */
+async function VotacionesDelPleno({ id }: { id: number }) {
+  const votaciones = await getVotacionesDeIniciativa(id);
+  if (votaciones === null) {
+    return (
+      <Panel titulo="¿Cómo votó la Cámara?">
+        <p className="px-5 py-6 text-sm text-ink-soft">
+          El registro de votaciones del SIL no respondió. El resto de la ficha
+          no depende de él.
+        </p>
+      </Panel>
+    );
+  }
+  if (votaciones.length === 0) {
+    return (
+      <Panel titulo="¿Cómo votó la Cámara?">
+        <p className="px-5 py-6 text-sm text-ink-soft">
+          El pleno aún no la ha sometido a una votación registrada en el SIL.
+        </p>
+      </Panel>
+    );
+  }
+  return (
+    <Panel titulo="¿Cómo votó la Cámara?" nota={String(votaciones.length)}>
+      <ListaPlegada
+        total={votaciones.length}
+        visibles={VISIBLES_VOTACIONES}
+        etiqueta={`Ver las ${votaciones.length} votaciones`}
+        etiquetaCerrar="Ocultar el resto de las votaciones"
+        render={(desde, hasta) => (
+          <ul>
+            {votaciones.slice(desde, hasta).map((v) => (
+              <FilaVotacion key={v.id} votacion={v} />
+            ))}
+          </ul>
+        )}
+      />
+      <div className="border-t border-hairline bg-canvas/50 px-5 py-2.5">
+        <p className="text-xs text-ink-soft">
+          Cada votación abre el voto de cada diputado. A veces el pleno vota un
+          grupo de piezas a la vez: la moción lo dice.
+        </p>
+      </div>
+    </Panel>
   );
 }
 

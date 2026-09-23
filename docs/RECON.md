@@ -97,11 +97,11 @@ Base: `https://www.diputadosrd.gob.do/sil/api/`
 
 | Servicio | Rutas |
 |---|---|
-| `iniciativa/` | `CountIniciativas` ✅, `getIniciativas?page=&keyword=` ✅, `iniciativa/{id}` ✅, `historicos?page=&id=` ✅, `proponentes?page=&id=` ✅, `documentos?page=&id=` ✅, `comisiones?page=&id=`, `votaciones?page=&id=`, `Actividades?page=&id=`, `Grupos` ✅, `Grupo?id=`, `Materias?grupo=` |
+| `iniciativa/` | `CountIniciativas` ✅, `getIniciativas?page=&keyword=` ✅, `iniciativa/{id}` ✅, `historicos?page=&id=` ✅, `proponentes?page=&id=` ✅, `documentos?page=&id=` ✅, `comisiones?page=&id=`, `votaciones?page=&id=` ✅ (§14), `Actividades?page=&id=`, `Grupos` ✅, `Grupo?id=`, `Materias?grupo=` |
 | `comision/` | `comisiones?tipoId=`, `comisiones?page=&keyword=` ✅, `comision/{id}`, `miembros`, `temas` (404) |
-| `legislador/` | `legisladores?page=&nivel=`, `legisladores?page=&keyword=`, `legislador/{id}`, `Iniciativas?page=&legisladorId=&keyword=` |
+| `legislador/` | `legisladores?page=&nivel=` ✅ (§14), `legisladores?page=&keyword=` ✅, `legislador/{id}` ✅, `Iniciativas?page=&legisladorId=&keyword=` ✅, `votaciones?page=&legisladorId=&keyword=` ✅, `Provincias/{padre}` ✅, `Representaciones` ✅ |
 | `sesion/` | `sesiones?page=&keyword=`, `sesion/{id}`, `documentos?page=&id=`, `ordendia?page=&id=`, `historicos` |
-| `votacion/` | `votacion/{id}`, `legisladores/?page=&id=`, `iniciativas/?page=&id=` |
+| `votacion/` | `votacion/{id}` ✅, `legisladores/?page=&id=` ✅, `iniciativas/?page=&id=` ✅ (§14) |
 | `asistencia/` | `sesion/?sesionId=`, `legisladores/?page=&id=`, `actividad/?page=&id=` |
 | `actividad/` | `actividad/{id}`, `actividadMiembros/?page=&id=`, `documentos/?page=&id=` |
 | `GruposParlamentarios/` | `Index` ✅, `Detalle/{id}`, `Actividades?grupo=` |
@@ -671,3 +671,111 @@ desde septiembre de 2026; AUDITORIA §4.1). Resultado:
 «Deroga la Ley 47-20 — *De Alianzas Público-Privadas*, Gaceta 10972,
 20/02/2020» con enlace a su texto oficial. Eso es lo que responde «¿de qué
 trata?» sin inventar nada.
+
+## 14. QUINTA PASADA — legisladores y voto nominal (2026-09-23)
+
+Verificado contra el SIL de Diputados con el User-Agent
+`Socratico-Inteligencia/1.0 (monitoreo legislativo; herramienta independiente)`,
+solo GET: dos barridos del directorio (41 peticiones cada uno), una votación
+completa (21) y unas pocas decenas de muestras, contando las de la interfaz.
+Las rutas se leyeron del bundle (`/sil/Script/Bundles`), servicio
+`legisladorBaseUrl` y `votacionBaseUrl`.
+
+### 14.1 Directorio — `legislador/legisladores`
+
+- ⚠️ **`nivel` no es el nivel de representación, es la demarcación.**
+  `nivel=` vacío o `nivel=null` → **400**; `nivel=1` (el id de «Provincial» en
+  `legislador/Representaciones`) → 200 con **0 filas**. Lo que sí funciona es
+  el id de una provincia (`nivel=1324` → los 5 de San Juan), `2892` (lista
+  nacional, 5) y `3403` (exterior, 7).
+- ✅ `legislador/Provincias/1` devuelve las **32 provincias** con su id
+  (`{id, descripcion}`; «Monte Plata » trae un espacio de más). `Provincias/2892`
+  y `Provincias/3403` devuelven un solo hijo cada una: no hacen falta.
+- ✅ Barrido completo: 34 demarcaciones, **41 peticiones**, **221 personas**
+  sin duplicados: **189 diputados** (118 «Diputado», 71 «Diputada») y
+  **32 senadores** (28 + 4) — el SIL de Diputados lista también a los
+  senadores, uno por provincia, porque firman piezas. Partidos: PRM 167, FP 31,
+  PLD 12, PRSC 3, DXC 2 y uno cada uno ALPAIS, PCR, PLR, PPG, PQDC, PRD.
+- ⚠️ `legisladores?keyword=` busca por nombre y funciona (`Mercedes` → 6), pero
+  `keyword=a` declara **224**: más que el censo por demarcaciones y sin
+  explicar. No se usa como censo.
+- Campos por fila: `legisladorId`, `nombres`, `apellidos`, `nombreCompleto`
+  (con dobles espacios, §2.7), `funcion`, `provincia`, `circunscripcion`
+  (`"Circunscripción 1"`…, o `"n/a"` / `"No aplica"`), `partido{id,nombre,siglas}`.
+
+### 14.2 Ficha — `legislador/legislador/{id}`
+
+- ✅ `representacion{funcion, nivelRepresentacion, provincia, ejercicio
+  ("En Curso"), inicio, fin, periodo}`, `partido`, `profesion`.
+- Trae también teléfono de oficina y correo institucional: **no se muestran**
+  (publicar no es exponer, AUDITORIA §E.5).
+- ✅ Un id inexistente responde `200` con cuerpo **`null`** (JSON válido).
+- ⚠️ Instituciones con iniciativa firman con un id de legislador (el Poder
+  Ejecutivo es `legisladorId` 1503, función «Institución del Estado»;
+  hipótesis: son el nivel `9999` «Entes con Iniciativas de Ley» de
+  `Representaciones`). La
+  plataforma solo enlaza a ficha a quien tiene función de diputado o senador.
+
+### 14.3 Qué propuso — `legislador/Iniciativas?legisladorId=`
+
+- ✅ Paginado de 10, de la pieza más reciente a la más antigua, con
+  `numero`, `descripcion`, `condicion`, `estado`, `fechaDeposito`. No trae
+  `tipo` (se deduce del inicio del título) ni `numPromulgacion`.
+- ⚠️ El campo `principal` viene **siempre `false`**, incluso en piezas donde
+  `iniciativa/proponentes` marca al mismo legislador como principal. No se usa.
+- Censos de muestra: 3502 → 122; otros seis al azar entre 13 y 57. La ficha lee
+  hasta **20 páginas (200 piezas)** y declara la muestra si el censo es mayor.
+- ✅ Los senadores también tienen listado (Lía Díaz, 3710 → 9 piezas).
+- Cobertura: la del listado general (§6), es decir, registro 2024-2028 más lo
+  arrastrado a él.
+
+### 14.4 Voto nominal ✅
+
+- `iniciativa/votaciones?page=&id=` — las votaciones del pleno en que se
+  sometió una pieza (155693 → 5; 158561 → 8), con `titulo` («Sesión 049,
+  Votación 015»), `mocion` (texto del acta), `fecha`, `votos{cantidadVotosSi,
+  cantidadVotosNo, cantidadVotosAbastencion}`, `asistencias{cantidadDelegados:
+  190, cantidadPresentes}`. `cantidadAusentes` viene **siempre 0**: no usarlo.
+- `votacion/votacion/{id}` — lo mismo más `habilitados` (190), `tipo`
+  («Electrónica») y `estado` («Completa»).
+- `votacion/iniciativas/?page=&id=` — las piezas decididas en esa votación;
+  a menudo un **grupo** («cuadragésimo noveno grupo de resoluciones internas»:
+  10 piezas en una votación).
+- `votacion/legisladores/?page=&id=` — **el voto de cada diputado**: 190 filas,
+  19 páginas. Códigos de `votoId`: `SI`, `NO`, `AU` («Ausente para esta
+  votación»), `SV` («No Voto»). Comprobado en la votación 22636: 124 SI + 20 NO
+  + 8 SV = 152 = `cantidadPresentes`; + 38 AU = 190. O sea, **SV es presente
+  que no votó** y AU es no presente. El código de la abstención no apareció en
+  las muestras. ⚠️ En estas filas `nombres` trae los **apellidos** y
+  `apellidos` los nombres, en versales; el partido es la etiqueta de bancada
+  en esa votación («DXC-ALPAÍS», «PLR-PCR», «INDEP»), no siempre la del
+  directorio.
+- `legislador/votaciones?page=&legisladorId=&keyword=` — cómo votó un diputado
+  en cada votación (3502 → 2 561 en total). ⚠️ **Sin `keyword` no está en
+  orden cronológico** (va por título de sesión descendente, mezclando años).
+  ✅ `keyword` filtra sobre el **número de sesión** (`00008-2026-SLO`): con
+  `keyword=2026-SLO` → 106 votaciones, de la sesión más reciente hacia atrás.
+  `keyword=presupuesto` → 0 (no busca en la moción). Los senadores → 0.
+- Las votaciones de una legislatura no traen la pieza (`iniciativaId` null en
+  este listado): se llega a ella abriendo la votación.
+
+### 14.5 Cruces verificados
+
+- ✅ **El buscador de iniciativas hace match también sobre `numero`**:
+  `keyword=06099-2024-2028-CD` → exactamente esa pieza. Con eso la cita de
+  Diputados que trae la ficha del Senado se resuelve a su ficha.
+- ⚠️ **No busca sobre `numPromulgacion`** (`43-26` → 0) y un número del año
+  2020 (`47-20`) es subcadena de toda cita de expediente (`06347-2024-…`) → 64
+  falsos positivos. La ley → proyecto se resuelve buscando una frase del
+  título oficial de la ley y **confirmando por el número de promulgación**
+  (43-26 → 06099-2024-2028-CD; 44-26 → 06038-2024-2028-CD; 86-25 →
+  04603-2024-2028-CD). La búsqueda es **insensible a mayúsculas y sensible a
+  tildes** (`codigo penal de la republica` → 0). ❌ 99-25 (presupuesto 2026)
+  no se encuentra: el título de la ley añade «Dominicano» y la frase corta
+  «presupuesto general del estado» da 134 resultados.
+- ⚠️ **El Senado no siempre llena «Número de Expediente Cámara Diputados»**:
+  el expediente 01712-2026-PLO-SE (id 39749), la misma Ley 43-26, lo trae
+  vacío. El gemelo se confirma entonces por el número de promulgación, que
+  ambas cámaras registran (`Ley núm. 43-26` en Diputados, `43-26` en el
+  Senado). Sin cita ni promulgación común, no se enlaza.
+

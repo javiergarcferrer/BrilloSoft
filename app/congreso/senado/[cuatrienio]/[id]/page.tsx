@@ -22,6 +22,7 @@ import { Esqueleto } from "@/components/esqueleto";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Ruta } from "@/components/ruta";
+import { EnDiputados } from "@/components/congreso/cruces";
 
 export const revalidate = 3600;
 
@@ -283,19 +284,14 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
             </Panel>
           )}
 
-          {ficha.numeroDiputados && (
-            <Panel titulo="En la Cámara de Diputados">
-              <div className="px-5 py-4">
-                <p className="font-mono text-sm tabular-nums text-ink">
-                  {ficha.numeroDiputados}
-                </p>
-                <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">
-                  Cita del expediente gemelo en Diputados. Los números de ambas
-                  cámaras cambian al arrastrarse entre períodos, así que no hay
-                  enlace directo confiable; se muestra como referencia.
-                </p>
-              </div>
-            </Panel>
+          {(ficha.numeroDiputados || ficha.numPromulgacion) && (
+            <Suspense fallback={null}>
+              <EnDiputados
+                numero={ficha.numeroDiputados}
+                promulgacion={ficha.numPromulgacion}
+                titulo={ficha.titulo}
+              />
+            </Suspense>
           )}
 
           {ficha.anotaciones && (

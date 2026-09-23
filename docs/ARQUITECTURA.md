@@ -238,6 +238,29 @@ sources impose:
 - `/planes` → annual purchasing plans (PACC) for the current year.
 - `/finanzas` → budget execution across the State, `/finanzas/[capitulo]` per
   institution (SSG from the snapshot, one page per chapter).
+- `/congreso/legisladores` → directory of the 2024-2028 period (189 deputies
+  and the 32 senators the SIL also lists), read **whole** from the SIL — one
+  listing per demarcation (`nivel=` is the province id, not the level; RECON
+  §14), ~41 requests cached a day — and filtered in the page by `?q=` (name,
+  accent-insensitive), `?camara=`, `?partido=` and `?provincia=`. The province
+  is compared through `claveProvincia` (accents, spacing, «Monte Cristi»,
+  «Concepción de La Vega»…), because `/provincias` links with common names.
+  `/congreso/legisladores/[id]` → what they signed (`getPropuestasDeLegislador`,
+  bounded to 20 pages and declared as a sample past that), how much was
+  approved (condition → tone, `?ver=` cuts), and for deputies how they voted in
+  the 30 latest votes of the legislature (`getVotosDeLegislador`, filtered by
+  session code). `/congreso/votaciones/[id]` → one plenary vote with the
+  roll call of all 190 (19 pages, cached a day), by party and by name.
+  `/congreso/[id]` links each deputy/senator sponsor to their ficha and lists
+  the plenary votes of the bill.
+- **Cross-links** (`components/congreso/cruces.tsx`, each in its own
+  `Suspense`, silent when unconfirmed): Diputados ↔ Senado via the Senate's
+  «Número de Expediente Cámara Diputados» or, when empty, the shared
+  promulgation number (`gemeloEnSenado` in `lib/senado.ts`, at most one
+  search + three fichas, only for bills that can be in the Senate); and
+  `/normativa/ley/[numero]` → the Diputados bill that became that law plus
+  bills citing it (`proyectosDeNorma` in `lib/legislacion.ts`: title phrase +
+  confirmation by `numPromulgacion`, since the SIL does not search that field).
 - `/estadisticas` → 30-day market dashboard. `/guia` → static bidder guide.
 - `/seguimiento` → starred processes.
 
