@@ -102,6 +102,19 @@ function aDocumento(f: FilaBuscador): Documento {
   };
 }
 
+/**
+ * Motivo de un rechazo, legible en los logs: el estado y, si lo hay, el
+ * veredicto de Cloudflare (`cf-mitigated: challenge` es un bloqueo del WAF,
+ * no una caída) y el servidor que respondió.
+ */
+function motivo(res: Response): string {
+  const cf = res.headers.get("cf-mitigated");
+  const servidor = res.headers.get("server");
+  return [String(res.status), cf && `cf-mitigated=${cf}`, servidor && `server=${servidor}`]
+    .filter(Boolean)
+    .join(" ");
+}
+
 /** Consulta el buscador. Lanza si el origen no contesta con una lista. */
 async function consultar(filtro: {
   DocumentTypeCode: number;
@@ -134,7 +147,7 @@ async function consultar(filtro: {
     cache: "no-store",
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`la búsqueda respondió ${res.status}`);
+  if (!res.ok) throw new Error(`la búsqueda respondió ${motivo(res)}`);
   const datos: unknown = await res.json();
   if (!Array.isArray(datos)) throw new Error("la búsqueda no devolvió una lista");
   return (datos as FilaBuscador[]).map(aDocumento);
@@ -151,7 +164,7 @@ async function gacetas(anio: number): Promise<Documento[]> {
     cache: "no-store",
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`el repositorio respondió ${res.status}`);
+  if (!res.ok) throw new Error(`el repositorio respondió ${motivo(res)}`);
   const datos: unknown = await res.json();
   if (!Array.isArray(datos)) throw new Error("el repositorio no devolvió una lista");
   return (datos as EntradaRepositorio[])
