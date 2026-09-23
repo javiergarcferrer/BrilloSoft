@@ -289,6 +289,29 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="Cruce de instituciones" estado="activa" etiqueta="Versionado">
+          <p>
+            No es una fuente nueva sino el puente entre cuatro: el catálogo de
+            unidades de compra de la DGCP (739 activas) trae el capítulo
+            presupuestario de cada una, y con él se ata al SIGEF sin emparejar
+            nombres. La nómina se ata a mano donde la correspondencia es
+            inequívoca (10 de 11 instituciones) y los decretos por la etiqueta de
+            institución de la Consultoría Jurídica. Alimenta las{" "}
+            <Link href="/instituciones" className="font-medium text-brand-700 hover:underline">
+              fichas de institución
+            </Link>{" "}
+            y el buscador de toda la plataforma.
+          </p>
+          <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
+            Es un archivo del repositorio, no una base de datos: se regenera con{" "}
+            <code className="rounded bg-canvas px-1 py-0.5 font-mono">
+              scripts/build-instituciones.py
+            </code>
+            . La etiqueta «Cámara de Cuentas» de la Consultoría se excluye del cruce
+            porque marca nombramientos, no a la Cámara.
+          </p>
+        </Fuente>
+
         <Fuente
           nombre="Crédito Público — deuda del SPNF"
           estado={deuda !== null ? "activa" : "caida"}

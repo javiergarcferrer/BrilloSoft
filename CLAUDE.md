@@ -18,6 +18,7 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 | Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (API JSON + instantánea) | `lib/normativa.ts` |
 | Nómina estatal | `/nomina` | Instantánea de 11 instituciones | `lib/nomina.ts`, `lib/nomina-server.ts` |
 | Deuda pública | tarjeta en `/` | Crédito Público (XLSX + instantánea) | `lib/deuda.ts` |
+| Instituciones (transversal) | `/instituciones`, `/buscar` | Cruce versionado DGCP ↔ SIGEF ↔ nómina ↔ Consultoría | `lib/instituciones.ts`, `lib/buscar.ts` |
 | Democracia | `/democracia` | Supabase, esquema `democracia` — **la excepción** | `lib/democracia.ts`, `lib/supabase.ts` |
 
 `lib/secciones.ts` es la fuente única de verticales y navegación. `/` es el
@@ -90,10 +91,9 @@ npm run dev      # http://localhost:3000
 npm run build    # build de producción — incluye el typecheck
 npx tsc --noEmit # solo typecheck
 
-python3 scripts/build-fiscal.py   # regenera public/data/fiscal.json (SIGEF, ~5 min)
-python3 scripts/build-nomina.py   # regenera public/data/nomina.json
-python3 scripts/build-deuda.py    # regenera public/data/deuda.json
-python3 scripts/build-normativa.py # regenera public/data/normativa.json (semanal)
+# Instantáneas en public/data/: fiscal (SIGEF, ~5 min), nomina, deuda, normativa
+# (semanal), instituciones (el cruce; tras normativa). Una por script:
+python3 scripts/build-<nombre>.py
 ```
 
 No hay suite de pruebas ni ESLint: `next build` es el gate real, envuelto por
