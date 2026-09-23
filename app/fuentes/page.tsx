@@ -228,7 +228,11 @@ export default async function FuentesPage() {
           )}
           <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Cobertura parcial declarada: es lo publicado en CSV procesable, no
-            todo el Estado. La nómina estatal completa (con nombres) vive en el
+            todo el Estado. De las nóminas que indexa datos.gob.do, la de
+            Migración y la del Ayuntamiento de Santiago rechazan la descarga
+            (403), y la del TSE, la del IDECOOP y la de la Comisión de Defensa
+            Comercial vienen en formatos que no se pueden leer sin adivinar
+            columnas; quedan fuera en vez de entrar mal. La nómina estatal completa (con nombres) vive en el
             tablero oficial del{" "}
             <a
               href="https://transparencia.gob.do/2025/12/17/nomina/"
@@ -435,13 +439,18 @@ export default async function FuentesPage() {
 
         <Fuente
           nombre="Portal de datos abiertos (datos.gob.do)"
-          estado="descartada"
-          etiqueta="Sin datos útiles"
+          estado="activa"
+          etiqueta="Solo como índice"
         >
           <p>
             Su <code className="rounded bg-canvas px-1 py-0.5 font-mono">robots.txt</code>{" "}
-            prohíbe <code className="rounded bg-canvas px-1 py-0.5 font-mono">/api/</code>, y
-            la búsqueda de conjuntos del Congreso no devolvió resultados. No se usa.
+            prohíbe <code className="rounded bg-canvas px-1 py-0.5 font-mono">/api/</code>, así
+            que no se consulta su API. Se usa como lo que es: un índice. Su búsqueda
+            y sus fichas, que son páginas normales, dan los enlaces directos a las
+            nóminas que cada institución publica en su propio portal, y de ahí salió
+            la ampliación de la nómina. Las fichas se leen a mano al regenerar, a una
+            petición cada diez segundos como pide el portal, nunca en una visita.
+            Del Congreso no tiene conjuntos útiles.
           </p>
         </Fuente>
       </div>

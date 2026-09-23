@@ -793,6 +793,30 @@ La primera pasada dio por muertos los archivos estadísticos. No lo están:
 **Ampliar `/nomina` más allá de las 11 instituciones actuales es hoy trabajo de
 manifiesto, no de ingeniería: el índice ya ofrece 159 candidatos.**
 
+**Ampliado el 2026-09-23: de 11 a 23 instituciones** (29,673 plazas, RD$1,066
+millones de masa mensual). Recorrido de ese día, con el robots respetado
+(`/api/` vetado, `Crawl-Delay: 10` entre peticiones):
+
+- ✅ `/dataset?q=nomina&page=1..9` sigue dando **159** conjuntos (19–20 por
+  página, 6 en la novena). Las fichas `/dataset/{slug}` son HTML servido y
+  traen los enlaces directos al CSV/ODS/XLSX en el portal de cada institución.
+- ✅ Integradas (CSV real, cabecera mapeable, último mes 2026-06 a 2026-08):
+  DGCP, IDEICE, IAD, Contraloría, TSS, MIREX, Poder Judicial (solo el archivo
+  de servidores fijos; el de contratados va aparte), Sistema 9-1-1, INABIMA,
+  Superintendencia de Vigilancia y Seguridad Privada, DIGEPRES y Lotería
+  Nacional. Las dos últimas exigieron sinónimos nuevos en el parser
+  (`PUESTO`/`NOMBRE DEL PUESTO`, `SALARIO BRUTO`). El archivo del 9-1-1 bajó con
+  200 desde `911.gob.do/wp-content/`, aunque la portada del 9-1-1 dio 470 en la
+  segunda pasada (§B.2).
+- ⚠️ La URL de nómina del **MSP** cambió (la vieja responde un CSV de una línea:
+  «La url de descarga no es correcta»); la nueva salió de su ficha en
+  datos.gob.do. Las URLs versionadas (`-6.csv`, `-2.csv`) se mueven: al
+  regenerar, un error de columnas suele ser eso.
+- ❌ **Migración** y **Ayuntamiento de Santiago**: 403 al UA identificable (no
+  se insistió). **UNADE**: 202 con una página HTML en vez del CSV.
+- ⚠️ Descartados por formato: **TSE** (CSV sin fila de cabecera), **IDECOOP**
+  (sin mes ni año), **CDC** (mes y año en una sola columna «Mes / año»).
+
 ### A.9 311 — lectura pública, y un hallazgo de seguridad que reportar
 
 - ✅ El Directus del 311 (`directus-dev.311.gob.do/items/statistics_documents`)
