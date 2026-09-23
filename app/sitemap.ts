@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { INSTITUCIONES, hrefInstitucion } from "@/lib/instituciones";
 import { CAPITULOS } from "@/lib/capitulos";
 import { PAGINAS_PLATAFORMA, SECCIONES } from "@/lib/secciones";
+import { PROVINCIAS } from "@/lib/provincias";
 
 /**
  * El dominio de producción, escrito aquí y no leído del entorno: las
@@ -24,6 +25,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...rutas.map((r) => ({ url: `${SITIO}${r}`, changeFrequency: "daily" as const })),
     ...INSTITUCIONES.map((i) => ({
       url: `${SITIO}${hrefInstitucion(i)}`,
+      changeFrequency: "weekly" as const,
+    })),
+    ...PROVINCIAS.map((p) => ({
+      url: `${SITIO}/provincias/${p.slug}`,
       changeFrequency: "weekly" as const,
     })),
     ...CAPITULOS.map((c) => ({

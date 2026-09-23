@@ -335,6 +335,7 @@ export const PAGINAS_PLATAFORMA: { href: string; label: string; descriptor: stri
   { href: "/", label: "Panorama", descriptor: "Las verticales en una sola página" },
   { href: "/instituciones", label: "Instituciones", descriptor: "Presupuesto, compras, nómina y decretos de cada institución" },
   { href: "/buscar", label: "Buscar en todo", descriptor: "Una caja para toda la plataforma" },
+  { href: "/provincias", label: "Provincias", descriptor: "El Estado visto desde cada provincia" },
   { href: "/fuentes", label: "Estado de las fuentes", descriptor: "Qué alimenta la plataforma y qué está bloqueado" },
   { href: "/seguridad", label: "Seguridad y cumplimiento", descriptor: "Postura de datos, Ley 172-13 y 200-04" },
 ];
