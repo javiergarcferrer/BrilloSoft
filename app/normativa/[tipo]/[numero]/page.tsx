@@ -7,9 +7,9 @@ import { pesoDocumento, urlDeLectura } from "@/lib/documentos";
 import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
 import VisorDocumento from "@/components/visor-documento";
-import { IconArrowLeft } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Ruta } from "@/components/ruta";
 
 export const revalidate = 86400;
 
@@ -55,18 +55,7 @@ export default async function NormaPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl">
-      {/*
-        Volver es la única salida de una ficha en un teléfono y era un renglón
-        de 16 px: se le da la altura de un mando (44 px) con un margen negativo
-        que deja el texto donde estaba ópticamente.
-      */}
-      <Link
-        href="/normativa"
-        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink sm:min-h-0 sm:py-1"
-      >
-        <IconArrowLeft className="h-3.5 w-3.5" />
-        Normativa
-      </Link>
+      <Ruta seccion="normativa" actual={`${tipo} ${norma.numero}`} />
 
       <header className="mt-1 sm:mt-3">
         <p className="font-mono text-sm font-semibold tabular-nums text-ink">

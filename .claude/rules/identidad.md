@@ -33,8 +33,8 @@ badge, a field or a layer that opens** — there is a primitive for each.
 `rounded-lg`), Button (`asChild` for links), Badge (`forma="sello"` versalitas /
 `forma="etiqueta"` for a state said in words), Input, Textarea, Label, Select
 (its `ayuda` prop carries the plain-Spanish line a native `<option>` cannot),
-Checkbox, Tabs, ToggleGroup, Sheet, Popover, Collapsible, Table, Progress
-(server-side, no Radix), Skeleton, Alert. Only the ones in use live there —
+Checkbox, Tabs, ToggleGroup, Sheet, Dialog, Command (cmdk), Breadcrumb,
+Popover, Collapsible, Table, Progress (server-side, no Radix), Skeleton, Alert. Only the ones in use live there —
 copy the next one from ui.shadcn.com and dress it in our tokens. Icons come
 from `components/icons.tsx`, never `lucide-react`; colours come from the token
 bridge in `app/globals.css`, never from shadcn's.
@@ -51,7 +51,11 @@ forces you to say what happened, what still stands and the one useful action),
 disclosure; the button says how many, never "ver más"),
 `components/antiguedad.tsx` (a date in a **listing row** is «hace 2 meses» in a
 real `<time>`, with the exact date in `title`; the absolute date belongs on the
-ficha), `lib/estados.ts` (the ONE colour table for state, keyed by meaning —
+ficha), `components/paleta.tsx` (⌘K «¿a dónde vas?»: every view of `lib/secciones`,
+and typed text offered to each `BUSQUEDAS` destination **with its scope** —
+never a fake global search), `components/ruta.tsx` (a ficha's way back; a new
+ficha uses it, never a hand-rolled «Volver» link), `components/paginador.tsx`
+(the one pager, links or state), `lib/estados.ts` (the ONE colour table for state, keyed by meaning —
 `accionable`/`contexto`/`cumplido`/`aviso`/`anulado`; a source translates into
 it and never keeps its own table: that is exactly how congreso ended up
 painting «depositada» in the green that means «already fulfilled»),

@@ -17,10 +17,11 @@ import Plegable from "@/components/plegable";
 import ListaPlegada from "../../../lista-plegada";
 import VisorDocumento from "@/components/visor-documento";
 import { urlDeLectura } from "@/lib/documentos";
-import { IconArrowLeft, IconExternal } from "@/components/icons";
+import { IconExternal } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Ruta } from "@/components/ruta";
 
 export const revalidate = 3600;
 
@@ -65,18 +66,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl">
-      {/*
-        Volver es la única salida de una ficha en un teléfono y era un renglón
-        de 16 px: se le da la altura de un mando (44 px) con un margen negativo
-        que deja el texto donde estaba ópticamente.
-      */}
-      <Link
-        href="/congreso/senado"
-        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-ink-soft transition-colors hover:text-ink sm:min-h-0 sm:py-1"
-      >
-        <IconArrowLeft className="h-3.5 w-3.5" />
-        Senado
-      </Link>
+      <Ruta seccion="congreso" padre={{ href: "/congreso/senado", label: "Senado" }} actual={`Expediente ${ficha.numero?.completo ?? ficha.id}`} />
 
       <header className="mt-1 sm:mt-3">
         <div className="flex flex-wrap items-center gap-2">
