@@ -44,11 +44,13 @@ def buscar(tipo: int, anio: int) -> list:
         "Institution": 0, "President": 0, "Consultor": 0, "Career": 0,
         "Guild": 0, "PensionType": 0, "PublicationYear": str(anio),
     })
-    # Solo lo que la vertical pinta: la fila cruda lleva nombres de personas
+    # Solo lo que la plataforma usa: la fila cruda lleva nombres de personas
     # designadas y campos vacíos que no hacen falta en el repositorio.
+    # `Institucion` alimenta el cruce con las fichas de institución.
     return [
         {k: f.get(k) for k in
-         ("DocId", "TipoDocumento", "Tipo", "Numero", "Titulo", "Gaceta", "FechaPromulgacion")}
+         ("DocId", "TipoDocumento", "Tipo", "Numero", "Titulo", "Gaceta", "FechaPromulgacion",
+          "Institucion")}
         for f in filas
     ]
 
