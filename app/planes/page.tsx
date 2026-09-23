@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { Metadata } from "next";
+import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import { listPacc } from "@/lib/dgcp";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
@@ -96,7 +98,18 @@ export default async function PlanesPage() {
               className="cv-auto [--cv-alto:4rem] flex flex-wrap items-center justify-between gap-3 rounded-lg border border-hairline px-4 py-3 text-sm"
             >
               <div className="min-w-0">
-                <div className="font-medium">{p.unidadCompra}</div>
+                <div className="font-medium">
+                  {(() => {
+                    const inst = institucionPorId(p.codigoUnidadCompra);
+                    return inst ? (
+                      <Link href={hrefInstitucion(inst)} className="text-brand-700 hover:underline">
+                        {p.unidadCompra}
+                      </Link>
+                    ) : (
+                      p.unidadCompra
+                    );
+                  })()}
+                </div>
                 <div className="text-xs text-ink-soft">
                   {p.fechaPublicacion ? (
                     <Antiguedad iso={p.fechaPublicacion} prefijo="Publicado" />

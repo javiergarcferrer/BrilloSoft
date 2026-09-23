@@ -102,7 +102,8 @@ preserving the acronyms in parentheses.
 
 ## API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return
-`502` on upstream failure: `procesos` (search/list), `precios?subclase=`
+`502` on upstream failure: `procesos` (search/list; `procesos/csv` the whole
+sweep, both parse filters with `procesos/filtros.ts`), `precios?subclase=`
 (validates `subclase` against a digit regex), `unidades`, `proveedores?q=`
 (the supplier lookup/market, same 30-min window as the page) and `feed` (renders
 an **RSS 2.0** feed of the last 30 days for a saved search — the alerting
@@ -240,6 +241,32 @@ sources impose:
   institution (SSG from the snapshot, one page per chapter).
 - `/estadisticas` → 30-day market dashboard. `/guia` → static bidder guide.
 - `/seguimiento` → starred processes.
+- **Every purchasing unit links to its institution** (`/instituciones/[id]`,
+  `lib/instituciones.ts`): the process ficha, `/contratos` and `/estadisticas`
+  rankings (aggregated by `codigo_unidad_compra`, not by name), each PACC row,
+  a supplier's main clients (by the code the contract carries) and
+  `/licitaciones?uc=`. The cross is 114 KB, so client components never import
+  it: `/api/unidades` adds `ficha` to each unit server-side for the buscador.
+- **CSV downloads** (`lib/csv.ts`: BOM, CRLF, formula-injection guard, scope in
+  the filename and `X-Alcance`): `/api/procesos/csv` is the **whole sweep** of
+  a `/licitaciones` search (`descargarProcesos`, same filters via
+  `app/api/procesos/filtros.ts`, capped at `MAX_FILAS_DESCARGA` = 6000 rows
+  read); `/contratos/csv` the 6000-contract sample (`contratosRecientes`,
+  same fetch cache); `/normativa/csv` the current list without the 200-row cut.
+- `/normativa?q=&mes=` → text search over number + title (all words, accent-
+  insensitive; not the norm's body) of the chosen type and year, live or
+  snapshot like the listing (`listaNormativa`). With decretos it shows
+  «Designaciones del mes» (`designacionesPorMes`): decrees tagged «Cámara de
+  Cuentas» by the Consultoría (appointments and their revocations), per month,
+  cargo read from the first mention in the title — derived, and declared so.
+- `/provincias`, `/provincias/[slug]` (`lib/provincias.ts`) → 32 demarcations.
+  The supplier register cannot be filtered by `provincia` (500 with any value,
+  re-verified 2026-09-23), so suppliers per province = registry cards of the
+  200 biggest winners of the contracts window, grouped by their declared
+  province (`unstable_cache`, daily, one computation for all pages). Local
+  governments: only the capital's ayuntamiento (and Santo Domingo's seven
+  municipalities), hand-mapped by DGCP code. Legislators: link to
+  `/congreso/legisladores?provincia=<SIL name>`.
 
 ## Client state — `lib/seguimiento.ts`
 Starred process codes in `localStorage` (key `lrd:seguimiento`). Cross-tab and

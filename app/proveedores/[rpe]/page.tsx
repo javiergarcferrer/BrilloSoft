@@ -10,6 +10,7 @@ import { titulizar } from "@/lib/capitulos";
 import { formatFecha, formatMonto } from "@/lib/format";
 import { IconArrowLeft } from "@/components/icons";
 import Antiguedad from "@/components/antiguedad";
+import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 
 export async function generateMetadata({
   params,
@@ -39,12 +40,26 @@ export default async function ProveedorPage({
   const total = historial.totalRegistro;
   const suma = historial.montoTotal;
 
-  const porInstitucion = new Map<string, { n: number; monto: number }>();
+  /*
+    Los clientes se agrupan por código de unidad de compra —el que publica la
+    DGCP en cada contrato—, no por el nombre: así cada uno enlaza con certeza
+    a su ficha de institución, y dos grafías del mismo nombre no se parten.
+  */
+  const porInstitucion = new Map<
+    string,
+    { nombre: string; n: number; monto: number; href: string | null }
+  >();
   for (const c of contratos) {
-    const a = porInstitucion.get(c.unidad_compra) ?? { n: 0, monto: 0 };
+    const cod = String(c.codigo_unidad_compra ?? "").trim();
+    const clave = cod || `n:${c.unidad_compra}`;
+    let a = porInstitucion.get(clave);
+    if (!a) {
+      const inst = cod ? institucionPorId(cod) : null;
+      a = { nombre: c.unidad_compra, n: 0, monto: 0, href: inst ? hrefInstitucion(inst) : null };
+      porInstitucion.set(clave, a);
+    }
     a.n += 1;
     a.monto += c.valor_contratado || 0;
-    porInstitucion.set(c.unidad_compra, a);
   }
   const topInstituciones = [...porInstitucion.entries()]
     .sort((a, b) => b[1].monto - a[1].monto)
@@ -281,7 +296,13 @@ export default async function ProveedorPage({
                 key={inst}
                 className="flex items-baseline justify-between gap-2 rounded-lg bg-canvas px-3 py-2"
               >
-                <span className="line-clamp-1">{inst}</span>
+                {a.href ? (
+                  <Link href={a.href} className="line-clamp-1 text-brand-700 hover:underline">
+                    {a.nombre}
+                  </Link>
+                ) : (
+                  <span className="line-clamp-1">{a.nombre}</span>
+                )}
                 <span className="shrink-0 text-xs text-ink-soft">
                   {a.n} · {formatMonto(a.monto, "DOP")}
                 </span>

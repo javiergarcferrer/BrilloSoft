@@ -8,6 +8,9 @@ import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
+import { Button } from "@/components/ui/button";
+import { IconDownload } from "@/components/icons";
+import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 
 export const metadata: Metadata = {
   title: "Histórico de contrataciones",
@@ -121,8 +124,13 @@ export default async function ContratosPage() {
         />
         <RankingContratos
           titulo="Instituciones que más adjudican"
+          nota="Enlazan a su ficha"
           items={r.topInstituciones}
           color="bg-brand-400"
+          hrefDe={(a) => {
+            const inst = a.codigo ? institucionPorId(a.codigo) : null;
+            return inst ? hrefInstitucion(inst) : undefined;
+          }}
         />
       </div>
 
@@ -172,7 +180,7 @@ export default async function ContratosPage() {
                   <span>{c.razon_social}</span>
                 )}
                 <Sep />
-                <span className="line-clamp-1">{c.unidad_compra}</span>
+                <UnidadDeCompra codigo={c.codigo_unidad_compra} nombre={c.unidad_compra} />
                 <Sep />
                 <Antiguedad iso={c.fecha_adjudicacion} prefijo="Adjudicado" />
               </div>
@@ -180,6 +188,21 @@ export default async function ContratosPage() {
           ))}
         </ul>
       </Card>
+
+      <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-ink-soft">
+          La muestra entera, contrato por contrato, para abrirla en una hoja de cálculo.
+        </p>
+        <Button asChild variant="secondary" size="sm" className="h-10 shrink-0 sm:h-9">
+          <a
+            href="/contratos/csv"
+            download
+            title={`Descarga los ${formatInt(r.escaneados)} contratos de la muestra, con todos sus estados`}
+          >
+            <IconDownload className="h-4 w-4" /> CSV ({formatInt(r.escaneados)}, muestra)
+          </a>
+        </Button>
+      </div>
 
       <p className="px-1 text-xs leading-relaxed text-ink-soft">
         Muestra de los {formatInt(r.escaneados)} contratos más recientes de{" "}
@@ -194,6 +217,17 @@ export default async function ContratosPage() {
         .
       </p>
     </div>
+  );
+}
+
+/** El nombre de la unidad de compra, con enlace a su ficha si está en el cruce. */
+function UnidadDeCompra({ codigo, nombre }: { codigo: string; nombre: string }) {
+  const inst = codigo ? institucionPorId(codigo) : null;
+  if (!inst) return <span className="line-clamp-1">{nombre}</span>;
+  return (
+    <Link href={hrefInstitucion(inst)} className="relative z-10 line-clamp-1 hover:text-brand-700 hover:underline">
+      {nombre}
+    </Link>
   );
 }
 
@@ -236,7 +270,7 @@ function RankingContratos({
             <span className="font-medium">{a.clave}</span>
           );
           return (
-            <li key={a.clave}>
+            <li key={a.codigo ?? a.clave}>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="line-clamp-1">{nombre}</span>
                 <span className="shrink-0 text-xs text-ink-soft">

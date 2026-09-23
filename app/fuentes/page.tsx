@@ -132,6 +132,19 @@ export default async function FuentesPage() {
             Del registro de proveedores omitimos además a propósito teléfonos y
             correos: esto vigila al Estado, no es un directorio comercial.
           </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            La vista por{" "}
+            <Link href="/provincias" className="font-medium text-brand-700 hover:underline">
+              provincia
+            </Link>{" "}
+            tampoco es el padrón: el filtro de provincia del registro devuelve
+            error con cualquier valor, así que se consulta la ficha de los 200
+            proveedores que más adjudicaron en esa misma ventana y se agrupan por
+            la provincia que declaran. Las descargas CSV de licitaciones y
+            contratos traen lo que la página leyó —el barrido de hasta 6000
+            registros, la muestra de contratos— y lo dicen en el nombre del
+            archivo.
+          </p>
         </Fuente>
 
         <Fuente
@@ -265,7 +278,10 @@ export default async function FuentesPage() {
             <Link href="/normativa" className="font-medium text-brand-700 hover:underline">
               normativa
             </Link>
-            , donde se ve el conteo por año.
+            , donde se ve el conteo por año. La búsqueda de esa vertical mira el
+            número y el título, no el texto de la norma; las designaciones del mes
+            se derivan de la etiqueta «Cámara de Cuentas» que la Consultoría pone
+            a los decretos de nombramiento y de su título.
           </p>
           {normativaInstantanea && (
             <p className="mt-3">
