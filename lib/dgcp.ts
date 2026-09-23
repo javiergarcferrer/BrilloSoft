@@ -1,6 +1,7 @@
 import { etapaPorClave } from "@/lib/estados";
 
 const BASE = "https://datosabiertos.dgcp.gob.do/api-dgcp/v1";
+const USER_AGENT = "Socratico-Inteligencia/1.0 (compras publicas; herramienta independiente)";
 
 export interface Proceso {
   codigo_proceso: string;
@@ -129,6 +130,7 @@ export async function dgcpFetch<T>(
   for (let intento = 0; intento < 2; intento++) {
     try {
       const res = await fetch(url.toString(), {
+        headers: { Accept: "application/json", "User-Agent": USER_AGENT },
         next: { revalidate },
         signal: AbortSignal.timeout(25000),
       });
@@ -261,25 +263,7 @@ export interface SearchResult {
   muestra?: boolean;
 }
 
-/**
- * Lista procesos.
- *
- * Dos caminos, y la diferencia se declara en la respuesta:
- *
- *  - **Passthrough** — sin texto, sin etapa que la API no sepa filtrar y sin
- *    orden distinto del natural. Una petición; `totalResults` es el censo del
- *    origen.
- *  - **Barrido** — hasta `MAX_PAGINAS_BARRIDO` páginas de 1000 dentro de los
- *    filtros dados, y aquí se filtra por texto y por etapa, se ordena y se
- *    pagina. `totalResults` es entonces lo hallado **en la muestra**, y
- *    `scanned`/`truncated`/`muestra` obligan a la interfaz a decirlo.
- *
- * Que un orden distinto de «recientes» fuerce el barrido no es un capricho de
- * coste: ordenar es rankear, y rankear las 24 filas de una página mientras el
- * control dice «Mayor monto» es afirmar algo falso sobre miles de procesos.
- * O se ordena todo lo que se declaró leer, o no se ofrece el orden.
- */
-export async function listProcesos(opts: {
+export interface FiltrosProcesos {
   q?: string;
   proceso?: string;
   etapa?: string;
@@ -290,13 +274,11 @@ export async function listProcesos(opts: {
   mipyme?: string;
   mipyme_mujer?: string;
   orden?: OrdenProceso;
-  page?: number;
-  limit?: number;
-}): Promise<SearchResult> {
+}
+
+function paramsComunes(opts: FiltrosProcesos): Params {
   const etapa = etapaPorClave(opts.etapa);
-  // Una etapa de un solo estado la filtra la API; las demás hay que barrerlas.
-  const filtrarAqui = Boolean(etapa && !etapa.estadoUnico);
-  const common: Params = {
+  return {
     proceso: opts.proceso,
     estado: etapa?.estadoUnico,
     modalidad: opts.modalidad,
@@ -306,21 +288,28 @@ export async function listProcesos(opts: {
     mipyme: opts.mipyme,
     mipyme_mujer: opts.mipyme_mujer,
   };
+}
 
+interface Barrido {
+  filtrados: Proceso[];
+  scanned: number;
+  truncated: boolean;
+  /** Censo que declara el origen para los filtros que él entiende. */
+  censo: number;
+}
+
+/**
+ * Hasta `MAX_PAGINAS_BARRIDO` páginas de 1000 dentro de los filtros que la API
+ * entiende; aquí se filtra por texto y por etapa y se ordena. Lo comparten el
+ * listado paginado y la descarga del barrido entero, así que las dos leen las
+ * mismas URLs y el mismo caché de `fetch`.
+ */
+async function barrerProcesos(opts: FiltrosProcesos): Promise<Barrido> {
+  const etapa = etapaPorClave(opts.etapa);
+  const filtrarAqui = Boolean(etapa && !etapa.estadoUnico);
+  const common = paramsComunes(opts);
   const q = opts.q?.trim();
   const orden = opts.orden ?? "recientes";
-  const limit = Math.max(1, opts.limit ?? 24);
-  const page = Math.max(1, opts.page ?? 1);
-
-  if (!q && !filtrarAqui && orden === "recientes") {
-    const data = await dgcpFetch<Proceso>("/procesos", { ...common, page, limit });
-    return {
-      content: data.payload.content,
-      totalResults: data.totalResults ?? data.payload.content.length,
-      pages: data.pages ?? 1,
-      page: data.page ?? page,
-    };
-  }
 
   const first = await dgcpFetch<Proceso>("/procesos", { ...common, page: 1, limit: 1000 });
   /*
@@ -363,16 +352,87 @@ export async function listProcesos(opts: {
 
   ordenar(filtrados, orden);
 
+  return {
+    filtrados,
+    scanned: all.length,
+    // Una página caída deja el rango incompleto igual que quedarse corto de
+    // páginas: las dos cosas son lo mismo para quien lee el conteo.
+    truncated: upstreamPages > aBarrer || fallos > 0,
+    censo,
+  };
+}
+
+/** Tope de filas de la descarga: el mismo barrido que el listado declara. */
+export const MAX_FILAS_DESCARGA = MAX_PAGINAS_BARRIDO * 1000;
+
+export interface DescargaProcesos {
+  filas: Proceso[];
+  /** Registros recorridos upstream. */
+  scanned: number;
+  /** El rango tenía más registros que el barrido. */
+  truncated: boolean;
+  censo: number;
+}
+
+/**
+ * Todo el conjunto que el buscador declara haber leído con esos filtros, no
+ * solo la página de 24: la descarga «del barrido». Siempre barre (aunque no
+ * haya texto ni etapa), acotado a `MAX_FILAS_DESCARGA`, y devuelve
+ * `scanned`/`truncated` para que el archivo diga su alcance.
+ */
+export async function descargarProcesos(opts: FiltrosProcesos): Promise<DescargaProcesos> {
+  const b = await barrerProcesos(opts);
+  return { filas: b.filtrados, scanned: b.scanned, truncated: b.truncated, censo: b.censo };
+}
+
+/**
+ * Lista procesos.
+ *
+ * Dos caminos, y la diferencia se declara en la respuesta:
+ *
+ *  - **Passthrough** — sin texto, sin etapa que la API no sepa filtrar y sin
+ *    orden distinto del natural. Una petición; `totalResults` es el censo del
+ *    origen.
+ *  - **Barrido** — `barrerProcesos`: hasta `MAX_PAGINAS_BARRIDO` páginas de
+ *    1000, y aquí se filtra, se ordena y se pagina. `totalResults` es entonces
+ *    lo hallado **en la muestra**, y `scanned`/`truncated`/`muestra` obligan a
+ *    la interfaz a decirlo.
+ *
+ * Que un orden distinto de «recientes» fuerce el barrido no es un capricho de
+ * coste: ordenar es rankear, y rankear las 24 filas de una página mientras el
+ * control dice «Mayor monto» es afirmar algo falso sobre miles de procesos.
+ * O se ordena todo lo que se declaró leer, o no se ofrece el orden.
+ */
+export async function listProcesos(
+  opts: FiltrosProcesos & { page?: number; limit?: number },
+): Promise<SearchResult> {
+  const etapa = etapaPorClave(opts.etapa);
+  // Una etapa de un solo estado la filtra la API; las demás hay que barrerlas.
+  const filtrarAqui = Boolean(etapa && !etapa.estadoUnico);
+  const q = opts.q?.trim();
+  const orden = opts.orden ?? "recientes";
+  const limit = Math.max(1, opts.limit ?? 24);
+  const page = Math.max(1, opts.page ?? 1);
+
+  if (!q && !filtrarAqui && orden === "recientes") {
+    const data = await dgcpFetch<Proceso>("/procesos", { ...paramsComunes(opts), page, limit });
+    return {
+      content: data.payload.content,
+      totalResults: data.totalResults ?? data.payload.content.length,
+      pages: data.pages ?? 1,
+      page: data.page ?? page,
+    };
+  }
+
+  const { filtrados, scanned, truncated } = await barrerProcesos(opts);
   const inicio = (page - 1) * limit;
   return {
     content: filtrados.slice(inicio, inicio + limit),
     totalResults: filtrados.length,
     pages: Math.max(1, Math.ceil(filtrados.length / limit)),
     page,
-    scanned: all.length,
-    // Una página caída deja el rango incompleto igual que quedarse corto de
-    // páginas: las dos cosas son lo mismo para quien lee el conteo.
-    truncated: upstreamPages > aBarrer || fallos > 0,
+    scanned,
+    truncated,
     muestra: true,
   };
 }
@@ -497,6 +557,8 @@ export interface AgregadoContrato {
   monto: number;
   /** Datos extra según el agregado (rpe del proveedor, etc.). */
   rpe?: string;
+  /** Código de unidad de compra, cuando el agregado es una institución. */
+  codigo?: string;
 }
 
 export interface PuntoMensual {
@@ -556,6 +618,25 @@ function acumular(mapa: Map<string, AgregadoContrato>, clave: string, monto: num
 }
 
 /**
+ * Como `acumular`, pero la llave es el código de unidad de compra: dos
+ * grafías del mismo nombre no parten a una institución en dos, y el código
+ * es lo que enlaza con su ficha (`lib/instituciones.ts`).
+ */
+function acumularInstitucion(
+  mapa: Map<string, AgregadoContrato>,
+  codigo: string | number | null | undefined,
+  nombre: string,
+  monto: number,
+) {
+  const cod = codigo === null || codigo === undefined ? "" : String(codigo).trim();
+  const k = cod || `n:${nombre || "—"}`;
+  const a = mapa.get(k) ?? { clave: nombre || "—", n: 0, monto: 0, codigo: cod || undefined };
+  a.n += 1;
+  a.monto += monto;
+  mapa.set(k, a);
+}
+
+/**
  * Muestra agregada de los contratos adjudicados más recientes. `paginas`
  * controla la profundidad (cada una son 1000 contratos, ~8 días).
  */
@@ -597,6 +678,16 @@ async function paginasDeContratos(paginas: number): Promise<VentanaContratos> {
   return { contratos, totalRegistro, truncado: upstreamPages > aEscanear };
 }
 
+/**
+ * La misma ventana que `muestrearContratos`, fila por fila, para descargarla:
+ * mismas URLs, mismo caché. `truncado` y `totalRegistro` dicen su alcance.
+ */
+export async function contratosRecientes(
+  paginas = MAX_CONTRATOS_PAGES,
+): Promise<{ contratos: Contrato[]; totalRegistro: number; truncado: boolean }> {
+  return paginasDeContratos(paginas);
+}
+
 export async function muestrearContratos(
   paginas = MAX_CONTRATOS_PAGES,
 ): Promise<ResumenContratos> {
@@ -625,7 +716,7 @@ export async function muestrearContratos(
       montoTotal += monto;
       conMonto += 1;
       acumular(adjudicatarios, c.razon_social, monto, c.rpe);
-      acumular(instituciones, c.unidad_compra, monto);
+      acumularInstitucion(instituciones, c.codigo_unidad_compra, c.unidad_compra, monto);
     }
     acumular(estados, c.estado_contrato || "—", monto);
 

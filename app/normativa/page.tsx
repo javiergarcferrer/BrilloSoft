@@ -4,17 +4,21 @@ import type { Metadata } from "next";
 import {
   RUTA_POR_TIPO,
   TIPOS_NORMATIVA,
-  consultarNormativa,
+  designacionesPorMes,
+  listaNormativa,
   type Documento,
+  type MesDesignaciones,
   type TipoNormativa,
 } from "@/lib/normativa";
-import { IconExternal, IconDoc } from "@/components/icons";
+import { IconDownload, IconExternal, IconDoc } from "@/components/icons";
+import { BuscadorUrl } from "@/components/buscador-url";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import Antiguedad from "@/components/antiguedad";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 
@@ -29,14 +33,31 @@ export const revalidate = 3600;
 const ANIO_ACTUAL = 2026;
 const ANIOS = [ANIO_ACTUAL, ANIO_ACTUAL - 1, ANIO_ACTUAL - 2, ANIO_ACTUAL - 3];
 
+/** Enlace de la página con los filtros dados; lo por defecto no viaja. */
+function hrefNormativa(f: { tipo: string; anio: number; q?: string; mes?: string }): string {
+  const p = new URLSearchParams();
+  p.set("tipo", f.tipo);
+  if (f.anio !== ANIO_ACTUAL) p.set("anio", String(f.anio));
+  if (f.q) p.set("q", f.q);
+  if (f.mes) p.set("mes", f.mes);
+  return `/normativa?${p}`;
+}
+
 export default async function NormativaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string; anio?: string }>;
+  searchParams: Promise<{ tipo?: string; anio?: string; q?: string; mes?: string }>;
 }) {
   const params = await searchParams;
   const tipo = (params.tipo && params.tipo in TIPOS_NORMATIVA ? params.tipo : "3") as TipoNormativa;
   const anio = ANIOS.includes(Number(params.anio)) ? Number(params.anio) : ANIO_ACTUAL;
+  const q = (params.q ?? "").trim().slice(0, 80);
+  // El mes solo filtra decretos, y solo uno del año elegido.
+  const mesPedido = params.mes ?? "";
+  const mes =
+    tipo === "3" && /^\d{4}-(0[1-9]|1[0-2])$/.test(mesPedido) && mesPedido.startsWith(String(anio))
+      ? mesPedido
+      : undefined;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -55,17 +76,26 @@ export default async function NormativaPage({
         </p>
       </header>
 
+      <Suspense>
+        <BuscadorUrl
+          etiqueta="Buscar en los títulos"
+          placeholder="Una palabra del título o un número: embajador, 606-26, pensión…"
+          ayuda={`Busca en el número y el título de ${TIPOS_NORMATIVA[tipo].toLowerCase()} de ${anio}, sin distinguir tildes; todas las palabras tienen que aparecer. No busca dentro del texto de la norma.`}
+        />
+      </Suspense>
+
       {/*
         Filtros de tipo y de año. A 390 px las dos barras envuelven en líneas
         limpias —cinco tipos en dos líneas, cuatro años en una— sin cortar el
         último filtro; la altura táctil la pone `FiltroEnlace`, que es donde
-        vive esa decisión.
+        vive esa decisión. La búsqueda viaja con ellos: cambiar de año busca
+        lo mismo en otro año.
       */}
-      <NavFiltros etiqueta="Tipo de documento">
+      <NavFiltros etiqueta="Tipo de documento" className="mt-4">
         {(Object.entries(TIPOS_NORMATIVA) as [TipoNormativa, string][]).map(([code, label]) => (
           <FiltroEnlace
             key={code}
-            href={`/normativa?tipo=${code}${anio !== ANIO_ACTUAL ? `&anio=${anio}` : ""}`}
+            href={hrefNormativa({ tipo: code, anio, q })}
             activo={tipo === code}
           >
             {label}
@@ -77,7 +107,7 @@ export default async function NormativaPage({
         {ANIOS.map((a) => (
           <FiltroEnlace
             key={a}
-            href={`/normativa?tipo=${tipo}${a !== ANIO_ACTUAL ? `&anio=${a}` : ""}`}
+            href={hrefNormativa({ tipo, anio: a, q })}
             activo={anio === a}
             mono
           >
@@ -90,8 +120,8 @@ export default async function NormativaPage({
         La Consultoría responde por año y tipo, y no siempre rápido. Los
         filtros llegan al instante; el listado cae en su hueco al contestar.
       */}
-      <Suspense fallback={<ListaEsqueleto tipo={tipo} anio={anio} />}>
-        <ListaNormativa tipo={tipo} anio={anio} />
+      <Suspense key={`${tipo}-${anio}-${q}-${mes ?? ""}`} fallback={<ListaEsqueleto tipo={tipo} anio={anio} />}>
+        <ListaNormativa tipo={tipo} anio={anio} q={q} mes={mes} />
       </Suspense>
 
       <p className="mt-4 text-xs leading-relaxed text-ink-soft">
@@ -107,8 +137,18 @@ export default async function NormativaPage({
   );
 }
 
-async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: number }) {
-  const { docs, origen } = await consultarNormativa(tipo, anio);
+async function ListaNormativa({
+  tipo,
+  anio,
+  q,
+  mes,
+}: {
+  tipo: TipoNormativa;
+  anio: number;
+  q: string;
+  mes?: string;
+}) {
+  const { docs, origen, total, todos } = await listaNormativa({ tipo, anio, q, mes });
 
   /*
     «No hay» y «no contestó» dicen cosas opuestas sobre el Ejecutivo. La capa
@@ -118,13 +158,40 @@ async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: numbe
   */
   const consultoriaCaida = origen === null;
   const instantanea = origen !== null && origen !== "vivo" ? origen : null;
+  const designaciones = tipo === "3" && !q ? designacionesPorMes(todos) : [];
+  const filtrada = Boolean(q || mes);
+  const consulta = new URLSearchParams({ tipo, anio: String(anio) });
+  if (q) consulta.set("q", q);
+  if (mes) consulta.set("mes", mes);
+  const csv = `/normativa/csv?${consulta}`;
 
   return (
     <>
-      {docs.length > 0 && (
-        <p className="mt-4 font-mono text-sm tabular-nums text-ink-soft">
-          {`${docs.length.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} en ${anio}`}
-        </p>
+      {designaciones.length > 0 && (
+        <Designaciones meses={designaciones} anio={anio} mes={mes} />
+      )}
+
+      {(docs.length > 0 || filtrada) && !consultoriaCaida && (
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-mono text-sm tabular-nums text-ink-soft" aria-live="polite">
+            {filtrada
+              ? `${docs.length.toLocaleString("es-DO")} de ${total.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} de ${anio}${
+                  mes ? ` · nombramientos y ceses de ${nombreMes(mes)}` : ""
+                }${q ? ` · «${q}»` : ""}`
+              : `${docs.length.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} en ${anio}`}
+          </p>
+          {docs.length > 0 && (
+            <Button asChild variant="secondary" size="sm" className="h-10 shrink-0 self-start sm:h-9 sm:self-auto">
+              <a
+                href={csv}
+                download
+                title={`Descarga las ${docs.length.toLocaleString("es-DO")} normas de esta lista, no solo las 200 que se muestran`}
+              >
+                <IconDownload className="h-4 w-4" /> CSV ({docs.length.toLocaleString("es-DO")})
+              </a>
+            </Button>
+          )}
+        </div>
       )}
 
       {instantanea && (
@@ -167,6 +234,12 @@ async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: numbe
           o rechazó la conexión. No es que no haya normativa: es que no pudimos
           mirar. Los datos vuelven solos cuando el origen se restablece.
         </EstadoVacio>
+      ) : filtrada ? (
+        <EstadoVacio titulo={q ? `Ningún título coincide con «${q}»` : "Sin decretos en ese mes"} className="mt-4">
+          {q
+            ? `Entre ${total.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} de ${anio}, ninguno tiene esas palabras en el número o el título. Prueba con menos palabras, otra forma de escribirlas u otro año.`
+            : "No hay nombramientos ni ceses con fecha de ese mes en la lista del año."}
+        </EstadoVacio>
       ) : (
         <EstadoVacio titulo="Sin resultados" className="mt-4">
           {instantanea ? "La instantánea de la Consultoría" : "La Consultoría respondió, pero"}{" "}
@@ -181,6 +254,100 @@ async function ListaNormativa({ tipo, anio }: { tipo: TipoNormativa; anio: numbe
         </p>
       )}
     </>
+  );
+}
+
+/** «agosto de 2026» para `2026-08`. */
+function nombreMes(mes: string): string {
+  return new Intl.DateTimeFormat("es-DO", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(`${mes}-15T12:00:00Z`),
+  );
+}
+
+/**
+ * Designaciones del mes: cuántos nombramientos y ceses firmó el Presidente y
+ * en qué cargos. Todo sale del título del decreto y de la etiqueta que le pone
+ * la Consultoría, y la tarjeta lo dice: no hay un campo «cargo» en el origen.
+ */
+function Designaciones({
+  meses,
+  anio,
+  mes,
+}: {
+  meses: MesDesignaciones[];
+  anio: number;
+  mes?: string;
+}) {
+  const actual = meses.find((m) => m.mes === mes) ?? meses[0];
+  const max = Math.max(1, ...actual.porCargo.map((c) => c.n));
+  const enMes = mes === actual.mes;
+  return (
+    <Card as="section" className="mt-5 p-5 sm:p-6">
+      <CardTitle>¿A quién designó el Presidente en {nombreMes(actual.mes)}?</CardTitle>
+      <p className="mt-1 text-sm text-ink-soft">
+        <span className="font-mono tabular-nums text-ink">{actual.designa}</span>{" "}
+        {actual.designa === 1 ? "decreto de nombramiento" : "decretos de nombramiento"} y{" "}
+        <span className="font-mono tabular-nums text-ink">{actual.cesa}</span> de cese
+        (derogan una designación anterior).
+      </p>
+
+      {actual.porCargo.length > 0 && (
+        <ul className="mt-4 space-y-2.5 text-sm">
+          {actual.porCargo.slice(0, 8).map((c) => (
+            <li key={c.cargo}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span>{c.cargo}</span>
+                <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">{c.n}</span>
+              </div>
+              <Progress
+                value={Math.max(2, (c.n / max) * 100)}
+                aria-label={`${c.cargo}: ${c.n}`}
+                className="mt-1"
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {enMes ? (
+          <Button asChild variant="secondary" size="sm" className="h-10 sm:h-9">
+            <Link href={hrefNormativa({ tipo: "3", anio })}>Todos los decretos de {anio}</Link>
+          </Button>
+        ) : (
+          <Button asChild variant="secondary" size="sm" className="h-10 sm:h-9">
+            <Link href={hrefNormativa({ tipo: "3", anio, mes: actual.mes })}>
+              Ver los {actual.designa + actual.cesa} decretos del mes
+            </Link>
+          </Button>
+        )}
+      </div>
+
+      {meses.length > 1 && (
+        <NavFiltros etiqueta="Mes de las designaciones" className="mt-4">
+          {meses.map((m) => (
+            <FiltroEnlace
+              key={m.mes}
+              href={hrefNormativa({ tipo: "3", anio, mes: m.mes })}
+              activo={m.mes === mes}
+              mono
+            >
+              {m.mes} · {m.designa + m.cesa}
+            </FiltroEnlace>
+          ))}
+        </NavFiltros>
+      )}
+
+      <p className="mt-4 text-xs leading-relaxed text-ink-soft">
+        Derivado del título, no de un campo del origen. La Consultoría Jurídica
+        etiqueta con la Cámara de Cuentas cada decreto que designa a un
+        funcionario —quien es designado declara su patrimonio ante ella— y los
+        que derogan esa designación; aquí se cuentan esos decretos por su fecha
+        de promulgación. El cargo es el primero que el título menciona: un
+        decreto que nombra a varias personas cuenta una vez. Los ceses no se
+        reparten por cargo.
+      </p>
+    </Card>
   );
 }
 

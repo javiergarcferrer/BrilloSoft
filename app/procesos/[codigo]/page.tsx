@@ -28,6 +28,7 @@ import AccionesProceso from "@/components/acciones-proceso";
 import { IconDoc, IconExternal, IconStar } from "@/components/icons";
 import { Esqueleto } from "@/components/esqueleto";
 import { Ruta } from "@/components/ruta";
+import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -73,6 +74,7 @@ export default async function ProcesoPage({
   const [{ proceso: p, articulos, documentos, contratos }, competencia] =
     await Promise.all([cargarProceso(decodificado), getCompetencia(decodificado)]);
   if (!p) notFound();
+  const institucion = institucionPorId(p.codigo_unidad_compra);
 
   const subclasesUnicas = Array.from(
     new Map(
@@ -166,7 +168,13 @@ export default async function ProcesoPage({
 
         <h1 className="mt-3 font-display text-3xl leading-tight">{p.titulo}</h1>
         <p className="mt-1 text-ink-soft">
-          {p.unidad_compra}{" "}
+          {institucion ? (
+            <Link href={hrefInstitucion(institucion)} className="text-ink hover:text-brand-700 hover:underline">
+              {p.unidad_compra}
+            </Link>
+          ) : (
+            p.unidad_compra
+          )}{" "}
           <Link
             href={`/licitaciones?uc=${p.codigo_unidad_compra}`}
             className="text-sm font-medium text-brand-600 hover:underline"

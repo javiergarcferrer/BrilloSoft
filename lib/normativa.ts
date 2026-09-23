@@ -66,6 +66,12 @@ export interface Documento {
   documentId: string | null;
   /** URL de apertura del documento en el origen. */
   url: string | null;
+  /**
+   * Etiqueta `Institucion` que la Consultoría pone a la norma, tal cual. En
+   * los decretos, «Cámara de Cuentas» marca un nombramiento o su cese (ver
+   * `esDesignacion`). Las gacetas no la tienen.
+   */
+  institucion?: string | null;
 }
 
 /** Fila del buscador `/api/consultas/search` (solo los campos que se leen). */
@@ -107,6 +113,7 @@ function aDocumento(f: FilaBuscador): Documento {
     fechaIso: iso,
     documentId,
     url: documentId ? `${BASE}/api/document/${documentId}` : null,
+    institucion: texto(f.Institucion) || null,
   };
 }
 
@@ -321,6 +328,147 @@ export async function normasDeInstitucion(
     }
   }
   return { docs: ordenar(docs), generadoEn: inst.generadoEn };
+}
+
+/* ------------------------------------------------ búsqueda sobre los títulos */
+
+/**
+ * Filtra una lista por texto sobre el número y el título, sin tildes ni
+ * mayúsculas. Todas las palabras tienen que aparecer, en cualquier orden:
+ * «designa embajador» encuentra «QUE DESIGNA AL SEÑOR…, EMBAJADOR…». No es
+ * búsqueda en el texto íntegro de la norma: el origen no lo sirve indexado.
+ */
+export function filtrarPorTexto(docs: Documento[], q: string): Documento[] {
+  const plano = (s: string) =>
+    s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const palabras = plano(q).split(/\s+/).filter(Boolean);
+  if (palabras.length === 0) return docs;
+  return docs.filter((d) => {
+    const hay = plano(`${d.tipo} ${d.numero} ${d.titulo}`);
+    return palabras.every((p) => hay.includes(p));
+  });
+}
+
+/* ------------------------------------------------- designaciones del Ejecutivo */
+
+/**
+ * ¿Es un decreto de nombramiento o de cese? La Consultoría etiqueta con la
+ * Cámara de Cuentas todo decreto que designa a un funcionario —el designado
+ * declara patrimonio ante la Cámara— y también los que derogan esa
+ * designación. La etiqueta la pone el origen; aquí solo se lee
+ * (`scripts/build-instituciones.py` la excluye del cruce por lo mismo).
+ */
+export function esDesignacion(d: Documento): boolean {
+  return d.tipo === "Decreto" && /camara de cuentas/i.test(
+    (d.institucion ?? "").normalize("NFD").replace(/\p{M}/gu, ""),
+  );
+}
+
+/**
+ * Cargos que se reconocen en el título. Gana el que aparece primero; a igual
+ * posición, el de más arriba en la lista. Se lee del título, no de un campo
+ * del origen: un decreto que nombra a varias personas en cargos distintos
+ * cuenta por el primero que menciona.
+ */
+const CARGOS: [string, RegExp][] = [
+  ["Viceministros", /\bviceministr[oa]s?\b/],
+  ["Ministros", /\bministr[oa]s?\b/],
+  ["Vicecónsules y cónsules", /\b(vice)?c[oó]nsul(es)?\b/],
+  ["Embajadores y servicio exterior", /\bembajador(a|es)?\b|\bministro consejero\b|\bconsejer[oa]s?\b|\bprimer secretario\b/],
+  ["Subdirectores", /\bsub-?director(a|es)?\b/],
+  ["Directores", /\bdirector(a|es)?\b/],
+  ["Superintendentes", /\bsuperintendente\b/],
+  ["Gobernadores", /\bgobernador(a|es)?\b/],
+  ["Miembros de consejos y juntas", /\bmiembros?\b|\bconsejo\b|\bjunta\b/],
+  ["Asesores", /\basesor(a|es)?\b/],
+  ["Encargados y coordinadores", /\bencargad[oa]s?\b|\bsubencargad[oa]s?\b|\bcoordinador(a|es)?\b/],
+];
+
+export function cargoDelTitulo(titulo: string): string {
+  const t = titulo.toLowerCase();
+  let mejor: { nombre: string; pos: number } | null = null;
+  for (const [nombre, re] of CARGOS) {
+    const pos = t.search(re);
+    if (pos >= 0 && (!mejor || pos < mejor.pos)) mejor = { nombre, pos };
+  }
+  return mejor?.nombre ?? "Otros cargos";
+}
+
+/** «Designa» si nombra; «cesa» si deroga o deja sin efecto una designación. */
+export function movimientoDelTitulo(titulo: string): "designa" | "cesa" {
+  const t = titulo
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/^que\s+/, "");
+  return /^(deroga|deja sin efecto|acepta la renuncia|destituye|cancela)/.test(t) ? "cesa" : "designa";
+}
+
+export interface MesDesignaciones {
+  /** `yyyy-mm`. */
+  mes: string;
+  designa: number;
+  cesa: number;
+  porCargo: { cargo: string; n: number }[];
+  docs: Documento[];
+}
+
+/**
+ * Los decretos de nombramiento y cese de una lista, por mes de promulgación
+ * y por cargo leído del título. Del mes más reciente al más antiguo.
+ */
+export function designacionesPorMes(docs: Documento[]): MesDesignaciones[] {
+  const meses = new Map<string, MesDesignaciones>();
+  for (const d of docs) {
+    if (!esDesignacion(d) || !d.fechaIso) continue;
+    const mes = d.fechaIso.slice(0, 7);
+    const m = meses.get(mes) ?? { mes, designa: 0, cesa: 0, porCargo: [], docs: [] };
+    m[movimientoDelTitulo(d.titulo)] += 1;
+    m.docs.push(d);
+    meses.set(mes, m);
+  }
+  for (const m of meses.values()) {
+    const cuenta = new Map<string, number>();
+    for (const d of m.docs) {
+      if (movimientoDelTitulo(d.titulo) !== "designa") continue;
+      const c = cargoDelTitulo(d.titulo);
+      cuenta.set(c, (cuenta.get(c) ?? 0) + 1);
+    }
+    m.porCargo = [...cuenta.entries()]
+      .map(([cargo, n]) => ({ cargo, n }))
+      .sort((a, b) => b.n - a.n);
+  }
+  return [...meses.values()].sort((a, b) => b.mes.localeCompare(a.mes));
+}
+
+/* ------------------------------------------------------ la lista de la página */
+
+export interface ListaNormativa extends ResultadoNormativa {
+  /** Documentos del tipo y año antes de filtrar por texto o por mes. */
+  total: number;
+  /** Todos los del tipo y año, para resumir las designaciones. */
+  todos: Documento[];
+}
+
+/**
+ * La lista que pinta `/normativa` y que baja su CSV: el tipo y el año (en
+ * vivo o desde la instantánea, como `consultarNormativa`), filtrados por
+ * texto sobre los títulos y, si se pide `mes` (`yyyy-mm`), reducidos a los
+ * decretos de nombramiento y cese de ese mes.
+ */
+export async function listaNormativa(opts: {
+  tipo: TipoNormativa;
+  anio: number;
+  q?: string;
+  mes?: string;
+}): Promise<ListaNormativa> {
+  const r = await consultarNormativa(opts.tipo, opts.anio);
+  let docs = r.docs;
+  if (opts.mes) {
+    docs = docs.filter((d) => esDesignacion(d) && d.fechaIso?.startsWith(opts.mes!));
+  }
+  if (opts.q) docs = filtrarPorTexto(docs, opts.q);
+  return { docs, origen: r.origen, total: r.docs.length, todos: r.docs };
 }
 
 /* --------------------------------------------------- resolución de una cita */

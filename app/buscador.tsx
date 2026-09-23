@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { OrdenProceso, Proceso } from "@/lib/dgcp";
@@ -100,7 +101,17 @@ interface Unidad {
   codigo: number;
   nombre: string;
   acronimo: string;
+  /** Enlace a su ficha de institución, si está en el cruce (lo pone `/api/unidades`). */
+  ficha?: string;
 }
+
+/**
+ * Tope de filas que lee la descarga: `MAX_FILAS_DESCARGA` de `lib/dgcp.ts`
+ * (seis páginas de 1000). Se repite aquí como literal porque importar el valor
+ * metería el adaptador entero en el bundle del navegador; si uno cambia, el
+ * otro también.
+ */
+const TOPE_DESCARGA = 6000;
 
 function etiquetaUnidad(u: Unidad): string {
   return u.acronimo && u.acronimo !== "N/A" ? `${u.nombre} (${u.acronimo})` : u.nombre;
@@ -318,33 +329,30 @@ export default function Buscador() {
   /* El conteo sale del barrido, no del censo: la interfaz está obligada a decirlo. */
   const esMuestra = Boolean(data?.muestra);
 
-  const exportarCsv = () => {
-    const cols: [string, (p: Proceso) => string | number][] = [
-      ["codigo_proceso", (p) => p.codigo_proceso],
-      ["titulo", (p) => p.titulo],
-      ["unidad_compra", (p) => p.unidad_compra],
-      ["modalidad", (p) => p.modalidad],
-      ["estado", (p) => p.estado_proceso],
-      ["monto_estimado", (p) => p.monto_estimado],
-      ["divisa", (p) => p.divisa],
-      ["fecha_publicacion", (p) => p.fecha_publicacion],
-      ["fecha_fin_recepcion_ofertas", (p) => p.fecha_fin_recepcion_ofertas],
-      ["url_portal", (p) => p.url],
-    ];
-    const esc = (v: string | number) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const lineas = [
-      cols.map(([h]) => h).join(","),
-      ...lista.map((p) => cols.map(([, f]) => esc(f(p))).join(",")),
-    ];
-    const blob = new Blob(["﻿" + lineas.join("\n")], {
-      type: "text/csv;charset=utf-8",
-    });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `licitaciones-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
+  /*
+    La descarga es el barrido entero, no la página. Antes el CSV traía las 24
+    filas visibles; ahora lo arma el servidor (`/api/procesos/csv`) con los
+    mismos filtros que el listado y sin paginar, hasta el tope de registros
+    que el listado ya declara leer. El botón dice cuántas filas baja.
+  */
+  const csvHref = (() => {
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q.trim());
+    if (etapa) params.set("etapa", etapa);
+    if (modalidad) params.set("modalidad", modalidad);
+    if (startdate) params.set("startdate", startdate);
+    if (enddate) params.set("enddate", enddate);
+    if (mipyme) params.set("mipyme", "true");
+    if (unidadSel) params.set("unidad_compra", String(unidadSel.codigo));
+    if (orden !== "recientes") params.set("orden", orden);
+    return `/api/procesos/csv?${params}`;
+  })();
+  const filasCsv = data
+    ? esMuestra
+      ? data.totalResults
+      : Math.min(data.totalResults, TOPE_DESCARGA)
+    : 0;
+  const csvRecortado = Boolean(data && (esMuestra ? data.truncated : data.totalResults > TOPE_DESCARGA));
 
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -564,6 +572,15 @@ export default function Buscador() {
             </Button>
           </div>
         )}
+        {unidadSel?.ficha && (
+          <p className="mb-3 text-sm text-ink-soft">
+            Procesos de {unidadSel.nombre}.{" "}
+            <Link href={unidadSel.ficha} className="font-medium text-brand-700 hover:underline">
+              Ver la ficha de la institución
+            </Link>{" "}
+            —su presupuesto, sus proveedores, su nómina y sus decretos.
+          </p>
+        )}
         {/*
           El conteo cambia sin recargar la página: sin `aria-live` un lector de
           pantalla no se entera de que la búsqueda terminó ni de cuántos
@@ -624,14 +641,19 @@ export default function Buscador() {
                   esta casa —silencioso y citable—, y se cierra diciendo el
                   alcance en el propio control.
                 */}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={exportarCsv}
-                  title={`Descarga las ${lista.length} filas de esta página, con los filtros puestos`}
-                  className="h-10 sm:h-9"
-                >
-                  <IconDownload className="h-4 w-4" /> CSV ({lista.length})
+                <Button asChild variant="secondary" size="sm" className="h-10 sm:h-9">
+                  <a
+                    href={csvHref}
+                    download
+                    title={
+                      csvRecortado
+                        ? `Descarga las ${filasCsv.toLocaleString("es-DO")} filas halladas entre los ${TOPE_DESCARGA.toLocaleString("es-DO")} registros más recientes del rango: acota las fechas para bajarlo entero`
+                        : `Descarga las ${filasCsv.toLocaleString("es-DO")} filas de esta búsqueda, todas las páginas, con los filtros puestos`
+                    }
+                  >
+                    <IconDownload className="h-4 w-4" /> CSV ({filasCsv.toLocaleString("es-DO")}
+                    {csvRecortado ? ", muestra" : ""})
+                  </a>
                 </Button>
                 <Button asChild variant="secondary" size="sm" className="h-10 sm:h-9">
                   <a

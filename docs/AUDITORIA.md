@@ -817,7 +817,12 @@ el servidor con el UA identificable, GET y pocas peticiones:
 - ⚠️ `estado`, `provincia` y `region` son nombres que el servidor **reconoce**
   pero devuelven **500 con cualquier valor probado** (`Activo`, `ACTIVO`,
   `activo`, `Inactivo`, `1`, `SANTIAGO`, `01`, `OZAMA`). Inservibles: no hay
-  forma de listar «los proveedores activos de Santiago».
+  forma de listar «los proveedores activos de Santiago». Re-verificado el
+  2026-09-23 (`provincia=SANTIAGO`, `provincia=Santiago`, `municipio=SANTIAGO`:
+  500). Por eso `/provincias` agrupa las fichas de los 200 mayores
+  adjudicatarios de la ventana (`lib/provincias.ts`), declarado como muestra.
+  El registro escribe La Vega como «CONCEPCIÓN DE LA VEGA» y Monte Cristi
+  como «MONTECRISTI»; de 200 fichas, 42 traen la provincia vacía.
 - ❌ **No hay búsqueda por razón social**: `razon_social`, `proveedor`,
   `nombre`, `q`, `rnc`, `documento`, `mipyme`, `provee`, `clasificacion` y
   `forma_juridica` se **ignoran en silencio** (devuelven el registro entero con

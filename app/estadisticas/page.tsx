@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { IconArrowRight } from "@/components/icons";
+import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 
 export const revalidate = 1800;
 
@@ -100,11 +101,29 @@ export default async function EstadisticasPage() {
   const mipymes = lista.filter((p) => p.dirigido_mipymes === "Si").length;
 
   const porModalidad = agrupar(lista, (p) => p.modalidad);
-  const porInstitucion = agrupar(lista, (p) => p.unidad_compra).slice(0, 10);
+  /*
+    Las instituciones se agrupan por código de unidad de compra, no por el
+    nombre: el código es estable y es lo que enlaza con su ficha. El nombre
+    que se pinta es el del primer proceso de ese código.
+  */
+  const nombreDe = new Map<string, string>();
+  for (const p of lista) {
+    const cod = String(p.codigo_unidad_compra ?? "");
+    if (cod && !nombreDe.has(cod)) nombreDe.set(cod, p.unidad_compra);
+  }
+  const porInstitucion = agrupar(lista, (p) =>
+    p.codigo_unidad_compra ? String(p.codigo_unidad_compra) : `n:${p.unidad_compra}`,
+  )
+    .slice(0, 10)
+    .map(([k, a]) => {
+      const inst = k.startsWith("n:") ? null : institucionPorId(k);
+      const nombre = k.startsWith("n:") ? k.slice(2) : (nombreDe.get(k) ?? k);
+      return { k, nombre, a, href: inst ? hrefInstitucion(inst) : null };
+    });
   const porEstado = [...agrupar(lista, (p) => p.estado_proceso)].sort(
     (a, b) => b[1].n - a[1].n
   );
-  const maxInst = porInstitucion[0]?.[1].monto || 1;
+  const maxInst = porInstitucion[0]?.a.monto || 1;
   const maxMod = porModalidad[0]?.[1].monto || 1;
   const totalN = lista.length || 1;
 
@@ -244,10 +263,16 @@ export default async function EstadisticasPage() {
         <Card as="section" className="p-6">
           <CardTitle>Top 10 instituciones por monto</CardTitle>
           <ul className="mt-3 space-y-2.5 text-sm">
-            {porInstitucion.map(([nombre, a]) => (
-              <li key={nombre}>
+            {porInstitucion.map(({ k, nombre, a, href }) => (
+              <li key={k}>
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="line-clamp-1 font-medium">{nombre}</span>
+                  {href ? (
+                    <Link href={href} className="line-clamp-1 font-medium text-brand-600 hover:underline">
+                      {nombre}
+                    </Link>
+                  ) : (
+                    <span className="line-clamp-1 font-medium">{nombre}</span>
+                  )}
                   <span className="shrink-0 text-xs text-ink-soft">
                     {a.n} · {formatMonto(a.monto, "DOP")}
                   </span>
