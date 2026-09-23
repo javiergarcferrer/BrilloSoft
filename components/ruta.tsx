@@ -38,11 +38,15 @@ import {
  */
 export function Ruta({
   seccion: seccionId,
+  raiz,
   padre,
   actual,
   className,
 }: {
-  seccion: SeccionId;
+  /** La vertical de la ficha. Las páginas transversales pasan `raiz`. */
+  seccion?: SeccionId;
+  /** Raíz de una página que no es de ninguna vertical: «Instituciones». */
+  raiz?: { href: string; label: string };
   /** La vista de la que cuelga la ficha, si no es la raíz de la vertical. */
   padre?: { href: string; label: string };
   /** Cómo se llama esta ficha: «Expediente 1234», «Capítulo 0201». */
@@ -50,11 +54,12 @@ export function Ruta({
   className?: string;
 }) {
   const router = useRouter();
-  const seccion = SECCIONES.find((s) => s.id === seccionId)!;
+  const seccion = seccionId ? SECCIONES.find((s) => s.id === seccionId) : undefined;
+  const inicio = seccion ? { href: seccion.href, label: seccion.nombre } : raiz!;
 
   const migas = [
-    { href: seccion.href, label: seccion.nombre },
-    ...(padre && padre.href !== seccion.href ? [padre] : []),
+    inicio,
+    ...(padre && padre.href !== inicio.href ? [padre] : []),
   ];
   const vuelta = migas[migas.length - 1];
 
@@ -83,7 +88,7 @@ export function Ruta({
           <BreadcrumbItemConSeparador key={m.href}>
             <BreadcrumbLink asChild>
               <Link href={m.href} onClick={alVolver(m.href)} className="inline-flex items-center gap-1.5 py-1">
-                {m.href === seccion.href && (
+                {seccion && m.href === seccion.href && (
                   <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", seccion.hue.punto)} />
                 )}
                 {m.label}

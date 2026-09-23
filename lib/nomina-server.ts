@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { periodLabel, type NominaData } from "./nomina";
+import { COL, median, periodLabel, type NominaData } from "./nomina";
 
 /**
  * Resumen de la nómina calculado en el servidor.
@@ -52,6 +52,58 @@ export async function getResumenNomina(): Promise<ResumenNomina | null> {
     };
   } catch (err) {
     console.error("[nomina] resumen:", err);
+    return null;
+  }
+}
+
+export interface NominaDeInstitucion {
+  codigo: string;
+  nombre: string;
+  periodo: string;
+  anio: number;
+  mes: number;
+  plazas: number;
+  masa: number;
+  mediana: number;
+  /** Los cargos con más plazas: cargo, plazas y sueldo mediano. */
+  cargos: { cargo: string; plazas: number; mediana: number }[];
+}
+
+/** La foto de nómina de una institución, por su código de `nomina.json`. */
+export async function getNominaDeInstitucion(
+  codigo: string,
+): Promise<NominaDeInstitucion | null> {
+  try {
+    const data = JSON.parse(
+      await readFile(join(process.cwd(), "public", "data", "nomina.json"), "utf8"),
+    ) as NominaData;
+    const indice = data.instituciones.findIndex((i) => i.codigo === codigo);
+    if (indice < 0) return null;
+    const inst = data.instituciones[indice];
+    const filas = data.rows.filter((r) => r[COL.INST] === indice);
+    const porCargo = new Map<number, number[]>();
+    for (const r of filas) {
+      const lista = porCargo.get(r[COL.CARGO]) ?? [];
+      lista.push(r[COL.SUELDO]);
+      porCargo.set(r[COL.CARGO], lista);
+    }
+    const cargos = [...porCargo.entries()]
+      .map(([c, sueldos]) => ({ cargo: data.cargos[c], plazas: sueldos.length, mediana: median(sueldos) }))
+      .sort((a, b) => b.plazas - a.plazas)
+      .slice(0, 8);
+    return {
+      codigo: inst.codigo,
+      nombre: inst.nombre,
+      periodo: periodLabel(inst.anio, inst.mes),
+      anio: inst.anio,
+      mes: inst.mes,
+      plazas: inst.plazas,
+      masa: inst.masa,
+      mediana: median(filas.map((r) => r[COL.SUELDO])),
+      cargos,
+    };
+  } catch (err) {
+    console.error("[nomina] institución:", err);
     return null;
   }
 }

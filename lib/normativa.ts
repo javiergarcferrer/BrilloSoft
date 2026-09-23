@@ -71,6 +71,8 @@ export interface Documento {
 /** Fila del buscador `/api/consultas/search` (solo los campos que se leen). */
 interface FilaBuscador {
   DocId?: number | null;
+  /** Etiqueta de institución de la Consultoría (ver `decretosDeInstitucion`). */
+  Institucion?: string | null;
   TipoDocumento?: number | null;
   Tipo?: string | null;
   Numero?: string | null;
@@ -297,6 +299,28 @@ export async function getResumenNormativa(anio = new Date().getFullYear()): Prom
     totalDecretos: decretos.length,
     totalLeyes: leyes.length,
   };
+}
+
+/**
+ * Normas de la instantánea cuya etiqueta `Institucion` es una de `etiquetas`,
+ * de la más reciente a la más antigua. La etiqueta la pone la Consultoría y el
+ * cruce con cada institución lo declara `scripts/build-instituciones.py`.
+ * Cubre los años de la instantánea; el origen en vivo no filtra por etiqueta.
+ */
+export async function normasDeInstitucion(
+  etiquetas: string[],
+): Promise<{ docs: Documento[]; generadoEn: string | null }> {
+  if (etiquetas.length === 0) return { docs: [], generadoEn: null };
+  const inst = await leerInstantanea();
+  if (!inst) return { docs: [], generadoEn: null };
+  const buscadas = new Set(etiquetas.map((e) => e.trim()));
+  const docs: Documento[] = [];
+  for (const filas of Object.values(inst.busquedas)) {
+    for (const f of filas) {
+      if (f.Institucion && buscadas.has(f.Institucion.trim())) docs.push(aDocumento(f));
+    }
+  }
+  return { docs: ordenar(docs), generadoEn: inst.generadoEn };
 }
 
 /* --------------------------------------------------- resolución de una cita */

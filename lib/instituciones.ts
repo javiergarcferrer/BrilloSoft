@@ -1,0 +1,207 @@
+/**
+ * La institución — el nodo que une las verticales.
+ *
+ * El mismo ministerio es una unidad de compra en la DGCP, un capítulo en el
+ * SIGEF, un código en la nómina y una etiqueta en la Consultoría Jurídica.
+ * `public/data/instituciones.json` (generado por `scripts/build-instituciones.py`)
+ * es el cruce versionado entre los cuatro: un archivo, no una base de datos.
+ * La entidad es la **unidad de compra** —la más fina con código estable— y su
+ * presupuesto es el del capítulo al que la DGCP la adscribe.
+ *
+ * Este módulo solo lee el cruce y compone; cada dato sigue viniendo de su
+ * capa (`lib/dgcp.ts`, `lib/fiscal.ts`, `lib/nomina-server.ts`,
+ * `lib/normativa.ts`). Ver docs/PLAN-ACCESO.md §2 (1.1) y §3 (2.3).
+ */
+
+import datos from "@/public/data/instituciones.json";
+import { dgcpFetch, normalize, type Contrato, type Proceso } from "@/lib/dgcp";
+
+export interface Institucion {
+  /** Código de unidad de compra de la DGCP. */
+  id: number;
+  nombre: string;
+  acronimo: string;
+  /** «Institución», «Gobierno local», «Hospital»… (tipo de la DGCP). */
+  tipo: string;
+  /** Capítulo presupuestario (SIGEF) al que la adscribe la DGCP. */
+  capitulo: string | null;
+  /** Código en `public/data/nomina.json`, si su nómina está en la foto. */
+  nomina: string | null;
+  /** Etiquetas de la Consultoría Jurídica que la nombran. */
+  consultoria: string[];
+}
+
+export const INSTITUCIONES: Institucion[] = (
+  datos as { instituciones: Institucion[] }
+).instituciones;
+
+const POR_ID = new Map(INSTITUCIONES.map((i) => [i.id, i]));
+
+/** Tramo legible de la URL: `/instituciones/5-mopc`. El número manda. */
+export function slugInstitucion(i: Institucion): string {
+  const base = normalize(i.acronimo || i.nombre)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+  return base ? `${i.id}-${base}` : String(i.id);
+}
+
+export function hrefInstitucion(i: Institucion): string {
+  return `/instituciones/${slugInstitucion(i)}`;
+}
+
+/** La institución de un tramo de URL (`5-mopc` o `5`), o `null`. */
+export function institucionDeSlug(slug: string): Institucion | null {
+  const m = /^(\d{1,6})(?:-|$)/.exec(slug);
+  return m ? (POR_ID.get(Number(m[1])) ?? null) : null;
+}
+
+export function institucionPorId(id: number | string): Institucion | null {
+  return POR_ID.get(Number(id)) ?? null;
+}
+
+/** Las unidades de compra adscritas a un capítulo presupuestario. */
+export function institucionesDelCapitulo(capitulo: string): Institucion[] {
+  return INSTITUCIONES.filter((i) => i.capitulo === capitulo);
+}
+
+/** La institución cuya nómina lleva ese código, si está en el cruce. */
+export function institucionDeNomina(codigo: string): Institucion | null {
+  return INSTITUCIONES.find((i) => i.nomina === codigo) ?? null;
+}
+
+/**
+ * Coincidencia por nombre o acrónimo, sin tildes. Los ministerios y las
+ * instituciones centrales van antes que hospitales y ayuntamientos, que son
+ * muchos y rara vez lo que se busca por un nombre corto.
+ */
+export function buscarInstituciones(q: string, limite = 30): Institucion[] {
+  const needle = normalize(q.trim());
+  if (!needle) return [];
+  const peso = (i: Institucion) =>
+    (normalize(i.acronimo) === needle ? 0 : 10) +
+    (i.tipo === "Institución" ? 0 : i.tipo === "Gobierno local" ? 2 : 1);
+  return INSTITUCIONES.filter(
+    (i) => normalize(i.nombre).includes(needle) || normalize(i.acronimo).includes(needle),
+  )
+    .sort((a, b) => peso(a) - peso(b) || a.nombre.localeCompare(b.nombre, "es"))
+    .slice(0, limite);
+}
+
+/* --------------------------------------------------------------- compras */
+
+export interface ProveedorDeInstitucion {
+  rpe: string;
+  nombre: string;
+  n: number;
+  monto: number;
+}
+
+export interface ComprasDeInstitucion {
+  /** Contratos en todo el registro (censo del origen). */
+  totalContratos: number;
+  /** Contratos leídos: los más recientes, hasta 1.000. */
+  leidos: number;
+  desde: string | null;
+  hasta: string | null;
+  /** Monto vigente en pesos de los contratos leídos. */
+  montoDop: number;
+  proveedores: ProveedorDeInstitucion[];
+  /** Cuota del primer proveedor sobre el monto leído (0–1). */
+  concentracion: number | null;
+  recientes: Contrato[];
+  senales: SenalesDeCompra | null;
+}
+
+/**
+ * Señales de los procesos de los últimos doce meses, contadas sobre lo que el
+ * origen publica. No son acusaciones: son las preguntas que un ciudadano
+ * haría primero. La ley permite la excepción; lo que se mira es cuánta.
+ */
+export interface SenalesDeCompra {
+  procesos: number;
+  /** El censo del origen superó lo leído (más de 1.000 en el año). */
+  truncado: boolean;
+  excepcion: number;
+  emergencia: number;
+  proveedorUnico: number;
+  noPlaneada: number;
+  desiertos: number;
+  abiertos: number;
+}
+
+const ESTADOS_VIGENTES = new Set(["Activo", "Modificado", "Cerrado"]);
+const ABIERTOS = /publicado|sobres/i;
+
+function isoDia(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+export async function getComprasDeInstitucion(id: number): Promise<ComprasDeInstitucion | null> {
+  const hoy = new Date();
+  const haceUnAnio = new Date(hoy);
+  haceUnAnio.setFullYear(hoy.getFullYear() - 1);
+
+  const [contratos, procesos] = await Promise.all([
+    dgcpFetch<Contrato>("/contratos", { unidad_compra: id, page: 1, limit: 1000 }, 3600).catch(
+      () => null,
+    ),
+    dgcpFetch<Proceso>(
+      "/procesos",
+      { unidad_compra: id, startdate: isoDia(haceUnAnio), enddate: isoDia(hoy), limit: 1000 },
+      3600,
+    ).catch(() => null),
+  ]);
+  if (!contratos && !procesos) return null;
+
+  const lista = contratos?.payload.content ?? [];
+  const porProveedor = new Map<string, ProveedorDeInstitucion>();
+  let montoDop = 0;
+  let desde: string | null = null;
+  let hasta: string | null = null;
+  for (const c of lista) {
+    const f = (c.fecha_adjudicacion ?? "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(f)) {
+      if (!desde || f < desde) desde = f;
+      if (!hasta || f > hasta) hasta = f;
+    }
+    if (!ESTADOS_VIGENTES.has(c.estado_contrato) || c.divisa !== "DOP") continue;
+    const monto = c.valor_contratado || 0;
+    if (monto <= 0) continue;
+    montoDop += monto;
+    const clave = c.rpe || c.razon_social;
+    const p = porProveedor.get(clave) ?? { rpe: c.rpe, nombre: c.razon_social, n: 0, monto: 0 };
+    p.n += 1;
+    p.monto += monto;
+    porProveedor.set(clave, p);
+  }
+  const proveedores = [...porProveedor.values()].sort((a, b) => b.monto - a.monto);
+
+  let senales: SenalesDeCompra | null = null;
+  if (procesos) {
+    const ps = procesos.payload.content;
+    const cuenta = (f: (p: Proceso) => boolean) => ps.filter(f).length;
+    senales = {
+      procesos: ps.length,
+      truncado: (procesos.totalResults ?? ps.length) > ps.length,
+      excepcion: cuenta((p) => /excepci/i.test(p.modalidad)),
+      emergencia: cuenta((p) => /emergencia|urgencia/i.test(p.tipo_excepcion ?? "")),
+      proveedorUnico: cuenta((p) => /proveedor .nico|exclusividad/i.test(p.tipo_excepcion ?? "")),
+      noPlaneada: cuenta((p) => p.adquisicion_planeada === "No"),
+      desiertos: cuenta((p) => /desierto/i.test(p.estado_proceso)),
+      abiertos: cuenta((p) => ABIERTOS.test(p.estado_proceso)),
+    };
+  }
+
+  return {
+    totalContratos: contratos?.totalResults ?? lista.length,
+    leidos: lista.length,
+    desde,
+    hasta,
+    montoDop,
+    proveedores: proveedores.slice(0, 8),
+    concentracion: montoDop > 0 && proveedores[0] ? proveedores[0].monto / montoDop : null,
+    recientes: lista.slice(0, 8),
+    senales,
+  };
+}
