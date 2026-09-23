@@ -2,7 +2,7 @@
  * Arquitectura de información de la plataforma — fuente única de verdad.
  *
  * Socrático.do cubre tres verticales (licitaciones, congreso, nómina) y un
- * panorama transversal. Todo el chrome —nav global, barra de sección, tab bar
+ * panorama transversal. Todo el chrome —megamenú (vía `lib/menu.ts`), barra de sección, tab bar
  * móvil, agrupación del pie— se deriva de este módulo para que la separación
  * entre verticales sea estructural y no una convención repetida a mano.
  *
@@ -41,13 +41,10 @@ export interface Seccion {
   /** Sustantivo corto: barra de sección, tab bar, pie. Se reconoce de un vistazo. */
   nombre: string;
   /**
-   * La vertical dicha como pregunta, para el nav global de escritorio.
-   *
-   * Ergonomía cognitiva: donde el usuario está *eligiendo a dónde ir* y hay
-   * espacio, la pregunta informa más que el sustantivo («¿Qué compra?» dice
-   * qué vas a encontrar; «Licitaciones» te obliga a saberlo). Donde ya sabe
-   * dónde está y solo necesita reconocer —pestañas de 72px, barra de
-   * sección—, el sustantivo gana. Por eso conviven las dos.
+   * La vertical dicha como pregunta. Ya no se pinta en la cabecera —el dueño
+   * la cambió por el megamenú de `lib/menu.ts` (docs/DECISIONES.md)—; queda
+   * como palabra clave de la paleta, para que «qué compra» encuentre
+   * Licitaciones.
    */
   pregunta: string;
   /** Ruta raíz de la vertical (a donde lleva el nav global). */

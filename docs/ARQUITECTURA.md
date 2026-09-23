@@ -373,6 +373,24 @@ sources impose:
   to `/procesos/*` and `/proveedores/*`.
 - `/gestion` → SISMAP ranking, `?tabla=instituciones|ayuntamientos|juntas` and `?q=`.
 
+## Chrome and indexing — `lib/menu.ts`, `app/sitemap.ts`, `lib/sitio.ts`
+- **Megamenú** (`components/megamenu.tsx` over `components/ui/navigation-menu.tsx`,
+  Radix NavigationMenu): three doors — Dinero público, Leyes, El Estado — whose
+  panels list every destination with a one-line `nota` from `lib/menu.ts`, plus
+  a featured entry per door. The viewport is anchored to the sticky header
+  (`absolute inset-x-0 top-full`), so the panel is as wide as the page column.
+  The trigger holding the current route gets a paper underline (`grupoActivo`).
+  The phone's «Más» sheet renders the same `MENU`. No questions in the header
+  (owner decision, DECISIONES): `pregunta` survives only as a palette keyword.
+- **Indexing:** `metadataBase` = `SITIO` (`lib/sitio.ts`, a constant — no env).
+  Every page declares `alternates.canonical`: static pages their route, fichas
+  their own path (`/instituciones/237` → `/instituciones/237-minerd`). Not
+  indexed: `/buscar` (results) and `/seguimiento` (lives in `localStorage`),
+  plus the /democracia registration flows. `app/sitemap.ts` (daily) lists the
+  views, platform pages, 739 institutions, 32 provinces, ~3,600 obras, the
+  budget chapters, the norms of the normativa snapshot (~3,000) and the 221
+  legislators; processes, bills and suppliers are reached through links.
+
 ## Client state — `lib/seguimiento.ts`
 Followed items in `localStorage` (key `lrd:seguimiento`) as typed entries
 `{tipo, id, titulo, href, huella?, desde?, visto?}`, `tipo` ∈ proceso, proyecto,

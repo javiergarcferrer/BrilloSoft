@@ -8,6 +8,7 @@ import { Termino } from "@/components/termino";
 import { OtrasGuias } from "@/components/otras-guias";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/finanzas/guia/deuda" },
   title: "Qué es la deuda pública",
   description:
     "Qué mide la deuda del Sector Público No Financiero que publica Crédito Público, qué es deuda interna y externa, y qué no es deuda pública.",

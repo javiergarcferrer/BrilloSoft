@@ -58,6 +58,7 @@ export async function generateMetadata({
     if (p) {
       return {
         title: p.titulo || limpio,
+        alternates: { canonical: `/procesos/${encodeURIComponent(limpio)}` },
         description: `${p.unidad_compra} · ${p.modalidad} · ${p.estado_proceso} · cierre de ofertas ${p.fecha_fin_recepcion_ofertas?.slice(0, 10) ?? "n/d"}`,
       };
     }

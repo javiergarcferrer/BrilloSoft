@@ -48,6 +48,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!i) return { title: "Institución no encontrada" };
   return {
     title: i.nombre,
+    // `/instituciones/237` y `/instituciones/237-minerd` son la misma página:
+    // la canónica es la del tramo legible.
+    alternates: { canonical: hrefInstitucion(i) },
     description: `Qué compra, cuánto gasta, a quién le paga y qué decreta el Estado sobre ${i.nombre}: presupuesto, contratos, nómina y normativa en una sola página.`,
   };
 }

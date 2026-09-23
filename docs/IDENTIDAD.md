@@ -93,8 +93,10 @@ lista van en rojo. Es la regla única y no admite excepción.
 ## La voz
 
 1. **Pregunta, no acusa.** Los titulares son preguntas; los datos responden.
-   La conclusión la saca el lector. El nav global nombra las verticales como
-   preguntas («¿Qué compra?»), porque eso es lo que el ciudadano va a buscar.
+   La conclusión la saca el lector. La pregunta vive en los titulares de
+   página, no en la cabecera: desde el 2026-09-23 (decisión del dueño) la
+   cabecera es un megamenú de sustantivos —Dinero público, Leyes, El Estado—
+   donde cada destino lleva debajo una línea que dice qué hay (`lib/menu.ts`).
 2. **Cita la fuente o no lo dice.** Cada cifra lleva origen y fecha. Lo que la
    fuente niega, se declara negado.
 3. **Español llano primero.** «Perimió» se explica antes de usarse.

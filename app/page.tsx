@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense, cache } from "react";
 import { dgcpFetch, type Proceso } from "@/lib/dgcp";
@@ -47,6 +48,8 @@ import { Portada } from "@/components/portada";
 import { SeccionBolsillo } from "@/components/fuentes-nuevas/indicadores-bolsillo";
 
 export const revalidate = 1800;
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 /** Páginas del SIL que alimentan el panorama (10 iniciativas por página). */
 const PAGINAS_CONGRESO = 10;

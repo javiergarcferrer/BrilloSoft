@@ -21,6 +21,7 @@ import {
 } from "@/components/fuentes-nuevas/resumen-fuentes";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/fuentes" },
   title: "Fuentes",
   description:
     "Qué fuentes alimentan la plataforma, cuáles están bloqueadas y con qué límites de cobertura.",

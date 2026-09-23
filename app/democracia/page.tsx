@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/democracia" },
   title: "Democracia Legislativa",
   description:
     "Vota a favor o en contra sobre las iniciativas del Congreso Nacional dominicano y mira el apoyo ciudadano en tiempo real. Piloto independiente, registro por cédula, voto privado.",

@@ -39,6 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!p) return { title: "Provincia no encontrada" };
   return {
     title: p.nombre,
+    alternates: { canonical: `/provincias/${p.slug}` },
     description: `${p.nombre} y el Estado: proveedores del Estado inscritos en la provincia, sus ayuntamientos y sus legisladores.`,
   };
 }

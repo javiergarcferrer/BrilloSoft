@@ -12,6 +12,7 @@ import Antiguedad from "@/components/antiguedad";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/planes" },
   title: "Planes anuales de compras",
   description:
     "Qué planea comprar cada institución del Estado dominicano este año, según el Plan Anual de Compras y Contrataciones (PACC) que publica en la DGCP.",

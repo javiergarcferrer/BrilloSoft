@@ -19,6 +19,7 @@ import FiltrosLegisladores from "./filtros-legisladores";
 import { hrefDirectorio, type FiltrosDirectorio } from "./href";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/congreso/legisladores" },
   title: "Legisladores",
   description:
     "Diputados y senadores del período 2024-2028: por provincia y partido, con lo que propusieron y cómo votaron en la Cámara.",

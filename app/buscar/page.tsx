@@ -15,6 +15,9 @@ import { EsqueletoFilas } from "@/components/esqueleto";
 import { IconArrowRight } from "@/components/icons";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/buscar" },
+  // Una página de resultados no es contenido: se sigue, no se indexa.
+  robots: { index: false, follow: true },
   title: "Buscar en toda la plataforma",
   description:
     "Una sola caja para instituciones, normativa, nómina, Congreso y compras públicas del Estado dominicano.",

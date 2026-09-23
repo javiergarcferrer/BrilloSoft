@@ -6,6 +6,7 @@ import { IconArrowLeft, IconCheck, IconShield } from "@/components/icons";
 import { cuentaUnicaHabilitada } from "@/app/democracia/cuenta-unica/cliente";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/democracia/seguridad" },
   title: "Seguridad y privacidad",
   description:
     "Cómo Democracia Legislativa protege la identidad y el voto: cédula cifrada con clave que no sale de la base, voto privado a nivel de base de datos, minimización de datos según la Ley 172-13.",

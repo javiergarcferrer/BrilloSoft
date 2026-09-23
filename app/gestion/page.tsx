@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/gestion" },
   title: "Calidad de la gestión pública",
   description:
     "El ranking del SISMAP: cuánto cumple cada institución del Gobierno central, cada ayuntamiento y cada junta de distrito los indicadores de gestión del Ministerio de Administración Pública.",

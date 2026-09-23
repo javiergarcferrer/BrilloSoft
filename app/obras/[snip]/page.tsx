@@ -32,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!d) return { title: "Obra no encontrada" };
   return {
     title: d.obra.nombre,
+    alternates: { canonical: `/obras/${snip}` },
     description: `Estado, valor, avance declarado y contratos de la obra SNIP ${snip}, ejecutada por ${d.obra.entidad}.`,
   };
 }

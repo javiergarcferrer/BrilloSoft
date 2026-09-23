@@ -18,6 +18,7 @@ import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { Barras } from "./barras";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/deuda" },
   title: "Deuda pública en el tiempo",
   description:
     "Cómo ha crecido la deuda del Sector Público No Financiero dominicano: cierre de cada año desde 2000 con su peso en el PIB y cierres trimestrales desde 2015, según Crédito Público.",

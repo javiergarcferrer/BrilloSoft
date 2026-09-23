@@ -9,6 +9,7 @@ import { Termino } from "@/components/termino";
 import { OtrasGuias } from "@/components/otras-guias";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/congreso/guia" },
   title: "Cómo nace una ley",
   description:
     "El camino de una ley en República Dominicana según la Constitución de 2015: quién puede proponerla, las dos cámaras, la promulgación u observación del Presidente, la Gaceta Oficial y la perención.",

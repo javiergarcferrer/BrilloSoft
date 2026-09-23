@@ -18,6 +18,7 @@ import { Termino } from "@/components/termino";
 import { DescargarCsv } from "./descargar-csv";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/finanzas" },
   title: "Ejecución del presupuesto",
   description:
     "En qué gasta el Estado dominicano: presupuesto vigente, comprometido, devengado y pagado por institución, mes a mes, según la API de datos abiertos del SIGEF.",

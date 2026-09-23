@@ -29,7 +29,17 @@ export async function generateMetadata({
   params: Promise<{ rpe: string }>;
 }) {
   const { rpe } = await params;
-  return { title: `Proveedor RPE ${rpe}` };
+  if (!/^\d{1,10}$/.test(rpe)) return { title: "Proveedor no encontrado" };
+  // El nombre del proveedor es lo que se busca en Google, no su número de RPE.
+  const registro = await getProveedorRegistro(rpe).catch(() => null);
+  const nombre = registro?.razonSocial;
+  return {
+    title: nombre ? `${nombre} — proveedor del Estado` : `Proveedor RPE ${rpe}`,
+    description: nombre
+      ? `Contratos de ${nombre} con el Estado dominicano: a quién le vende, cuánto y desde cuándo, con su ficha del Registro de Proveedores (RPE ${rpe}).`
+      : `Contratos del proveedor RPE ${rpe} con el Estado dominicano.`,
+    alternates: { canonical: `/proveedores/${rpe}` },
+  };
 }
 
 export default async function ProveedorPage({

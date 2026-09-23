@@ -14,6 +14,7 @@ import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 export const revalidate = 1800;
 
 export const metadata = {
+  alternates: { canonical: "/estadisticas" },
   title: "Estadísticas del mercado",
   description:
     "Panorama de los procesos de compras públicas de los últimos 30 días en República Dominicana.",

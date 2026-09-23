@@ -5,6 +5,7 @@ import { Cargando, Esqueleto, EsqueletoTarjetas } from "@/components/esqueleto";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/licitaciones" },
   title: "Licitaciones",
   description:
     "Busca procesos de compras públicas del Estado dominicano con los datos abiertos de la DGCP: filtros por institución, modalidad, estado y monto.",

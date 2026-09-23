@@ -17,6 +17,7 @@ import { formatFecha } from "@/lib/format";
 import { IconArrowLeft } from "@/components/icons";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/congreso/perencion" },
   title: "Perención",
   description:
     "Qué iniciativas del Congreso están por perimir antes del cierre de la legislatura.",

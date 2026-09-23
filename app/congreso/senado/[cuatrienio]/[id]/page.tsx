@@ -54,7 +54,9 @@ async function cargarFicha(params: Props["params"]) {
 export async function generateMetadata({ params }: Props) {
   const ficha = await cargarFicha(params);
   if (!ficha) return { title: "Expediente no encontrado" };
+  const { cuatrienio, id } = await params;
   return {
+    alternates: { canonical: `/congreso/senado/${cuatrienio}/${id}` },
     title: ficha.numero?.completo ?? `Expediente ${ficha.id}`,
     description: ficha.titulo.slice(0, 160),
   };

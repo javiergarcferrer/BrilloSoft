@@ -21,6 +21,7 @@ import { IconArrowRight, IconClock } from "@/components/icons";
 import { Termino } from "@/components/termino";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/congreso" },
   title: "Cámara de Diputados",
   description:
     "Busca iniciativas legislativas de la Cámara de Diputados dominicana: estado procesal, trámites, proponentes y alertas de perención.",

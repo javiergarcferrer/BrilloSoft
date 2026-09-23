@@ -14,6 +14,7 @@ import { Cargando, EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/provincias" },
   title: "Provincias",
   description:
     "El Estado dominicano por provincia: qué proveedores del Estado están inscritos en cada una, sus gobiernos locales y sus legisladores.",

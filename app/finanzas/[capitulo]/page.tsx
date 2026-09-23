@@ -26,6 +26,7 @@ export async function generateMetadata({
   if (!datos) return { title: `Capítulo ${capitulo}` };
   return {
     title: `${datos.institucion.nombreLegible} — ejecución presupuestaria`,
+    alternates: { canonical: `/finanzas/${capitulo}` },
     description: `Presupuesto vigente, comprometido, devengado y pagado de ${datos.institucion.nombreLegible} en ${datos.fiscal.anio}.`,
   };
 }

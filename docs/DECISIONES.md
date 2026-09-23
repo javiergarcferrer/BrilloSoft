@@ -61,6 +61,14 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
 
 ## Cerradas, para que nadie las reabra
 
+- **Cabecera sin preguntas; megamenú** (23-09-2026). El dueño pidió quitar
+  las preguntas («¿Qué compra?») de la cabecera y un megamenú. La cabecera
+  lleva tres puertas —Dinero público, Leyes, El Estado— que abren un panel con
+  toda la plataforma, cada destino con su línea en llano (`lib/menu.ts`,
+  `components/megamenu.tsx`); el teléfono muestra lo mismo en la hoja «Más».
+  La pregunta sigue en los titulares de página y como palabra clave de la
+  paleta.
+
 - **XLSX sin dependencia**: `lib/deuda.ts` lee el ZIP directamente.
 - **El Senado se lee por su consultante público**, no por su WordPress (401).
 - **Los PDF se rasterizan** con pdf.js *legacy* sobre un canvas a través de

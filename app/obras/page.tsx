@@ -22,6 +22,7 @@ import { Card } from "@/components/ui/card";
 import { FilaObra } from "@/components/fuentes-nuevas/fila-obra";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/obras" },
   title: "Obras públicas",
   description:
     "La inversión pública del Estado dominicano proyecto a proyecto: estado, valor, avance declarado, provincia y los contratos de compras que la ejecutan, según los datos abiertos de MapaInversiones.",

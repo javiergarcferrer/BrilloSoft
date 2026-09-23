@@ -7,6 +7,7 @@ import { Termino } from "@/components/termino";
 import { OtrasGuias } from "@/components/otras-guias";
 
 export const metadata = {
+  alternates: { canonical: "/guia" },
   title: "Guía para ofertar al Estado — Licitaciones RD",
   description:
     "Cómo registrarte como proveedor del Estado dominicano, qué documentos suelen pedir y cómo presentar una oferta ganadora.",

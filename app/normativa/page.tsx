@@ -24,6 +24,7 @@ import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 import { Termino } from "@/components/termino";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/normativa" },
   title: "Normativa del Ejecutivo",
   description:
     "Decretos, leyes, reglamentos, resoluciones y Gaceta Oficial de República Dominicana, en vivo desde la Consultoría Jurídica del Poder Ejecutivo.",

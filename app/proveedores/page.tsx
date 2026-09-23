@@ -34,6 +34,7 @@ import BuscadorProveedores from "./buscador";
 import { Portada } from "@/components/portada";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/proveedores" },
   title: "Proveedores del Estado",
   description:
     "Quién le vende al Estado dominicano: quién más se adjudica, con cuántas instituciones trabaja y qué dice de cada empresa el Registro de Proveedores del Estado.",

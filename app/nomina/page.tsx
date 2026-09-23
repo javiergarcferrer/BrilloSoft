@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "¿A quién le paga el Estado?",
   description:
     "Foto transversal de la nómina pública dominicana: plazas, áreas, cargos y sueldos brutos del último mes publicado por cada institución cubierta, sin nombres ni datos personales.",
-  robots: { index: false, follow: false },
+  alternates: { canonical: "/nomina" },
 };
 
 /*

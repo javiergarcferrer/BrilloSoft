@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { PAGINAS_PLATAFORMA, SECCIONES, seccionDe, type Seccion } from "@/lib/secciones";
+import { SECCIONES, seccionDe } from "@/lib/secciones";
+import { MENU, puntoDe } from "@/lib/menu";
 import {
   IconChartBar,
   IconCheck,
@@ -30,7 +31,7 @@ import {
 /**
  * Navegación inferior móvil (oculta en lg+, donde navega el nav del header).
  *
- * Mismo modelo mental que el nav global: panorama + verticales, derivadas de
+ * Mismo modelo mental que el megamenú de escritorio: panorama + verticales, derivadas de
  * `lib/secciones`. Las vistas internas de cada vertical viven en la barra de
  * sección, no aquí: la tab bar cambia de vertical, no de vista.
  *
@@ -155,105 +156,51 @@ export default function MobileTabBar() {
 
           <SheetContent side="bottom">
             <SheetHeader>
-              <SheetTitle>Las demás secciones</SheetTitle>
+              <SheetTitle>Toda la plataforma</SheetTitle>
               <SheetDescription>
-                Lo que la barra no lleva fijo. Cada una lee su propia fuente del
-                Estado.
+                Lo mismo que el menú de escritorio: el dinero, las leyes y el
+                Estado, cada destino con una línea que dice qué hay.
               </SheetDescription>
             </SheetHeader>
             <SheetBody className="px-2 py-2">
-              <ul>
-                {restantes.map((seccion) => (
-                  <li key={seccion.id}>
-                    <EnlaceHoja
-                      seccion={seccion}
-                      activa={actual?.id === seccion.id}
-                      onNavegar={() => setHojaAbierta(false)}
-                    />
-                  </li>
-                ))}
-              </ul>
               {/*
-                Las páginas transversales —instituciones, buscar en todo, el
-                seguimiento— no son una vertical, pero en el teléfono tienen que
-                estar a dos toques como ellas. Salen de la misma lista que el pie
-                y la paleta.
+                El mismo `lib/menu` que el megamenú de escritorio: en el teléfono
+                no hay panel ancho, así que los tres grupos se apilan y cada
+                destino es una fila de 48 px con su línea de explicación.
               */}
-              <ul className="mt-2 border-t border-hairline pt-2">
-                {PAGINAS_PLATAFORMA.filter((p) => p.href !== "/").map((p) => (
-                  <li key={p.href}>
-                    <Link
-                      href={p.href}
-                      onClick={() => setHojaAbierta(false)}
-                      aria-current={pathname === p.href ? "page" : undefined}
-                      className="flex min-h-12 items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-canvas/70 active:bg-canvas/70"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold text-ink">{p.label}</span>
-                        <span className="block truncate text-xs text-ink-soft">{p.descriptor}</span>
-                      </span>
-                      <IconChevronRight className="h-4 w-4 shrink-0 text-ink-soft" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              {MENU.map((grupo) => (
+                <section key={grupo.id} aria-label={grupo.label} className="mb-3">
+                  <h2 className="rotulo px-3 pb-1 pt-2 text-ink-soft">{grupo.label}</h2>
+                  <ul>
+                    {grupo.columnas.flatMap((col) =>
+                      col.enlaces.map((e) => (
+                        <li key={e.href}>
+                          <Link
+                            href={e.href}
+                            onClick={() => setHojaAbierta(false)}
+                            aria-current={pathname === e.href ? "page" : undefined}
+                            className="flex min-h-12 items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-canvas/70 active:bg-canvas/70 aria-[current=page]:bg-canvas"
+                          >
+                            <span
+                              aria-hidden
+                              className={cn("h-1.5 w-1.5 shrink-0 rounded-full", puntoDe(col))}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-semibold text-ink">{e.label}</span>
+                              <span className="block truncate text-xs text-ink-soft">{e.nota}</span>
+                            </span>
+                            <IconChevronRight className="h-4 w-4 shrink-0 text-ink-soft" />
+                          </Link>
+                        </li>
+                      )),
+                    )}
+                  </ul>
+                </section>
+              ))}
             </SheetBody>
           </SheetContent>
         </Sheet>
       </div>
     </nav>
-  );
-}
-
-/** Una fila de la hoja: objetivo táctil de 56 px, con el matiz de su vertical. */
-function EnlaceHoja({
-  seccion,
-  activa,
-  onNavegar,
-}: {
-  seccion: Seccion;
-  activa: boolean;
-  onNavegar: () => void;
-}) {
-  const Icon = ICONOS[seccion.id];
-  return (
-    <Link
-      href={seccion.href}
-      onClick={onNavegar}
-      aria-current={activa ? "page" : undefined}
-      className={cn(
-        // La fila actual va rellena y con filete; las demás solo se encienden
-        // al tocarlas, y con un papel más leve para que no se confundan con
-        // ella.
-        "flex min-h-14 items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
-        activa
-          ? "bg-canvas ring-1 ring-inset ring-hairline"
-          : "hover:bg-canvas/70 active:bg-canvas/70",
-      )}
-    >
-      <span
-        aria-hidden
-        className={cn(
-          "grid h-10 w-10 shrink-0 place-items-center rounded-lg",
-          seccion.hue.chip,
-        )}
-      >
-        <Icon className="h-5 w-5" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span
-          className={cn(
-            "block text-sm font-semibold",
-            activa ? seccion.hue.activo : "text-ink",
-          )}
-        >
-          {seccion.nombre}
-        </span>
-        <span className="block truncate text-xs text-ink-soft">
-          {seccion.descriptor}
-        </span>
-      </span>
-      <IconChevronRight className="h-4 w-4 shrink-0 text-ink-soft" />
-    </Link>
   );
 }

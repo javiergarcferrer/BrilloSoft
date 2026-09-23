@@ -4,6 +4,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { IconArrowRight, IconCheck, IconShield } from "@/components/icons";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/seguridad" },
   title: "Seguridad y cumplimiento",
   description:
     "Postura de seguridad, privacidad y cumplimiento normativo de Socrático.do: minimización de datos según la Ley 172-13, acceso a información pública bajo la Ley 200-04 y estándares NORTIC de la OGTIC.",

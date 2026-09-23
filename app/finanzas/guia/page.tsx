@@ -9,6 +9,7 @@ import { Termino } from "@/components/termino";
 import { OtrasGuias } from "@/components/otras-guias";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/finanzas/guia" },
   title: "Cómo leer el presupuesto",
   description:
     "Qué significan presupuesto inicial, vigente, comprometido, devengado y pagado en el Presupuesto General del Estado dominicano; qué es un capítulo y qué es la deuda administrativa.",

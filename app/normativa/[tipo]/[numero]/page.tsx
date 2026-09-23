@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const norma = await cargarNorma(tipo, numero);
   return {
     title: `${tipo} ${numero}`,
+    alternates: { canonical: `/normativa/${slug}/${numero}` },
     description: norma?.titulo
       ? `${tipo} ${numero}: ${desdeMayusculas(norma.titulo).slice(0, 150)}`
       : `Texto oficial de la ${tipo} ${numero}.`,

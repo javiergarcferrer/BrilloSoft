@@ -40,6 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (d === "inexistente") return { title: "Votación no encontrada" };
   return {
     title: d.votacion.titulo,
+    alternates: { canonical: `/congreso/votaciones/${id}` },
     description: `${d.votacion.si} a favor, ${d.votacion.no} en contra: cómo votó cada diputado.`,
   };
 }

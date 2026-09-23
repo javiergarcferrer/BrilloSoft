@@ -22,6 +22,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/congreso/senado" },
   title: "Senado",
   description:
     "Expedientes legislativos del Senado dominicano: estado procesal, historial de trámites y promulgación, desde 2002 hasta hoy.",

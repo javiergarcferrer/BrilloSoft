@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { EstadoVacio } from "@/components/estado-vacio";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/instituciones" },
   title: "Instituciones del Estado",
   description:
     "Cada institución del Estado dominicano en una página: presupuesto, compras, nómina y normativa, que el Estado publica en cuatro catálogos distintos.",

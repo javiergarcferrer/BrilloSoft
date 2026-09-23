@@ -6,7 +6,8 @@ import MobileTabBar from "@/components/mobile-tab-bar";
 import InstallPrompt from "@/components/install-prompt";
 import ScrollTop from "@/components/scroll-top";
 import HeaderSearch from "@/components/header-search";
-import GlobalNav from "@/components/global-nav";
+import Megamenu from "@/components/megamenu";
+import { SITIO } from "@/lib/sitio";
 import Paleta from "@/components/paleta";
 import Rastro from "@/components/rastro";
 import SectionBar from "@/components/section-bar";
@@ -43,18 +44,22 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  // Base de las URL absolutas (canónicas, Open Graph): sin ella, cada enlace
+  // compartido y cada canónica salía relativa.
+  metadataBase: new URL(SITIO),
   title: {
     default: "Socrático.do — Preguntarle al Estado con sus propios datos",
     template: "%s · Socrático.do",
   },
   description:
-    "Qué compra, qué legisla y a quién paga el Estado dominicano: compras públicas de la DGCP, iniciativas del Congreso Nacional y la nómina pública, leídas en vivo desde sus fuentes oficiales.",
+    "El Estado dominicano con sus propios datos: compras públicas, presupuesto, deuda, Congreso, decretos, nómina, obras e instituciones, leídos desde sus fuentes oficiales. Herramienta independiente y no oficial.",
   openGraph: {
     title: "Socrático.do",
     description:
-      "Compras públicas, Congreso Nacional y nómina estatal de República Dominicana, en un solo lugar.",
+      "Compras, presupuesto, leyes, nómina, obras e instituciones del Estado dominicano en un solo lugar. Independiente y no oficial.",
     locale: "es_DO",
     type: "website",
+    siteName: "Socrático.do",
   },
   appleWebApp: {
     capable: true,
@@ -77,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/*
           Chrome de dos niveles:
           1) Header global — marca, búsqueda con alcance (solo donde aplica) y
-             el nav de verticales en escritorio. Responde «¿qué es esto y a
+             el megamenú en escritorio (`components/megamenu.tsx`). Responde «¿qué es esto y a
              dónde puedo ir?».
           2) SectionBar — solo dentro de una vertical: nombre, matiz y sus
              vistas. Responde «¿dónde estoy y qué hay aquí?».
@@ -130,7 +135,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <HeaderSearch />
             </div>
 
-            <GlobalNav />
+            <Megamenu />
 
             {/*
               La paleta —«¿a dónde vas?»— vive en el borde derecho, que es donde

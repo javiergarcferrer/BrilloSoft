@@ -247,10 +247,10 @@ export default function Paleta() {
                         <span className="font-medium">{s.nombre}</span>
                         {!unica && <span className="text-ink-soft"> · {v.label}</span>}
                       </span>
-                      {/* La pregunta de la vertical, una sola vez: en su primera vista. */}
+                      {/* El descriptor de la vertical, una sola vez: en su primera vista. */}
                       {i === 0 && (
                         <span className="hidden shrink-0 text-xs text-ink-soft sm:inline">
-                          {s.pregunta}
+                          {s.descriptor}
                         </span>
                       )}
                     </CommandItem>

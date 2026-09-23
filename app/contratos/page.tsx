@@ -13,6 +13,7 @@ import { IconDownload } from "@/components/icons";
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/contratos" },
   title: "Histórico de contrataciones",
   description:
     "Qué está adjudicando el Estado dominicano: montos, adjudicatarios e instituciones sobre los contratos más recientes registrados en la DGCP.",

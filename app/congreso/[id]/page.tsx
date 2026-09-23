@@ -63,6 +63,7 @@ export async function generateMetadata({ params }: Props) {
   return {
     title: ini.numero?.completo ?? `Iniciativa ${ini.id}`,
     description: ini.titulo.slice(0, 160),
+    alternates: { canonical: `/congreso/${ini.id}` },
   };
 }
 
