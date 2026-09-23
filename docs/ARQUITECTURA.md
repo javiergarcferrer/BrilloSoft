@@ -236,8 +236,29 @@ sources impose:
 - `/proveedores/[rpe]` → supplier profile: contract history plus the RPE
   registry card (RNC, legal form, incorporation date, MIPYME status).
 - `/planes` → annual purchasing plans (PACC) for the current year.
-- `/finanzas` → budget execution across the State, `/finanzas/[capitulo]` per
-  institution (SSG from the snapshot, one page per chapter).
+- `/finanzas` → budget execution across the State. Filtered on the server
+  from the URL (`?q=`, `?seccion=`, `?orden=devengado|ejecucion|cambio|pendiente`),
+  so it is dynamic; three rankings computed from the same snapshot columns
+  (`vigente − inicial`, `devengado − pagado`, lowest execution among chapters
+  over RD$ 1,000 millones, zero-accrual ones named apart), and a CSV of the
+  filtered table built in the browser (`app/finanzas/descargar-csv.tsx`).
+  `/finanzas/[capitulo]` per institution (SSG from the snapshot, one page per
+  chapter) lists its DGCP purchasing units from `institucionesDelCapitulo`,
+  each linking to its `/instituciones/[id]` ficha.
+- `/deuda` → SPNF debt over time (finanzas section): year-end since 2000 with
+  % of GDP and quarter-ends since 2015 from `getSerieDeuda()` (`lib/deuda.ts`),
+  which reads the series from `public/data/deuda.json` and appends the live
+  latest close when Crédito Público answers. Bars are a server SVG
+  (`app/deuda/barras.tsx`) with a table behind a `Plegable`.
+- `/nomina` → the payroll explorer (client, `components/nomina/explorer.tsx`)
+  keeps its state in the URL: `?q=` and `?inst=CODIGO` are a contract with the
+  ⌘K palette and the institution ficha; `?cargo=` (normalized prefix match,
+  `patronCargo` in `lib/nomina.ts`) and `?vista=resumen|tabla|comparar` are its
+  own. Written with `history.replaceState`, applied back when a link changes
+  the URL. The page resolves the code → ficha links on the server (the
+  institutions cross is 114 KB and never ships to the client) and lists the
+  covered institutions with an ochre mark when a photo is older than three
+  months (`estaAtrasada`); `revalidate` is a day so that mark stays true.
 - `/estadisticas` → 30-day market dashboard. `/guia` → static bidder guide.
 - `/seguimiento` → starred processes.
 

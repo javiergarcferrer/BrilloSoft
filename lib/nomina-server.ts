@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { COL, median, periodLabel, type NominaData } from "./nomina";
+import { COL, median, periodLabel, type InstitucionNomina, type NominaData } from "./nomina";
 
 /**
  * Resumen de la nómina calculado en el servidor.
@@ -104,6 +104,31 @@ export async function getNominaDeInstitucion(
     };
   } catch (err) {
     console.error("[nomina] institución:", err);
+    return null;
+  }
+}
+
+/**
+ * Las instituciones de la foto, con su período: lo que `/nomina` pinta en el
+ * servidor para declarar la cobertura y la antigüedad de cada una sin esperar
+ * a que el explorador baje el JSON entero.
+ */
+export async function getInstitucionesNomina(): Promise<{
+  generatedAt: string;
+  plazas: number;
+  instituciones: InstitucionNomina[];
+} | null> {
+  try {
+    const data = JSON.parse(
+      await readFile(join(process.cwd(), "public", "data", "nomina.json"), "utf8"),
+    ) as NominaData;
+    return {
+      generatedAt: data.generatedAt,
+      plazas: data.rows.length,
+      instituciones: data.instituciones,
+    };
+  } catch (err) {
+    console.error("[nomina] instituciones:", err);
     return null;
   }
 }

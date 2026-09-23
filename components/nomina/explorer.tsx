@@ -1,6 +1,8 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   IconBuilding,
   IconChartBar,
@@ -15,7 +17,12 @@ import {
 import {
   aggregateBy,
   bucketOf,
+  CARGOS_COMPARABLES,
+  cargoBase,
   COL,
+  estaAtrasada,
+  patronCargo,
+  textoAtraso,
   formatCompactDOP,
   formatDOP,
   formatInt,
@@ -29,7 +36,10 @@ import {
 } from "@/lib/nomina";
 import { BarList, Histogram } from "./charts";
 import { DataTable, type SortDir, type SortKey } from "./data-table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { EstadoVacio } from "@/components/estado-vacio";
 import {
   Card,
   CardAction,
@@ -61,11 +71,26 @@ function useDebounced<T>(value: T, ms = 250): T {
   return v;
 }
 
-type View = "resumen" | "tabla";
+type View = "resumen" | "tabla" | "comparar";
+const VISTAS: View[] = ["resumen", "tabla", "comparar"];
 type Metric = "total" | "count" | "avg";
 type IconType = React.ComponentType<{ className?: string }>;
 
-export function Explorer() {
+/**
+ * Enlace de cada código de nómina a la ficha de su institución. Lo calcula el
+ * servidor (`app/nomina/page.tsx`) porque el cruce de instituciones pesa
+ * 114 KB y no tiene por qué viajar al navegador para once enlaces.
+ */
+export type FichasNomina = Record<string, string>;
+
+/*
+  El estado del explorador vive en la URL —`?q=`, `?inst=`, `?cargo=`,
+  `?vista=`— para que una vista se comparta y se vuelva a ella: la ficha de
+  una institución enlaza `/nomina?inst=MSP`, y la paleta ⌘K manda
+  `/nomina?q=<texto>`. Los nombres `q` e `inst` son contrato con esas dos
+  puertas; no se cambian.
+*/
+export function Explorer({ fichas = {} }: { fichas?: FichasNomina }) {
   const [data, setData] = useState<NominaData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,20 +103,27 @@ export function Explorer() {
       <Card className="p-6 text-sm text-ink-soft">{error}</Card>
     );
   }
-  if (!data) {
-    // La silueta del explorador —barra de filtros y seis indicadores— en
-    // lugar de un rótulo suelto: el contenido cae en su sitio sin mover nada.
-    return (
+  if (!data) return <ExplorerEsqueleto />;
+  return <ExplorerReady data={data} fichas={fichas} />;
+}
+
+/**
+ * La silueta del explorador —barra de filtros y seis indicadores— en lugar de
+ * un rótulo suelto: el contenido cae en su sitio sin mover nada. También es
+ * el `fallback` del `Suspense` de la página, mientras se leen los parámetros.
+ */
+export function ExplorerEsqueleto() {
+  return (
       <div role="status" aria-busy="true" className="space-y-5">
         <span className="sr-only">Cargando la nómina consolidada…</span>
         {/*
           Las alturas son las del contenido real a cada ancho: hasta `lg` la
-          barra de filtros apila tres controles de 44 px (188 px) y solo en una
+          barra de filtros apila cuatro controles de 44 px (244 px) y solo en una
           sola fila mide 76; cada indicador crece cuando su rótulo se parte en
           dos líneas, que es lo normal a 390 px. Con las alturas de escritorio
           la página daba un tirón de media pantalla al llegar el JSON.
         */}
-        <Skeleton className="h-[188px] rounded-lg border border-hairline bg-surface lg:h-20" />
+        <Skeleton className="h-[244px] rounded-lg border border-hairline bg-surface lg:h-20" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton
@@ -106,18 +138,30 @@ export function Explorer() {
         </div>
         <Skeleton className="h-[845px] rounded-lg border border-hairline bg-surface lg:h-[36rem]" />
       </div>
-    );
-  }
-  return <ExplorerReady data={data} />;
+  );
 }
 
-function ExplorerReady({ data }: { data: NominaData }) {
-  const [view, setView] = useState<View>("resumen");
+/** Índice de la institución por su código (`MSP`, `msp`), o `null`. */
+function indiceDe(data: NominaData, codigo: string | null): number | null {
+  if (!codigo) return null;
+  const i = data.instituciones.findIndex((o) => o.codigo.toLowerCase() === codigo.toLowerCase());
+  return i < 0 ? null : i;
+}
+
+function vistaDe(v: string | null): View {
+  return VISTAS.includes(v as View) ? (v as View) : "resumen";
+}
+
+function ExplorerReady({ data, fichas }: { data: NominaData; fichas: FichasNomina }) {
+  const params = useSearchParams();
+  const [view, setView] = useState<View>(() => vistaDe(params.get("vista")));
 
   // ---- filters
-  const [queryInput, setQueryInput] = useState("");
+  const [queryInput, setQueryInput] = useState(() => params.get("q") ?? "");
   const query = useDebounced(queryInput.trim(), 250);
-  const [instId, setInstId] = useState<number | null>(null);
+  const [instId, setInstId] = useState<number | null>(() => indiceDe(data, params.get("inst")));
+  const [cargoInput, setCargoInput] = useState(() => params.get("cargo") ?? "");
+  const cargo = useDebounced(cargoInput.trim(), 250);
   const [salMin, setSalMin] = useState<string>("");
   const [salMax, setSalMax] = useState<string>("");
 
@@ -127,6 +171,49 @@ function ExplorerReady({ data }: { data: NominaData }) {
 
   // ---- ranking metric for instituciones/áreas
   const [metric, setMetric] = useState<Metric>("total");
+
+  // ---- el estado, en la URL
+  /*
+    Se escribe con `history.replaceState`, no con `router.replace`: cada tecla
+    del buscador no es una navegación ni una entrada del historial, y Next ya
+    sincroniza `useSearchParams` con esa llamada. La cadena que escribimos se
+    recuerda para distinguir nuestros cambios de los que llegan de fuera —un
+    enlace `/nomina?inst=JAC` pulsado en esta misma página—, que sí se aplican.
+  */
+  const escrito = useRef<string | null>(null);
+  const instCodigo = instId != null ? data.instituciones[instId]?.codigo : null;
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const poner = (k: string, v: string | null | undefined) => (v ? p.set(k, v) : p.delete(k));
+    poner("q", query);
+    poner("inst", instCodigo);
+    poner("cargo", cargo);
+    poner("vista", view === "resumen" ? null : view);
+    const s = p.toString();
+    escrito.current = s;
+    if (s !== window.location.search.replace(/^\?/, "")) {
+      window.history.replaceState(null, "", s ? `${window.location.pathname}?${s}` : window.location.pathname);
+    }
+  }, [query, instCodigo, cargo, view]);
+
+  const cadena = params.toString();
+  useEffect(() => {
+    if (escrito.current === null || cadena === escrito.current) return;
+    const p = new URLSearchParams(cadena);
+    escrito.current = cadena;
+    setQueryInput(p.get("q") ?? "");
+    setInstId(indiceDe(data, p.get("inst")));
+    setCargoInput(p.get("cargo") ?? "");
+    setView(vistaDe(p.get("vista")));
+  }, [cadena, data]);
+
+  // ---- cargo → qué nombres de cargo del diccionario entran
+  const cargoPatron = useMemo(() => patronCargo(cargo), [cargo]);
+  const cargoBases = useMemo(() => data.cargos.map(cargoBase), [data]);
+  const cargoEntra = useMemo(
+    () => (cargoPatron ? cargoBases.map((b) => cargoPatron.test(b)) : null),
+    [cargoPatron, cargoBases],
+  );
 
   const { areaNorm, cargoNorm, instNorm } = useMemo(
     () => ({
@@ -161,6 +248,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
     const out: Row[] = [];
     for (const r of data.rows) {
       if (instFiltro != null && r[COL.INST] !== instFiltro) continue;
+      if (cargoEntra && !cargoEntra[r[COL.CARGO]]) continue;
       const s = r[COL.SUELDO];
       if (min != null && s < min) continue;
       if (max != null && s > max) continue;
@@ -173,7 +261,55 @@ function ExplorerReady({ data }: { data: NominaData }) {
       out.push(r);
     }
     return out;
-  }, [data.rows, instFiltro, min, max, areaMatch, cargoMatch, instMatch]);
+  }, [data.rows, instFiltro, cargoEntra, min, max, areaMatch, cargoMatch, instMatch]);
+
+  // ---- el mismo cargo en cada institución
+  /*
+    La comparación mira solo el cargo: ignora a propósito la institución, la
+    búsqueda y el rango de sueldo, porque su pregunta es «cuánto paga cada
+    institución por este puesto» y un filtro de institución la dejaría en una
+    sola fila.
+  */
+  const comparacion = useMemo(() => {
+    if (!cargoEntra) return null;
+    const porInst = new Map<number, number[]>();
+    const nombres = new Map<number, number>();
+    for (const r of data.rows) {
+      if (!cargoEntra[r[COL.CARGO]]) continue;
+      const lista = porInst.get(r[COL.INST]) ?? [];
+      lista.push(r[COL.SUELDO]);
+      porInst.set(r[COL.INST], lista);
+      nombres.set(r[COL.CARGO], (nombres.get(r[COL.CARGO]) ?? 0) + 1);
+    }
+    const filas = [...porInst.entries()]
+      .map(([inst, sueldos]) => ({
+        inst,
+        plazas: sueldos.length,
+        mediana: median(sueldos),
+        min: Math.min(...sueldos),
+        max: Math.max(...sueldos),
+      }))
+      .sort((a, b) => b.mediana - a.mediana);
+    const denominaciones = [...nombres.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([c]) => data.cargos[c]);
+    return { filas, denominaciones, plazas: filas.reduce((s, f) => s + f.plazas, 0) };
+  }, [cargoEntra, data]);
+
+  // ---- los puestos mejor pagados de la foto (cargo + institución)
+  const mejorPagados = useMemo(() => {
+    const acc = new Map<string, { inst: number; cargo: number; sueldo: number; plazas: number }>();
+    for (const r of data.rows) {
+      const k = `${r[COL.INST]}:${r[COL.CARGO]}`;
+      const g = acc.get(k);
+      if (!g) acc.set(k, { inst: r[COL.INST], cargo: r[COL.CARGO], sueldo: r[COL.SUELDO], plazas: 1 });
+      else {
+        g.plazas++;
+        if (r[COL.SUELDO] > g.sueldo) g.sueldo = r[COL.SUELDO];
+      }
+    }
+    return [...acc.values()].sort((a, b) => b.sueldo - a.sueldo).slice(0, 15);
+  }, [data]);
 
   // ---- KPIs
   const kpis = useMemo(() => {
@@ -270,10 +406,11 @@ function ExplorerReady({ data }: { data: NominaData }) {
     URL.revokeObjectURL(url);
   };
 
-  const hasFilters = !!query || instId != null || !!salMin || !!salMax;
+  const hasFilters = !!query || instId != null || !!cargoInput || !!salMin || !!salMax;
   const reset = () => {
     setQueryInput("");
     setInstId(null);
+    setCargoInput("");
     setSalMin("");
     setSalMax("");
   };
@@ -309,6 +446,14 @@ function ExplorerReady({ data }: { data: NominaData }) {
             )}
           </label>
 
+          <Input
+            value={cargoInput}
+            onChange={(e) => setCargoInput(e.target.value)}
+            placeholder="Cargo: chofer, director…"
+            aria-label="Filtrar por cargo: la palabra con que empieza el nombre del puesto"
+            className="bg-canvas lg:max-w-52"
+          />
+
           <Select
             value={instId === null ? "todas" : String(instId)}
             onValueChange={(v) => setInstId(v === "todas" ? null : Number(v))}
@@ -324,7 +469,11 @@ function ExplorerReady({ data }: { data: NominaData }) {
                 Todas las instituciones ({data.instituciones.length})
               </SelectItem>
               {data.instituciones.map((o, i) => (
-                <SelectItem key={o.codigo} value={String(i)} ayuda={o.codigo}>
+                <SelectItem
+                  key={o.codigo}
+                  value={String(i)}
+                  ayuda={`${o.codigo} · ${data.monthNames[o.mes - 1]} ${o.anio}${estaAtrasada(o) ? ` · desactualizada, ${textoAtraso(o.anio, o.mes)}` : ""}`}
+                >
                   {o.nombre}
                 </SelectItem>
               ))}
@@ -374,11 +523,22 @@ function ExplorerReady({ data }: { data: NominaData }) {
         </div>
 
         {instSel && (
-          <p className="mt-3 text-xs text-ink-soft">
-            <span className="font-semibold text-ink">{instSel.nombre}</span> · foto de{" "}
-            {data.monthNames[instSel.mes - 1]} {instSel.anio} ·{" "}
-            {formatInt(instSel.plazas)} plazas
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft">
+            <p>
+              <span className="font-semibold text-ink">{instSel.nombre}</span> · foto de{" "}
+              {data.monthNames[instSel.mes - 1]} {instSel.anio} ·{" "}
+              {formatInt(instSel.plazas)} plazas
+            </p>
+            <MarcaAtraso anio={instSel.anio} mes={instSel.mes} />
+            {fichas[instSel.codigo] && (
+              <Link
+                href={fichas[instSel.codigo]}
+                className="font-semibold text-brand-700 hover:underline"
+              >
+                Ficha de la institución: presupuesto, compras y decretos
+              </Link>
+            )}
+          </div>
         )}
       </Card>
 
@@ -424,6 +584,10 @@ function ExplorerReady({ data }: { data: NominaData }) {
             <TabsTrigger value="tabla">
               <IconLayers className="h-4 w-4" />
               Tabla
+            </TabsTrigger>
+            <TabsTrigger value="comparar">
+              <IconTrendingUp className="h-4 w-4" />
+              Comparar
             </TabsTrigger>
           </TabsList>
           {/*
@@ -480,7 +644,7 @@ function ExplorerReady({ data }: { data: NominaData }) {
                   id: g.key,
                   label: inst.nombre,
                   value: metric === "total" ? g.total : metric === "count" ? g.count : g.avg,
-                  sub: `${formatInt(g.count)} plazas · ${periodLabel(inst.anio, inst.mes)}`,
+                  sub: `${formatInt(g.count)} plazas · ${periodLabel(inst.anio, inst.mes)}${estaAtrasada(inst) ? ` · desactualizada (${textoAtraso(inst.anio, inst.mes)})` : ""}`,
                 };
               })}
               format={metricFormat}
@@ -543,6 +707,136 @@ function ExplorerReady({ data }: { data: NominaData }) {
             onSort={handleSort}
           />
         </TabsContent>
+
+        <TabsContent value="comparar" className="space-y-5">
+          <Panel
+            title="¿Cuánto paga cada institución por el mismo puesto?"
+            subtitle={`Sueldo bruto mediano de las plazas cuyo cargo empieza por la palabra elegida, en las ${data.instituciones.length} instituciones de la foto. Solo cuenta el cargo: la institución, la búsqueda y el rango de sueldo no se aplican aquí.`}
+          >
+            <div role="group" aria-label="Cargos que aparecen en casi todas las instituciones" className="flex flex-wrap gap-2 sm:gap-1.5">
+              {CARGOS_COMPARABLES.map((c) => {
+                const activo = norm(cargo) === norm(c);
+                return (
+                  <Button
+                    key={c}
+                    type="button"
+                    size="sm"
+                    variant={activo ? "default" : "secondary"}
+                    aria-pressed={activo}
+                    onClick={() => setCargoInput(activo ? "" : c)}
+                    className="h-10 sm:h-9"
+                  >
+                    {c}
+                  </Button>
+                );
+              })}
+            </div>
+
+            {!comparacion ? (
+              <p className="mt-4 text-sm text-ink-soft">
+                Elige un cargo o escríbelo en el campo «Cargo» de arriba: se
+                compara la mediana de cada institución, que no se mueve por un
+                solo sueldo muy alto.
+              </p>
+            ) : comparacion.filas.length === 0 ? (
+              <EstadoVacio className="mt-4" titulo={`Ningún cargo de la foto empieza por «${cargo}»`}>
+                Prueba con la palabra con que empieza el puesto: «chofer», «analista»,
+                «director».
+              </EstadoVacio>
+            ) : (
+              <>
+                <ul className="mt-4 space-y-3">
+                  {comparacion.filas.map((f) => {
+                    const inst = data.instituciones[f.inst];
+                    const maxMediana = comparacion.filas[0].mediana || 1;
+                    return (
+                      <li key={f.inst}>
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                          {fichas[inst.codigo] ? (
+                            <Link
+                              href={fichas[inst.codigo]}
+                              className="min-w-0 text-sm font-medium text-ink hover:text-brand-700 hover:underline"
+                            >
+                              {inst.nombre}
+                            </Link>
+                          ) : (
+                            <span className="min-w-0 text-sm font-medium text-ink">{inst.nombre}</span>
+                          )}
+                          <span className="shrink-0 font-mono text-sm font-semibold tabular-nums">
+                            {formatDOP(f.mediana)}
+                          </span>
+                        </div>
+                        <Progress
+                          value={Math.max(1, (f.mediana / maxMediana) * 100)}
+                          aria-label={`${inst.nombre}: sueldo mediano ${formatDOP(f.mediana)}`}
+                          indicadorClassName="bg-brand-400"
+                          className="mt-1"
+                        />
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
+                          <span>
+                            {formatInt(f.plazas)} {f.plazas === 1 ? "plaza" : "plazas"}
+                            {f.plazas > 1 && ` · de ${formatDOP(f.min)} a ${formatDOP(f.max)}`} ·{" "}
+                            {periodLabel(inst.anio, inst.mes)}
+                          </span>
+                          <MarcaAtraso anio={inst.anio} mes={inst.mes} />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="mt-4 text-xs leading-relaxed text-ink-soft">
+                  {formatInt(comparacion.plazas)} plazas en{" "}
+                  {comparacion.denominaciones.length === 1
+                    ? "una denominación"
+                    : `${comparacion.denominaciones.length} denominaciones`}{" "}
+                  de cargo: {comparacion.denominaciones.slice(0, 8).join(" · ")}
+                  {comparacion.denominaciones.length > 8 &&
+                    ` y ${comparacion.denominaciones.length - 8} más`}
+                  . Cada institución nombra el puesto a su manera; se juntan las que
+                  empiezan igual, en masculino o femenino, sin grado ni nivel.
+                </p>
+              </>
+            )}
+          </Panel>
+
+          <Panel
+            title="¿Cuáles son los puestos mejor pagados?"
+            subtitle={`El sueldo más alto de cada cargo en cada institución, en las ${data.instituciones.length} instituciones de la foto: no es todo el Estado.`}
+          >
+            <ol className="divide-y divide-hairline">
+              {mejorPagados.map((p) => {
+                const inst = data.instituciones[p.inst];
+                return (
+                  <li
+                    key={`${p.inst}:${p.cargo}`}
+                    className="flex items-baseline justify-between gap-3 py-2.5"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-sm leading-snug text-ink">{data.cargos[p.cargo]}</span>
+                      <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
+                        {fichas[inst.codigo] ? (
+                          <Link href={fichas[inst.codigo]} className="hover:text-brand-700 hover:underline">
+                            {inst.nombre}
+                          </Link>
+                        ) : (
+                          <span>{inst.nombre}</span>
+                        )}
+                        <span>
+                          · {periodLabel(inst.anio, inst.mes)}
+                          {p.plazas > 1 && ` · ${formatInt(p.plazas)} plazas con este cargo`}
+                        </span>
+                        <MarcaAtraso anio={inst.anio} mes={inst.mes} />
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-mono text-sm font-semibold tabular-nums">
+                      {formatDOP(p.sueldo)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </Panel>
+        </TabsContent>
       </Tabs>
 
       {/* La declaración de cobertura es lectura, no metadato: 13 px en teléfono. */}
@@ -571,6 +865,20 @@ function ExplorerReady({ data }: { data: NominaData }) {
 /* ------------------------------------------------------------------ */
 /* small presentational helpers                                        */
 /* ------------------------------------------------------------------ */
+
+/**
+ * La marca de una foto vieja: más de tres meses desde el mes publicado. Ocre,
+ * porque es una advertencia al margen, y dicha en palabras —«foto de hace 4
+ * años y 9 meses»—, porque el color solo no llega a quien no lo ve.
+ */
+function MarcaAtraso({ anio, mes }: { anio: number; mes: number }) {
+  if (!estaAtrasada({ anio, mes })) return null;
+  return (
+    <Badge variant="alerta" forma="etiqueta">
+      Foto {textoAtraso(anio, mes)}
+    </Badge>
+  );
+}
 
 function rankBy(stats: GroupStat[], metric: Metric, n: number): GroupStat[] {
   const key = (g: GroupStat) =>
