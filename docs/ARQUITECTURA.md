@@ -118,6 +118,15 @@ Every UI that shows them states the source's cut date.
   exposes one `avance` and the UI calls it «avance declarado».
   Self-contained server components for other pages live in
   `components/fuentes-nuevas/` (`ObraDelProceso`, `ObrasDeInstitucion`, `FilaObra`).
+- **`lib/rnc.ts`** — DGII taxpayer register joined to the DGCP supplier register
+  (`docs/AUDITORIA.md` §A.2, §A.12). `scripts/build-rnc.py` downloads the full
+  supplier table (`/api-dgcp/v1/tablas/proveedores?Type=csv`, reading only RPE
+  and document — contacts never leave the script) and the DGII ZIP (cp1252),
+  keeps the 9-digit RNCs (legal persons) and writes ten shards
+  `public/data/rnc/{0..9}.json` keyed by the RPE's last digit, each with its own
+  dictionary of activities and states. `getRegistroTributario(rpe)` reads one
+  shard; `FichaRnc` (in `/proveedores/[rpe]`) shows activity, state, regime and
+  the days between «inicio de operaciones» and the oldest contract the API returns.
 
 ## API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return

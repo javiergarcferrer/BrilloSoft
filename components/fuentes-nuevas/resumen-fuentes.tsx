@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { getObras } from "@/lib/obras";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
@@ -19,4 +21,21 @@ export async function ResumenObras() {
       una institución de la plataforma.
     </>
   );
+}
+
+export async function ResumenRnc() {
+  try {
+    const m = JSON.parse(
+      await readFile(join(process.cwd(), "public", "data", "rnc", "meta.json"), "utf8"),
+    ) as { corteDgii: string | null; proveedores: number; conRnc: number; enPadron: number; padron: number };
+    return (
+      <>
+        Padrón{m.corteDgii ? ` al ${formatFecha(m.corteDgii)}` : ""} ({formatInt(m.padron)}{" "}
+        contribuyentes): {formatInt(m.enPadron)} de los {formatInt(m.conRnc)} proveedores con RNC
+        de empresa están en él, de {formatInt(m.proveedores)} inscritos en el registro.
+      </>
+    );
+  } catch {
+    return <>La instantánea no está disponible ahora mismo.</>;
+  }
 }

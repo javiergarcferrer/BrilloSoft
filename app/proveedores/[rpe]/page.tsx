@@ -10,6 +10,7 @@ import { titulizar } from "@/lib/capitulos";
 import { formatFecha, formatMonto } from "@/lib/format";
 import { IconArrowLeft } from "@/components/icons";
 import Antiguedad from "@/components/antiguedad";
+import { FichaRnc } from "@/components/fuentes-nuevas/ficha-rnc";
 
 export async function generateMetadata({
   params,
@@ -248,6 +249,8 @@ export default async function ProveedorPage({
           </p>
         </Card>
       )}
+
+      <FichaRnc rpe={rpe} primerContrato={primeraAdjudicacion} />
 
       {historial.porAnio.length > 1 && (
         <Card as="section" className="p-6">

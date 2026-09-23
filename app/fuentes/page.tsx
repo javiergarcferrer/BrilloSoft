@@ -13,7 +13,7 @@ import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
 import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { IconArrowLeft } from "@/components/icons";
-import { ResumenObras } from "@/components/fuentes-nuevas/resumen-fuentes";
+import { ResumenObras, ResumenRnc } from "@/components/fuentes-nuevas/resumen-fuentes";
 
 export const metadata: Metadata = {
   title: "Fuentes",
@@ -410,6 +410,26 @@ export default async function FuentesPage() {
             MapaInversiones: se muestran los dos, cada uno con su origen.
             Regenerar con{" "}
             <code className="rounded bg-canvas px-1 py-0.5 font-mono">scripts/build-obras.py</code>.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="DGII — padrón de contribuyentes (RNC)" estado="activa" etiqueta="Instantánea local">
+          <p>
+            La consulta web de RNC de la DGII rechaza a los programas, pero la DGII
+            publica el padrón completo como un ZIP descargable. Se cruza al
+            construir con el Registro de Proveedores del Estado —que la DGCP también
+            ofrece como archivo— y la ficha de cada proveedor muestra su actividad
+            económica declarada, su estado ante la DGII, su régimen y la fecha en que
+            inició operaciones, con la distancia hasta su primer contrato. <ResumenRnc />
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            Solo personas jurídicas (RNC de 9 dígitos): el padrón lista también a
+            personas físicas por cédula y no se cruzan. La fecha de inicio la declara
+            el contribuyente, y el «primer contrato» es el más antiguo que devuelve
+            la API de la DGCP. Del registro de proveedores solo se leen el RPE y el
+            documento; sus teléfonos y correos no se descargan a la plataforma.
+            Regenerar con{" "}
+            <code className="rounded bg-canvas px-1 py-0.5 font-mono">scripts/build-rnc.py</code>.
           </p>
         </Fuente>
 

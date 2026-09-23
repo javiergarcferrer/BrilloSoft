@@ -12,7 +12,7 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 
 | Vertical | Ruta | Fuente | Capa de datos |
 |---|---|---|---|
-| Compras públicas | `/licitaciones` | API abierta de la DGCP | `lib/dgcp.ts` |
+| Compras públicas | `/licitaciones` | API abierta de la DGCP + padrón RNC de la DGII (instantánea) | `lib/dgcp.ts`, `lib/rnc.ts` |
 | Finanzas públicas | `/finanzas` | SIGEF (instantánea) | `lib/fiscal.ts`, `lib/capitulos.ts` |
 | Congreso Nacional | `/congreso` | SIL Diputados + consultante del Senado | `lib/congreso.ts`, `lib/senado.ts` |
 | Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (API JSON + instantánea) | `lib/normativa.ts` |

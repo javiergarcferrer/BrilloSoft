@@ -624,6 +624,26 @@ ruta), y su sección de estadísticas responde 403. Pero:
 - ❌ `DGII_RNC.zip` (el nombre antiguo) da 403. El robots de la DGII solo veta
   rutas de SharePoint (`/_layouts/`, `/_vti_bin/`, `/_catalogs/`).
 
+**Integrado el 2026-09-23** (`scripts/build-rnc.py` → `public/data/rnc/{0..9}.json`,
+`lib/rnc.ts`, ficha de proveedor). Verificación de campo de ese día:
+
+- ✅ El ZIP sigue en la misma URL: 200 `application/x-zip-compressed`,
+  26,878,229 bytes, `last-modified: 19-sep-2026`; dentro,
+  `RNC_Contribuyentes_Actualizado_19_Sep_2026.csv` (115.6 MB, **791,384**
+  contribuyentes). El nombre del archivo cambia con cada corte: el script lo
+  lee del ZIP y de ahí saca la fecha.
+- ⚠️ **Corrección: la codificación es Windows-1252, no cp850.** Leído como
+  cp850, «RAZÓN» sale «RAZËN» y «EMPEÑO», «EMPEÐO» (cp850 decodifica cualquier
+  byte, así que no falla: miente). Coma como separador, todo entre comillas,
+  fechas `DD/MM/AAAA`, 67 mil filas sin fecha de inicio.
+- ✅ `robots.txt` de `dgii.gov.do` solo veta rutas de SharePoint.
+- La lista de RNC a cruzar sale de la **tabla completa del RPE** (ver §A.12,
+  añadido del 2026-09-23): 137,817 proveedores, 81,092 con RNC de 9 dígitos,
+  **80,877 presentes en el padrón**. Se acota a personas jurídicas (el padrón
+  lista también personas físicas por cédula; no se cruzan) y se guarda solo
+  RNC, actividad, inicio de operaciones, estado y régimen: 3.7 MB en diez
+  archivos por el último dígito del RPE.
+
 **Qué habilita**: cruzar cada proveedor del Estado con su registro tributario —
 actividad económica declarada, estado, antigüedad. La señal clásica de riesgo
 («RNC creado semanas antes de ganar el contrato») deja de ser inverificable.
@@ -872,6 +892,21 @@ el servidor con el UA identificable, GET y pocas peticiones:
    que la ausencia. Si algún día hiciera falta el padrón completo, la vía es el
    RNC de la DGII (§A.2), no este endpoint.
 
+**Añadido el 2026-09-23 — la tabla entera sí se descarga.** La sección
+«Tablas» del portal de datos abiertos de la DGCP no pagina la API: su JS
+(`TablasPage-*.js`) llama a
+`GET https://datosabiertos.dgcp.gob.do/api-dgcp/v1/tablas/proveedores?Type=csv&inhabilitados=false`,
+que responde **200 `text/csv`, 80 MB en 3 s**, `content-disposition:
+attachment; filename=Proveedores.csv`, con cabeceras `x-ratelimit-limit: 60`
+(por minuto). Son **137,817 filas y 42 columnas** —más que los 127,896 que
+declara `totalResults` de la API; la diferencia no está explicada y se
+anota ⚠️—, incluidos teléfonos, correos y personas de contacto que la
+plataforma **no lee** (el script solo toma `RPE`, `NUMERO_DOCUMENTO` y
+`TIPO_DOCUMENTO`). Existen tablas hermanas para procesos y contratos
+(`/tablas/procesos`, `/tablas/contratos` con año y semestre), no exploradas.
+Esto no cambia la búsqueda en vivo de `/proveedores`; habilita cruces en build
+como el del padrón RNC (§A.2).
+
 ## B. Bloqueos confirmados
 
 ### B.1 Sin cambios desde la primera pasada
@@ -942,7 +977,7 @@ Las fases 1 y 2 (deuda, normativa) siguen implementadas. Estas se ordenan por
 | **6** ✅ | **SIGEF: `lib/fiscal.ts` + vertical de finanzas públicas** | medio | `unstable_cache` diario, consulta **por institución**, timeout ≥120 s, precalentar el mes vigente, degradar al mes cerrado anterior |
 | **7** | **MICM: indicador de combustibles** | bajo | Portada + título del último aviso; declarar que son 4 precios, no el aviso completo |
 | **8** ✅ | **MapaInversiones: obra pública** | medio | CSV grandes → instantánea en build (patrón nómina), unión por `codigo_snip` con procesos |
-| **9** | **RNC (DGII) en fichas de proveedor** | medio | Instantánea en build restringida a los RNC presentes en compras; nunca descarga en request |
+| **9** ✅ | **RNC (DGII) en fichas de proveedor** | medio | Instantánea en build restringida a los RNC presentes en compras; nunca descarga en request |
 | **10** | **Nómina ampliada (159 candidatos) + SISMAP** | bajo | Añadir líneas al manifiesto de `scripts/build-nomina.py`; SISMAP es parseo de tabla |
 | **11** | BCRD (tipo de cambio) | bajo | Solo si el XLS del CDN se parsea sin dependencia pesada; el resto de series, tras pedir el índice |
 

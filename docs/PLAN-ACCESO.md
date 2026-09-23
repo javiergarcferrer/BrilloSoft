@@ -84,6 +84,10 @@ entre esfuerzo. Todas respetan la invariante (sin llave, instantánea en build).
 2. **Padrón RNC de la DGII** (§A.2, fase 9): actividad, estado y fecha de
    inicio del proveedor; hace comprobable «empresa creada semanas antes de
    ganar». Instantánea acotada a los RNC que aparecen en compras.
+   ✅ 2026-09-23: `lib/rnc.ts` + `scripts/build-rnc.py`; la lista de RNC sale
+   de la tabla completa del RPE, que la DGCP sí sirve como archivo (AUDITORIA
+   §A.12, añadido). `FichaRnc` en `/proveedores/[rpe]` dice actividad, estado,
+   régimen e «inició operaciones N días antes de su primer contrato».
 3. **Nómina por datos.gob.do** (§A.8, fase 10): de 11 a decenas de
    instituciones; trabajo de manifiesto en `scripts/build-nomina.py`.
 4. **SISMAP y SISMAP Municipal** (§A.7, fase 10): calidad de gestión por
