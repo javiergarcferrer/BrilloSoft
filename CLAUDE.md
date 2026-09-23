@@ -15,7 +15,7 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 | Compras públicas | `/licitaciones` | API abierta de la DGCP | `lib/dgcp.ts` |
 | Finanzas públicas | `/finanzas` | SIGEF (instantánea) | `lib/fiscal.ts`, `lib/capitulos.ts` |
 | Congreso Nacional | `/congreso` | SIL Diputados + consultante del Senado | `lib/congreso.ts`, `lib/senado.ts` |
-| Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (token + POST) | `lib/normativa.ts` |
+| Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (API JSON) | `lib/normativa.ts` |
 | Nómina estatal | `/nomina` | Instantánea de 11 instituciones | `lib/nomina.ts`, `lib/nomina-server.ts` |
 | Deuda pública | tarjeta en `/` | Crédito Público (XLSX + instantánea) | `lib/deuda.ts` |
 | Democracia | `/democracia` | Supabase, esquema `democracia` — **la excepción** | `lib/democracia.ts`, `lib/supabase.ts` |

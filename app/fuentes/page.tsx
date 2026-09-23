@@ -248,9 +248,9 @@ export default async function FuentesPage() {
         >
           <p>
             Consulta pública de la Consultoría Jurídica del Poder Ejecutivo:
-            leyes, decretos, reglamentos, resoluciones y Gaceta Oficial (desde
-            1926). No hay API — es una app con token antiforgery, de la misma
-            familia que el consultante del Senado. Alimenta la vertical de{" "}
+            leyes, decretos, reglamentos y resoluciones desde 1926, por su
+            buscador JSON, y la Gaceta Oficial desde 2020, por su repositorio de
+            documentos. Alimenta la vertical de{" "}
             <Link href="/normativa" className="font-medium text-brand-700 hover:underline">
               normativa
             </Link>
@@ -263,9 +263,8 @@ export default async function FuentesPage() {
             articulado de las piezas del Congreso ya promulgadas.
           </p>
           <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
-            Toda la lectura es GET/POST de consulta y se acota por año: el origen
-            no pagina y cuelga si se le pide todo el histórico de una vez. Los
-            operadores de fecha son numéricos, no el signo igual.
+            Toda la lectura es de consulta y se acota por año o por número: el
+            origen no pagina y devuelve cada año entero de una vez.
           </p>
         </Fuente>
 

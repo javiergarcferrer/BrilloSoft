@@ -38,10 +38,10 @@ plataforma ya sabe hablar con las tres:
    Fiscal, DIGEPRES, Contraloría, TSS, Hacienda: robots abiertos, sitemaps,
    y datos en XLSX/PDF. La estrella es **Crédito Público**: series de deuda en
    XLSX con URL predecible por mes (§3.3).
-3. **Apps de consulta legacy sin API (WebForms/MVC).** La Consultoría Jurídica
-   del Poder Ejecutivo (leyes, decretos, reglamentos, resoluciones y Gaceta
-   Oficial) se consulta con el mismo patrón token+POST que ya resolvimos para
-   el Senado (§4.1).
+3. **Apps de consulta legacy sin API (WebForms/MVC).** El consultante del
+   Senado se consulta con el patrón token+POST. La Consultoría Jurídica salió
+   de esta familia en septiembre de 2026: su portal nuevo expone un buscador
+   JSON (§4.1).
 
 **El bloqueador real es el WAF, no la política.** El patrón de `robots.txt`
 dominante es el bloque gestionado de Cloudflare: veta por nombre a los
@@ -61,7 +61,7 @@ de Cuentas) — ahí la vía es institucional, no técnica.
 | Fiscal | DIGEPRES | Presupuesto, ejecución | WP abierto, PDFs | ⚠️ PDF |
 | Fiscal | MapaInversiones | Inversión pública: proyecto ↔ contrato ↔ territorio | **15 CSV abiertos + búsqueda JSON** | ✅ ↓ §A.4 |
 | Fiscal | DGII | **Padrón de RNC (788,700 contribuyentes)** | **ZIP estático semanal** | ❌→✅ ↓ §A.2 |
-| Normativa | **Consultoría Jurídica** | **Leyes, decretos, reglamentos, resoluciones, Gaceta** | Consulta MVC (token+POST), PDF por GUID | ✅ |
+| Normativa | **Consultoría Jurídica** | **Leyes, decretos, reglamentos, resoluciones, Gaceta** | Buscador JSON (`/api/consultas/search`), PDF por `DocId` | ✅ |
 | Integridad | Contraloría | Nóminas aprobadas, informes | WP abierto | ✅ mapear |
 | Integridad | Cámara de Cuentas | Declaraciones juradas, auditorías | — | ❌ WAF (HTTP 470) |
 | Integridad | datos.gob.do | 1,206 datasets declarados; **159 responden a «nómina»** | Índice HTML paginado (su `/api/` sigue vetado) | ✅ ↓ §A.8 |
@@ -212,10 +212,29 @@ tasas) está a un registro de distancia. El costo no es técnico: es la regla
   | 7 | Resoluciones |
   | 1014 | **GACETA OFICIAL** |
 
-- Mecánica: búsqueda vía `POST /Consulta/Home/Search` con
-  `__RequestVerificationToken` (antiforgery) — **el mismo patrón
-  página→token→POST que ya automatizamos para el Senado**. Documentos
-  descargables por GUID (`/Documents/GetDocument?reference={guid}`).
+- ❌ **La app MVC murió (verificado 2026-09-23).** El portal se rehízo en
+  Next.js; `/consulta/` redirige a `/consulta` y esta da **404**. El adaptador
+  viejo (token antiforgery + `POST /Consulta/Home/Search`) degradaba a lista
+  vacía y `/normativa` mostraba «no respondió» sin estar caído el origen.
+- ✅ **Mecánica actual (verificada 2026-09-23, UA identificable):**
+  - Robots nuevo: `Allow: /`; solo veda `/oficina-virtual/dashboard/`,
+    `/api/auth/` y `/api/admin/`.
+  - Búsqueda: `POST /api/consultas/search`, cuerpo JSON, **sin token ni
+    sesión**. Campos: `DocumentTypeCode` (1, 3, 4, 5, 7), `DocumentNumber`,
+    `PublicationYear` (`"2026"` o `"2020-2026"`), más filtros de persona e
+    institución a `""`/`0`. Responde 201 con la lista entera, sin paginar:
+    decretos 2026 = 570 filas, 640 KB, ~3,5 s; una cita por número ~0,9 s.
+  - Fila: `DocId`, `TipoDocumento`, `Tipo` (plural: «Decretos»), `Numero`,
+    `Titulo`, `Gaceta`, `FechaPromulgacion`/`FechaPublicacion` ISO,
+    `Institucion`, `Presidente`, `Consultor`, y para designaciones `Nombre`,
+    `Apellido`, `Cargo`.
+  - Texto: `GET /api/document/{DocId}` → PDF `inline`, con capa de texto.
+  - ⚠️ **Gaceta Oficial ya no está en el buscador** (el tipo 1014 desapareció
+    de `/api/consultas/document-types`). Vive en el repositorio:
+    `GET /api/documents?category=gacetas` → JSON con las 292 gacetas
+    2020–2026 (número, mes, año, `fileUrl` = `PDF|portada`). No trae día.
+  - ⚠️ Reglamentos casi vacíos en el origen (2020: 11; 2024–2026: 0): la
+    mayoría se dicta por decreto. «Sin resultados» es cierto, no un fallo.
 - Es la fuente del vertical **Normativa**: «qué decreta el Ejecutivo» — la
   tercera pata que falta al triángulo legislativo (Diputados ✅, Senado ✅,
   Ejecutivo ⬜).

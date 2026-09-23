@@ -666,7 +666,8 @@ dominicana es autodescriptivo y **cita las normas que la pieza toca**.
 `lib/legislacion.ts` extrae esas citas con su relación (deroga / modifica /
 adiciona…, tomando el verbo *más cercano* hacia atrás, no el primero) y
 `lib/normativa.ts` las resuelve contra la Consultoría Jurídica, cuyo buscador
-acepta `DocumentNumber` como filtro único y responde en ~2 s. Resultado:
+acepta `DocumentNumber` como filtro único y responde en ~1 s (buscador JSON
+desde septiembre de 2026; AUDITORIA §4.1). Resultado:
 «Deroga la Ley 47-20 — *De Alianzas Público-Privadas*, Gaceta 10972,
 20/02/2020» con enlace a su texto oficial. Eso es lo que responde «¿de qué
 trata?» sin inventar nada.

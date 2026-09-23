@@ -29,8 +29,8 @@ verified mechanics per source live there; this is what every adapter obeys.
   Hooks enforce this; do not work around them.
 - **Cache by volatility:** live listings 5 min, prices 1 h, catalogues 24 h,
   monthly series daily. Use fetch `revalidate` when the URL is stable;
-  `unstable_cache` when a session cookie or nonce breaks the fetch-cache key
-  (precedent: `lib/senado.ts`, `lib/normativa.ts`).
+  `unstable_cache` when a session cookie, nonce or POST body keeps it out of
+  the fetch cache (precedent: `lib/senado.ts`, `lib/normativa.ts`).
 - **Server-only modules** (`node:` imports: `lib/deuda.ts`, `lib/nomina-server.ts`)
   must never be imported from a client component; webpack on Next 15 rejects
   it at build time, Turbopack would not warn you.

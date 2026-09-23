@@ -2,18 +2,18 @@
  * Normativa del Poder Ejecutivo — Consultoría Jurídica.
  *
  * Mismo contrato que las demás capas: sin base de datos, lectura en vivo con
- * caché. La Consultoría Jurídica del Poder Ejecutivo expone la consulta pública
- * de leyes, decretos, reglamentos, resoluciones y Gaceta Oficial. No hay API:
- * es una app ASP.NET MVC con token antiforgery, misma familia que el
- * consultante del Senado. Reglas verificadas (docs/AUDITORIA.md §4.1, spike QRSPI):
+ * caché. En septiembre de 2026 la Consultoría rehízo su portal: la vieja app
+ * ASP.NET MVC (`/consulta/`, token antiforgery + POST de formulario) devuelve
+ * 404 y el buscador nuevo habla JSON. Reglas verificadas (docs/AUDITORIA.md §4.1):
  *
- *  1. **Token + POST.** `GET /consulta/` entrega `__RequestVerificationToken`;
- *     la búsqueda es `POST /Consulta/Home/Search` con ese token y una sesión.
- *  2. **Consultas acotadas.** Sin filtro el buscador cuelga (renderiza todo el
- *     histórico 1926–hoy sin paginar). Siempre se filtra por año.
- *  3. **Operadores numéricos.** El operador de año es `1`=Igual, `2`=Mayor Que…
- *     (no el signo `=`). Ese detalle es lo que hace viable la consulta.
- *  4. GET/POST de solo lectura; User-Agent identificable; un reintento.
+ *  1. **Búsqueda.** `POST /api/consultas/search` con cuerpo JSON; sin token ni
+ *     sesión. Responde la lista completa, sin paginar.
+ *  2. **Consultas acotadas.** Siempre se filtra: por año (`PublicationYear`)
+ *     para los listados, por número (`DocumentNumber`) para una cita.
+ *  3. **Gaceta Oficial** no está en el buscador: vive en el repositorio de
+ *     documentos, `GET /api/documents?category=gacetas`, un JSON con todas.
+ *  4. El texto de una norma es `GET /api/document/{DocId}`, PDF `inline`.
+ *  5. Solo lectura; User-Agent identificable.
  */
 
 import { unstable_cache } from "next/cache";
@@ -25,7 +25,11 @@ const USER_AGENT =
 
 const TIMEOUT_MS = 30_000;
 
-/** Tipos de documento del propio formulario. */
+/**
+ * Tipos que ofrece la vertical. Los códigos 1–7 son los del buscador; `1014`
+ * era el de Gaceta en la app vieja y se conserva como clave de URL, aunque
+ * ahora se sirve desde el repositorio de documentos.
+ */
 export const TIPOS_NORMATIVA = {
   "1": "Leyes",
   "3": "Decretos",
@@ -36,137 +40,155 @@ export const TIPOS_NORMATIVA = {
 
 export type TipoNormativa = keyof typeof TIPOS_NORMATIVA;
 
+/** Nombre singular por código: el que usan las fichas y las citas. */
+const TIPO_SINGULAR: Record<number, string> = {
+  1: "Ley",
+  3: "Decreto",
+  4: "Reglamento",
+  5: "Varios",
+  7: "Resolución",
+};
+
 export interface Documento {
   tipo: string;
   numero: string;
   titulo: string;
   gaceta: string | null;
   fecha: string | null;
-  /** ISO `yyyy-mm-dd` para ordenar, si la fecha tiene forma dd/mm/yyyy. */
+  /** ISO `yyyy-mm-dd` para ordenar, si el origen da una fecha completa. */
   fechaIso: string | null;
   documentId: string | null;
   /** URL de apertura del documento en el origen. */
   url: string | null;
 }
 
-function limpiar(s: string): string {
-  return s
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&nbsp;/g, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+/** Fila del buscador `/api/consultas/search` (solo los campos que se leen). */
+interface FilaBuscador {
+  DocId?: number | null;
+  TipoDocumento?: number | null;
+  Tipo?: string | null;
+  Numero?: string | null;
+  Titulo?: string | null;
+  Gaceta?: string | null;
+  FechaPromulgacion?: string | null;
 }
 
-function fechaIso(f: string | null): string | null {
-  if (!f) return null;
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(f.trim());
-  return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : null;
+/** Entrada del repositorio `/api/documents` (solo los campos que se leen). */
+interface EntradaRepositorio {
+  id?: string;
+  title?: string | null;
+  fileUrl?: string | null;
+  year?: number | null;
+  month?: string | null;
+  status?: string | null;
 }
 
-interface Sesion {
-  token: string;
-  cookie: string;
+function texto(s: string | null | undefined): string {
+  return (s ?? "").replace(/\s+/g, " ").trim();
 }
 
-async function abrirSesion(): Promise<Sesion | null> {
-  try {
-    const res = await fetch(`${BASE}/consulta/`, {
-      headers: { "User-Agent": USER_AGENT },
-      cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    if (!res.ok) return null;
-    const html = await res.text();
-    const token = /name="__RequestVerificationToken"[^>]*value="([^"]+)"/.exec(html)?.[1];
-    if (!token) return null;
-    const setCookies =
-      typeof res.headers.getSetCookie === "function"
-        ? res.headers.getSetCookie()
-        : [res.headers.get("set-cookie") ?? ""];
-    const cookie = setCookies
-      .map((c) => c.split(";")[0])
-      .filter((c) => c.includes("="))
-      .join("; ");
-    return { token, cookie };
-  } catch (err) {
-    console.error(`[normativa] sesión: ${String(err)}`);
-    return null;
-  }
+function aDocumento(f: FilaBuscador): Documento {
+  const iso = /^\d{4}-\d{2}-\d{2}/.exec(f.FechaPromulgacion ?? "")?.[0] ?? null;
+  const documentId = f.DocId != null ? String(f.DocId) : null;
+  return {
+    tipo: TIPO_SINGULAR[f.TipoDocumento ?? -1] ?? texto(f.Tipo),
+    numero: texto(f.Numero),
+    titulo: texto(f.Titulo),
+    gaceta: texto(f.Gaceta) || null,
+    fecha: iso ? iso.split("-").reverse().join("/") : null,
+    fechaIso: iso,
+    documentId,
+    url: documentId ? `${BASE}/api/document/${documentId}` : null,
+  };
 }
 
-function parsearFilas(html: string): Documento[] {
-  const filas = [...html.matchAll(/<tr[^>]*>(.*?)<\/tr>/gs)];
-  const docs: Documento[] = [];
-  for (const [, rxml] of filas) {
-    const celdas = [...rxml.matchAll(/<td[^>]*>(.*?)<\/td>/gs)].map((m) => m[1]);
-    if (celdas.length < 5) continue; // cabecera u otra fila
-    const fecha = limpiar(celdas[4]) || null;
-    const documentId = /documentId=(\d+)/.exec(rxml)?.[1] ?? null;
-    docs.push({
-      tipo: limpiar(celdas[0]),
-      numero: limpiar(celdas[1]),
-      titulo: limpiar(celdas[2]),
-      gaceta: limpiar(celdas[3]) || null,
-      fecha,
-      fechaIso: fechaIso(fecha),
-      documentId,
-      url: documentId
-        ? `${BASE}/Consulta/Home/FileManagement?documentId=${documentId}&managementType=1`
-        : null,
-    });
-  }
-  return docs;
+/** Consulta el buscador. Lanza si el origen no contesta con una lista. */
+async function consultar(filtro: {
+  DocumentTypeCode: number;
+  DocumentNumber?: string;
+  PublicationYear?: string;
+}): Promise<Documento[]> {
+  const res = await fetch(`${BASE}/api/consultas/search`, {
+    method: "POST",
+    headers: {
+      "User-Agent": USER_AGENT,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      DocumentTypeCode: filtro.DocumentTypeCode,
+      DocumentNumber: filtro.DocumentNumber ?? "",
+      FullText: "",
+      Name: "",
+      LastName: "",
+      Identification: "",
+      Charge: "",
+      Institution: 0,
+      President: 0,
+      Consultor: 0,
+      Career: 0,
+      Guild: 0,
+      PensionType: 0,
+      PublicationYear: filtro.PublicationYear ?? "",
+    }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`la búsqueda respondió ${res.status}`);
+  const datos: unknown = await res.json();
+  if (!Array.isArray(datos)) throw new Error("la búsqueda no devolvió una lista");
+  return (datos as FilaBuscador[]).map(aDocumento);
+}
+
+/**
+ * Gacetas Oficiales de un año, desde el repositorio de documentos. El
+ * repositorio da número, mes y año —no día—, así que no hay `fechaIso` y el
+ * orden es por número de gaceta.
+ */
+async function gacetas(anio: number): Promise<Documento[]> {
+  const res = await fetch(`${BASE}/api/documents?category=gacetas`, {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+    cache: "no-store",
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`el repositorio respondió ${res.status}`);
+  const datos: unknown = await res.json();
+  if (!Array.isArray(datos)) throw new Error("el repositorio no devolvió una lista");
+  return (datos as EntradaRepositorio[])
+    .filter((e) => e.year === anio && (e.status ?? "published") === "published")
+    .map((e) => {
+      const numero = texto(e.title);
+      const mes = texto(e.month).toLowerCase();
+      // `fileUrl` junta el PDF y su portada con «|»; el primero es el PDF.
+      const archivo = (e.fileUrl ?? "").split("|")[0]?.trim() ?? "";
+      return {
+        tipo: "Gaceta Oficial",
+        numero,
+        titulo: mes ? `Edición de ${mes} de ${anio}` : `Edición de ${anio}`,
+        gaceta: null,
+        fecha: mes ? `${mes} de ${anio}` : String(anio),
+        fechaIso: null,
+        documentId: e.id ?? null,
+        url: archivo.startsWith("/uploads/") ? `${BASE}${archivo}` : null,
+      };
+    })
+    .sort((a, b) => Number(b.numero) - Number(a.numero));
 }
 
 /**
  * Busca documentos de un tipo dentro de un año. Devuelve la lista ordenada de
- * más reciente a más antigua (por fecha del documento). Degrada a `[]`.
+ * más reciente a más antigua. Degrada a `[]`.
  */
 export async function buscarNormativa(
   tipo: TipoNormativa,
   anio: number,
 ): Promise<Documento[]> {
-  const sesion = await abrirSesion();
-  if (!sesion) return [];
-
-  const cuerpo = new URLSearchParams({
-    __RequestVerificationToken: sesion.token,
-    DocumentTypeCode: tipo,
-    DocumentCategory: "0",
-    DocumentNumber: "",
-    DocumentTitle: "",
-    GacetaOficial: "",
-    PublicationYearOperator: "1", // Igual a
-    PublicationYear: String(anio),
-    PublicationYearEnd: "",
-    EmisionDateOperator: "",
-    EmisionDate: "",
-    EmisionDateEnd: "",
-    President: "",
-    Consultor: "",
-    Category: "",
-    Institution: "",
-  });
-
   try {
-    const res = await fetch(`${BASE}/Consulta/Home/Search?Length=7`, {
-      method: "POST",
-      headers: {
-        "User-Agent": USER_AGENT,
-        Cookie: sesion.cookie,
-        "Content-Type": "application/x-www-form-urlencoded",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-      body: cuerpo.toString(),
-      cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+    if (tipo === "1014") return await gacetas(anio);
+    const docs = await consultar({
+      DocumentTypeCode: Number(tipo),
+      PublicationYear: String(anio),
     });
-    if (!res.ok) return [];
-    const docs = parsearFilas(await res.text());
     docs.sort((a, b) => (b.fechaIso ?? "").localeCompare(a.fechaIso ?? ""));
     return docs;
   } catch (err) {
@@ -243,56 +265,18 @@ export function queEsNorma(tipo: string): string | null {
 /**
  * Resuelve una cita normativa (`Ley 47-20`) al documento oficial.
  *
- * El buscador acepta `DocumentNumber` como único filtro y responde en ~2 s
+ * El buscador acepta `DocumentNumber` como único filtro y responde en ~1 s
  * —la regla de «siempre filtrar» se cumple con el número—, así que una cita
- * cuesta una sesión más una consulta. Devuelve `null` si no hay coincidencia
- * exacta: se prefiere no enlazar antes que enlazar a otra norma.
+ * cuesta una consulta. Devuelve `null` si no hay coincidencia exacta: se
+ * prefiere no enlazar antes que enlazar a otra norma.
  */
 async function normaUpstream(tipo: string, numero: string): Promise<Documento | null> {
   const codigo = CODIGO_POR_TIPO[tipo.toLowerCase()];
   if (!codigo) return null;
 
-  const sesion = await abrirSesion();
-  if (!sesion) throw new Error("sin sesión en la Consultoría");
-
-  const cuerpo = new URLSearchParams({
-    __RequestVerificationToken: sesion.token,
-    DocumentTypeCode: codigo,
-    DocumentCategory: "0",
-    DocumentNumber: numero,
-    DocumentTitle: "",
-    GacetaOficial: "",
-    PublicationYearOperator: "",
-    PublicationYear: "",
-    PublicationYearEnd: "",
-    EmisionDateOperator: "",
-    EmisionDate: "",
-    EmisionDateEnd: "",
-    President: "",
-    Consultor: "",
-    Category: "",
-    Institution: "",
-  });
-
-  const res = await fetch(`${BASE}/Consulta/Home/Search?Length=7`, {
-    method: "POST",
-    headers: {
-      "User-Agent": USER_AGENT,
-      Cookie: sesion.cookie,
-      "Content-Type": "application/x-www-form-urlencoded",
-      "X-Requested-With": "XMLHttpRequest",
-    },
-    body: cuerpo.toString(),
-    cache: "no-store",
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`la búsqueda respondió ${res.status}`);
-
+  const docs = await consultar({ DocumentTypeCode: Number(codigo), DocumentNumber: numero });
   const normalizado = numero.replace(/\s+/g, "");
-  return (
-    parsearFilas(await res.text()).find((d) => d.numero.replace(/\s+/g, "") === normalizado) ??
-    null
-  );
+  return docs.find((d) => d.numero.replace(/\s+/g, "") === normalizado) ?? null;
 }
 
 // Una norma publicada no cambia: ventana larga y un fallo nunca se cachea.
