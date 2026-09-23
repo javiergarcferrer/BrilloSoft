@@ -85,7 +85,16 @@ export default async function VotacionPage({ params }: Props) {
         <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
           {v.mocion ?? "Votación del pleno"}
         </h1>
-        {v.fecha && <p className="mt-2 text-sm text-ink-soft">{formatFecha(v.fecha)}</p>}
+        <p className="mt-2 text-sm text-ink-soft">
+          {v.fecha && <>{formatFecha(v.fecha)} · </>}
+          <a
+            href={`/congreso/votaciones/${v.id}/csv`}
+            download
+            className="font-medium text-brand-700 hover:underline"
+          >
+            Descargar el voto nominal (CSV)
+          </a>
+        </p>
       </header>
 
       {iniciativas.length > 0 && (

@@ -62,7 +62,14 @@ export default async function LegisladoresPage({ searchParams }: Props) {
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
           Diputados y senadores del período 2024-2028, con lo que propusieron,
-          cuánto prosperó y cómo votaron en la Cámara.
+          cuánto prosperó y cómo votaron en la Cámara.{" "}
+          <a
+            href="/congreso/legisladores/csv"
+            download
+            className="font-medium text-brand-700 hover:underline"
+          >
+            Descargar el directorio (CSV)
+          </a>
         </p>
       </header>
 
