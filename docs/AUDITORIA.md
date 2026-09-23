@@ -740,6 +740,21 @@ de campo de ese día, UA identificable, 4 descargas + 1 ficha:
   completo (GLP, gas natural, kerosene, fuel oil) no es legible por máquina.
   La fecha de vigencia se deriva del título del último aviso del sitemap.
 
+**Integrado el 2026-09-23** (`lib/combustibles.ts`, fuente viva con caché de
+1 h; indicador `IndicadorCombustibles` para el panorama). Re-verificación:
+
+- ✅ La portada responde 200 `text/html` (934 KB, 1.5 s) y ahora trae **seis**
+  precios, no cuatro: Gasolina Premium 350.10, Gasoil Óptimo 302.10, GLP
+  135.20, Gasolina Regular 315.50, Gasoil Regular 267.80 y Gas Natural
+  (GNL-GNC) 43.97, más la vigencia en texto: «semana del 19 a 25 de septiembre
+  del 2026». Ya no hace falta el sitemap para la fecha.
+- ⚠️ Cada precio va como `$350.10<br><p>Nombre</p>`, con el bloque repetido
+  para el teléfono (se deduplica por nombre) y el `<p>` del GLP sin cerrar.
+- ⚠️ La portada **no escribe unidades**. Se dice «por galón» solo para
+  gasolinas y gasoil; GLP y gas natural se muestran sin unidad.
+- ❌ `combustibles.micm.gob.do` («Portal de Combustibles») está parado en la
+  semana del 27-sep-2025: no sirve.
+
 ### A.6 BCRD — CORRECCIÓN: el CDN sí sirve las series
 
 La primera pasada dio por muertos los archivos estadísticos. No lo están:
@@ -758,6 +773,19 @@ La primera pasada dio por muertos los archivos estadísticos. No lo están:
   el índice al BCRD.
 - ⚠️ La API con credenciales (`api.bancentral.gov.do`) sigue igual: el dilema
   de §8.3 se **reduce**, no desaparece — el tipo de cambio ya no la necesita.
+
+**Integrado el 2026-09-23** (`lib/tasa.ts`, fuente viva con caché de 1 h;
+indicador `IndicadorTasa` para el panorama). Re-verificación:
+
+- ⚠️ **El `.xls` citado arriba está congelado**: 200, 915 KB, pero
+  `last-modified: 19-jul-2022` (formato OLE2/BIFF). Leerlo habría mostrado una
+  tasa de hace cuatro años como si fuera de hoy.
+- ✅ **`TASA_DOLAR_REFERENCIA_MC.xlsx`** (misma ruta, extensión nueva) → 200
+  `application/octet-stream`, 357 KB, `last-modified: 21-sep-2026`. Siete
+  hojas; la primera, «Diaria», trae Año | Mes | Día | Compra | Venta desde el
+  2-ene-1991 (8,967 filas); último dato 21-sep-2026: compra 59.1740, venta
+  59.4618. Se lee con el mini-lector de XLSX de `lib/deuda.ts`, sin
+  dependencias, y solo la cola de la hoja.
 
 ### A.7 SISMAP — no hay SPA: las tablas vienen servidas
 
@@ -1020,11 +1048,11 @@ Las fases 1 y 2 (deuda, normativa) siguen implementadas. Estas se ordenan por
 |---|---|---|---|
 | **5** ✅ | **DGCP: `/ofertas`, `/proveedores`, `/catalogo`, `/pacc`** | **bajo** | Mismo host, mismo `dgcpFetch`, mismas ventanas de caché. Es la mejor relación valor/esfuerzo de toda la auditoría |
 | **6** ✅ | **SIGEF: `lib/fiscal.ts` + vertical de finanzas públicas** | medio | `unstable_cache` diario, consulta **por institución**, timeout ≥120 s, precalentar el mes vigente, degradar al mes cerrado anterior |
-| **7** | **MICM: indicador de combustibles** | bajo | Portada + título del último aviso; declarar que son 4 precios, no el aviso completo |
+| **7** ✅ | **MICM: indicador de combustibles** | bajo | Portada + título del último aviso; declarar que son 4 precios, no el aviso completo |
 | **8** ✅ | **MapaInversiones: obra pública** | medio | CSV grandes → instantánea en build (patrón nómina), unión por `codigo_snip` con procesos |
 | **9** ✅ | **RNC (DGII) en fichas de proveedor** | medio | Instantánea en build restringida a los RNC presentes en compras; nunca descarga en request |
 | **10** ✅ | **Nómina ampliada (159 candidatos) + SISMAP** | bajo | Añadir líneas al manifiesto de `scripts/build-nomina.py`; SISMAP es parseo de tabla |
-| **11** | BCRD (tipo de cambio) | bajo | Solo si el XLS del CDN se parsea sin dependencia pesada; el resto de series, tras pedir el índice |
+| **11** ✅ | BCRD (tipo de cambio) | bajo | Solo si el XLS del CDN se parsea sin dependencia pesada; el resto de series, tras pedir el índice |
 
 **Regla que impone la fase 6**: la plataforma necesita una segunda clase de
 adaptador — *fuente lenta, consolidada en instantánea* — junto a la actual

@@ -61,7 +61,7 @@ async function fetchBuffer(url: string, revalidate: number): Promise<ArrayBuffer
 
 /* ----------------------------------------------------- mini-lector de XLSX */
 
-interface ArchivoZip {
+export interface ArchivoZip {
   nombre: string;
   datos: Buffer;
 }
@@ -69,8 +69,9 @@ interface ArchivoZip {
 /**
  * Extrae los archivos de un XLSX (ZIP). Soporta almacenamiento sin comprimir
  * (método 0) e inflado deflate (método 8) — es todo lo que produce Excel.
+ * Exportado para `lib/tasa.ts` (XLSX del BCRD): un solo lector en la casa.
  */
-async function leerZip(buf: ArrayBuffer): Promise<ArchivoZip[]> {
+export async function leerZip(buf: ArrayBuffer): Promise<ArchivoZip[]> {
   const b = Buffer.from(buf);
   const archivos: ArchivoZip[] = [];
   // Recorremos las cabeceras de archivo local (firma PK\x03\x04).

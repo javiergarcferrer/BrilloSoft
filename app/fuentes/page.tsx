@@ -13,7 +13,12 @@ import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
 import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { IconArrowLeft } from "@/components/icons";
-import { ResumenObras, ResumenRnc } from "@/components/fuentes-nuevas/resumen-fuentes";
+import {
+  ResumenCombustibles,
+  ResumenObras,
+  ResumenRnc,
+  ResumenTasa,
+} from "@/components/fuentes-nuevas/resumen-fuentes";
 
 export const metadata: Metadata = {
   title: "Fuentes",
@@ -455,6 +460,36 @@ export default async function FuentesPage() {
             ficha de institución es por nombre, y la que no casa se queda sin enlace
             (sobre todo juntas de distrito). Regenerar con{" "}
             <code className="rounded bg-canvas px-1 py-0.5 font-mono">scripts/build-sismap.py</code>.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="MICM — precios de los combustibles" estado="activa" etiqueta="Conectada">
+          <p>
+            El Ministerio de Industria, Comercio y Mipymes pone en su portada los
+            precios de la semana. Se leen de ahí, con caché de una hora, para el
+            indicador del panorama. <ResumenCombustibles />
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            Son los precios de la portada, no el aviso completo: el aviso semanal se
+            publica con el cuerpo vacío y su API está cerrada, así que otros
+            productos (kerosene, fuel oil) no se pueden leer. La portada no escribe
+            unidades; se dice «por galón» solo para gasolinas y gasoil.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Banco Central — tasa de cambio de referencia" estado="activa" etiqueta="Conectada">
+          <p>
+            La tasa del dólar del mercado spot, día a día desde 1991, sale del
+            archivo público que el Banco Central deja en su CDN; se lee con caché de
+            una hora. <ResumenTasa />
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            La API del Banco Central exige credenciales y no se usa: pedirlas es una
+            decisión pendiente del dueño. El archivo <code className="rounded bg-canvas px-1 py-0.5 font-mono">.xls</code>{" "}
+            con el mismo nombre sigue en línea pero dejó de actualizarse en julio de
+            2022; el vigente es el <code className="rounded bg-canvas px-1 py-0.5 font-mono">.xlsx</code>. El
+            resto de las series del Banco Central no se puede enumerar sin
+            navegador: su índice se arma con JavaScript.
           </p>
         </Fuente>
 

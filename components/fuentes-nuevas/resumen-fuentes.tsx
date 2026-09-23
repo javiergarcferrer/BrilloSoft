@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getObras } from "@/lib/obras";
+import { getCombustibles } from "@/lib/combustibles";
+import { getTasa } from "@/lib/tasa";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 
@@ -38,4 +40,21 @@ export async function ResumenRnc() {
   } catch {
     return <>La instantánea no está disponible ahora mismo.</>;
   }
+}
+
+export async function ResumenCombustibles() {
+  const c = await getCombustibles();
+  if (!c) return <>Ahora mismo la portada no contestó o cambió de forma.</>;
+  return (
+    <>
+      Última lectura: {c.precios.length} precios
+      {c.semana ? `, semana del ${c.semana}` : ""}.
+    </>
+  );
+}
+
+export async function ResumenTasa() {
+  const t = await getTasa();
+  if (!t) return <>Ahora mismo el archivo no contestó.</>;
+  return <>Último dato: {formatFecha(t.ultimo.fecha)}.</>;
 }

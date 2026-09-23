@@ -102,6 +102,11 @@ entre esfuerzo. Todas respetan la invariante (sin llave, instantánea en build).
    el día de la consulta.
 5. **Combustibles del MICM** (§A.5, fase 7) y **tasa del BCRD por CDN**
    (§A.6, fase 11): indicadores del bolsillo en la portada.
+   ✅ 2026-09-23 (capa e indicadores; colocarlos en `/` queda a quien edite el
+   panorama): `lib/combustibles.ts` y `lib/tasa.ts`, en vivo con caché de 1 h;
+   `<SeccionBolsillo />` de `components/fuentes-nuevas/indicadores-bolsillo.tsx`
+   trae los dos con su `Suspense`. La tasa sale del `.xlsx` del CDN: el `.xls`
+   que citaba la auditoría está congelado desde 2022.
 
 ## 5. Horizonte 4 — lo que solo desbloquea el dueño
 

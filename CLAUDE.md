@@ -20,6 +20,7 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 | Deuda pública | tarjeta en `/` | Crédito Público (XLSX + instantánea) | `lib/deuda.ts` |
 | Obra pública | `/obras` | MapaInversiones (instantánea) | `lib/obras.ts` |
 | Gestión pública | `/gestion`, fichas | SISMAP (instantánea) | `lib/sismap.ts` |
+| Bolsillo | indicadores para `/` | MICM (portada) y BCRD (XLSX del CDN), en vivo | `lib/combustibles.ts`, `lib/tasa.ts` |
 | Democracia | `/democracia` | Supabase, esquema `democracia` — **la excepción** | `lib/democracia.ts`, `lib/supabase.ts` |
 
 `lib/secciones.ts` es la fuente única de verticales y navegación. `/` es el panorama; `/fuentes` declara
@@ -102,8 +103,7 @@ efecto, statelessness, secretos, harness, build). El lockfile fija **Next 15**;
 se compila contra él (`npm ci`) — Turbopack en 16 tolera cosas que webpack en 15
 rechaza, como un import `node:` llegando a un bundle de cliente.
 
-Habilidades: `/verificar` (el gate), `/entregar` (docs → gate → commit → push),
-`/nueva-fuente` (QRSPI de una fuente del Estado). Agentes: `recon` (reconocimiento
+Habilidades: `/verificar` (el gate), `/entregar` (docs → gate → commit → push), `/nueva-fuente` (QRSPI de una fuente del Estado). Agentes: `recon` (reconocimiento
 de campo con la higiene de la plataforma), `revisor` (revisión de solo lectura
 contra todas las reglas de arriba).
 

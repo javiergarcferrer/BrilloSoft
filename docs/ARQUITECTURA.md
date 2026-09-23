@@ -135,6 +135,12 @@ Every UI that shows them states the source's cut date.
   dropped). No cut date is published upstream, so the snapshot carries
   `consultado`. `/gestion` shows the full ranking; `SismapDeInstitucion` the
   institution's row.
+- **`lib/combustibles.ts`** and **`lib/tasa.ts`** are *live* sources, not
+  snapshots (fetch `revalidate: 3600`, 25 s, one retry, content-type checked):
+  the MICM front page (six prices + the week, parsed from its markup) and the
+  BCRD reference-rate `.xlsx` on its CDN (daily sheet, only the tail parsed with
+  `leerZip` exported from `lib/deuda.ts`). The panorama indicators live in
+  `components/fuentes-nuevas/indicadores-bolsillo.tsx` (`SeccionBolsillo`).
 
 ## API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return
