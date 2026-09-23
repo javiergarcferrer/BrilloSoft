@@ -96,6 +96,10 @@ entre esfuerzo. Todas respetan la invariante (sin llave, instantánea en build).
    bloqueos en AUDITORIA §A.8.
 4. **SISMAP y SISMAP Municipal** (§A.7, fase 10): calidad de gestión por
    institución y por ayuntamiento; tablas HTML, lo más barato.
+   ✅ 2026-09-23: `/gestion` (instituciones, ayuntamientos y juntas de distrito,
+   con búsqueda) y `SismapDeInstitucion` en la ficha; `lib/sismap.ts` sobre
+   `scripts/build-sismap.py`. El SISMAP no publica fecha de corte: se declara
+   el día de la consulta.
 5. **Combustibles del MICM** (§A.5, fase 7) y **tasa del BCRD por CDN**
    (§A.6, fase 11): indicadores del bolsillo en la portada.
 

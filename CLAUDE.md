@@ -19,11 +19,11 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 | Nómina estatal | `/nomina` | Instantánea de 23 instituciones | `lib/nomina.ts`, `lib/nomina-server.ts` |
 | Deuda pública | tarjeta en `/` | Crédito Público (XLSX + instantánea) | `lib/deuda.ts` |
 | Obra pública | `/obras` | MapaInversiones (instantánea) | `lib/obras.ts` |
+| Gestión pública | `/gestion`, fichas | SISMAP (instantánea) | `lib/sismap.ts` |
 | Democracia | `/democracia` | Supabase, esquema `democracia` — **la excepción** | `lib/democracia.ts`, `lib/supabase.ts` |
 
-`lib/secciones.ts` es la fuente única de verticales y navegación. `/` es el
-panorama; `/fuentes` declara qué alimenta la plataforma, qué está bloqueado y
-con qué límites de cobertura — mantenerlo cierto es parte de tocar una fuente.
+`lib/secciones.ts` es la fuente única de verticales y navegación. `/` es el panorama; `/fuentes` declara
+qué alimenta la plataforma, qué está bloqueado y con qué límites de cobertura — mantenerlo cierto es parte de tocar una fuente.
 
 ## La invariante
 

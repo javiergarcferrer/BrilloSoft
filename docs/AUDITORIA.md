@@ -771,6 +771,27 @@ La primera pasada dio por muertos los archivos estadísticos. No lo están:
 - La primera pasada supuso una API interna que hay que extraer del bundle: no
   hace falta. Es parseo de tabla, el patrón más barato de la casa.
 
+**Integrado el 2026-09-23** (`scripts/build-sismap.py` → `public/data/sismap.json`,
+`lib/sismap.ts`, `/gestion`, ficha de institución). Verificación de ese día:
+
+- ✅ `sismap.gob.do/robots.txt` → 404 (sin política).
+- ✅ `/GestionPublica/Ranking/RankingView` → 200 `text/html`, 228 KB en 5.7 s:
+  **181 organismos** (1º Ministerio de Energía y Minas 99.09 %; los dos últimos,
+  Dirección General de Persecución del Ministerio Público e Instituto Nacional
+  de Ciencias Forenses, 0.00 %). Cada fila enlaza a
+  `/GestionPublica/CargaEvidencia/Index/{id}`.
+- ⚠️ `/Municipal/Ranking` ya **no trae la tabla** en el HTML (la monta por JS);
+  su propio menú apunta a `/Municipal/Ranking/RankingView?tipoOrganismoID=17`
+  (**160 ayuntamientos**, 1º Santiago de los Caballeros 87.30 %) y `=16`
+  (**233 juntas de distrito**), ambas servidas. La portada `/Municipal` solo
+  trae los diez primeros de cada una.
+- ⚠️ **Ninguna de las tres páginas declara fecha de corte ni período.** La
+  instantánea guarda el día de la consulta y la interfaz lo dice así.
+- El cruce por nombre con `instituciones.json` ata 136 de 181 organismos,
+  135 de 160 ayuntamientos y 62 de 233 juntas (el catálogo de la DGCP nombra
+  las juntas de muchas formas). Un ayuntamiento nunca casa con la junta del
+  mismo lugar, y dos filas que apunten a la misma ficha se sueltan las dos.
+
 ### A.8 datos.gob.do — dimensionado
 
 - ✅ El portal declara **1,206 conjuntos de datos**. Ojo: esa cifra **no varía
@@ -1002,7 +1023,7 @@ Las fases 1 y 2 (deuda, normativa) siguen implementadas. Estas se ordenan por
 | **7** | **MICM: indicador de combustibles** | bajo | Portada + título del último aviso; declarar que son 4 precios, no el aviso completo |
 | **8** ✅ | **MapaInversiones: obra pública** | medio | CSV grandes → instantánea en build (patrón nómina), unión por `codigo_snip` con procesos |
 | **9** ✅ | **RNC (DGII) en fichas de proveedor** | medio | Instantánea en build restringida a los RNC presentes en compras; nunca descarga en request |
-| **10** | **Nómina ampliada (159 candidatos) + SISMAP** | bajo | Añadir líneas al manifiesto de `scripts/build-nomina.py`; SISMAP es parseo de tabla |
+| **10** ✅ | **Nómina ampliada (159 candidatos) + SISMAP** | bajo | Añadir líneas al manifiesto de `scripts/build-nomina.py`; SISMAP es parseo de tabla |
 | **11** | BCRD (tipo de cambio) | bajo | Solo si el XLS del CDN se parsea sin dependencia pesada; el resto de series, tras pedir el índice |
 
 **Regla que impone la fase 6**: la plataforma necesita una segunda clase de

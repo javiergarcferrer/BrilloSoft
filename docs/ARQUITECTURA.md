@@ -127,6 +127,14 @@ Every UI that shows them states the source's cut date.
   dictionary of activities and states. `getRegistroTributario(rpe)` reads one
   shard; `FichaRnc` (in `/proveedores/[rpe]`) shows activity, state, regime and
   the days between «inicio de operaciones» and the oldest contract the API returns.
+- **`lib/sismap.ts`** — MAP's SISMAP ranking (`docs/AUDITORIA.md` §A.7), three
+  server-rendered tables (181 institutions, 160 ayuntamientos, 233 juntas) read
+  by `scripts/build-sismap.py`, which also joins each row to a purchasing unit
+  by normalised words (exact set, else Jaccard ≥ 0.85 with a unique best; an
+  ayuntamiento never matches the junta of the same place; duplicate targets are
+  dropped). No cut date is published upstream, so the snapshot carries
+  `consultado`. `/gestion` shows the full ranking; `SismapDeInstitucion` the
+  institution's row.
 
 ## API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return
@@ -270,6 +278,7 @@ sources impose:
   server-side by `?q=`, `?estado=`, `?provincia=` (slug) and `?uc=` (purchasing
   unit); `/obras/[snip]` → one project with its contracts and processes, linked
   to `/procesos/*` and `/proveedores/*`.
+- `/gestion` → SISMAP ranking, `?tabla=instituciones|ayuntamientos|juntas` and `?q=`.
 - `/estadisticas` → 30-day market dashboard. `/guia` → static bidder guide.
 - `/seguimiento` → starred processes.
 

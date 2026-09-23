@@ -437,6 +437,27 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="SISMAP — calidad de la gestión pública" estado="activa" etiqueta="Instantánea local">
+          <p>
+            El ranking del Sistema de Monitoreo de la Administración Pública
+            (Ministerio de Administración Pública) alimenta{" "}
+            <Link href="/gestion" className="font-medium text-brand-700 hover:underline">
+              ¿Qué tan bien se gestiona?
+            </Link>{" "}
+            y el recuadro de gestión de cada ficha de institución. Son tres tablas
+            que el SISMAP sirve como páginas normales: instituciones del Gobierno
+            central, ayuntamientos y juntas de distrito municipal.
+          </p>
+          <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
+            El SISMAP no publica fecha de corte en esas páginas: se declara el día en
+            que se consultó. Mide cumplimiento de indicadores de gestión con
+            evidencias que remite cada organismo; no es una auditoría. El enlace a la
+            ficha de institución es por nombre, y la que no casa se queda sin enlace
+            (sobre todo juntas de distrito). Regenerar con{" "}
+            <code className="rounded bg-canvas px-1 py-0.5 font-mono">scripts/build-sismap.py</code>.
+          </p>
+        </Fuente>
+
         <Fuente
           nombre="Portal de datos abiertos (datos.gob.do)"
           estado="activa"
