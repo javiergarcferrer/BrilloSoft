@@ -353,12 +353,18 @@ sources impose:
   `app/api/procesos/filtros.ts`, capped at `MAX_FILAS_DESCARGA` = 6000 rows
   read); `/contratos/csv` the 6000-contract sample (`contratosRecientes`,
   same fetch cache); `/normativa/csv` the current list without the 200-row cut.
-- `/normativa?q=&mes=` → text search over number + title (all words, accent-
+- `/normativa?q=&mes=&materia=` → text search over number + title (all words, accent-
   insensitive; not the norm's body) of the chosen type and year, live or
   snapshot like the listing (`listaNormativa`). With decretos it shows
   «Designaciones del mes» (`designacionesPorMes`): decrees tagged «Cámara de
   Cuentas» by the Consultoría (appointments and their revocations), per month,
   cargo read from the first mention in the title — derived, and declared so.
+  Decretos also get a subject (`materiaDe`: 16 ordered rules over the plain
+  title and the source's `Institucion` tag, first match wins, «Otros asuntos»
+  ~6 % of 2023–2026). The «¿De qué tratan…?» card counts the whole year and
+  each subject links to `?materia=`; rows and the CSV (`materia_derivada`)
+  carry it. Rules, not a model: they run on the live read with no key
+  (docs/DECISIONES.md, Jev).
 - `/provincias`, `/provincias/[slug]` (`lib/provincias.ts`) → 32 demarcations.
   The supplier register cannot be filtered by `provincia` (500 with any value,
   re-verified 2026-09-23), so suppliers per province = registry cards of the

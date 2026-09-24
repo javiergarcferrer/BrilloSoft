@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { TIPOS_NORMATIVA, listaNormativa, type Documento, type TipoNormativa } from "@/lib/normativa";
+import {
+  TIPOS_NORMATIVA,
+  listaNormativa,
+  materiaDe,
+  materiaPorSlug,
+  type Documento,
+  type TipoNormativa,
+} from "@/lib/normativa";
 import { aCsv, respuestaCsv, type ColumnaCsv } from "@/lib/csv";
 
 export const dynamic = "force-dynamic";
@@ -11,12 +18,14 @@ const COLUMNAS: ColumnaCsv<Documento>[] = [
   ["fecha_promulgacion", (d) => d.fechaIso ?? d.fecha],
   ["titulo", (d) => d.titulo],
   ["gaceta", (d) => d.gaceta],
+  // Derivada con reglas del título y la etiqueta (`materiaDe`), no del origen.
+  ["materia_derivada", (d) => materiaDe(d)?.nombre ?? null],
   ["etiqueta_institucion", (d) => d.institucion],
   ["url_documento", (d) => d.url],
 ];
 
 /**
- * La lista de `/normativa` en CSV: el mismo tipo, año, texto y mes que la
+ * La lista de `/normativa` en CSV: el mismo tipo, año, texto, mes y materia que la
  * página, **sin** el recorte a 200 filas de la vista. Parámetros validados
  * con las mismas reglas que la página.
  */
@@ -39,8 +48,9 @@ export async function GET(req: NextRequest) {
     tipo === "3" && /^\d{4}-(0[1-9]|1[0-2])$/.test(mesPedido) && mesPedido.startsWith(String(anio))
       ? mesPedido
       : undefined;
+  const materia = tipo === "3" ? materiaPorSlug(sp.get("materia"))?.slug : undefined;
 
-  const r = await listaNormativa({ tipo, anio, q, mes });
+  const r = await listaNormativa({ tipo, anio, q, mes, materia });
   if (r.origen === null) {
     return NextResponse.json(
       { error: "La Consultoría Jurídica no respondió y la instantánea no cubre esa consulta" },
@@ -48,7 +58,7 @@ export async function GET(req: NextRequest) {
     );
   }
   const fuente = r.origen === "vivo" ? "en vivo" : `instantanea del ${r.origen}`;
-  const partes = [`normativa-${tipo}-${anio}`, mes, q ? "busqueda" : null].filter(Boolean).join("-");
+  const partes = [`normativa-${tipo}-${anio}`, mes, materia, q ? "busqueda" : null].filter(Boolean).join("-");
   return respuestaCsv(
     aCsv(COLUMNAS, r.docs),
     `${partes}.csv`,

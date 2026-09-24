@@ -6,7 +6,11 @@ import {
   TIPOS_NORMATIVA,
   designacionesPorMes,
   listaNormativa,
+  materiaDe,
+  materiaPorSlug,
+  materiasDe,
   type Documento,
+  type Materia,
   type MesDesignaciones,
   type TipoNormativa,
 } from "@/lib/normativa";
@@ -23,6 +27,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 import { Termino } from "@/components/termino";
 import { Paginador } from "@/components/paginador";
+import Plegable from "@/components/plegable";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/normativa" },
@@ -53,6 +58,7 @@ function hrefNormativa(f: {
   anio: number;
   q?: string;
   mes?: string;
+  materia?: string;
   pagina?: number;
 }): string {
   const p = new URLSearchParams();
@@ -60,6 +66,7 @@ function hrefNormativa(f: {
   if (f.anio !== ANIO_ACTUAL) p.set("anio", String(f.anio));
   if (f.q) p.set("q", f.q);
   if (f.mes) p.set("mes", f.mes);
+  if (f.materia) p.set("materia", f.materia);
   if (f.pagina && f.pagina > 1) p.set("pagina", String(f.pagina));
   return `/normativa?${p}`;
 }
@@ -67,7 +74,14 @@ function hrefNormativa(f: {
 export default async function NormativaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string; anio?: string; q?: string; mes?: string; pagina?: string }>;
+  searchParams: Promise<{
+    tipo?: string;
+    anio?: string;
+    q?: string;
+    mes?: string;
+    materia?: string;
+    pagina?: string;
+  }>;
 }) {
   const params = await searchParams;
   const tipo = (params.tipo && params.tipo in TIPOS_NORMATIVA ? params.tipo : "3") as TipoNormativa;
@@ -79,6 +93,8 @@ export default async function NormativaPage({
     tipo === "3" && /^\d{4}-(0[1-9]|1[0-2])$/.test(mesPedido) && mesPedido.startsWith(String(anio))
       ? mesPedido
       : undefined;
+  // La materia solo existe en los decretos (`materiaDe`); otro valor no filtra.
+  const materia = tipo === "3" ? materiaPorSlug(params.materia)?.slug : undefined;
   // La página pedida; la lista la acota a las que existen cuando sabe cuántas hay.
   const pagina = /^\d{1,4}$/.test(params.pagina ?? "") ? Math.max(1, Number(params.pagina)) : 1;
 
@@ -147,10 +163,10 @@ export default async function NormativaPage({
         filtros llegan al instante; el listado cae en su hueco al contestar.
       */}
       <Suspense
-        key={`${tipo}-${anio}-${q}-${mes ?? ""}-${pagina}`}
+        key={`${tipo}-${anio}-${q}-${mes ?? ""}-${materia ?? ""}-${pagina}`}
         fallback={<ListaEsqueleto tipo={tipo} anio={anio} />}
       >
-        <ListaNormativa tipo={tipo} anio={anio} q={q} mes={mes} pagina={pagina} />
+        <ListaNormativa tipo={tipo} anio={anio} q={q} mes={mes} materia={materia} pagina={pagina} />
       </Suspense>
 
       <p className="mt-4 text-xs leading-relaxed text-ink-soft">
@@ -171,15 +187,17 @@ async function ListaNormativa({
   anio,
   q,
   mes,
+  materia,
   pagina: paginaPedida,
 }: {
   tipo: TipoNormativa;
   anio: number;
   q: string;
   mes?: string;
+  materia?: string;
   pagina: number;
 }) {
-  const { docs, origen, total, todos } = await listaNormativa({ tipo, anio, q, mes });
+  const { docs, origen, total, todos } = await listaNormativa({ tipo, anio, q, mes, materia });
   const paginas = Math.max(1, Math.ceil(docs.length / POR_PAGINA));
   const pagina = Math.min(paginas, paginaPedida);
   const desde = (pagina - 1) * POR_PAGINA;
@@ -194,11 +212,16 @@ async function ListaNormativa({
   */
   const consultoriaCaida = origen === null;
   const instantanea = origen !== null && origen !== "vivo" ? origen : null;
-  const designaciones = tipo === "3" && !q ? designacionesPorMes(todos) : [];
-  const filtrada = Boolean(q || mes);
+  const designaciones = tipo === "3" && !q && !materia ? designacionesPorMes(todos) : [];
+  // Las materias reparten el año entero y la búsqueda viaja con ellas; con un
+  // mes elegido la lista ya es de nombramientos, así que no se ofrecen.
+  const materias = tipo === "3" && !mes ? materiasDe(todos) : [];
+  const nombreMateria = materiaPorSlug(materia)?.nombre;
+  const filtrada = Boolean(q || mes || materia);
   const consulta = new URLSearchParams({ tipo, anio: String(anio) });
   if (q) consulta.set("q", q);
   if (mes) consulta.set("mes", mes);
+  if (materia) consulta.set("materia", materia);
   const csv = `/normativa/csv?${consulta}`;
 
   return (
@@ -208,6 +231,10 @@ async function ListaNormativa({
         pregunta en la primera página. Desde la segunda el lector ya está
         recorriendo la lista: la tarjeta solo empujaría las normas hacia abajo.
       */}
+      {materias.length > 1 && pagina === 1 && (
+        <Materias materias={materias} anio={anio} q={q} activa={materia} />
+      )}
+
       {designaciones.length > 0 && pagina === 1 && (
         <Designaciones meses={designaciones} anio={anio} mes={mes} />
       )}
@@ -222,7 +249,7 @@ async function ListaNormativa({
             {filtrada
               ? `${docs.length.toLocaleString("es-DO")} de ${total.toLocaleString("es-DO")} ${nombreTipo} de ${anio}${
                   mes ? ` · nombramientos y ceses de ${nombreMes(mes)}` : ""
-                }${q ? ` · «${q}»` : ""}`
+                }${nombreMateria ? ` · ${nombreMateria.toLowerCase()}` : ""}${q ? ` · «${q}»` : ""}`
               : `${docs.length.toLocaleString("es-DO")} ${nombreTipo} en ${anio}`}
             {paginas > 1 &&
               ` · se muestran del ${(desde + 1).toLocaleString("es-DO")} al ${(desde + visibles.length).toLocaleString("es-DO")}, lo más reciente primero`}
@@ -272,7 +299,7 @@ async function ListaNormativa({
               className="mt-3"
               pagina={pagina}
               paginas={paginas}
-              href={(n) => hrefNormativa({ tipo, anio, q, mes, pagina: n })}
+              href={(n) => hrefNormativa({ tipo, anio, q, mes, materia, pagina: n })}
               etiqueta={`Páginas de ${nombreTipo} de ${anio}`}
             />
           )}
@@ -293,10 +320,23 @@ async function ListaNormativa({
           mirar. Los datos vuelven solos cuando el origen se restablece.
         </EstadoVacio>
       ) : filtrada ? (
-        <EstadoVacio titulo={q ? `Ningún título coincide con «${q}»` : "Sin decretos en ese mes"} className="mt-4">
+        <EstadoVacio
+          titulo={
+            q
+              ? `Ningún título coincide con «${q}»`
+              : mes
+                ? "Sin decretos en ese mes"
+                : `Sin decretos de ${(nombreMateria ?? "esa materia").toLowerCase()} en ${anio}`
+          }
+          className="mt-4"
+        >
           {q
-            ? `Entre ${total.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} de ${anio}, ninguno tiene esas palabras en el número o el título. Prueba con menos palabras, otra forma de escribirlas u otro año.`
-            : "No hay nombramientos ni ceses con fecha de ese mes en la lista del año."}
+            ? `Entre ${total.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} de ${anio}${
+                nombreMateria ? ` (${nombreMateria.toLowerCase()})` : ""
+              }, ninguno tiene esas palabras en el número o el título. Prueba con menos palabras, otra forma de escribirlas u otro año.`
+            : mes
+              ? "No hay nombramientos ni ceses con fecha de ese mes en la lista del año."
+              : "Ningún decreto del año cae en esa materia. Prueba otro año o vuelve a todos los decretos."}
         </EstadoVacio>
       ) : (
         <EstadoVacio titulo="Sin resultados" className="mt-4">
@@ -403,6 +443,106 @@ function Designaciones({
   );
 }
 
+/** Filas que se ven de entrada; el resto, a un toque. */
+const MATERIAS_VISIBLES = 6;
+
+/**
+ * ¿De qué tratan los decretos del año? Un año son casi mil títulos en
+ * mayúsculas y el lector no viene a leerlos todos: viene por las pensiones,
+ * las expropiaciones o las compras de emergencia. Cada materia es un enlace
+ * que filtra la lista, con su cuenta y su barra, y la tarjeta dice cómo se
+ * decidió: reglas sobre el título y la etiqueta del origen (`materiaDe`).
+ */
+function Materias({
+  materias,
+  anio,
+  q,
+  activa,
+}: {
+  materias: (Materia & { n: number })[];
+  anio: number;
+  q: string;
+  activa?: string;
+}) {
+  const total = materias.reduce((s, m) => s + m.n, 0);
+  const max = Math.max(1, ...materias.map((m) => m.n));
+  // La elegida siempre a la vista, aunque su cuenta la dejara plegada: abrir
+  // la lista entera empujaba los decretos filtrados dos pantallas abajo.
+  const primeras = materias.slice(0, MATERIAS_VISIBLES);
+  const visibles =
+    activa && !primeras.some((m) => m.slug === activa)
+      ? [...primeras, ...materias.filter((m) => m.slug === activa)]
+      : primeras;
+  const resto = materias.filter((m) => !visibles.includes(m));
+
+  const lista = (ms: (Materia & { n: number })[]) => (
+    <ul className="space-y-1 text-sm">
+      {ms.map((m) => {
+        const elegida = m.slug === activa;
+        return (
+          <li key={m.slug}>
+            <Link
+              href={hrefNormativa({ tipo: "3", anio, q, materia: m.slug })}
+              aria-current={elegida ? "page" : undefined}
+              className="-mx-2 block min-h-11 rounded-md px-2 py-2 transition-colors hover:bg-canvas/60"
+            >
+              <div className="flex items-baseline justify-between gap-2">
+                <span className={elegida ? "font-semibold text-brand-700" : "text-ink"}>{m.nombre}</span>
+                <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">
+                  {m.n.toLocaleString("es-DO")}
+                </span>
+              </div>
+              <Progress
+                value={Math.max(2, (m.n / max) * 100)}
+                aria-label={`${m.nombre}: ${m.n}`}
+                className="mt-1"
+              />
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  return (
+    <Card as="section" className="mt-5 p-5 sm:p-6">
+      <CardTitle>
+        ¿De qué tratan los {total.toLocaleString("es-DO")} decretos de {anio}?
+      </CardTitle>
+      <p className="mt-1 text-sm text-ink-soft">
+        Toca una materia para ver solo sus decretos
+        {q ? `; la búsqueda «${q}» se mantiene` : ""}.
+      </p>
+
+      <div className="mt-3">{lista(visibles)}</div>
+      {resto.length > 0 && (
+        <Plegable
+          className="-mx-5 mt-2 sm:-mx-6"
+          etiqueta={`Ver las otras ${resto.length} materias`}
+        >
+          <div className="px-5 pt-2 sm:px-6">{lista(resto)}</div>
+        </Plegable>
+      )}
+
+      {activa && (
+        <div className="mt-4">
+          <Button asChild variant="secondary" size="sm" className="h-10 sm:h-9">
+            <Link href={hrefNormativa({ tipo: "3", anio, q })}>Todos los decretos de {anio}</Link>
+          </Button>
+        </div>
+      )}
+
+      <p className="mt-4 text-xs leading-relaxed text-ink-soft">
+        La materia no es un campo del origen: se lee del título y de la etiqueta
+        de institución que pone la Consultoría Jurídica, con reglas fijas y
+        públicas, no con un modelo. Cada decreto cuenta en una sola materia, la
+        primera que reconoce; «Otros asuntos» reúne lo que ninguna regla
+        reconoce. Las cuentas son del año entero, sin la búsqueda.
+      </p>
+    </Card>
+  );
+}
+
 function ListaEsqueleto({ tipo, anio }: { tipo: TipoNormativa; anio: number }) {
   return (
     <div role="status" aria-busy="true">
@@ -429,6 +569,7 @@ function ListaEsqueleto({ tipo, anio }: { tipo: TipoNormativa; anio: number }) {
 function FilaDoc({ doc }: { doc: Documento }) {
   // El número normalizado es la identidad de la ficha propia; si el origen lo
   // escribe de otra forma, la fila se queda con el enlace al documento.
+  const materia = materiaDe(doc);
   const ruta =
     RUTA_POR_TIPO[doc.tipo] && /^\d{1,4}-\d{2,4}$/.test(doc.numero.trim())
       ? `/normativa/${RUTA_POR_TIPO[doc.tipo]}/${doc.numero.trim()}`
@@ -452,6 +593,9 @@ function FilaDoc({ doc }: { doc: Documento }) {
             <Antiguedad iso={doc.fechaIso} className="text-ink-soft" />
           )}
           {doc.gaceta && <span className="text-ink-soft">Gaceta {doc.gaceta}</span>}
+          {materia && materia.slug !== "otros" && (
+            <span className="text-ink-soft">{materia.nombre}</span>
+          )}
         </div>
         <p className="mt-1 text-[15px] leading-snug text-ink group-hover:text-brand-700">
           {desdeMayusculas(doc.titulo)}

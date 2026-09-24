@@ -302,7 +302,10 @@ export default async function FuentesPage() {
             , donde se ve el conteo por año. La búsqueda de esa vertical mira el
             número y el título, no el texto de la norma; las designaciones del mes
             se derivan de la etiqueta «Cámara de Cuentas» que la Consultoría pone
-            a los decretos de nombramiento y de su título.
+            a los decretos de nombramiento y de su título. La materia de cada
+            decreto —pensiones, expropiaciones, compras de emergencia…— tampoco
+            es un campo del origen: se lee con reglas fijas del título y de esa
+            etiqueta, y lo que ninguna reconoce queda en «Otros asuntos».
           </p>
           {normativaInstantanea && (
             <p className="mt-3">

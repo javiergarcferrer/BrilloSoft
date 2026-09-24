@@ -449,6 +449,155 @@ export function designacionesPorMes(docs: Documento[]): MesDesignaciones[] {
   return [...meses.values()].sort((a, b) => b.mes.localeCompare(a.mes));
 }
 
+/* ------------------------------------------------------ materia de un decreto */
+
+/**
+ * ¿De qué trata un decreto? El origen no lo dice: da el título y la etiqueta
+ * `Institucion`. Pero los títulos son de fórmula —«QUE CONCEDE PENSIONES…»,
+ * «QUE DECLARA DE UTILIDAD PÚBLICA…»— y la etiqueta lo termina de decidir, así
+ * que la materia se lee con reglas, no con un modelo: son auditables, corren
+ * sobre la lectura en vivo sin clave ni secreto, y medidas sobre los 2.729
+ * decretos de 2023–2026 de la instantánea dejan 6 % en «Otros asuntos» con
+ * muestras por materia sin errores de bulto (septiembre de 2026).
+ *
+ * El orden importa: gana la primera regla que casa. Los nombramientos van
+ * primero porque la etiqueta «Cámara de Cuentas» es del origen (ver
+ * `esDesignacion`) y un embajador designado es un nombramiento antes que
+ * relaciones exteriores; las condecoraciones van antes que Defensa y
+ * Exteriores, que las tramitan, y un ascenso es militar aunque lo etiquete
+ * Exteriores. `t` es el título plano, sin «que» inicial;
+ * `i`, la etiqueta de institución plana.
+ */
+const REGLAS_MATERIA: { slug: string; nombre: string; casa: (t: string, i: string) => boolean }[] = [
+  {
+    slug: "nombramientos",
+    nombre: "Nombramientos y ceses",
+    casa: (t, i) =>
+      i.includes("camara de cuentas") ||
+      /^(nombra|designa|confirma)\b(?! como organizacion)/.test(t) ||
+      /^(deroga|deja sin efecto)\b.{0,240}\b(designo|designaron|nombro|nombraron)\b/.test(t),
+  },
+  {
+    slug: "pensiones",
+    nombre: "Pensiones",
+    casa: (t, i) => /\bpension/.test(t) || i.includes("jubilaciones y pensiones"),
+  },
+  { slug: "exequatur", nombre: "Exequátur", casa: (t) => t.includes("exequatur") },
+  {
+    slug: "naturalizaciones",
+    nombre: "Naturalizaciones",
+    casa: (t) => /naturaliz|nacionalidad dominicana/.test(t),
+  },
+  { slug: "extradiciones", nombre: "Extradiciones", casa: (t) => t.includes("extradicion") },
+  { slug: "expropiaciones", nombre: "Expropiaciones", casa: (t) => t.includes("utilidad publica") },
+  {
+    slug: "emergencias",
+    nombre: "Compras de emergencia",
+    casa: (t) => /declara de emergencia|emergencia nacional/.test(t),
+  },
+  {
+    slug: "honores",
+    nombre: "Condecoraciones y conmemoraciones",
+    casa: (t) =>
+      /condecora|medalla|orden (del? |al )merito|\bdia nacional|\bdia de\b|como (el )?ano\b|\bano (nacional|de la|del)\b|duelo oficial|\bpremios?\b|\bheroe|aniversario|reconoce a/.test(t),
+  },
+  {
+    slug: "militares",
+    nombre: "Militares y policías",
+    casa: (t, i) =>
+      /ministerio de defensa|policia nacional|armada|ejercito|fuerza aerea/.test(i) ||
+      /\basciend|\bascenso|fuerzas armadas/.test(t),
+  },
+  {
+    slug: "exteriores",
+    nombre: "Relaciones exteriores",
+    casa: (t, i) =>
+      i.includes("relaciones exteriores") || /\b(vice)?consul(es|ados?|ar(es)?)?\b|embajad/.test(t),
+  },
+  {
+    slug: "zonas-francas",
+    nombre: "Zonas francas",
+    casa: (t, i) => i.includes("zonas francas") || /zonas? francas?/.test(t),
+  },
+  {
+    slug: "bienes",
+    nombre: "Bienes del Estado",
+    casa: (t, i) =>
+      i.includes("bienes nacionales") || /\binmueble|\bterreno|\bparcela|designacion catastral/.test(t),
+  },
+  {
+    slug: "cooperativas",
+    nombre: "Cooperativas y asociaciones",
+    casa: (t) => /incorporacion|cooperativ|personalidad juridica/.test(t),
+  },
+  {
+    slug: "recursos-naturales",
+    nombre: "Costas, áreas protegidas y minería",
+    casa: (t) => /franja maritima|area protegida|parque nacional|hidrocarburo|miner[ai]/.test(t),
+  },
+  {
+    slug: "reglamentos",
+    nombre: "Reglamentos",
+    casa: (t) => /^(aprueba|establece|dicta|emite|instituye|modifica)\b.{0,120}\breglamento/.test(t),
+  },
+  {
+    slug: "organizacion",
+    nombre: "Organización del Estado",
+    casa: (t) =>
+      /^(crea|integra|suprime|adscribe|fusiona|reestructura|constituye|conforma)\b/.test(t) ||
+      /fideicomiso|\bcomision\b|\bconsejo\b|\bgabinete\b|\bcomite\b/.test(t),
+  },
+];
+
+const OTROS_ASUNTOS = { slug: "otros", nombre: "Otros asuntos" } as const;
+
+export interface Materia {
+  slug: string;
+  nombre: string;
+}
+
+/** Las materias en el orden de sus reglas, con «Otros asuntos» al final. */
+export const MATERIAS: readonly Materia[] = [
+  ...REGLAS_MATERIA.map(({ slug, nombre }) => ({ slug, nombre })),
+  OTROS_ASUNTOS,
+];
+
+const plano = (s: string | null | undefined) =>
+  (s ?? "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+/** La materia de un decreto; `null` para lo que no es decreto. */
+export function materiaDe(d: Documento): Materia | null {
+  if (d.tipo !== "Decreto") return null;
+  const t = plano(d.titulo)
+    .replace(/\s+/g, " ")
+    .replace(/^(del\s+)?(que|mediante el cual|por el cual|el cual)\s+(se\s+)?/, "");
+  const i = plano(d.institucion);
+  const regla = REGLAS_MATERIA.find((r) => r.casa(t, i));
+  return regla ? { slug: regla.slug, nombre: regla.nombre } : OTROS_ASUNTOS;
+}
+
+/** `slug` válido de materia, o `undefined`. */
+export function materiaPorSlug(slug: string | null | undefined): Materia | undefined {
+  return MATERIAS.find((m) => m.slug === slug);
+}
+
+/**
+ * Cuántos decretos hay de cada materia, de la más numerosa a la menos, con
+ * «Otros asuntos» siempre al final. Las materias sin decretos no aparecen.
+ */
+export function materiasDe(docs: Documento[]): (Materia & { n: number })[] {
+  const cuenta = new Map<string, number>();
+  for (const d of docs) {
+    const m = materiaDe(d);
+    if (m) cuenta.set(m.slug, (cuenta.get(m.slug) ?? 0) + 1);
+  }
+  return MATERIAS.filter((m) => cuenta.has(m.slug))
+    .map((m) => ({ ...m, n: cuenta.get(m.slug)! }))
+    .sort((a, b) =>
+      a.slug === OTROS_ASUNTOS.slug ? 1 : b.slug === OTROS_ASUNTOS.slug ? -1 : b.n - a.n,
+    );
+}
+
 /* ------------------------------------------------------ la lista de la página */
 
 export interface ListaNormativa extends ResultadoNormativa {
@@ -461,17 +610,20 @@ export interface ListaNormativa extends ResultadoNormativa {
 /**
  * La lista que pinta `/normativa` y que baja su CSV: el tipo y el año (en
  * vivo o desde la instantánea, como `consultarNormativa`), filtrados por
- * texto sobre los títulos y, si se pide `mes` (`yyyy-mm`), reducidos a los
- * decretos de nombramiento y cese de ese mes.
+ * texto sobre los títulos, por `materia` (slug de `MATERIAS`, solo decretos)
+ * y, si se pide `mes` (`yyyy-mm`), reducidos a los decretos de nombramiento y
+ * cese de ese mes.
  */
 export async function listaNormativa(opts: {
   tipo: TipoNormativa;
   anio: number;
   q?: string;
   mes?: string;
+  materia?: string;
 }): Promise<ListaNormativa> {
   const r = await consultarNormativa(opts.tipo, opts.anio);
   let docs = r.docs;
+  if (opts.materia) docs = docs.filter((d) => materiaDe(d)?.slug === opts.materia);
   if (opts.mes) {
     docs = docs.filter((d) => esDesignacion(d) && d.fechaIso?.startsWith(opts.mes!));
   }

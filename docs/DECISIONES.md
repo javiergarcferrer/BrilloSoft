@@ -61,6 +61,21 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
 
 ## Cerradas, para que nadie las reabra
 
+- **Clasificadores de IA (Jev, `typesafe-ai/jev` por el AI Gateway de
+  Vercel) solo donde cambian la experiencia** (24-09-2026). El dueño pidió
+  usarlo donde marque una diferencia grande y en ningún otro sitio. Evaluado:
+  no puede correr en una petición (exige `AI_GATEWAY_API_KEY` o el token OIDC,
+  y las superficies no llevan secretos), así que solo cabe al generar una
+  instantánea. Donde más rendía —la materia de los decretos en `/normativa`—
+  las reglas le ganan: los títulos son de fórmula y el origen ya etiqueta la
+  institución, así que `materiaDe` (`lib/normativa.ts`) deja 6 % sin materia,
+  corre sobre la lectura en vivo, cuesta cero y es auditable. Obras ya trae
+  sector oficial, el Congreso sus 15 grupos (RECON §9) y compras se lee en
+  vivo. Candidato si vuelve: familias de cargo sobre los ~3.250 títulos de la
+  nómina, en `scripts/build-nomina.py`. La conexión de Vercel de las sesiones
+  no puede crear claves del Gateway ni tokens OIDC (403, verificado
+  24-09-2026): la clave la crea el dueño en su panel.
+
 - **Cabecera sin preguntas; megamenú** (23-09-2026). El dueño pidió quitar
   las preguntas («¿Qué compra?») de la cabecera y un megamenú. La cabecera
   lleva tres puertas —Dinero público, Leyes, El Estado— que abren un panel con
