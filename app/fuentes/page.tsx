@@ -14,7 +14,10 @@ import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
 import { IconArrowLeft } from "@/components/icons";
 import {
+  ResumenBiblioteca,
+  ResumenCatalogo,
   ResumenCombustibles,
+  ResumenHistorico,
   ResumenObras,
   ResumenRnc,
   ResumenTasa,
@@ -556,17 +559,168 @@ export default async function FuentesPage() {
         <Fuente
           nombre="Portal de datos abiertos (datos.gob.do)"
           estado="activa"
-          etiqueta="Solo como índice"
+          etiqueta="Índice e instantánea"
         >
           <p>
             Su <code className="rounded bg-canvas px-1 py-0.5 font-mono">robots.txt</code>{" "}
             prohíbe <code className="rounded bg-canvas px-1 py-0.5 font-mono">/api/</code>, así
             que no se consulta su API. Se usa como lo que es: un índice. Su búsqueda
-            y sus fichas, que son páginas normales, dan los enlaces directos a las
-            nóminas que cada institución publica en su propio portal, y de ahí salió
-            la ampliación de la nómina. Las fichas se leen a mano al regenerar, a una
+            pública recorre el catálogo entero y de ahí sale{" "}
+            <Link href="/datos" className="font-medium text-brand-700 hover:underline">
+              el buscador de datos abiertos
+            </Link>
+            : título, organización, formatos y grupo de cada conjunto, con enlace a
+            su ficha. <ResumenCatalogo /> Sus fichas dan además los enlaces directos a
+            las nóminas que cada institución publica en su propio portal, y de ahí
+            salió la ampliación de la nómina. Todo se lee al regenerar, a una
             petición cada diez segundos como pide el portal, nunca en una visita.
-            Del Congreso no tiene conjuntos útiles.
+            El rótulo del portal («1199 resultados») no cambia con la búsqueda: el
+            total que damos es el que contamos.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="DGCP — historia completa desde 2015" estado="activa" etiqueta="Instantánea local">
+          <p>
+            La sección «Tablas» de datos abiertos de la DGCP sirve enteras, como
+            archivo, las tablas de contratos y de procesos: cada contrato y cada
+            proceso registrado desde que existe el sistema. Se bajan al regenerar
+            —unos 360 MB, nunca en una visita— y se agregan por año, por
+            institución y por proveedor para{" "}
+            <Link href="/historico" className="font-medium text-brand-700 hover:underline">
+              la historia de las compras
+            </Link>{" "}
+            y el bloque «desde 2015» de cada ficha. <ResumenHistorico /> Es valor
+            contratado en pesos, no pagado, sin cancelados. La tabla de contratos no
+            dice qué institución firmó: se deduce del prefijo del código, que es el
+            de la unidad de compra, solo cuando ese prefijo es inequívoco. Los
+            contratos de RD$10 mil millones o más no se suman —varios son errores de
+            captura evidentes— y se listan aparte con nombre y apellido.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Biblioteca del Estado — documentos de las instituciones" estado="activa" etiqueta="Instantánea local">
+          <p>
+            Muchas instituciones publican en WordPress, y WordPress trae una vía
+            pública de lectura de su biblioteca de archivos, sin clave. Se recorre
+            entera al regenerar —robots primero, un segundo entre peticiones— y
+            queda{" "}
+            <Link href="/documentos" className="font-medium text-brand-700 hover:underline">
+              un buscador de documentos
+            </Link>{" "}
+            que enlaza al archivo en el sitio de cada institución; aquí no se copia
+            nada. <ResumenBiblioteca /> El total que anuncia cada sitio incluye
+            archivos que cuelgan de páginas no públicas y que nadie puede abrir: se
+            da lo que de verdad se leyó. El título es el que puso la institución y la
+            fecha, la de subida. Las declaraciones juradas que algunas instituciones
+            publican por mandato de la Ley 311-14 se indexan como cualquier otro
+            documento público.
+          </p>
+          <p className="mt-3">
+            <strong>Sin acceso:</strong> Salud Pública (SNS), Administración Pública
+            (MAP) y Deportes cierran esa vía con un plugin; el Ministerio de la
+            Presidencia la veta en su robots; Agricultura e INFOTEP responden con el
+            muro de Cloudflare; la ONE, con un desafío. Educación, Obras Públicas,
+            Salud, la DGII y Aduanas no usan WordPress. La apertura se pide por la
+            Ley 200-04.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Tribunal Constitucional — sentencias" estado="activa" etiqueta="Conectada">
+          <p>
+            El buscador de sentencias del Tribunal sirve cada año entero en una
+            página normal, sin paginar: número, fecha, expediente y de qué trata.{" "}
+            <Link href="/constitucional" className="font-medium text-brand-700 hover:underline">
+              Las sentencias del Tribunal
+            </Link>{" "}
+            se leen de ahí con caché de horas para el año en curso y de días para los
+            cerrados. La sentencia en sí es un PDF que se abre desde su ficha en el
+            sitio del Tribunal: no se descarga ni se copia.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Banco Central — remesas, reservas y tasa activa" estado="activa" etiqueta="Conectada">
+          <p>
+            Tres archivos públicos del CDN del Banco Central, sin clave, en el
+            panorama: remesas del mes, reservas internacionales brutas y la tasa de
+            interés activa ponderada. Cada una contra el mismo mes del año anterior
+            (la tasa, contra el mes anterior, en puntos). Los títulos de dos de esos
+            archivos dicen «millones» y las celdas vienen en dólares: se convierte y
+            se dice. Lo que el Banco marca como preliminar, se marca. El índice de
+            actividad (IMAE) del mismo CDN está congelado desde octubre de 2024 y no
+            se muestra.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Aduanas — comercio exterior y recaudación" estado="activa" etiqueta="Conectada">
+          <p>
+            La DGA publica sus series como hojas de cálculo con rutas que cambian en
+            cada publicación; su propio sitio las lista en un índice JSON público, y
+            de ahí se toman cada día: importaciones y exportaciones del mes (valor
+            FOB, en dólares) y lo que cobró Aduanas, con el mismo mes y el acumulado
+            del año anterior. Son cifras preliminares de la DGA, no la balanza
+            comercial del Banco Central. Los títulos dicen «millones» y las celdas no
+            lo están: un valor fuera de rango se descarta, nunca se reescala a ojo.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Organismo Coordinador — generación eléctrica" estado="activa" etiqueta="Conectada">
+          <p>
+            La portada del OC pinta sus gráficos con un servicio JSON público. De él
+            se lee el día de ayer: generación real contra programada, hora pico y
+            cuántas horas registró el OC como «desabastecimiento», que es la huella
+            pública de la falta de energía. Ese servicio a veces devuelve menos de 24
+            horas: se dice sobre cuántas. Un día incompleto no se muestra.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="INDOMET — alertas meteorológicas" estado="activa" etiqueta="Conectada">
+          <p>
+            INDOMET emite sus alertas en el estándar internacional CAP y las publica,
+            en dominio público, en el repositorio que alimenta a los agregadores de
+            alertas. Se leen cada 15 minutos las 20 más recientes y se muestran las
+            vigentes. Son alertas, no el pronóstico.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="INTRANT — muertes en las vías (OPSEVI)" estado="activa" etiqueta="Conectada">
+          <p>
+            El tablero del Observatorio Permanente de Seguridad Vial se alimenta de
+            una interfaz JSON sin clave que su propia página llama. No está
+            documentada: puede cambiar sin aviso, y sus cifras son preliminares y se
+            revisan. El año en curso se compara con los mismos meses del anterior,
+            nunca con el año entero.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Mapeadas en la tercera pasada, aún sin integrar" estado="descartada" etiqueta="Pendientes">
+          <p>
+            Verificadas y sin clave, a la espera de su turno: las estadísticas
+            judiciales mensuales del Poder Judicial (índice de 943 archivos), las
+            sentencias del Tribunal Superior Electoral, los informes de auditoría de
+            la Contraloría, las listas de cumplimiento de la declaración jurada de la
+            Cámara de Cuentas —que volvió a responder—, el subsidio a las
+            distribuidoras eléctricas por la misma API del SIGEF, los mantenimientos
+            programados de Edenorte y Edesur, las llegadas de turistas y el IPC del
+            Banco Central, los indicadores de SIMBAD de la Superintendencia de
+            Bancos, las subastas de Crédito Público, los robos y armas del
+            Ministerio de Interior y la matrícula del MINERD.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Bloqueadas o sin vía hoy (tercera pasada)" estado="bloqueada" etiqueta="Sin acceso">
+          <p>
+            <strong>ONE y SIMV</strong>: desafío de Cloudflare hasta en su robots.{" "}
+            <strong>Superintendencia de Electricidad</strong>, <strong>Agricultura</strong>{" "}
+            e <strong>INFOTEP</strong>: 403 de Cloudflare.{" "}
+            <strong>Archivo de recaudación de la DGII</strong>: 403 (la misma cifra
+            la publica Hacienda). <strong>SNIP</strong>: solo con usuario.{" "}
+            <strong>IDAC y Liga Municipal</strong>: tableros Power BI sin datos
+            legibles. <strong>MOPC</strong>: su interfaz exige un token incrustado en
+            su página, que no se usa. <strong>Buscador de sentencias de la Suprema
+            Corte</strong>: solo responde a un formulario. <strong>Consulta de
+            declaraciones juradas de la Cámara de Cuentas</strong>: error 500. Ninguna
+            se rodea: la vía es institucional (Ley 200-04), y cada una está anotada
+            en la auditoría de fuentes.
           </p>
         </Fuente>
       </div>

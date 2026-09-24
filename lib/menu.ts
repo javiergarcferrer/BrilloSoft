@@ -51,6 +51,7 @@ export const MENU: GrupoMenu[] = [
           { href: "/proveedores", label: "Proveedores", nota: "Quién le vende al Estado" },
           { href: "/estadisticas", label: "Mercado", nota: "Cómo compró en los últimos 30 días" },
           { href: "/planes", label: "Planes de compra", nota: "Lo que cada institución dijo que compraría" },
+          { href: "/historico", label: "Desde 2015", nota: "Todo lo contratado, año por año, y a quién" },
           { href: "/guia", label: "Cómo licitar", nota: "Guía para venderle al Estado" },
         ],
       },
@@ -95,10 +96,11 @@ export const MENU: GrupoMenu[] = [
         ],
       },
       {
-        titulo: "Poder Ejecutivo",
+        titulo: "Ejecutivo y Constitucional",
         seccion: "normativa",
         enlaces: [
           { href: "/normativa", label: "Decretos y leyes", nota: "Lo que se promulga y se firma, por año" },
+          { href: "/constitucional", label: "Tribunal Constitucional", nota: "Sus sentencias, año por año" },
         ],
       },
       {
@@ -127,6 +129,8 @@ export const MENU: GrupoMenu[] = [
           { href: "/instituciones", label: "Instituciones", nota: "Cada ministerio, dirección y ayuntamiento" },
           { href: "/provincias", label: "Provincias", nota: "El Estado visto desde tu provincia" },
           { href: "/gestion", label: "Gestión pública", nota: "El ranking SISMAP de instituciones y municipios" },
+          { href: "/documentos", label: "Biblioteca del Estado", nota: "Informes, memorias y declaraciones que publica cada institución" },
+          { href: "/datos", label: "Datos abiertos", nota: "Todo el catálogo de datos.gob.do en un buscador" },
         ],
       },
       {

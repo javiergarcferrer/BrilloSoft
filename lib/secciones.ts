@@ -94,6 +94,7 @@ export const SECCIONES: Seccion[] = [
       "/estadisticas",
       "/contratos",
       "/planes",
+      "/historico",
       "/guia",
     ],
     vistas: [
@@ -102,6 +103,7 @@ export const SECCIONES: Seccion[] = [
       { href: "/contratos", label: "Contratado" },
       { href: "/proveedores", label: "Proveedores" },
       { href: "/planes", label: "Planes" },
+      { href: "/historico", label: "Desde 2015" },
       { href: "/guia", label: "Guía" },
     ],
     hue: {
@@ -157,8 +159,11 @@ export const SECCIONES: Seccion[] = [
     pregunta: "¿Qué decreta?",
     href: "/normativa",
     descriptor: "Decretos y leyes · Poder Ejecutivo",
-    rutas: ["/normativa"],
-    vistas: [{ href: "/normativa", label: "Decretos y leyes" }],
+    rutas: ["/normativa", "/constitucional"],
+    vistas: [
+      { href: "/normativa", label: "Decretos y leyes" },
+      { href: "/constitucional", label: "Tribunal Constitucional" },
+    ],
     hue: {
       activo: "text-v-normativa",
       barra: "bg-v-normativa",
@@ -273,7 +278,7 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
     etiqueta: "Toda la plataforma",
     href: "/buscar",
     alcance:
-      "Reconoce un RNC, una cita como «Ley 47-20» o un código de proceso y lleva directo; si no, junta instituciones, normativa, cargos de nómina e iniciativas de Diputados, y ofrece seguir en cada vertical.",
+      "Reconoce un RNC, una cita como «Ley 47-20» o un código de proceso y lleva directo; si no, junta instituciones, normativa, obras, cargos de nómina, documentos publicados, datos abiertos e iniciativas de Diputados, y ofrece seguir en cada vertical.",
   },
   {
     etiqueta: "Instituciones",
@@ -312,6 +317,22 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
     alcance: "Títulos de leyes, decretos, reglamentos y resoluciones de la Consultoría Jurídica, del año elegido.",
   },
   {
+    seccion: "normativa",
+    etiqueta: "Tribunal Constitucional",
+    href: "/constitucional",
+    alcance: "Número, expediente y asunto de las sentencias del año elegido; el texto está en el PDF de cada una.",
+  },
+  {
+    etiqueta: "Documentos",
+    href: "/documentos",
+    alcance: "Títulos y nombres de archivo de los documentos que publican las instituciones con biblioteca WordPress abierta; no busca dentro del documento.",
+  },
+  {
+    etiqueta: "Datos abiertos",
+    href: "/datos",
+    alcance: "Título y organización de los conjuntos del catálogo de datos.gob.do; lleva a su ficha en el portal.",
+  },
+  {
     seccion: "nomina",
     etiqueta: "Nómina",
     href: "/nomina",
@@ -336,6 +357,8 @@ export const PAGINAS_PLATAFORMA: { href: string; label: string; descriptor: stri
   { href: "/provincias", label: "Provincias", descriptor: "El Estado visto desde cada provincia" },
   { href: "/obras", label: "Obras públicas", descriptor: "¿Existe la obra y avanza? Proyectos de inversión con su avance" },
   { href: "/gestion", label: "Gestión pública", descriptor: "El ranking SISMAP de instituciones y ayuntamientos" },
+  { href: "/documentos", label: "Biblioteca del Estado", descriptor: "Los documentos que publica cada institución, en un buscador" },
+  { href: "/datos", label: "Datos abiertos", descriptor: "El catálogo entero de datos.gob.do, buscable" },
   { href: "/seguimiento", label: "Mi seguimiento", descriptor: "Lo que sigues y qué cambió desde tu última visita" },
   { href: "/fuentes", label: "Estado de las fuentes", descriptor: "Qué alimenta la plataforma y qué está bloqueado" },
   { href: "/seguridad", label: "Seguridad y cumplimiento", descriptor: "Postura de datos, Ley 172-13 y 200-04" },

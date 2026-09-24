@@ -12,16 +12,16 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 
 | Vertical | Ruta | Fuente | Capa de datos |
 |---|---|---|---|
-| Compras públicas | `/licitaciones` | API abierta de la DGCP + padrón RNC de la DGII (instantánea) | `lib/dgcp.ts`, `lib/rnc.ts` |
+| Compras públicas | `/licitaciones`, `/historico` | API abierta de la DGCP + tablas completas desde 2015 y padrón RNC (instantáneas) | `lib/dgcp.ts`, `lib/historico.ts`, `lib/rnc.ts` |
 | Finanzas públicas | `/finanzas` | SIGEF (instantánea) | `lib/fiscal.ts`, `lib/capitulos.ts` |
 | Congreso Nacional | `/congreso` | SIL Diputados + consultante del Senado | `lib/congreso.ts`, `lib/senado.ts` |
-| Normativa del Ejecutivo | `/normativa` | Consultoría Jurídica (API JSON + instantánea) | `lib/normativa.ts` |
+| Normativa y sentencias | `/normativa`, `/constitucional` | Consultoría Jurídica (API JSON + instantánea); Tribunal Constitucional (HTML) | `lib/normativa.ts`, `lib/tc.ts` |
 | Nómina estatal | `/nomina` | Instantánea de 22 instituciones | `lib/nomina.ts`, `lib/nomina-server.ts` |
 | Deuda pública | `/deuda` y tarjeta en `/` | Crédito Público (XLSX + instantánea con serie) | `lib/deuda.ts` |
 | Instituciones (transversal) | `/instituciones`, `/buscar` | Cruce versionado DGCP ↔ SIGEF ↔ nómina ↔ Consultoría | `lib/instituciones.ts`, `lib/buscar.ts` |
 | Obra pública | `/obras` | MapaInversiones (instantánea) | `lib/obras.ts` |
-| Gestión pública | `/gestion`, fichas | SISMAP (instantánea) | `lib/sismap.ts` |
-| Bolsillo | indicadores para `/` | MICM (portada) y BCRD (XLSX del CDN), en vivo | `lib/combustibles.ts`, `lib/tasa.ts` |
+| Gestión, documentos y datos | `/gestion`, `/documentos`, `/datos` | SISMAP; bibliotecas WordPress de 22 instituciones; catálogo de datos.gob.do (instantáneas) | `lib/sismap.ts`, `lib/biblioteca.ts`, `lib/catalogo.ts` |
+| Indicadores del panorama | tarjetas en `/` | MICM, BCRD (CDN), Aduanas, OC (luz), INDOMET (alertas), OPSEVI (vías), en vivo | `lib/combustibles.ts`, `lib/tasa.ts`, `lib/macro.ts`, `lib/aduanas.ts`, `lib/energia.ts`, `lib/alertas.ts`, `lib/siniestralidad.ts` |
 | Democracia | `/democracia` | Supabase, esquema `democracia` — **la excepción** | `lib/democracia.ts`, `lib/supabase.ts` |
 
 `lib/secciones.ts` es la fuente única de verticales y navegación. `/` es el panorama; `/fuentes` declara

@@ -3,6 +3,9 @@ import { join } from "node:path";
 import { getObras } from "@/lib/obras";
 import { getCombustibles } from "@/lib/combustibles";
 import { getTasa } from "@/lib/tasa";
+import { getResumenHistorico } from "@/lib/historico";
+import { getIndiceBiblioteca } from "@/lib/biblioteca";
+import { getCatalogo } from "@/lib/catalogo";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 
@@ -57,4 +60,38 @@ export async function ResumenTasa() {
   const t = await getTasa();
   if (!t) return <>Ahora mismo el archivo no contestó.</>;
   return <>Último dato: {formatFecha(t.ultimo.fecha)}.</>;
+}
+
+export async function ResumenHistorico() {
+  const d = await getResumenHistorico();
+  if (!d) return <>La instantánea no está disponible ahora mismo.</>;
+  return (
+    <>
+      Instantánea del {formatFecha(d.generado)}: {formatInt(d.contratosLeidos)} contratos y{" "}
+      {formatInt(d.procesosLeidos)} procesos, hasta el {formatFecha(d.corte)}.
+    </>
+  );
+}
+
+export async function ResumenBiblioteca() {
+  const d = await getIndiceBiblioteca();
+  if (!d) return <>El índice no está disponible ahora mismo.</>;
+  const con = d.fuentes.filter((f) => f.documentos > 0).length;
+  return (
+    <>
+      Índice del {formatFecha(d.generado)}: {formatInt(d.total)} documentos de {formatInt(con)}{" "}
+      instituciones.
+    </>
+  );
+}
+
+export async function ResumenCatalogo() {
+  const d = await getCatalogo();
+  if (!d) return <>El catálogo no está disponible ahora mismo.</>;
+  return (
+    <>
+      Catálogo del {formatFecha(d.generado)}: {formatInt(d.total)} conjuntos de{" "}
+      {formatInt(d.organizaciones)} organizaciones.
+    </>
+  );
 }

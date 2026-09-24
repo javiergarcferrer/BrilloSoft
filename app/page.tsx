@@ -46,6 +46,11 @@ import {
 import { MarcaEstado } from "@/components/marca-estado";
 import { Portada } from "@/components/portada";
 import { SeccionBolsillo } from "@/components/fuentes-nuevas/indicadores-bolsillo";
+import { AlertasTiempo } from "@/components/fuentes-nuevas/alertas-tiempo";
+import { SiniestralidadVial } from "@/components/fuentes-nuevas/siniestralidad-vial";
+import { DiaElectrico } from "@/components/fuentes-nuevas/dia-electrico";
+import { IndicadoresMacro } from "@/components/fuentes-nuevas/indicadores-macro";
+import { ComercioExterior } from "@/components/fuentes-nuevas/comercio-exterior";
 
 export const revalidate = 1800;
 
@@ -194,6 +199,29 @@ export default function Panorama() {
 
       {/* Lo que el Estado fija y se paga de bolsillo: combustibles y dólar. */}
       <SeccionBolsillo />
+
+      {/* La economía: remesas, reservas y tasa activa (BCRD); lo que entra y sale por Aduanas. */}
+      <section className="grid gap-4 lg:grid-cols-2" aria-label="Economía y comercio exterior">
+        <Suspense fallback={<Esqueleto className="h-[360px]" />}>
+          <IndicadoresMacro />
+        </Suspense>
+        <Suspense fallback={<Esqueleto className="h-[360px]" />}>
+          <ComercioExterior />
+        </Suspense>
+      </section>
+
+      {/* Lo que el Estado avisa y registra de la calle: la luz, el tiempo y las vías. */}
+      <section className="grid gap-4 lg:grid-cols-3" aria-label="Luz, tiempo y vías">
+        <Suspense fallback={<Esqueleto className="h-[280px]" />}>
+          <DiaElectrico />
+        </Suspense>
+        <Suspense fallback={<Esqueleto className="h-[220px]" />}>
+          <AlertasTiempo />
+        </Suspense>
+        <Suspense fallback={<Esqueleto className="h-[300px]" />}>
+          <SiniestralidadVial />
+        </Suspense>
+      </section>
 
       {/* Señales que exigen atención */}
       <section className="grid gap-4 lg:grid-cols-2">

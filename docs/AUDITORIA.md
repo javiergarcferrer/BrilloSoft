@@ -22,6 +22,13 @@ claves, lectura en vivo con caché.
 > esta primera versión (SIGEF, DGII, DGCP) y cierra los «por mapear». Está al
 > final del documento, en **SEGUNDA PASADA**. Las filas de la tabla de abajo
 > marcadas **↓** quedan superadas por ella.
+>
+> **Tercera pasada: 2026-09-24.** Barrido de todo el Estado en seis frentes
+> (datos.gob.do, macro y finanzas, social, justicia e integridad, energía y
+> territorio, bibliotecas WordPress) sobre más de 120 hosts. Siete fuentes nuevas
+> integradas y una veintena mapeadas. Va después de la segunda, en **TERCERA
+> PASADA** (§G); corrige §4.3 y §B.1 (Cámara de Cuentas ya responde), §5.2
+> (Poder Judicial: cadena TLS incompleta, resoluble) y §5.3 (el TC sí se lee).
 
 ---
 
@@ -277,7 +284,7 @@ tasas) está a un registro de distancia. El costo no es técnico: es la regla
 - ✅ WP con robots abierto y sitemap. Publica informes y nóminas aprobadas;
   formatos por mapear.
 
-### 4.3 Cámara de Cuentas — ❌ WAF
+### 4.3 Cámara de Cuentas — ❌ WAF (corregido: ✅ responde desde 2026-09-24, §G.6)
 
 - ❌ `www.camaradecuentas.gob.do` responde **HTTP 470** (código no estándar de
   bloqueo) con página de 33 KB a cualquier ruta, robots incluido. Las
@@ -311,7 +318,7 @@ tasas) está a un registro de distancia. El costo no es técnico: es la regla
   su propio sitio y formato (los boletines JSON de la noche electoral suelen
   existir pero cambian por elección). Recon dedicada por comicio.
 
-### 5.2 Poder Judicial — ⚠️ matiz importante
+### 5.2 Poder Judicial — ⚠️ matiz importante (cadena TLS incompleta, resoluble: §G.6)
 
 - ❌ `www.poderjudicial.gob.do` **no valida TLS desde este entorno**: «unable
   to get local issuer certificate» — cadena incompleta en el servidor (falta
@@ -321,7 +328,7 @@ tasas) está a un registro de distancia. El costo no es técnico: es la regla
   abierto salvo `/reportePDF/`. Vía viable para estadísticas/portal de
   transparencia judicial.
 
-### 5.3 Tribunal Constitucional — ⚠️ sin mapear
+### 5.3 Tribunal Constitucional — ⚠️ sin mapear (corregido: ✅ integrado, §G.6)
 
 - ✅ Sin robots (404). El buscador de sentencias TC queda por recon dedicada.
 
@@ -1159,3 +1166,209 @@ corte honesto es el último mes con devengado real, no el último mes con filas.
 8. **Solicitar a la OGTIC el cliente OAuth2 de Cuenta Única** (§A.11,
    PLAN-DEMOCRACIA §9.4). Cabe en el mismo oficio que el reporte del token
    del 311 (§A.9).
+
+
+---
+
+# TERCERA PASADA — 2026-09-24
+
+Barrido de todo el Estado para responder «¿qué más se puede leer?», en seis
+frentes a la vez, con el mismo método: robots primero, UA identificable, solo
+GET, ≤6 peticiones por host en el reconocimiento (datos.gob.do, con su
+`Crawl-Delay: 10`, fue la excepción declarada), ningún bloqueo rodeado. Más de
+120 hosts. Los informes crudos de cada frente vivieron en el scratchpad de la
+sesión; lo que sigue es lo que queda verificado.
+
+**Integrado en esta pasada:** historia completa de compras (§G.1), biblioteca de
+documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
+(§G.4), BCRD y Aduanas (§G.5), sentencias del TC (§G.6), muertes en las vías
+(§G.7), generación eléctrica (§G.8). La nómina se amplió por la vía de §A.8.
+
+### G.1 ⭐ DGCP — las tablas de contratos y procesos bajan enteras
+
+§A.12 encontró la tabla de proveedores; sus hermanas hacen lo mismo:
+
+- ✅ `GET https://datosabiertos.dgcp.gob.do/api-dgcp/v1/tablas/contratos?Type=csv`
+  → 200 `text/csv`, **115 MB en 3.5 s**, `Contratos.csv`: **722,825 contratos
+  desde 2015** (código, estado, estado de adjudicación, fecha, valor, moneda,
+  objeto, RPE, razón social, documento). **No trae la unidad de compra.**
+- ✅ `…/tablas/procesos?Type=csv` → 200 `text/csv`, **245 MB en 5.4 s**:
+  **631,103 procesos** con unidad de compra, modalidad, tipo de excepción,
+  estado, monto estimado y URL.
+- ⚠️ Los parámetros `anio` y `semestre` que pinta el portal **se ignoran**: cada
+  tabla baja entera.
+- ✅ **Contrato → institución por prefijo.** El código de contrato empieza por el
+  prefijo de la unidad (`INFOTEP-2026-01420`), el mismo que abre sus procesos.
+  Resolviendo el prefijo contra la tabla de procesos solo cuando un código de
+  unidad reúne >95 % de sus procesos: 803 prefijos, 2 ambiguos (MOPC, MEPYD),
+  **99.2 % de los contratos asignados (94 % del valor)**.
+- ❌→⚠️ **Valores atípicos que son errores de captura:** RD$103,680 millones por
+  ascensores (ADN, 2023), RD$47,444 millones de INABIE a una persona física,
+  dos contratos idénticos de RD$46,514 millones de la DGII por vigilancia. 13
+  contratos ≥ RD$10 mil millones reúnen el 16 % del valor. Se apartan de toda
+  suma y se listan uno a uno (`/historico`).
+- Implementado: `scripts/build-historico.py` → `public/data/historico/`
+  (resumen, por institución, por proveedor en 10 fragmentos; 6.3 MB),
+  `lib/historico.ts`, `/historico` y los bloques «desde 2015» de las fichas.
+
+### G.2 ⭐ Bibliotecas WordPress — un índice de documentos del Estado
+
+- ✅ `GET https://<host>/wp-json/wp/v2/media?media_type=application&per_page=100&_fields=id,date,title,source_url,mime_type`
+  → 200 JSON sin clave en **23 de 44** hosts de instituciones; `X-WP-Total` y
+  `X-WP-TotalPages` en la cabecera. Ningún robots veta `/wp-json`.
+- ⚠️ **`X-WP-Total` sobrestima**: WordPress cuenta en SQL y después descarta los
+  adjuntos cuyo padre no es público. INAPA anuncia 28,488 y deja leer 6;
+  Cultura 9,659 → 74; INDOTEL 18,122 → 1,035. Hay páginas vacías (`[]`) en
+  medio: se recorre hasta `X-WP-TotalPages`, tope 250 por host.
+- ⚠️ El título suele ser el nombre del archivo; `date` es la fecha de subida;
+  `description` no aporta. Declaraciones juradas nominales (Ley 311-14)
+  aparecen entre los PDF: se indexan como documento público que son.
+- ✅ Barrido completo del 2026-09-24: **18,841 documentos de 22 instituciones**
+  (OGTIC 7,276; DIGEPRES 3,013; Ambiente 1,379; MIREX 1,306; MEM 1,217; INDOTEL
+  1,035; Hacienda 1,015…). MIVHED anuncia 785 y no deja leer ninguno.
+- ❌ REST cerrada por plugin (401): SNS, MAP, MIDEREC y MINPRE (este además con
+  `Disallow: /*?` en su robots: fuera). WAF: Agricultura (403 solo en
+  `/wp-json`), INFOTEP, ONE. No WordPress: MOPC, MITUR, MINERD, MSP, MICM,
+  Presidencia (Drupal), DGII (SharePoint), Aduanas y SB (Umbraco), INABIE.
+- No hay lista maestra pública de instituciones con su dominio
+  (`gob.do/instituciones` 404; la REST de map.gob.do es solo para
+  administradores). La lista de hosts vive en el script.
+- Implementado: `scripts/build-documentos.py` → `public/data/documentos/`
+  (3.2 MB), `lib/biblioteca.ts`, `/documentos` y «Lo que publica» en la ficha.
+
+### G.3 datos.gob.do — el catálogo entero se enumera por HTML
+
+- ✅ `/dataset/?q=*:*&sort=name+asc&page=N` recorre el catálogo: 20 tarjetas
+  por página (slug, título, organización, formatos, grupos), 54 páginas,
+  **1,065 conjuntos públicos**; la 60 viene vacía. El rótulo «1199 resultados»
+  no cambia con la consulta (§E.8 sigue en pie).
+- ✅ `/organization/` lista 271 organizaciones con su conteo; `/group/`, 11
+  grupos (929 conjuntos; ~136 sin grupo). ❌ `/sitemap.xml` 404.
+- ⚠️ Las fichas traen autor, fechas, licencia, periodicidad y la tabla de
+  archivos, pero el enlace a veces no es el archivo (Maternidad enlaza a una
+  categoría de Joomla; SIUBEN repite el mismo `id` para CSV y ODS; PGR trae
+  `href=""`). Recorrerlas son 1,065 peticiones, ~3 h 30 min con la espera: no
+  se hace en build.
+- ✅ Archivos verificados en el host de la institución: MICM combustibles
+  2010–2026 (CSV cp1252 `;`, 873 semanas), MEM despacho de generadoras
+  2022–2026 (6,590 filas; `octet-stream`), DGM derechos mineros (1.6 MB; ⚠️ mes
+  y año invertidos en 2,076 filas). ⚠️ OMSA «pasajeros» trae `RECAUDACIONES`.
+- Implementado: `scripts/build-catalogo.py` → `public/data/catalogo.json`,
+  `lib/catalogo.ts`, `/datos`.
+
+### G.4 INDOMET — alertas CAP en dominio público
+
+- ✅ `https://cap-sources.s3.amazonaws.com/do-indomet-es/rss.xml` → 200
+  `text/xml`, 20 ítems, `copyright: public domain`. Cada `<link>` es un XML
+  CAP 1.2 (`application/xml`): `event`, `severity`, `urgency`, `onset`,
+  `expires`, `areaDesc`, polígono. ONAMET es ahora INDOMET.
+- Implementado: `lib/alertas.ts` (índice 15 min, cada alerta 1 día, vigente =
+  no expirada ni cancelada, la reemisión más reciente manda) y la tarjeta del
+  panorama.
+
+### G.5 BCRD y Aduanas — series sin clave
+
+- ✅ BCRD CDN (nombres de archivo del paquete R abierto `databcrd`; el sitio los
+  monta por POST): `sector-externo/documents/Remesas_6.xlsx` (ago-2026 US$1,116.3
+  M; ⚠️ el título dice millones y las celdas vienen en dólares),
+  `reservas_internacionales.xlsx` (brutas US$15,434.2 M; columnas por año
+  variables), `sector-monetario-y-financiero/documents/tbm_activad.xlsx`
+  (14.08 %; filas diarias del mes en curso y «Enero 2022» repetido). ✅ IPC
+  `precios/documents/ipc_base_2019-2020.xls` (BIFF: pide script en build).
+  ⚠️ `imae.xlsx` congelado en oct-2024. ✅ llegadas de turistas
+  `sector-turismo/documents/lleg_total.xls` (BIFF, 1978–jul-2026).
+- ✅ Aduanas: `GET https://www.aduanas.gob.do/umbraco/api/searcher/getpageofdocuments?id=3442`
+  → índice JSON (8 importaciones, 5 exportaciones, 7 recaudación); las rutas
+  `/media/{hash}` cambian en cada publicación. Ago-2026: importaciones FOB
+  US$2,778.4 M, exportaciones US$1,298.3 M, recaudación RD$22,484.7 M;
+  ⚠️ títulos en «millones» con celdas en unidades.
+- ⚠️ DGII: las páginas de estadísticas responden 200 (corrige §A.2) pero los ZIP
+  de `informeRecaudacionMensual` dan 403; la misma cifra la publica Hacienda
+  (`INGRESOS-FISCALES-POR-PRINCIPALES-PARTIDAS-…xlsx`, hojas DGII/DGA/TN).
+- ✅ DIGEPRES: 1,508 XLSX por su WP; balance mensual de la Administración
+  Central 2004–2026 (dice millones, vienen pesos).
+- ✅/⚠️ Superintendencia de Bancos: SIMBAD (`simbad.sb.gob.do`) es un Apache
+  Superset público: `/api/v1/chart/1467/data/?format=json` da la morosidad
+  (1.79 % a julio), 24 meses por gráfico. ⚠️ **Hallazgo de seguridad:** su API
+  pública expone el SQL de cada gráfico y usuarios del personal; se notifica a
+  la SB, no se usa.
+- ✅ Crédito Público: `/Content/subastas/consolidados/2026/02Consolidado.xlsx`.
+- ❌ SIMV y ONE: desafío de Cloudflare hasta en robots. ⚠️ SIPEN: el TLS ya no
+  falla por el proxy; los datos se cargan por JS. Seguros se mudó a `sis.gob.do`.
+- Implementado: `lib/macro.ts`, `lib/aduanas.ts` y sus tarjetas del panorama.
+
+### G.6 Justicia e integridad
+
+- ✅ **Tribunal Constitucional** (robots 404):
+  `GET /consultas/secretar%C3%ADa/sentencias/` sirve el año entero sin paginar
+  (966 filas de 2026, 885 KB): número, fecha, expediente, «Relativo a». Otro año:
+  `?filtery=2012&criteriay=years&size=999999`. La ficha `/sentencias/tc096626`
+  lleva al PDF en `tribunalsitestorage.blob.core.windows.net` (id opaco).
+  Implementado: `lib/tc.ts` y `/constitucional`. Corrige §5.3.
+- ✅ **Cámara de Cuentas vuelve a responder** (corrige §4.3 y §B.1): `www.` → 301
+  al ápex, 200, Joomla. Publica informes de auditoría y **listas de quién
+  presentó la declaración jurada a tiempo, tarde o no la presentó** (no el
+  patrimonio). ❌ `consultadjp.camaradecuentas.gob.do` → 500.
+- ⚠️ **Poder Judicial**: el servidor no envía el intermedio de Sectigo (cadena
+  incompleta, no bloqueo; corrige §5.2). Con él, `poderjudicial.gob.do` es un
+  WordPress con 520 PDF de memorias. ✅ `transparencia.poderjudicial.gob.do/…/BoletinesEstadisticos`
+  enlaza 943 PDF/XLSX de estadísticas judiciales mensuales (último: jul-2026,
+  preliminares). ❌ El buscador de la SCJ (`consultasentenciascj…/Home/GetExpedientes`)
+  solo acepta POST de formulario.
+- ✅ **TSE**: `visorpdf.tse.do/?y=2026` lista sus sentencias por GET (26 en 2026).
+- ⚠️ JCE: seis peticiones sin CAPTCHA; «Organizaciones políticas reconocidas» en
+  PDF. El padrón solo está en Issuu.
+- ✅ Contraloría: `/informes-de-auditorias/` enlaza ~38 PDF; Índice de Control
+  Interno trimestral. PGR: WordPress con 220 PDF.
+- Declaraciones juradas: no hay registro central legible; DIGEIG publica las de
+  sus directivos en PDF (encontrables por la biblioteca, §G.2).
+
+### G.7 Social y seguridad
+
+- ✅ **OPSEVI (INTRANT)**: `opsevi.intrant.gob.do` (sin robots) llama a una API
+  JSON interna sin clave: `/api/national?years=2026` (mensual con nombres de mes
+  en mayúsculas al azar, por tipo de vehículo), `/api/fatalities/provinces?year=`
+  (con nombre de provincia), `/api/summary?years=` (fallecidos, heridos,
+  población). No documentada. Implementado: `lib/siniestralidad.ts` y su
+  tarjeta (año en curso contra los mismos meses del anterior).
+- ✅ MIP: XLSX de robos 2018–2025 (bloques apilados, `#N/D`), armas,
+  naturalizaciones (nombres no predecibles: por su WP). Homicidios solo en JPEG.
+- ✅ MINERD: CSV de matrícula 2015-16…2023-24 (dice UTF-8, es cp1252).
+- ⚠️ TSS: su biblioteca tiene 5 archivos; cotizantes no están. SISALRIL: Plotly
+  Dash por POST. SNS: REST 401. Pro Consumidor: PDF semanal «Precio Justo».
+  INESPRE: datos hasta 2015. ❌ Agricultura (403 CF); Policía Nacional
+  (`Disallow: /*?*`); DIGEPI y Mercados Dominicanos (502 del egreso de este
+  entorno, no de la fuente).
+
+### G.8 Energía, agua y territorio
+
+- ✅ **Organismo Coordinador**: `apps.oc.org.do/wsOCWebsiteChart/Service.asmx/GetGeneracionReprogramadaJSon?Fecha=MM/DD/YYYY`
+  → 24 filas horarias PROGRAMADO/GENERACION/DESVIACION, también días pasados;
+  `GetCentralMarginalPonderadaJSon` da la marginal por hora —«DESABASTECIMIENTO»
+  cuando la oferta no cubre la demanda— y a veces menos de 24 períodos (con
+  «P-7» en vez de planta). Resuelve el «sin datos» de §A.10. Implementado:
+  `lib/energia.ts` y su tarjeta (el día de ayer).
+- ✅ Subsidio a las EDE por la API del SIGEF de `lib/fiscal.ts`:
+  `gastos/transferencias/2025/12/json?seccion=11111&capitulo=0999` (2025:
+  Edeeste RD$45,063 M, Edesur 29,175 M, Edenorte 28,994 M).
+- ✅ Edenorte: RSS semanal de mantenimientos con circuito; Edesur: HTML de la
+  semana. ✅ MIVHED: CSV de licencias de construcción 2022–2026. ✅ CAASD: CSV
+  del último mes de producción de agua.
+- ❌ SIE (403 CF), SNIP (login), IDAC y Liga Municipal (Power BI), MOPC (token
+  embebido en su JS: no se usa). IGN: solo WMS raster. COE: RSS vacío.
+  ⚠️ Hallazgo de seguridad menor: Tomcat por defecto en `gis.caasd.gob.do`.
+
+### G.9 Pendientes que deja esta pasada
+
+1. Estadísticas judiciales (índice + XLSX mensual) y sentencias del TSE.
+2. Cumplimiento de la declaración jurada (Cámara de Cuentas) — solo quién
+   presentó, nunca el patrimonio.
+3. Subsidio eléctrico por el SIGEF en `/finanzas`; mantenimientos de las EDE.
+4. IPC y turismo del BCRD (BIFF: script en build), subastas de Crédito
+   Público, SIMBAD.
+5. Robos y armas (MIP), matrícula (MINERD), licencias (MIVHED).
+6. Fichas de datos.gob.do (3 h 30 min): solo si una rutina programada lo asume.
+7. Institucional (Ley 200-04 y divulgación responsable): SB (SQL y usuarios
+   expuestos en SIMBAD), CAASD (Tomcat), Cámara de Cuentas (500), SCJ (GET en
+   su buscador), PJ (cadena TLS), SNS/MAP/MIDEREC (REST cerrada),
+   Agricultura/INFOTEP/SIE/SIMV/ONE (WAF).

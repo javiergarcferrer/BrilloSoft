@@ -14,6 +14,7 @@ import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import AccionesFicha from "@/components/acciones-ficha";
 import { Termino } from "@/components/termino";
 import { FichaRnc } from "@/components/fuentes-nuevas/ficha-rnc";
+import { HistoriaDeProveedor } from "@/components/fuentes-nuevas/historia-compras";
 import { diasEntre, getRegistroTributario } from "@/lib/rnc";
 
 /** Días o años, en llano. */
@@ -320,6 +321,8 @@ export default async function ProveedorPage({
       )}
 
       <FichaRnc rpe={rpe} />
+
+      <HistoriaDeProveedor rpe={rpe} />
 
       {historial.porAnio.length > 1 && (
         <Card as="section" className="p-6">

@@ -1,7 +1,8 @@
 /**
  * Una serie de saldos en barras verticales, pintada en el servidor.
  *
- * Una sola serie y un solo tono (el de la vertical): no hay leyenda que leer,
+ * Una sola serie y un solo tono (el de la vertical, que se pasa como clase
+ * literal para que Tailwind la vea): no hay leyenda que leer,
  * el título de la tarjeta la nombra. Cada barra lleva su `<title>` —el
  * navegador lo muestra al apuntarla— y la etiqueta accesible del gráfico dice
  * el primer y el último valor; la tabla completa va aparte, desplegable, para
@@ -13,11 +14,14 @@ export function Barras({
   puntos,
   etiqueta,
   alto = 180,
+  tono = "fill-v-finanzas",
 }: {
   puntos: { clave: string; valor: number; titulo: string; marca?: string }[];
   /** Qué dice el gráfico, para quien no lo ve. */
   etiqueta: string;
   alto?: number;
+  /** Clase de relleno de la vertical: `fill-v-finanzas`, `fill-v-compras`. */
+  tono?: "fill-v-finanzas" | "fill-v-compras";
 }) {
   const n = puntos.length;
   if (n === 0) return null;
@@ -46,7 +50,7 @@ export function Barras({
               width={paso - 2}
               height={h}
               rx={1}
-              className="fill-v-finanzas"
+              className={tono}
             >
               <title>{p.titulo}</title>
             </rect>

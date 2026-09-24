@@ -15,7 +15,7 @@ import {
 import { EstadoVacio } from "@/components/estado-vacio";
 import Plegable from "@/components/plegable";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
-import { Barras } from "./barras";
+import { Barras } from "@/components/barras";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/deuda" },
