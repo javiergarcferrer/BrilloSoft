@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Loading() {
   return (
     <Cargando className="space-y-5">
-      <Esqueleto className="h-[26rem] border-transparent bg-ink/90 sm:h-80" />
+      <Esqueleto className="h-[34rem] border-transparent bg-ink/90 sm:h-80" />
       <div className="overflow-hidden rounded-lg border border-hairline bg-surface">
         <div className="flex flex-wrap gap-2 px-5 py-4 sm:gap-1.5 sm:px-6">
           {Array.from({ length: 5 }).map((_, i) => (
