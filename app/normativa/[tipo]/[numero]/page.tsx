@@ -59,7 +59,6 @@ export default async function NormaPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl">
       <Ruta seccion="normativa" actual={`${tipo} ${norma.numero}`} />
-      <AccionesFicha className="mt-2" tipo="norma" id={`${slug}/${numero}`} titulo={`${tipo} ${norma.numero}: ${desdeMayusculas(norma.titulo)}`} href={`/normativa/${slug}/${numero}`} />
 
       <header className="mt-1 sm:mt-3">
         <p className="font-mono text-sm font-semibold tabular-nums text-ink">
@@ -77,6 +76,7 @@ export default async function NormaPage({ params }: Props) {
             .join(" · ")}
         </p>
       </header>
+      <AccionesFicha className="mt-3" tipo="norma" id={`${slug}/${numero}`} titulo={`${tipo} ${norma.numero}: ${desdeMayusculas(norma.titulo)}`} href={`/normativa/${slug}/${numero}`} />
 
       {explicacion && (
         <Card as="section" className="mt-5 p-5">

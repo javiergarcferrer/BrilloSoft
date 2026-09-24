@@ -56,7 +56,6 @@ export default async function InstitucionFiscalPage({
   return (
     <div className="space-y-5">
       <Ruta seccion="finanzas" actual={`Capítulo ${i.codigo}`} />
-      <AccionesFicha className="mt-2" tipo="capitulo" id={i.codigo} titulo={i.nombreLegible} href={`/finanzas/${i.codigo}`} />
 
       <Card as="section" className="p-5 sm:p-6">
         <div className="rotulo text-ink-soft">
@@ -68,6 +67,7 @@ export default async function InstitucionFiscalPage({
         <p className="mt-1.5 text-sm text-ink-soft">
           Ejecución de {fiscal.anio}, con corte a {etiquetaCorte(fiscal.mesCorte, fiscal.anio)}.
         </p>
+        <AccionesFicha className="mt-3" tipo="capitulo" id={i.codigo} titulo={i.nombreLegible} href={`/finanzas/${i.codigo}`} />
 
         {/*
           «RD$ 330.0 mil millones» no cabe en una casilla de media pantalla: a

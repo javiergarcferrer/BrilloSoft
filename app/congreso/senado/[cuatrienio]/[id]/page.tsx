@@ -72,7 +72,6 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl">
       <Ruta seccion="congreso" padre={{ href: "/congreso/senado", label: "Senado" }} actual={`Expediente ${ficha.numero?.completo ?? ficha.id}`} />
-      <AccionesFicha className="mt-2" tipo="expediente-senado" id={`${ficha.cuatrienio}/${ficha.id}`} titulo={ficha.titulo} href={`/congreso/senado/${ficha.cuatrienio}/${ficha.id}`} situacion={{ condicion: ficha.condicion, estadoActual: ficha.estadoActual, promulgada: ficha.promulgada, perimida: ficha.perimida }} />
 
       <header className="mt-1 sm:mt-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -89,6 +88,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
           {ficha.titulo}
         </h1>
+        <AccionesFicha className="mt-3" tipo="expediente-senado" id={`${ficha.cuatrienio}/${ficha.id}`} titulo={ficha.titulo} href={`/congreso/senado/${ficha.cuatrienio}/${ficha.id}`} situacion={{ condicion: ficha.condicion, estadoActual: ficha.estadoActual, promulgada: ficha.promulgada, perimida: ficha.perimida }} />
 
         {ficha.tituloModificado && (
           <div className="mt-3 rounded-lg border-l-[3px] border-brand-500 bg-surface py-3 pl-4 pr-3">
