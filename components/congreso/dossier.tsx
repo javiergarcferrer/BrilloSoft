@@ -3,8 +3,8 @@ import { IconExternal, IconLayers } from "@/components/icons";
 import {
   ETIQUETA_RELACION,
   numeroDeNorma,
+  enQuePunto,
   queEs,
-  queSigue,
   referenciasNormativas,
   type ReferenciaNorma,
 } from "@/lib/legislacion";
@@ -23,6 +23,13 @@ interface Props {
   tituloModificado?: string | null;
   tipo: string | null;
   condicion: string | null;
+  /**
+   * El estado del último trámite. La condición es gruesa —una ley promulgada
+   * sigue diciendo «APROBADO»— y este es el dato fino.
+   */
+  estado?: string | null;
+  /** De qué cámara partió: decide si «aprobada aquí» deja pendiente la otra. */
+  camaraOrigen?: string | null;
   materia?: string | null;
   proponente?: string | null;
   /** Número con que se promulgó («136-15»), si completó el trámite. */
@@ -51,6 +58,8 @@ export default async function Dossier({
   tituloModificado,
   tipo,
   condicion,
+  estado,
+  camaraOrigen,
   materia,
   proponente,
   promulgadaComo,
@@ -70,7 +79,17 @@ export default async function Dossier({
   const ley = await resolverNorma("Ley", numeroDeNorma(promulgadaComo));
 
   const esto = ley ? null : queEs(tipo);
-  const sigue = queSigue(condicion);
+  // «En qué punto está» sale del punto más avanzado que se conoce, no de la
+  // condición sola: si la ley ya resolvió en la Consultoría o la cámara guarda
+  // su número de promulgación, la pieza terminó, diga lo que diga la condición.
+  const sigue = enQuePunto({
+    condicion,
+    estado,
+    promulgada: Boolean(ley || promulgadaComo),
+    numPromulgacion: ley ? `Ley ${ley.numero}` : promulgadaComo,
+    tipo,
+    camaraOrigen,
+  });
   if (!esto && !sigue && !ley && citas.length === 0 && !materia && !proponente) {
     return null;
   }
