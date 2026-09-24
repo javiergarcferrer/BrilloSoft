@@ -27,9 +27,10 @@ validado. Un 401/403 no se reintenta ni se rodea: se anota como bloqueado.
 
 No se copia ningún archivo: el índice guarda título, fecha, tipo y la URL
 original, y la plataforma enlaza a ella. Las declaraciones juradas de
-patrimonio que algunas instituciones publican por mandato de la Ley 311-14 se
-indexan como cualquier otro documento público: son el núcleo de lo que un
-ciudadano necesita vigilar.
+patrimonio que algunas instituciones publican por mandato de la Ley 311-14
+**se excluyen por título** (`DECLARACION`) hasta que el dueño decida si un
+índice buscable por nombre de funcionario cabe en la Ley 172-13
+(docs/DECISIONES.md): el documento sigue en el sitio de la institución.
 
 Uso:
     python3 scripts/build-documentos.py
@@ -89,6 +90,7 @@ TIPOS = {
     "application/msword": "doc",
 }
 PRUEBA = re.compile(r"^(documento de )?prueba\b|^test\b", re.I)
+DECLARACION = re.compile(r"declaraci[oó]n(es)?[\s_-]*jurada|\bDJP\b", re.I)
 
 
 def pedir(url: str, tipo: str) -> tuple[int, dict, bytes]:
@@ -113,27 +115,44 @@ def pedir(url: str, tipo: str) -> tuple[int, dict, bytes]:
 
 
 def robots_permite(host: str) -> tuple[bool, str]:
+    """Reglas del grupo `User-agent: *` (varias líneas User-agent seguidas
+    forman un solo grupo; `Allow` más largo gana a `Disallow`). Un 404 es «sin
+    reglas»; un robots que no se pudo leer por otra causa salta el host."""
     try:
         estado, _, cuerpo = pedir(f"https://{host}/robots.txt", "text/")
-    except Exception:  # noqa: BLE001 — sin robots legible se trata como sin reglas
-        return True, "robots ilegible"
+    except Exception as e:  # noqa: BLE001
+        return False, f"robots ilegible ({e})"
+    if estado == 404:
+        return True, "sin robots"
     if estado != 200:
-        return True, f"robots {estado}"
-    reglas, aplica = [], False
+        return False, f"robots {estado}"
+    reglas: list[tuple[str, str]] = []
+    agentes: list[str] = []
+    en_reglas = False
     for linea in cuerpo.decode("utf-8", "replace").splitlines():
         linea = linea.split("#")[0].strip()
         if ":" not in linea:
             continue
         k, v = (x.strip() for x in linea.split(":", 1))
-        if k.lower() == "user-agent":
-            aplica = v == "*"
-        elif aplica and k.lower() == "disallow" and v:
-            reglas.append(v)
+        k = k.lower()
+        if k == "user-agent":
+            if en_reglas:
+                agentes, en_reglas = [], False
+            agentes.append(v)
+        elif k in ("allow", "disallow"):
+            en_reglas = True
+            if "*" in agentes and v:
+                reglas.append((k, v))
     muestra = "/wp-json/wp/v2/media?media_type=application"
-    for r in reglas:
+
+    def casa(r: str) -> int:
         patron = "^" + re.escape(r).replace(r"\*", ".*").replace(r"\$", "$")
-        if re.match(patron, muestra):
-            return False, f"robots veta «{r}»"
+        return len(r) if re.match(patron, muestra) else -1
+
+    mejor_allow = max((casa(v) for k, v in reglas if k == "allow"), default=-1)
+    peor = max(((casa(v), v) for k, v in reglas if k == "disallow"), default=(-1, ""))
+    if peor[0] >= 0 and peor[0] > mejor_allow:
+        return False, f"robots veta «{peor[1]}»"
     return True, "robots permite"
 
 
@@ -175,7 +194,7 @@ def barrer(host: str) -> dict:
                 continue
             titulo = html.unescape(re.sub(r"<[^>]+>", "", (m.get("title") or {}).get("rendered", ""))).strip()
             titulo = re.sub(r"\s+", " ", titulo) or url_doc.rsplit("/", 1)[-1]
-            if PRUEBA.search(titulo):
+            if PRUEBA.search(titulo) or DECLARACION.search(titulo) or DECLARACION.search(url_doc):
                 continue
             vistos.add(url_doc)
             salida["docs"].append([titulo[:240], (m.get("date") or "")[:10], tipo, url_doc])

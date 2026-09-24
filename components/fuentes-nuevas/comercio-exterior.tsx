@@ -41,7 +41,7 @@ function cambio(actual: number, anterior: number): string {
 const FIGURAS = [
   { clave: "importaciones", etiqueta: "Importaciones", unidad: "valor FOB, en dólares" },
   { clave: "exportaciones", etiqueta: "Exportaciones", unidad: "valor FOB, en dólares" },
-  { clave: "recaudacion", etiqueta: "Lo que cobró Aduanas", unidad: "recaudación, en pesos" },
+  { clave: "recaudacion", etiqueta: "Lo que cobró Aduanas para el fondo general", unidad: "recaudación «Fondo 100», en pesos" },
 ] as const;
 
 export async function ComercioExterior() {

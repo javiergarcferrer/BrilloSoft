@@ -59,7 +59,7 @@ def bajar(url: str) -> str:
 def limpio(s: str) -> str:
     s = html.unescape(re.sub(r"<[^>]+>", " ", s))
     s = re.sub(r"\s+", " ", s).strip()
-    return s.strip("“”\"' ").rstrip(".").strip("“”\"' ")
+    return s.strip("“”❝❞\"' ").rstrip(".").strip("“”❝❞\"' ")
 
 
 def tarjetas(pagina: str) -> list[dict]:

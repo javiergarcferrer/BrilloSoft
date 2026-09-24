@@ -24,12 +24,12 @@ export async function DocumentosDeInstitucion({ uc }: { uc: number }) {
       </p>
       <ol className="mt-3 divide-y divide-hairline">
         {r.docs.map((d) => (
-          <li key={d.url} className="py-2.5">
+          <li key={d.url} className="relative py-2.5">
             <a
               href={d.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block text-sm leading-snug text-ink [overflow-wrap:anywhere] hover:text-brand-700 hover:underline"
+              className="block text-sm leading-snug text-ink [overflow-wrap:anywhere] after:absolute after:inset-0 hover:text-brand-700"
             >
               {d.titulo}
             </a>

@@ -129,7 +129,7 @@ export const MENU: GrupoMenu[] = [
           { href: "/instituciones", label: "Instituciones", nota: "Cada ministerio, dirección y ayuntamiento" },
           { href: "/provincias", label: "Provincias", nota: "El Estado visto desde tu provincia" },
           { href: "/gestion", label: "Gestión pública", nota: "El ranking SISMAP de instituciones y municipios" },
-          { href: "/documentos", label: "Biblioteca del Estado", nota: "Informes, memorias y declaraciones que publica cada institución" },
+          { href: "/documentos", label: "Biblioteca del Estado", nota: "Informes, memorias y estadísticas que publica cada institución" },
           { href: "/datos", label: "Datos abiertos", nota: "Todo el catálogo de datos.gob.do en un buscador" },
         ],
       },

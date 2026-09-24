@@ -8,13 +8,13 @@ import { getCatalogo, hrefConjunto } from "@/lib/catalogo";
 import { formatPesos } from "@/lib/format";
 import { buscarInstituciones, hrefInstitucion } from "@/lib/instituciones";
 import { buscarIniciativas, desdeMayusculas, marcaDeIniciativa, normalizarIniciativa } from "@/lib/congreso";
-import { formatFecha } from "@/lib/format";
+import { formatFecha, hace } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { BUSQUEDAS } from "@/lib/secciones";
 import { BuscadorUrl } from "@/components/buscador-url";
 import { Card, CardTitle } from "@/components/ui/card";
 import { EsqueletoFilas } from "@/components/esqueleto";
-import { IconArrowRight } from "@/components/icons";
+import { IconArrowRight, IconExternal } from "@/components/icons";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/buscar" },
@@ -143,7 +143,7 @@ export default async function BuscarPage({
           <ul className="divide-y divide-hairline">
             {documentos?.docs.slice(0, 6).map((d) => (
               <li key={d.url}>
-                <Fila href={d.url} titulo={d.titulo} detalle={`${d.tipo.toUpperCase()} · ${nombreFuente(d.host)}${d.fecha ? ` · subido el ${formatFecha(d.fecha)}` : ""}`} />
+                <Fila externo href={d.url} titulo={d.titulo} detalle={`${d.tipo.toUpperCase()} · ${nombreFuente(d.host)}${d.fecha ? ` · subido ${hace(d.fecha) ?? `el ${formatFecha(d.fecha)}`}` : ""}`} />
               </li>
             ))}
           </ul>
@@ -166,7 +166,7 @@ export default async function BuscarPage({
           <ul className="divide-y divide-hairline">
             {conjuntos.slice(0, 6).map((c) => (
               <li key={c.slug}>
-                <Fila href={hrefConjunto(c.slug)} titulo={c.titulo} detalle={`${c.org} · ${c.formatos.slice(0, 3).join(", ")}`} />
+                <Fila externo href={hrefConjunto(c.slug)} titulo={c.titulo} detalle={`${c.org} · ${c.formatos.slice(0, 3).join(", ")}`} />
               </li>
             ))}
           </ul>
@@ -357,18 +357,37 @@ function SinCoincidencias({ q, donde }: { q: string; donde: string[] }) {
   );
 }
 
-function Fila({ href, titulo, detalle }: { href: string | null; titulo: string; detalle?: string }) {
+function Fila({
+  href,
+  titulo,
+  detalle,
+  externo = false,
+}: {
+  href: string | null;
+  titulo: string;
+  detalle?: string;
+  /** Un archivo o una ficha en el sitio de otra institución: pestaña nueva y su icono. */
+  externo?: boolean;
+}) {
+  const Icono = externo ? IconExternal : IconArrowRight;
   const cuerpo = (
     <>
       <span className="min-w-0 flex-1">
-        <span className="line-clamp-2 block text-sm leading-snug text-ink group-hover:text-brand-700">
+        <span className="line-clamp-2 block text-sm leading-snug text-ink [overflow-wrap:anywhere] group-hover:text-brand-700">
           {titulo}
         </span>
         {detalle && <span className="mt-0.5 block text-xs text-ink-soft">{detalle}</span>}
       </span>
-      {href && <IconArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-ink-soft" />}
+      {href && <Icono className="mt-0.5 h-4 w-4 shrink-0 text-ink-soft" />}
     </>
   );
+  if (href && externo) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="group flex min-h-11 items-start gap-3 py-2.5">
+        {cuerpo}
+      </a>
+    );
+  }
   return href ? (
     <Link href={href} className="group flex min-h-11 items-start gap-3 py-2.5">
       {cuerpo}

@@ -202,10 +202,10 @@ export default function Panorama() {
 
       {/* La economía: remesas, reservas y tasa activa (BCRD); lo que entra y sale por Aduanas. */}
       <section className="grid gap-4 lg:grid-cols-2" aria-label="Economía y comercio exterior">
-        <Suspense fallback={<Esqueleto className="h-[360px]" />}>
+        <Suspense fallback={<Esqueleto className="h-[780px] sm:h-[420px]" />}>
           <IndicadoresMacro />
         </Suspense>
-        <Suspense fallback={<Esqueleto className="h-[360px]" />}>
+        <Suspense fallback={<Esqueleto className="h-[780px] sm:h-[420px]" />}>
           <ComercioExterior />
         </Suspense>
       </section>

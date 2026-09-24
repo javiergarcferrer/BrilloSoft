@@ -20,17 +20,21 @@ usuario: esto corre en build.
 la unidad de compra (`INFOTEP-2026-01420`), el mismo que abre los códigos de
 sus procesos (`ITLA-DAF-CM-2026-0050`). El prefijo se resuelve contra la
 tabla de procesos solo si un único código de unidad reúne más del 95 % de sus
-procesos; así se asigna el 99.2 % de los contratos (94 % del valor). Los dos
-prefijos ambiguos (MOPC, MEPYD) y los códigos viejos `DO1.PCCNTR.*` quedan
-«sin institución asignada» y se cuentan como tales: nunca se adivina.
+procesos; así se asigna el 99.2 % de los contratos pero solo el ~91.5 % del
+valor, porque el prefijo más grande que queda fuera es el del MOPC (lo
+comparte con la OPRET: 82 % / 18 % de sus procesos). Los prefijos ambiguos y
+los códigos viejos `DO1.PCCNTR.*` quedan «sin institución asignada», se
+cuentan y se nombran (`sinAsignar`) con su monto: nunca se adivina.
 
-**Lo que se suma.** Solo contratos en pesos (los 280 en US$, € y £ se
-cuentan aparte) y no cancelados. **Atípicos:** un contrato de RD$10 mil
-millones o más no entra en ninguna suma y se lista con nombre y apellido.
-Son 13 y reúnen el 16 % del valor, y varios son errores de captura evidentes
-(RD$103,680 millones por ascensores; RD$47,444 millones de INABIE a una
-persona física). Sumarlos daría la cifra creíble y falsa que §D prohíbe; no
-sumarlos sin decirlo escondería lo que el registro publica. Se muestran.
+**Lo que se suma.** Solo contratos en pesos (los ~270 en US$, € y £ se
+cuentan aparte) y no cancelados. **Atípicos:** un contrato vigente o cerrado
+de RD$10 mil millones o más no entra en ninguna suma y se lista con nombre y
+apellido (13 el 2026-09-24, ~16 % del valor). Algunos parecen errores de
+captura (RD$10,000,000,001 exactos por un servicio de Cultura); otros pueden
+ser obras reales (la Autopista del Ámbar, la línea 2 del teleférico). Sin el
+expediente no se distinguen: sumarlos podría dar la cifra creíble y falsa que
+§D prohíbe, y esconderlos callaría lo que el registro publica. Cada ficha de
+institución y de proveedor dice además cuántos de los suyos quedaron fuera.
 
 Sin teléfonos ni correos: estas tablas no los traen, y de todas formas no
 se leerían (§E.6).
@@ -144,6 +148,10 @@ def main() -> None:
     otras_monedas = collections.Counter()
     cancelados = 0
     sin_uc = 0
+    sin_uc_monto = 0.0
+    sin_asignar: dict[str, list] = collections.defaultdict(lambda: [0, 0.0])
+    atip_uc: dict[str, list] = collections.defaultdict(lambda: [0, 0.0])
+    atip_rpe: dict[str, list] = collections.defaultdict(lambda: [0, 0.0])
     corte = ""
     n_contratos = 0
     for r in csv.DictReader(io.StringIO(t_contratos)):
@@ -167,6 +175,12 @@ def main() -> None:
         rpe = (r.get("RPE") or "").strip()
         razon = " ".join((r.get("RAZON_SOCIAL") or "").split())
         if valor >= ATIPICO:
+            if uc:
+                atip_uc[uc][0] += 1
+                atip_uc[uc][1] += valor
+            if rpe.isdigit():
+                atip_rpe[rpe][0] += 1
+                atip_rpe[rpe][1] += valor
             atipicos.append({
                 "codigo": codigo, "fecha": fecha, "valor": round(valor), "estado": estado,
                 "rpe": rpe or None, "proveedor": razon, "uc": int(uc) if uc else None,
@@ -186,6 +200,10 @@ def main() -> None:
         else:
             a["sinUc"] += 1
             sin_uc += 1
+            sin_uc_monto += valor
+            sp = sin_asignar["DO1 (códigos antiguos)" if codigo.startswith("DO1.") else codigo.split("-")[0]]
+            sp[0] += 1
+            sp[1] += valor
         if rpe.isdigit():
             p = prov.get(rpe)
             if p is None:
@@ -224,6 +242,12 @@ def main() -> None:
         "cancelados": cancelados,
         "otrasMonedas": dict(otras_monedas),
         "sinInstitucion": sin_uc,
+        "sinInstitucionMonto": round(sin_uc_monto),
+        "sinAsignar": [
+            {"prefijo": k, "contratos": v[0], "monto": round(v[1]),
+             "unidades": [nombres.get(u, u) for u, _ in por_prefijo.get(k, collections.Counter()).most_common(3)]}
+            for k, v in sorted(sin_asignar.items(), key=lambda kv: -kv[1][1])[:10]
+        ],
         "prefijosAmbiguos": sorted(ambiguos),
         "umbralAtipico": ATIPICO,
         "anios": [
@@ -250,7 +274,7 @@ def main() -> None:
     # Por institución: serie anual [año, contratos, monto, procesos] y sus
     # principales proveedores [rpe, nombre, contratos, monto].
     por_inst = {}
-    for uc in set(inst) | set(proc_uc_anio):
+    for uc in set(inst) | set(proc_uc_anio) | set(atip_uc):
         i = inst.get(uc)
         ys = sorted(set(i["anios"] if i else []) | set(proc_uc_anio.get(uc, {})))
         serie = [[y, i["anios"][y][0] if i and y in i["anios"] else 0,
@@ -262,6 +286,7 @@ def main() -> None:
             "serie": serie,
             "top": [[rpe, prov[rpe]["nombre"] if rpe in prov else "", v[0], round(v[1])] for rpe, v in top],
             "proveedores": len(i["prov"]) if i else 0,
+            "atipicos": [atip_uc[uc][0], round(atip_uc[uc][1])] if uc in atip_uc else None,
         }
     (SALIDA / "instituciones.json").write_text(
         json.dumps({"generado": generado, "corte": corte, "filas": por_inst},
@@ -278,6 +303,7 @@ def main() -> None:
             "s": [[y, v[0], round(v[1])] for y, v in sorted(p["anios"].items())],
             "c": [[int(uc), v[0], round(v[1])] for uc, v in clientes[:TOP_CLIENTES]],
             "k": len(clientes),
+            "a": [atip_rpe[rpe][0], round(atip_rpe[rpe][1])] if rpe in atip_rpe else None,
         }
     for dgt, filas in fragmentos.items():
         (SALIDA / "proveedores" / f"{dgt}.json").write_text(

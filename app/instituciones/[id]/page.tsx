@@ -23,6 +23,8 @@ import { Ruta } from "@/components/ruta";
 import { ObrasDeInstitucion } from "@/components/fuentes-nuevas/obras-de-institucion";
 import { SismapDeInstitucion } from "@/components/fuentes-nuevas/sismap-de-institucion";
 import { HistoriaDeInstitucion } from "@/components/fuentes-nuevas/historia-compras";
+import { historiaDeInstitucion, prefijoSinAsignar } from "@/lib/historico";
+import { documentosDeInstitucion } from "@/lib/biblioteca";
 import { DocumentosDeInstitucion } from "@/components/fuentes-nuevas/documentos-de-institucion";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -81,7 +83,7 @@ export default async function InstitucionPage({ params }: Props) {
   const i = institucionDeSlug((await params).id);
   if (!i) notFound();
 
-  const [fiscal, nomina, resumenNomina, normas, obras, sismap] = await Promise.all([
+  const [fiscal, nomina, resumenNomina, normas, obras, sismap, historia, sinAsignar, documentos] = await Promise.all([
     i.capitulo ? getInstitucionFiscal(i.capitulo) : null,
     i.nomina ? getNominaDeInstitucion(i.nomina) : null,
     // Solo para decir de cuántas se lee la nómina cuando esta no está.
@@ -89,7 +91,11 @@ export default async function InstitucionPage({ params }: Props) {
     normasDeInstitucion(i.consultoria),
     obrasDeInstitucion(i.id),
     sismapDeInstitucion(i.id),
+    historiaDeInstitucion(i.id),
+    prefijoSinAsignar(i.nombre),
+    documentosDeInstitucion(i.id),
   ]);
+  const conHistoria = Boolean(historia?.historia.serie.some((f) => f[1] > 0)) || Boolean(sinAsignar);
   const hermanas = i.capitulo ? institucionesDelCapitulo(i.capitulo).filter((h) => h.id !== i.id) : [];
   const nObras = obras?.obras.length ?? 0;
 
@@ -101,10 +107,11 @@ export default async function InstitucionPage({ params }: Props) {
   const indice = [
     { id: "presupuesto", texto: i.capitulo ? `Presupuesto · cap. ${i.capitulo}` : "Presupuesto" },
     { id: "compras", texto: `Compras · DGCP ${i.id}` },
-    { id: "historia", texto: "Desde 2015" },
+    conHistoria && { id: "historia", texto: "Desde 2015" },
     nObras > 0 && { id: "obras", texto: `Obras · ${formatInt(nObras)}` },
     sismap && { id: "gestion", texto: "Gestión" },
     { id: "nomina", texto: nomina ? "Nómina" : "Nómina · sin datos" },
+    documentos && { id: "documentos", texto: `Documentos · ${formatInt(documentos.fuente.documentos)}` },
     { id: "decretos", texto: normas.docs.length > 0 ? `Normativa · ${formatInt(normas.docs.length)}` : "Normativa" },
     { id: "plan", texto: "Plan de compras" },
   ].filter((e): e is { id: string; texto: string } => Boolean(e));
@@ -160,7 +167,7 @@ export default async function InstitucionPage({ params }: Props) {
         </Suspense>
       </div>
 
-      <HistoriaDeInstitucion uc={i.id} />
+      <HistoriaDeInstitucion uc={i.id} nombre={i.nombre} />
 
       {nObras > 0 && (
         <div id="obras">

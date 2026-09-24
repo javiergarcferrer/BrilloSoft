@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/documentos" },
   title: "Biblioteca del Estado",
   description:
-    "Un buscador sobre los documentos que publican las instituciones del Estado dominicano en sus sitios: informes, memorias, estadísticas, nóminas, declaraciones juradas, resoluciones.",
+    "Un buscador sobre los documentos que publican las instituciones del Estado dominicano en sus sitios: informes, memorias, estadísticas, nóminas, resoluciones.",
 };
 
 export const revalidate = 86400;
@@ -102,9 +102,10 @@ export default async function DocumentosPage({
         titulo="¿Qué ha publicado el Estado?"
         descripcion={
           <>
-            Informes, memorias, estadísticas, nóminas, resoluciones y declaraciones
-            juradas que las instituciones suben a sus propios sitios, en un solo
-            buscador. Aquí no se copia nada: cada resultado abre el archivo en el
+            Informes, memorias, estadísticas, nóminas y resoluciones que las
+            instituciones suben a sus propios sitios, en un solo buscador. Las
+            declaraciones juradas de patrimonio quedan fuera hasta decidir si un
+            buscador por nombre de funcionario es proporcionado. Aquí no se copia nada: cada resultado abre el archivo en el
             sitio de la institución. El título es el que ella le puso —a veces, el
             nombre del archivo— y la fecha es la de subida, no la del documento.
           </>
@@ -113,14 +114,14 @@ export default async function DocumentosPage({
         <PortadaCifras>
           <PortadaCifra etiqueta="Documentos indexados" valor={formatInt(indice.total)} destacar />
           <PortadaCifra etiqueta="Instituciones" valor={formatInt(conDocs.length)} />
-          <PortadaCifra etiqueta="Sin acceso" valor={formatInt(bloqueadas.length)} />
+          <PortadaCifra etiqueta="Consultadas sin documentos legibles" valor={formatInt(bloqueadas.length)} />
         </PortadaCifras>
       </Portada>
 
       <Suspense>
         <BuscadorUrl
           etiqueta="Buscar en los documentos"
-          placeholder="Memoria 2025, nómina julio, declaración jurada, auditoría…"
+          placeholder="Memoria 2025, nómina julio, auditoría, presupuesto…"
           ayuda={`Busca todas las palabras en el título y el nombre del archivo de ${formatInt(indice.total)} documentos, sin distinguir tildes.`}
         />
       </Suspense>
@@ -144,7 +145,12 @@ export default async function DocumentosPage({
         ))}
       </NavFiltros>
 
-      {!r || r.total === 0 ? (
+      {!r ? (
+        <EstadoVacio variante="caida" titulo="No pudimos leer el índice de documentos">
+          La copia del índice no respondió. No es que no haya documentos: es que no
+          pudimos mirar. Cada institución los sigue teniendo en su sitio.
+        </EstadoVacio>
+      ) : r.total === 0 ? (
         <EstadoVacio titulo={q ? `Ningún título coincide con «${q}»` : "No hay documentos con este filtro"}>
           Prueba con menos palabras, otra institución u otro tipo. Recuerda que se busca
           en el título que puso la institución, no dentro del documento.
@@ -234,7 +240,7 @@ export default async function DocumentosPage({
 
       <p className="text-xs leading-relaxed text-ink-soft">
         Fuera de este índice por decisión de cada institución, y no por falta de
-        intento: Salud Pública (SNS), Administración Pública (MAP), el Ministerio de
+        intento: el Servicio Nacional de Salud (SNS), Administración Pública (MAP), el Ministerio de
         la Presidencia, Deportes, Agricultura, INFOTEP y la ONE cierran o protegen
         esa vía de lectura; su apertura se pide por la Ley 200-04. Otras —Educación,
         Obras Públicas, Salud, la DGII, Aduanas— no usan WordPress y requieren otra

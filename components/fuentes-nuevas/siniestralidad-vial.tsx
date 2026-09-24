@@ -47,7 +47,7 @@ export async function SiniestralidadVial() {
             <p className="mt-3 text-sm text-ink-soft">
               {Math.abs(cambio.abs) === 0
                 ? "La misma cifra que en esos meses del año anterior."
-                : `${formatInt(Math.abs(cambio.abs))} ${cambio.abs > 0 ? "más" : "menos"} que en esos meses del año anterior (${cambio.abs > 0 ? "+" : "−"}${Math.abs(cambio.pct).toFixed(1)} %).`}
+                : `Con cifras preliminares, que pueden subir a medida que se completa el registro: ${formatInt(Math.abs(cambio.abs))} ${cambio.abs > 0 ? "más" : "menos"} que en esos meses del año anterior (${cambio.abs > 0 ? "+" : "−"}${Math.abs(cambio.pct).toFixed(1)} %).`}
               {s.tasa != null && ` Van ${s.tasa.toFixed(1)} por cada 100 mil habitantes en el año.`}
             </p>
           )}

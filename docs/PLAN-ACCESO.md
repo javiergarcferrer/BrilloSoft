@@ -160,7 +160,7 @@ Barrido del Estado entero en seis frentes (`docs/AUDITORIA.md` §G). Entregado:
 - ✅ **Historia de las compras desde 2015** (`/historico`, §G.1): 722,825
   contratos y 631,103 procesos agregados por año, institución y proveedor; cada
   ficha de institución y de proveedor lleva su bloque «desde 2015».
-- ✅ **Biblioteca del Estado** (`/documentos`, §G.2): 18,841 documentos de 22
+- ✅ **Biblioteca del Estado** (`/documentos`, §G.2): 18,726 documentos de 22
   instituciones, buscables por título; «Lo que publica» en la ficha.
 - ✅ **Catálogo de datos abiertos** (`/datos`, §G.3): todo datos.gob.do.
 - ✅ **Sentencias del Tribunal Constitucional** (`/constitucional`, §G.6).

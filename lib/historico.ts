@@ -22,9 +22,12 @@ import { join } from "node:path";
  *    otras monedas.
  *  - Un contrato de RD$10 mil millones o más **no se suma**: se lista aparte
  *    (`atipicos`), porque varios son errores de captura evidentes.
- *  - La institución de un contrato se deduce del prefijo de su código; el
- *    ~0.8 % que no se puede asignar sin adivinar queda fuera de las series por
- *    institución y se cuenta (`sinInstitucion`).
+ *  - La institución de un contrato se deduce del prefijo de su código; lo que
+ *    no se puede asignar sin adivinar (0.8 % de los contratos, pero ~8.5 % del
+ *    valor: casi todo es el MOPC, cuyo prefijo comparte la OPRET) queda fuera
+ *    de las series por institución, se cuenta y se nombra (`sinAsignar`).
+ *  - Cada ficha dice cuántos de sus propios contratos atípicos quedaron fuera
+ *    (`atipicos`).
  *
  * Módulo de servidor (`node:fs`), memoizado por instancia.
  */
@@ -60,6 +63,9 @@ export interface ResumenHistorico {
   cancelados: number;
   otrasMonedas: Record<string, number>;
   sinInstitucion: number;
+  sinInstitucionMonto: number;
+  /** Prefijos que no se asignan, con las unidades que los comparten. */
+  sinAsignar: { prefijo: string; contratos: number; monto: number; unidades: string[] }[];
   prefijosAmbiguos: string[];
   umbralAtipico: number;
   anios: AnioHistorico[];
@@ -76,6 +82,8 @@ export interface HistoriaInstitucion {
   top: [string, string, number, number][];
   /** Proveedores distintos a los que contrató en todo el período. */
   proveedores: number;
+  /** [contratos, monto] atípicos propios, fuera de las sumas. */
+  atipicos: [number, number] | null;
 }
 
 export interface HistoriaProveedor {
@@ -88,6 +96,8 @@ export interface HistoriaProveedor {
   clientes: [number, number, number][];
   /** Instituciones distintas que le contrataron. */
   totalClientes: number;
+  /** [contratos, monto] atípicos propios, fuera de las sumas. */
+  atipicos: [number, number] | null;
 }
 
 const DIR = join(process.cwd(), "public", "data", "historico");
@@ -128,6 +138,7 @@ interface FilaProveedor {
   s: [number, number, number][];
   c: [number, number, number][];
   k: number;
+  a?: [number, number] | null;
 }
 
 export async function historiaDeProveedor(
@@ -140,7 +151,7 @@ export async function historiaDeProveedor(
   const f = d?.filas[rpe];
   if (!f || !d) return null;
   return {
-    historia: { nombre: f.n, desde: f.d, hasta: f.h, serie: f.s, clientes: f.c, totalClientes: f.k },
+    historia: { nombre: f.n, desde: f.d, hasta: f.h, serie: f.s, clientes: f.c, totalClientes: f.k, atipicos: f.a ?? null },
     corte: d.corte,
   };
 }
@@ -153,4 +164,14 @@ export function sumar<T extends number[]>(serie: T[], i: number): number {
 /** «1 contrato», «2,979 contratos». */
 export function nContratos(n: number): string {
   return `${n.toLocaleString("es-DO")} ${n === 1 ? "contrato" : "contratos"}`;
+}
+
+/**
+ * Si la unidad de compra comparte prefijo con otra y por eso no tiene serie,
+ * el prefijo y lo que quedó sin asignar; si no, `null`.
+ */
+export async function prefijoSinAsignar(nombre: string): Promise<ResumenHistorico["sinAsignar"][number] | null> {
+  const r = await getResumenHistorico();
+  const clave = nombre.trim().toLowerCase();
+  return r?.sinAsignar.find((s) => s.unidades.some((u) => u.trim().toLowerCase() === clave)) ?? null;
 }

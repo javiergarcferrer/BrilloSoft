@@ -1201,12 +1201,20 @@ documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
   prefijo de la unidad (`INFOTEP-2026-01420`), el mismo que abre sus procesos.
   Resolviendo el prefijo contra la tabla de procesos solo cuando un código de
   unidad reúne >95 % de sus procesos: 803 prefijos, 2 ambiguos (MOPC, MEPYD),
-  **99.2 % de los contratos asignados (94 % del valor)**.
-- ❌→⚠️ **Valores atípicos que son errores de captura:** RD$103,680 millones por
-  ascensores (ADN, 2023), RD$47,444 millones de INABIE a una persona física,
-  dos contratos idénticos de RD$46,514 millones de la DGII por vigilancia. 13
-  contratos ≥ RD$10 mil millones reúnen el 16 % del valor. Se apartan de toda
-  suma y se listan uno a uno (`/historico`).
+  **99.2 % de los contratos asignados, pero solo el 91.5 % del valor**: el
+  prefijo MOPC lo comparten el MOPC (82 %) y la OPRET (18 %), y sus 4,450
+  contratos (RD$128.4 mil millones) quedan sin institución. Sin él, el MOPC
+  sería el mayor comprador del período; `/historico` lo dice junto al ranking
+  y la ficha del MOPC explica por qué no tiene serie.
+- ⚠️ **Valores atípicos.** Entre los contratos cancelados hay cifras que son
+  errores de captura evidentes (RD$103,680 millones por ascensores; RD$47,444
+  millones de INABIE a una persona física), y el filtro de cancelados ya los
+  deja fuera. Entre los vigentes o cerrados quedan 13 de RD$10 mil millones o
+  más (~16 % del valor): algunos parecen errores (RD$10,000,000,001 exactos a
+  un servicio de Cultura), otros pueden ser obras reales (Autopista del Ámbar,
+  línea 2 del teleférico). Sin el expediente no se distinguen: se apartan de
+  toda suma y se listan uno a uno (`/historico`); cada ficha dice cuántos de
+  los suyos quedaron fuera.
 - Implementado: `scripts/build-historico.py` → `public/data/historico/`
   (resumen, por institución, por proveedor en 10 fragmentos; 6.3 MB),
   `lib/historico.ts`, `/historico` y los bloques «desde 2015» de las fichas.
@@ -1222,8 +1230,10 @@ documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
   medio: se recorre hasta `X-WP-TotalPages`, tope 250 por host.
 - ⚠️ El título suele ser el nombre del archivo; `date` es la fecha de subida;
   `description` no aporta. Declaraciones juradas nominales (Ley 311-14)
-  aparecen entre los PDF: se indexan como documento público que son.
+  aparecen entre los PDF (115 títulos el 2026-09-24): **se excluyen por título**
+  hasta que el dueño decida (docs/DECISIONES.md); el índice queda en 18,726.
 - ✅ Barrido completo del 2026-09-24: **18,841 documentos de 22 instituciones**
+  (18,726 publicados tras excluir las declaraciones juradas)
   (OGTIC 7,276; DIGEPRES 3,013; Ambiente 1,379; MIREX 1,306; MEM 1,217; INDOTEL
   1,035; Hacienda 1,015…). MIVHED anuncia 785 y no deja leer ninguno.
 - ❌ REST cerrada por plugin (401): SNS, MAP, MIDEREC y MINPRE (este además con

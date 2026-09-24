@@ -16,9 +16,11 @@
  * (son registros de fallecidos del año, preliminares). Si cambia de forma, la
  * lectura da `null` y la interfaz dice que no contestó.
  *
- * La comparación con el año anterior se hace **sobre los mismos meses**: el
- * año en curso está incompleto y compararlo con un año entero sería inventar
- * una caída. Caché de un día; cuatro peticiones por lectura.
+ * La comparación con el año anterior se hace **sobre los mismos meses
+ * cerrados**: el mes en curso se descarta, y el año en curso no se compara con
+ * un año entero. Aun así, el año en curso es preliminar y el registro llega
+ * con retraso (los heridos de 2026 van muy por debajo del ritmo de 2025): la
+ * interfaz lo dice en la misma frase que la comparación. Caché de un día; cuatro peticiones por lectura.
  */
 
 import { provinciaDeTexto, type Provincia } from "./provincias";
@@ -92,6 +94,13 @@ export async function getSiniestralidad(): Promise<Siniestralidad | null> {
   ]);
   const mesesActual = porMes(actual);
   if (!mesesActual) return null;
+  // El mes en curso (y cualquier mes futuro mal fechado) no entra: compararía un
+  // mes a medias con el mes entero del año anterior e inventaría una caída.
+  const mesHoy = Number(
+    new Date().toLocaleString("en-CA", { timeZone: "America/Santo_Domingo", month: "numeric" }),
+  );
+  for (const m of [...mesesActual.keys()]) if (m >= mesHoy) mesesActual.delete(m);
+  if (mesesActual.size === 0) return null;
   const meses = [...mesesActual.keys()].sort((a, b) => a - b);
   const muertes = meses.reduce((s, m) => s + (mesesActual.get(m) ?? 0), 0);
   const mesesAnterior = porMes(anterior);
