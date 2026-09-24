@@ -16,6 +16,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import Plegable from "@/components/plegable";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { Barras } from "@/components/barras";
+import { SubastasDeuda } from "@/components/fuentes-nuevas/subastas-deuda";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/deuda" },
@@ -233,6 +234,8 @@ export default async function DeudaPage() {
           </ol>
         </Card>
       </div>
+
+      <SubastasDeuda />
 
       <Card as="section" className="p-5 sm:p-6">
         <CardTitle>Cómo leer estas cifras</CardTitle>

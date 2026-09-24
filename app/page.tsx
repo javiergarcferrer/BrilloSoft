@@ -52,6 +52,7 @@ import { DiaElectrico } from "@/components/fuentes-nuevas/dia-electrico";
 import { IndicadoresMacro } from "@/components/fuentes-nuevas/indicadores-macro";
 import { ComercioExterior } from "@/components/fuentes-nuevas/comercio-exterior";
 import { InflacionTurismo } from "@/components/fuentes-nuevas/inflacion-turismo";
+import { IndicadoresBanca } from "@/components/fuentes-nuevas/indicadores-banca";
 import { EstadisticasJudiciales } from "@/components/fuentes-nuevas/estadisticas-judiciales";
 
 export const revalidate = 1800;
@@ -213,9 +214,14 @@ export default function Panorama() {
       </section>
 
       {/* Precios y turismo: las dos series del BCRD que solo vienen en .xls viejo (instantánea). */}
-      <Suspense fallback={<Esqueleto className="h-[640px] sm:h-[460px]" />}>
-        <InflacionTurismo />
-      </Suspense>
+      <section className="grid gap-4 lg:grid-cols-2" aria-label="Precios, turismo y banca">
+        <Suspense fallback={<Esqueleto className="h-[640px] sm:h-[460px]" />}>
+          <InflacionTurismo />
+        </Suspense>
+        <Suspense fallback={<Esqueleto className="h-[520px] sm:h-[420px]" />}>
+          <IndicadoresBanca />
+        </Suspense>
+      </section>
 
       {/* La carga de los tribunales ordinarios, del boletín mensual del Poder Judicial (instantánea). */}
       <Suspense fallback={<Esqueleto className="h-[640px] sm:h-[460px]" />}>

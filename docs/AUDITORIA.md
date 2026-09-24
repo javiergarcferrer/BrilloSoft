@@ -1456,6 +1456,28 @@ documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
   enlaza su página.
 - Implementado: `lib/cortes.ts` (en vivo, 6 h, solo de hoy en adelante) y `/luz`.
 
+### G.13 Banca (SIMBAD) y subastas de Crédito Público
+
+- ✅ SIMBAD (`simbad.sb.gob.do`, Apache Superset; robots 404): se leen solo
+  `/api/v1/chart/{id}/data/?format=json&type=results`, que devuelve `colnames`,
+  `coltypes` y `data` **sin el campo de la consulta**. Gráficos: 1467
+  morosidad (jul-2026 1.79 %), 1466 cartera (RD$2.48 billones), 1464 solvencia
+  (may-2026 18.87 %), 1423 tasa de préstamos nuevos (14.00 %; ventana fija que
+  termina el 2026-08-05). 20–23 filas por serie; cada una termina en su mes.
+  No hay serie de depósitos. ⚠️ Hallazgo de seguridad pendiente de notificar a
+  la SB (§G.5): no se tocan los endpoints de usuarios, SQL ni datasets.
+- ✅ Subastas: la lista `/emisiones/subastas?dlAnio=AAAA&tipocontenido=Resultados`
+  (GET; 2009–2026) enlaza un consolidado por año que se reescribe tras cada
+  subasta: `…/2026/02Consolidado.xlsx`, `…/2025/02Consolidado.xls` (BIFF: `xlrd`
+  en build). 2026: RD$200,000 M adjudicados sobre 450,160.6 M demandados (casa
+  con el total del archivo). Cada subasta competitiva va seguida de una ronda no
+  competitiva a la misma tasa. ⚠️ Las filas del 8 y 9-sep-2026 traen la fecha
+  de liquidación (11/09/2026) en la columna de vencimiento (el PDF del resultado
+  dice vencimiento 29-may-2041): se marcan como dudosas y el plazo queda nulo.
+- Implementado: `lib/banca.ts` + `IndicadoresBanca` en `/`;
+  `scripts/build-subastas.py` → `public/data/subastas.json`, `lib/subastas.ts`
+  + `SubastasDeuda` en `/deuda`.
+
 ### G.9 Pendientes que deja esta pasada
 
 1. Estadísticas judiciales (índice + XLSX mensual) y sentencias del TSE.

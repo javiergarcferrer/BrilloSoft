@@ -738,6 +738,33 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="Superintendencia de Bancos — SIMBAD" estado="activa" etiqueta="Conectada">
+          <p>
+            El tablero público SIMBAD de la Superintendencia de Bancos sirve cada
+            gráfico por una interfaz sin clave. Se leen cada día cuatro series del
+            sistema financiero —morosidad, cartera de créditos, solvencia y tasa de
+            los préstamos nuevos—, pidiendo solo sus datos. Cada gráfico trae unos
+            dos años y termina en su propio mes, que se dice junto a la cifra. Esa
+            misma interfaz expone información interna que no debería ser pública; no
+            se usa, y se notifica a la Superintendencia.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Crédito Público — subastas de bonos" estado="activa" etiqueta="Instantánea local">
+          <p>
+            El consolidado anual de subastas de bonos en pesos (2025 en el formato
+            antiguo de Excel, 2026 en el nuevo) se convierte al regenerar: fecha,
+            bono, tasa de corte, monto demandado y adjudicado, en{" "}
+            <Link href="/deuda" className="font-medium text-brand-700 hover:underline">
+              deuda
+            </Link>
+            . El script rechaza el archivo si las filas no suman su propio total. En
+            las subastas de septiembre de 2026 el archivo pone la fecha de liquidación
+            donde va el vencimiento: se muestran marcadas como dudosas, no se corrigen
+            a ojo.
+          </p>
+        </Fuente>
+
         <Fuente nombre="Aduanas — comercio exterior y recaudación" estado="activa" etiqueta="Conectada">
           <p>
             La DGA publica sus series como hojas de cálculo con rutas que cambian en
@@ -799,10 +826,9 @@ export default async function FuentesPage() {
           <p>
             Verificadas y sin clave, a la espera de su turno: los informes de auditoría de
             la Contraloría, las listas de cumplimiento de la declaración jurada de la
-            Cámara de Cuentas —que volvió a responder—, los indicadores de SIMBAD de
-            la Superintendencia de Bancos, las subastas de Crédito Público, los robos
-            y armas del Ministerio de Interior, la matrícula del MINERD y las
-            licencias de construcción del MIVHED.
+            Cámara de Cuentas —que volvió a responder—, los robos y armas del
+            Ministerio de Interior, la matrícula del MINERD y las licencias de
+            construcción del MIVHED.
           </p>
         </Fuente>
 

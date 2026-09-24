@@ -194,6 +194,11 @@ composed in `app/page.tsx`):
   XLSX (§G.5), `ComercioExterior`. Daily.
 - **`lib/energia.ts`** — Organismo Coordinador hourly generation and marginal
   plant for yesterday (§G.8), `DiaElectrico`. Hourly.
+- **`lib/banca.ts`** — SIMBAD chart data (`type=results`, never the query)
+  for four banking series (§G.13), `IndicadoresBanca` on `/`. Daily.
+- **`lib/subastas.ts`** — Crédito Público auction results (§G.13), snapshot
+  from `scripts/build-subastas.py` (build-time `xlrd` for 2025), `SubastasDeuda`
+  on `/deuda`.
 - **`lib/cortes.ts`** — scheduled maintenance outages from Edenorte's RSS and
   Edesur's weekly page (§G.11), today onward; `/luz`.
 - **`lib/alertas.ts`** — INDOMET CAP feed (§G.4), `AlertasTiempo`. 15 min.
