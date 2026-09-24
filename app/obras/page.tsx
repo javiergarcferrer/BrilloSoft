@@ -106,12 +106,9 @@ export default async function ObrasPage({ searchParams }: { searchParams: Promis
         titulo="¿Existe la obra y avanza?"
         descripcion={
           <>
-            Los proyectos de inversión que MapaInversiones publica en ejecución,
-            paralizados, en reevaluación o por reprogramar —las obras terminadas no
-            están en estos datos—, con su estado, su valor, el avance que declara la
-            institución que los ejecuta y los contratos de compras que los
-            materializan. Es una instantánea de sus datos abiertos, no una consulta
-            en vivo.
+            Cada proyecto de inversión con su estado, su valor, el avance que
+            declara quien lo ejecuta y los contratos que lo materializan. Es una
+            instantánea de los datos abiertos: las obras terminadas no vienen.
           </>
         }
       >
@@ -126,7 +123,7 @@ export default async function ObrasPage({ searchParams }: { searchParams: Promis
       <Suspense>
         <BuscadorUrl
           etiqueta="Buscar una obra"
-          placeholder="Nombre, institución o código SNIP: liceo, acueducto, 12080…"
+          placeholder="Liceo, acueducto, código SNIP…"
           ayuda={`Busca en el nombre, la entidad ejecutora y el código SNIP de las ${formatInt(datos.proyectos.length)} obras de la instantánea, sin distinguir tildes.`}
         />
       </Suspense>
