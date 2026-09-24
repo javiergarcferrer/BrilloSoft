@@ -117,7 +117,7 @@ export function Logotipo({
   return (
     <span className={`font-display leading-none ${className}`}>
       Socrático
-      <span className={sobreTinta ? "text-sello-400" : "text-sello-600"}>.do</span>
+      <span className={sobreTinta ? "text-sello-300" : "text-sello-600"}>.do</span>
     </span>
   );
 }

@@ -674,6 +674,7 @@ export default function Buscador() {
           */}
           {data && data.pages > 1 && (
             <Paginador
+              etiqueta="Paginación de los resultados (arriba)"
               pagina={data.page}
               paginas={data.pages}
               pendiente={loading}
@@ -768,6 +769,7 @@ export default function Buscador() {
             pendiente={loading}
             onPage={setPage}
             className="mt-4"
+            etiqueta="Paginación de los resultados (abajo)"
           />
         )}
       </section>

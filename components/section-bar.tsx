@@ -73,7 +73,9 @@ export default function SectionBar() {
   const unaSolaVista = seccion.vistas.length <= 1;
 
   return (
-    <div className="border-b border-hairline bg-surface">
+    // Toda la barra es un landmark: el nombre de la vertical quedaba fuera de
+    // cualquier región (axe: region) y un lector de pantalla no lo encontraba.
+    <nav aria-label={`Sección ${seccion.nombre}`} className="border-b border-hairline bg-surface">
       <div
         ref={fila}
         className="no-scrollbar mx-auto flex max-w-6xl items-center gap-3 overflow-x-auto px-4 sm:gap-4"
@@ -87,8 +89,7 @@ export default function SectionBar() {
         </span>
 
         {!unaSolaVista && (
-          <nav
-            aria-label={`Vistas de ${seccion.nombre}`}
+          <div
             // El aire de la derecha deja que la última pestaña se corte a
             // medias en vez de morir pegada al borde: así se ve que hay más.
             className="flex items-center pr-6 sm:pr-0"
@@ -127,9 +128,9 @@ export default function SectionBar() {
                 </Link>
               );
             })}
-          </nav>
+          </div>
         )}
       </div>
-    </div>
+    </nav>
   );
 }

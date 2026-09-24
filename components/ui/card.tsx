@@ -64,9 +64,20 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
  * Título de panel: sans en negrita a 14 px. La serif a ese tamaño se lee
  * floja, así que el titular serif se queda para la pregunta de la página.
  */
-function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
+/**
+ * El título de una tarjeta es un `h2` por defecto: la tarjeta es una sección
+ * de la página, que ya tiene su `h1`. Como `h3` saltaba un nivel en 33 de 44
+ * páginas auditadas (axe: heading-order), y un lector de pantalla que navega
+ * por encabezados no encontraba el segundo nivel. Una tarjeta anidada en otra
+ * sección pasa `as="h3"`.
+ */
+function CardTitle({
+  className,
+  as: Etiqueta = "h2",
+  ...props
+}: React.ComponentProps<"h2"> & { as?: "h2" | "h3" | "h4" }) {
   return (
-    <h3
+    <Etiqueta
       data-slot="card-title"
       className={cn("font-sans text-sm font-semibold text-ink", className)}
       {...props}

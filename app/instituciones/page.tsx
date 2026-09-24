@@ -106,7 +106,7 @@ export default async function InstitucionesPage({
                 <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
                   {unidades.slice(0, 12).map((u) => (
                     <li key={u.id}>
-                      <Link href={hrefInstitucion(u)} className="text-brand-700 hover:underline">
+                      <Link href={hrefInstitucion(u)} className="inline-flex min-h-6 items-center text-brand-700 hover:underline">
                         {u.acronimo || u.nombre}
                       </Link>
                     </li>

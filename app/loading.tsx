@@ -5,5 +5,12 @@ import { EsqueletoPagina } from "@/components/esqueleto";
  * al instante y el contenido llega por streaming cuando la fuente responde.
  */
 export default function Loading() {
-  return <EsqueletoPagina />;
+  return (
+    <>
+      {/* Un lector de pantalla que llega durante la carga oye qué pasa, y la
+          página nunca queda sin `h1` (axe: page-has-heading-one). */}
+      <h1 className="sr-only">Cargando la página…</h1>
+      <EsqueletoPagina />
+    </>
+  );
 }

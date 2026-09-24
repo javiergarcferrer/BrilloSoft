@@ -59,6 +59,9 @@
   --color-sello-50: #fbeeeb;
   --color-sello-100: #f5d9d3;
   --color-sello-200: #ecb9ae;
+  /* El sello sobre la tinta: el 400 daba 3,34:1 contra #171d2e (WCAG pide
+     4,5:1 a 19 px). Mismo tono, más luz: 5,08:1. Solo para fondo de tinta. */
+  --color-sello-300: #d7705b;
   --color-sello-400: #c0472f;
   --color-sello-500: #b03f2b;
   --color-sello-600: #a63a2a;

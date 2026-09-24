@@ -173,7 +173,7 @@ export default async function ContratosPage() {
                 {c.rpe ? (
                   <Link
                     href={`/proveedores/${c.rpe}`}
-                    className="relative z-10 font-medium text-brand-600 hover:underline"
+                    className="relative z-10 inline-block py-1 font-medium text-brand-600 hover:underline"
                   >
                     {c.razon_social}
                   </Link>
@@ -226,7 +226,7 @@ function UnidadDeCompra({ codigo, nombre }: { codigo: string; nombre: string }) 
   const inst = codigo ? institucionPorId(codigo) : null;
   if (!inst) return <span className="line-clamp-1">{nombre}</span>;
   return (
-    <Link href={hrefInstitucion(inst)} className="relative z-10 line-clamp-1 hover:text-brand-700 hover:underline">
+    <Link href={hrefInstitucion(inst)} className="relative z-10 line-clamp-1 py-1 hover:text-brand-700 hover:underline">
       {nombre}
     </Link>
   );
