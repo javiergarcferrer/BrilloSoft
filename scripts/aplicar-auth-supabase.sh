@@ -14,7 +14,7 @@
 set -euo pipefail
 
 REF="${SUPABASE_PROJECT_REF:-amuyclnyjyhigeyhuufs}"
-SITIO="${SITIO:-https://brillo-soft.vercel.app}"
+SITIO="${SITIO:-https://socratico.vercel.app}"
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then

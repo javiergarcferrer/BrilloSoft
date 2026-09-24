@@ -4,4 +4,4 @@
  * invariante). Lo usan `metadataBase`, el sitemap y robots. Si el dominio
  * cambia, cambia esta línea.
  */
-export const SITIO = "https://brillo-soft.vercel.app";
+export const SITIO = "https://socratico.vercel.app";

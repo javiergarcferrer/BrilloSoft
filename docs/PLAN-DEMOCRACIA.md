@@ -340,7 +340,7 @@ con código público: `github.com/ogticrd/cuenta-unica-registry` (MIT, Next.js
   «sin secreto en el app». Conclusión: Cuenta Única **no sustituye** la sesión
   de Supabase; **se acopla encima** como verificación.
 - ⚠️ `socratico.do` aún no resuelve en DNS (ENOTFOUND el 2026-09-02). La
-  `redirect_uri` a registrar debe incluir `brillo-soft.vercel.app` hasta que
+  `redirect_uri` a registrar debe incluir `socratico.vercel.app` hasta que
   el dominio apunte.
 
 ### 9.2 Arquitectura propuesta — respeta §2 y §4 íntegros
@@ -389,7 +389,7 @@ identidad verificada. UI: segundo camino en el registro y, en el widget,
    fuera del alcance de una sesión).
 3. Registrar las `redirect_uri` en el cliente:
    `https://socratico.do/democracia/cuenta-unica/callback` y la equivalente
-   en `brillo-soft.vercel.app` mientras el dominio no resuelva.
+   en `socratico.vercel.app` mientras el dominio no resuelva.
 
 ### 9.4 Borrador de solicitud a la OGTIC
 
@@ -460,7 +460,7 @@ Decisiones tomadas al construir:
 
 Pasos del dueño, en orden (ninguno lo hace una sesión):
 1. Solicitar el cliente a la OGTIC (§9.4) con `redirect_uris`
-   `https://brillo-soft.vercel.app/democracia/cuenta-unica/callback` y
+   `https://socratico.vercel.app/democracia/cuenta-unica/callback` y
    `https://socratico.do/democracia/cuenta-unica/callback`.
 2. Aplicar la migración `20260902120000` al proyecto `Transac`.
 3. Desplegar la función: `supabase functions deploy vincular-cuenta-unica`

@@ -16,7 +16,8 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
 - **Dedicated Supabase project for /democracia in production**
   (PLAN-DEMOCRACIA §1): the pilot shares the `Transac` Auth pool.
 - **Supabase Auth panel**: Site URL still `http://localhost:3000`, production
-  domain not in the redirect allowlist, Magic Link template should send
+  domain (`https://socratico.vercel.app` since 2026-09-24; the project was
+  renamed from `brillo-soft`) not in the redirect allowlist, Magic Link template should send
   `{{ .Token }}`. Fixing it is a panel action; registration works without it.
   Measured 2026-09-04 (PLAN-DEMOCRACIA §5.1): GoTrue does **not** reject a
   non-allowlisted `redirect_to`, it substitutes the Site URL, and the answer
@@ -78,6 +79,11 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
   crea el dueño en su panel, con tope de gasto.
 
 ## Cerradas, para que nadie las reabra
+
+- **Nombre: socratico** (24-09-2026). El repositorio pasó a
+  `javiergarcferrer/socratico` y el proyecto de Vercel a `socratico`, con
+  `socratico.vercel.app` como dirección de producción; el dueño pidió borrar
+  `brillo-soft.vercel.app`.
 
 - **Clasificadores de IA (Jev, `typesafe-ai/jev` por el AI Gateway de
   Vercel) solo donde cambian la experiencia** (24-09-2026). El dueño pidió

@@ -45,7 +45,7 @@ type Paso =
  *   Decirlo con precisión evita mandar a nadie a mirar una bandeja vacía.
  *
  * Verificado contra el proyecto el 2026-09-04:
- * `GET /auth/v1/verify?token=…&redirect_to=https://brillo-soft.vercel.app/…`
+ * `GET /auth/v1/verify?token=…&redirect_to=https://socratico.vercel.app/…`
  * responde `303` a `http://localhost:3000#error=access_denied&
  * error_code=otp_expired&…` — o sea: GoTrue **no rechaza** una redirección
  * fuera de la lista, la sustituye por el Site URL, y el resultado siempre
@@ -251,7 +251,7 @@ export default function Registro() {
     /*
       Se pide la vuelta a esta misma página aunque hoy no esté en la lista de
       redirecciones del proyecto. Comprobado el 2026-09-04 contra este GoTrue:
-      `POST /auth/v1/otp?redirect_to=https://brillo-soft.vercel.app/…` pasa la
+      `POST /auth/v1/otp?redirect_to=https://socratico.vercel.app/…` pasa la
       validación (falla después, por política de altas), y `/auth/v1/verify` con
       esa misma redirección responde 303 al Site URL. Es decir: pedirla no
       rompe nada hoy —el enlace sigue aterrizando en el Site URL— y el día que

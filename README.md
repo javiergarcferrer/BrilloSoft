@@ -6,7 +6,7 @@ vivo y cacheadas, sin base de datos intermedia. La única vertical con
 persistencia es el piloto de voto ciudadano, que la necesita y la declara.
 
 Herramienta independiente y no oficial. Producción:
-https://brillo-soft.vercel.app
+https://socratico.vercel.app
 
 ## Verticales
 

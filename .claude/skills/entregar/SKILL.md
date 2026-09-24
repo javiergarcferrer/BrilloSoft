@@ -5,7 +5,7 @@ allowed-tools: Bash, Read, Edit, Grep, Glob
 ---
 # /entregar — from working tree to production
 
-Pushing to `main` deploys to https://brillo-soft.vercel.app. Nothing reaches
+Pushing to `main` deploys to https://socratico.vercel.app. Nothing reaches
 main unverified, and nothing stays in a container: the session is ephemeral.
 
 ## 1. Documentation is memory
