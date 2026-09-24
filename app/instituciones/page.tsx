@@ -10,6 +10,7 @@ import {
 } from "@/lib/instituciones";
 import { getFiscal } from "@/lib/fiscal";
 import { formatPesos } from "@/lib/format";
+import { desdeMayusculas } from "@/lib/congreso";
 import { formatInt } from "@/lib/nomina";
 import { BuscadorUrl } from "@/components/buscador-url";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -90,7 +91,7 @@ export default async function InstitucionesPage({
       <Suspense>
         <BuscadorUrl
           etiqueta="Buscar una institución"
-          placeholder="Nombre o siglas: MINERD, Obras Públicas, Ayuntamiento de Santiago…"
+          placeholder="Nombre o siglas: MINERD…"
           ayuda="Busca en el nombre y las siglas de las 739 unidades de compra activas de la DGCP, sin distinguir tildes."
         />
       </Suspense>
@@ -262,7 +263,7 @@ function FilaInstitucion({
         {compacta ? (
           <span className="min-w-0">
             <span className="block text-[15px] leading-snug text-ink">
-              {i.nombre}
+              {desdeMayusculas(i.nombre)}
               {sigla && <span className="font-mono text-xs text-ink-soft"> · {sigla}</span>}
             </span>
             {devengado !== undefined && (
@@ -273,7 +274,7 @@ function FilaInstitucion({
           </span>
         ) : (
           <span className="min-w-0">
-            <span className="block text-[15px] leading-snug text-ink">{i.nombre}</span>
+            <span className="block text-[15px] leading-snug text-ink">{desdeMayusculas(i.nombre)}</span>
             <span className="mt-0.5 block text-xs text-ink-soft">
               {[i.acronimo, i.tipo].filter(Boolean).join(" · ")}
             </span>

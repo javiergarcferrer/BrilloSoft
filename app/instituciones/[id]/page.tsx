@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const i = institucionDeSlug((await params).id);
   if (!i) return { title: "Institución no encontrada" };
   return {
-    title: i.nombre,
+    title: desdeMayusculas(i.nombre),
     // `/instituciones/237` y `/instituciones/237-minerd` son la misma página:
     // la canónica es la del tramo legible.
     alternates: { canonical: hrefInstitucion(i) },
@@ -114,7 +114,7 @@ export default async function InstitucionPage({ params }: Props) {
         <div className="rotulo text-ink-soft">
           {[i.tipo, i.acronimo].filter(Boolean).join(" · ")}
         </div>
-        <h1 className="mt-1 font-display text-2xl leading-tight sm:text-3xl">{i.nombre}</h1>
+        <h1 className="mt-1 font-display text-2xl leading-tight sm:text-3xl">{desdeMayusculas(i.nombre)}</h1>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
           Lo que el Estado publica sobre esta institución en cuatro sitios distintos,
           reunido aquí: su presupuesto, lo que compra y a quién,{" "}
