@@ -34,19 +34,27 @@ export default function LicitacionesPage() {
 function BuscadorEsqueleto() {
   return (
     <Cargando className="space-y-5">
-      <div className="space-y-2 pt-1">
-        <Skeleton className="h-8 w-3/4 max-w-lg bg-hairline/70" />
-        <Skeleton className="h-3 w-56 bg-hairline/70" />
+      <div className="space-y-3 pt-1">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-3/4 max-w-lg bg-hairline/70" />
+          <Skeleton className="h-3 w-56 bg-hairline/70" />
+        </div>
+        {/* El campo de texto de la vertical y la línea de su alcance. */}
+        <div className="max-w-2xl space-y-1.5">
+          <Skeleton className="h-11 w-full bg-hairline/70 sm:h-10" />
+          <Skeleton className="h-3 w-5/6 bg-hairline/70" />
+          <Skeleton className="h-3 w-2/3 bg-hairline/70" />
+        </div>
       </div>
       {/*
         Las alturas son las de lo que llega: la barra de control del teléfono
-        mide 64 px con su relleno —no 44, que era la del botón suelto— y una
-        tarjeta de proceso a 390 px mide entre 200 y 230. Con `h-44` la
+        es una fila de 48 px y una tarjeta de proceso a 390 px mide entre 200
+        y 230. Con `h-44` la
         silueta encogía cincuenta píxeles por tarjeta y la página daba un
         tirón hacia abajo justo cuando el ojo empezaba a leer.
       */}
       <Esqueleto className="hidden h-56 lg:block" />
-      <Esqueleto className="h-16 lg:hidden" />
+      <Esqueleto className="h-12 lg:hidden" />
       <EsqueletoTarjetas n={6} alto="h-52" />
     </Cargando>
   );

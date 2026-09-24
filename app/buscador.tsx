@@ -17,6 +17,7 @@ import {
   type EtapaClave,
 } from "@/lib/estados";
 import ProcesoCard from "@/components/proceso-card";
+import CampoLicitaciones from "@/components/campo-licitaciones";
 import { cn } from "@/lib/cn";
 import { BottomSheet } from "@/components/bottom-sheet";
 import {
@@ -355,6 +356,7 @@ export default function Buscador() {
   const csvRecortado = Boolean(data && (esMuestra ? data.truncated : data.totalResults > TOPE_DESCARGA));
 
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [barraOculta, setBarraOculta] = useOcultarAlBajar(!sheetOpen);
 
   /**
    * Devuelve la búsqueda a los filtros con los que abre. No es «limpiar»: la
@@ -455,8 +457,12 @@ export default function Buscador() {
 
   return (
     <div className="space-y-5">
-      {/* Encabezado compacto — la búsqueda vive en la barra superior */}
-      <div className="flex items-center justify-between gap-3 pt-1">
+      {/*
+        Encabezado y, debajo, el campo de texto de esta vertical. El campo vivía
+        en la cabecera global —solo en compras—, donde la misma franja buscaba
+        cosas distintas según la página; aquí dice debajo qué recorre.
+      */}
+      <div className="space-y-3 pt-1">
         <div>
           <h1 className="font-display text-2xl leading-tight text-ink sm:text-3xl">
             ¿Qué está comprando el Estado ahora mismo?
@@ -467,6 +473,9 @@ export default function Buscador() {
             </span>
             En vivo desde la API de datos abiertos de la DGCP
           </p>
+        </div>
+        <div className="max-w-2xl">
+          <CampoLicitaciones />
         </div>
       </div>
 
@@ -482,43 +491,49 @@ export default function Buscador() {
       </Card>
 
       {/*
-        Barra de control en móvil: filtros + conteo + chips activos.
+        Barra de control en móvil: el botón de filtros y los filtros puestos,
+        en **una** fila de 48 px que se desliza de lado.
 
-        Se pega justo debajo del header, y ese «justo» es literal: el header
-        mide 64 px de caja más su filete de un píxel, más el recorte superior
-        del teléfono (`app/layout.tsx`), y la barra decía 60. Los cinco píxeles
-        de diferencia metían su borde bajo la banda de tinta —el header va en
-        z-50 y esta en z-30—, así que los chips aparecían recortados por arriba
-        en cuanto se desplazaba.
+        Medida a 390 × 844 con la página desplazada, la barra de antes —botón,
+        conteo y una segunda fila de chips— ocupaba 111 px; con la cabecera y
+        la tab bar, el chrome fijo se llevaba el 28 % de la pantalla y el
+        conteo salía dos veces en la primera vista. El conteo se queda donde
+        declara su base, sobre los resultados; aquí sobraba.
+
+        Se aparta al bajar y vuelve en cuanto se sube —o en cuanto uno de sus
+        controles recibe el foco—, que es cuando se quiere cambiar un filtro.
+        Con movimiento reducido cambia sin desplazarse.
+
+        Se pega justo debajo del header: 64 px de caja, su filete de un píxel y
+        el recorte superior del teléfono (`app/layout.tsx`). Con cinco píxeles
+        de menos su borde quedaba bajo la banda de tinta y los chips salían
+        recortados por arriba.
       */}
       <div
-        className="sticky z-30 -mx-4 border-b border-hairline bg-canvas px-4 py-2.5 lg:hidden"
+        data-oculta={barraOculta || undefined}
+        onFocusCapture={() => setBarraOculta(false)}
+        className="sticky z-30 -mx-4 flex h-12 items-center gap-2 border-b border-hairline bg-canvas px-4 transition-transform duration-200 ease-out motion-reduce:transition-none data-[oculta]:-translate-y-full lg:hidden"
         style={{ top: "calc(65px + env(safe-area-inset-top, 0px))" }}
       >
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => setSheetOpen(true)}>
-            <IconSliders className="h-4 w-4 text-brand-600" />
-            Filtros
-            {chips.length > 0 && (
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 font-mono text-[11px] font-semibold tabular-nums text-canvas">
-                {chips.length}
-              </span>
-            )}
-          </Button>
-          {/*
-            También aquí se marca la muestra. Es el conteo que se ve en un
-            teléfono —la superficie principal— y repetir el número desnudo
-            encima del que sí declara su base es justo cómo una muestra acaba
-            usándose de censo.
-          */}
-          <span className="ml-auto text-right text-xs text-ink-soft">
-            {data
-              ? `${data.totalResults.toLocaleString("es-DO")} ${enBusqueda ? "coincid." : "procesos"}${esMuestra ? " (muestra)" : ""}`
-              : ""}
-          </span>
-        </div>
+        <Button
+          variant="secondary"
+          onClick={() => setSheetOpen(true)}
+          className="shrink-0 px-3"
+        >
+          <IconSliders className="h-4 w-4 text-brand-600" />
+          Filtros
+          {chips.length > 0 && (
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 font-mono text-[11px] font-semibold tabular-nums text-canvas">
+              {chips.length}
+            </span>
+          )}
+        </Button>
         {chips.length > 0 && (
-          <div className="no-scrollbar -mb-0.5 mt-2 flex gap-2 overflow-x-auto">
+          <div
+            role="group"
+            aria-label="Filtros puestos"
+            className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto"
+          >
             {/*
               En el teléfono el chip mide 40 px de alto con 8 px de aire entre
               chips: es el mínimo con el que un pulgar acierta el aspa de
@@ -1006,4 +1021,30 @@ function FiltrosControles({
       </div>
     </div>
   );
+}
+
+/**
+ * ¿Se aparta ahora la barra pegajosa? Sí al bajar más allá de la primera
+ * pantalla; no en cuanto se sube, por poco que sea, ni mientras `activo` sea
+ * falso (con la hoja de filtros abierta la barra no se toca). El umbral de
+ * 8 px evita que el temblor del dedo la haga parpadear.
+ */
+function useOcultarAlBajar(activo: boolean) {
+  const [oculta, setOculta] = useState(false);
+  useEffect(() => {
+    if (!activo) {
+      setOculta(false);
+      return;
+    }
+    let previo = window.scrollY;
+    const alDesplazar = () => {
+      const y = window.scrollY;
+      if (Math.abs(y - previo) < 8) return;
+      setOculta(y > previo && y > 240);
+      previo = y;
+    };
+    window.addEventListener("scroll", alDesplazar, { passive: true });
+    return () => window.removeEventListener("scroll", alDesplazar);
+  }, [activo]);
+  return [oculta, setOculta] as const;
 }

@@ -238,9 +238,21 @@ primitivas: lo que sigue se hereda, no se repite en cada página.
 - **Un enlace dentro de una frase es la excepción** y se queda a la altura de su
   línea: darle altura de mando rompería el párrafo.
 - **Lo que flota se reparte el borde inferior.** Tab bar, barra de acciones de
-  una ficha y botón de volver arriba se pisaban entre sí; ahora la barra marca
-  la raíz con `data-barra-acciones` y `globals.css` aparta al botón. Cualquier
+  una ficha y aviso de instalación se pisaban entre sí; ahora la barra marca
+  la raíz con `data-barra-acciones` y el aviso sube por encima. Cualquier
   pieza nueva que flote abajo se suma a ese reparto, no se inventa el suyo.
+  El botón de volver arriba ya no flota en el teléfono —tapaba los títulos
+  de las tarjetas—: ahí sube al principio tocar la pestaña de la página en
+  la que ya se está, y el botón solo aparece desde `xl`, tras tres pantallas,
+  en el margen que la columna deja libre.
+- **El chrome fijo no pasa de un quinto de la pantalla.** Cabecera, barra de
+  filtros y tab bar llegaron a sumar el 28 % a 390 × 844. Una barra pegajosa
+  de página es una fila de 48 px, se aparta al bajar y vuelve al subir (sin
+  animar con movimiento reducido).
+- **La cabecera busca siempre lo mismo.** «Buscar» abre la paleta en todas
+  las páginas; la búsqueda con alcance de una vertical vive dentro de su
+  página, con el alcance escrito debajo. Un mismo sitio del chrome que busca
+  cosas distintas según la página es una trampa.
 - **Una silueta de carga miente si no mide lo que va a llegar.** Se calibra con
   la altura real medida a 390 px, donde ninguna pregunta de esta plataforma cabe
   en un solo renglón.

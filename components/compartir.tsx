@@ -52,12 +52,16 @@ export async function compartirEnlace(tipo: TipoCompartido, titulo: string): Pro
   );
 }
 
-export default function Compartir({
-  titulo,
-  tipo = "proceso",
+/**
+ * Copia el enlace de la página. Suelto para que una fila compacta pueda
+ * llevarlo dentro de «Más opciones» (`components/acciones-ficha.tsx`).
+ */
+export function CopiarEnlace({
+  className,
+  variant = "outline",
 }: {
-  titulo: string;
-  tipo?: TipoCompartido;
+  className?: string;
+  variant?: "outline" | "ghost";
 }) {
   const [copiado, setCopiado] = useState(false);
 
@@ -72,15 +76,30 @@ export default function Compartir({
   };
 
   return (
+    <Button variant={variant} size="sm" onClick={copiar} className={className}>
+      {copiado && <IconCheck className="h-4 w-4 text-valido-600" />}
+      <span aria-live="polite">{copiado ? "Copiado" : "Copiar enlace"}</span>
+    </Button>
+  );
+}
+
+export default function Compartir({
+  titulo,
+  tipo = "proceso",
+  conCopiar = true,
+}: {
+  titulo: string;
+  tipo?: TipoCompartido;
+  /** Sin él, solo el botón de compartir: quien lo usa pone el de copiar aparte. */
+  conCopiar?: boolean;
+}) {
+  return (
     <span className="flex items-center gap-2">
       <Button variant="outline" size="sm" onClick={() => compartirEnlace(tipo, titulo)}>
         <IconShare className="h-3.5 w-3.5" />
         Compartir
       </Button>
-      <Button variant="outline" size="sm" onClick={copiar}>
-        {copiado && <IconCheck className="h-4 w-4 text-valido-600" />}
-        <span aria-live="polite">{copiado ? "Copiado" : "Copiar enlace"}</span>
-      </Button>
+      {conCopiar && <CopiarEnlace />}
     </span>
   );
 }

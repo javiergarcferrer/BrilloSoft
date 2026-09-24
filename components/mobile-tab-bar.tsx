@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SECCIONES, seccionDe } from "@/lib/secciones";
 import { MENU, puntoDe } from "@/lib/menu";
+import { CampoBusqueda } from "@/components/campo-busqueda";
+import { subirArriba } from "@/components/scroll-top";
 import {
   IconChartBar,
   IconCheck,
@@ -47,9 +50,29 @@ import {
  * Las cuatro verticales que quedan fijas son las que la plataforma nombra en
  * su propia descripción —qué compra, qué legisla y a quién paga— más el
  * panorama; las demás viven en la hoja de «Más», que se compone también desde
- * `lib/secciones` para que no haya dos listas que mantener. Cuando el
- * visitante está en una de ellas, la casilla de «Más» lleva su nombre y su
- * matiz: la barra sigue diciendo dónde está, sin mentir sobre qué abre.
+ * `lib/menu` —los mismos tres grupos del megamenú de escritorio— para que no
+ * haya dos listas que mantener.
+ *
+ * **«Más» no cambia de nombre.** Antes se rebautizaba «Finanzas» o «Normativa»
+ * al estar en esas páginas —el mismo sitio de la barra, con otra palabra según
+ * la página— y en `/obras`, `/instituciones` o `/provincias` ninguna casilla
+ * se encendía: la barra dejaba de responder «¿dónde estoy?». Ahora la regla es
+ * una: toda ruta es de una casilla fija o vive en la hoja, y entonces se
+ * enciende «Más». Qué página es exactamente lo dice su nombre accesible y,
+ * dentro de la hoja, la fila marcada.
+ *
+ * **Por qué ni Buscar ni Instituciones desplazan a una fija.** Buscar ya está
+ * en todas las páginas, en la cabecera y a la derecha, donde llega el pulgar,
+ * y encabeza la hoja; una casilla más sería el mismo mando dos veces en la
+ * misma pantalla. Instituciones es la puerta transversal, pero lo que la
+ * plataforma dice de sí misma —qué compra, qué legisla y a quién paga— son
+ * las tres fijas, y a una institución se llega igual desde el buscador o
+ * desde cualquier ficha de esas tres verticales.
+ *
+ * **Tocar la casilla de la página en la que ya se está sube al principio**, en
+ * vez de recargarla. Es el gesto de las apps del sistema, sustituye al botón
+ * flotante de «volver arriba» —que en el teléfono tapaba el contenido— y no
+ * tira los filtros de `/licitaciones`, que viven en el querystring.
  */
 
 const ICONOS: Record<SeccionId, (p: { className?: string }) => React.ReactElement> = {
@@ -64,17 +87,30 @@ const ICONOS: Record<SeccionId, (p: { className?: string }) => React.ReactElemen
 /** Las que ocupan casilla fija, en orden. El resto va a la hoja. */
 const FIJAS: SeccionId[] = ["licitaciones", "congreso", "nomina"];
 
+/** La búsqueda de toda la plataforma, tal como la presenta el megamenú. */
+const BUSCAR_TODO = MENU.flatMap((g) => g.destacado).find((d) => d.href === "/buscar");
+
+/** La fila de la hoja que corresponde a la página actual, si la hay. */
+function destinoDe(pathname: string): { href: string; label: string } | null {
+  let mejor: { href: string; label: string } | null = null;
+  for (const e of MENU.flatMap((g) => g.columnas.flatMap((c) => c.enlaces))) {
+    if (e.href === "/") continue;
+    const dentro = pathname === e.href || pathname.startsWith(`${e.href}/`);
+    if (dentro && (!mejor || e.href.length > mejor.href.length)) mejor = e;
+  }
+  return mejor;
+}
+
 export default function MobileTabBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const actual = seccionDe(pathname);
   const [hojaAbierta, setHojaAbierta] = useState(false);
+  const [texto, setTexto] = useState("");
 
   const fijas = FIJAS.map(
     (id) => SECCIONES.find((s) => s.id === id)!,
   ).filter(Boolean);
-  const restantes = SECCIONES.filter((s) => !FIJAS.includes(s.id));
-
-  const enHoja = restantes.find((s) => s.id === actual?.id) ?? null;
 
   const tabs = [
     {
@@ -95,6 +131,11 @@ export default function MobileTabBar() {
     })),
   ];
 
+  // Toda ruta que no enciende una fija vive en la hoja: entonces es «Más».
+  const enHoja = !tabs.some((t) => t.activa);
+  const destino = destinoDe(pathname);
+  const aqui = enHoja ? (destino?.label ?? actual?.nombre ?? null) : null;
+
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-surface lg:hidden"
@@ -107,6 +148,11 @@ export default function MobileTabBar() {
             key={href}
             href={href}
             aria-current={activa ? "page" : undefined}
+            onClick={(e) => {
+              if (pathname !== href) return;
+              e.preventDefault();
+              subirArriba();
+            }}
             className={cn(
               "group relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 pb-1.5 pt-2 text-[11px] font-medium leading-tight transition-colors active:scale-95",
               activa ? texto : "text-ink-soft",
@@ -128,30 +174,27 @@ export default function MobileTabBar() {
         <Sheet open={hojaAbierta} onOpenChange={setHojaAbierta}>
           <SheetTrigger
             // `aria-current` va también aquí: cuando el visitante está en una
-            // sección de la hoja, esta casilla **es** la que representa la
-            // página actual en la navegación, y quien no ve el matiz tiene
-            // derecho a saberlo igual.
+            // página de la hoja, esta casilla **es** la que representa la
+            // página actual en la navegación, y quien no ve el subrayado tiene
+            // derecho a saberlo igual. El nombre accesible empieza por «Más»,
+            // que es lo que se ve (WCAG 2.5.3), y dice después dónde se está.
             aria-current={enHoja ? "page" : undefined}
-            aria-label={
-              enHoja
-                ? `${enHoja.nombre} — ver las demás secciones`
-                : "Ver las demás secciones"
-            }
+            aria-label={aqui ? `Más secciones — estás en ${aqui}` : "Más secciones"}
             className={cn(
               "group relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 pb-1.5 pt-2 text-[11px] font-medium leading-tight transition-colors active:scale-95",
-              enHoja ? enHoja.hue.activo : "text-ink-soft",
+              enHoja ? (actual?.hue.activo ?? "text-ink") : "text-ink-soft",
             )}
           >
             <span
               aria-hidden
               className={cn(
                 "absolute top-0 h-0.5 w-8 transition-opacity",
-                enHoja ? enHoja.hue.barra : "bg-ink",
+                actual?.hue.barra ?? "bg-ink",
                 enHoja ? "opacity-100" : "opacity-0",
               )}
             />
             <IconMenu className="h-6 w-6" />
-            <span className="max-w-full truncate">{enHoja?.nombre ?? "Más"}</span>
+            <span className="max-w-full truncate">Más</span>
           </SheetTrigger>
 
           <SheetContent side="bottom">
@@ -163,6 +206,26 @@ export default function MobileTabBar() {
               </SheetDescription>
             </SheetHeader>
             <SheetBody className="px-2 py-2">
+              {/*
+                Buscar encabeza la hoja: quien abre «Más» sin saber en qué
+                grupo vive lo que busca no tiene que recorrer veinte filas para
+                descubrirlo. Es la misma búsqueda que «Buscar» en la cabecera y
+                que la tarjeta destacada del megamenú, con su alcance debajo.
+              */}
+              <CampoBusqueda
+                className="px-2 pb-2 pt-1"
+                valor={texto}
+                onValor={setTexto}
+                onLimpiar={() => setTexto("")}
+                onEnviar={(v) => {
+                  setHojaAbierta(false);
+                  setTexto("");
+                  router.push(v ? `/buscar?q=${encodeURIComponent(v)}` : "/buscar");
+                }}
+                etiqueta="Buscar en toda la plataforma"
+                placeholder="Buscar en todo…"
+                ayuda={BUSCAR_TODO?.nota}
+              />
               {/*
                 El mismo `lib/menu` que el megamenú de escritorio: en el teléfono
                 no hay panel ancho, así que los tres grupos se apilan y cada
@@ -178,7 +241,7 @@ export default function MobileTabBar() {
                           <Link
                             href={e.href}
                             onClick={() => setHojaAbierta(false)}
-                            aria-current={pathname === e.href ? "page" : undefined}
+                            aria-current={destino?.href === e.href ? "page" : undefined}
                             className="flex min-h-12 items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-canvas/70 active:bg-canvas/70 aria-[current=page]:bg-canvas"
                           >
                             <span

@@ -68,8 +68,6 @@ export interface Seccion {
    * puede deducir del camino, se declara.
    */
   sinVista?: string[];
-  /** ¿El buscador de licitaciones del header aplica en esta vertical? */
-  conBuscadorGlobal: boolean;
   hue: {
     /** Texto/acento del estado activo sobre fondo claro. */
     activo: string;
@@ -106,7 +104,6 @@ export const SECCIONES: Seccion[] = [
       { href: "/planes", label: "Planes" },
       { href: "/guia", label: "Guía" },
     ],
-    conBuscadorGlobal: true,
     hue: {
       activo: "text-v-compras",
       barra: "bg-v-compras",
@@ -126,7 +123,6 @@ export const SECCIONES: Seccion[] = [
       { href: "/deuda", label: "Deuda" },
       { href: "/finanzas/guia", label: "Guías" },
     ],
-    conBuscadorGlobal: false,
     hue: {
       activo: "text-v-finanzas",
       barra: "bg-v-finanzas",
@@ -148,7 +144,6 @@ export const SECCIONES: Seccion[] = [
       { href: "/congreso/perencion", label: "Perención", exact: true },
       { href: "/congreso/guia", label: "Guía" },
     ],
-    conBuscadorGlobal: false,
     hue: {
       activo: "text-v-congreso",
       barra: "bg-v-congreso",
@@ -164,7 +159,6 @@ export const SECCIONES: Seccion[] = [
     descriptor: "Decretos y leyes · Poder Ejecutivo",
     rutas: ["/normativa"],
     vistas: [{ href: "/normativa", label: "Decretos y leyes" }],
-    conBuscadorGlobal: false,
     hue: {
       activo: "text-v-normativa",
       barra: "bg-v-normativa",
@@ -180,7 +174,6 @@ export const SECCIONES: Seccion[] = [
     descriptor: "Plazas y sueldos · por institución",
     rutas: ["/nomina"],
     vistas: [{ href: "/nomina", label: "Explorador" }],
-    conBuscadorGlobal: false,
     hue: {
       activo: "text-v-nomina",
       barra: "bg-v-nomina",
@@ -202,7 +195,6 @@ export const SECCIONES: Seccion[] = [
     // El registro por cédula y la vuelta de Cuenta Única son trámites: se
     // llega a ellos desde cualquier ficha y no son ninguna de las dos vistas.
     sinVista: ["/democracia/registro", "/democracia/cuenta-unica"],
-    conBuscadorGlobal: false,
     hue: {
       activo: "text-v-democracia",
       barra: "bg-v-democracia",

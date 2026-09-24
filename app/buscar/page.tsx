@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { buscarCargos, buscarNormas, buscarObras, rutaDirecta } from "@/lib/buscar";
@@ -45,6 +45,115 @@ export default async function BuscarPage({
     : [[], { normas: [], total: 0, generadoEn: null }, [], { obras: [], total: 0 }];
   const sigue = BUSQUEDAS.filter((d) => d.href !== "/buscar");
 
+  const grupos = [
+    {
+      titulo: "Instituciones",
+      vacio: instituciones.length === 0,
+      el: (
+        <Grupo titulo="Instituciones" nota="Por nombre o siglas.">
+          <ul className="divide-y divide-hairline">
+            {instituciones.map((i) => (
+              <li key={i.id}>
+                <Fila href={hrefInstitucion(i)} titulo={i.nombre} detalle={[i.acronimo, i.tipo].filter(Boolean).join(" · ")} />
+              </li>
+            ))}
+          </ul>
+        </Grupo>
+      ),
+    },
+    {
+      titulo: "Normativa",
+      vacio: normas.normas.length === 0,
+      el: (
+        <Grupo
+          titulo="Normativa"
+          nota={
+            normas.total > normas.normas.length
+              ? `${formatInt(normas.total)} normas de los últimos cuatro años mencionan «${q}» en el título; estas son las más recientes.`
+              : "En el título de leyes, decretos y resoluciones de los últimos cuatro años."
+          }
+        >
+          <ul className="divide-y divide-hairline">
+            {normas.normas.map((n) => (
+              <li key={`${n.tipo}-${n.numero}-${n.fecha ?? ""}`}>
+                <Fila
+                  href={n.href}
+                  titulo={desdeMayusculas(n.titulo)}
+                  detalle={`${n.tipo} ${n.numero}${n.fecha ? ` · ${formatFecha(n.fecha)}` : ""}`}
+                />
+              </li>
+            ))}
+          </ul>
+        </Grupo>
+      ),
+    },
+    {
+      titulo: "Obras públicas",
+      vacio: obras.obras.length === 0,
+      el: (
+        <Grupo
+          titulo="Obras públicas"
+          nota={
+            obras.total > obras.obras.length
+              ? `${formatInt(obras.total)} proyectos de inversión coinciden; estos son los de mayor valor.`
+              : "Proyectos de inversión de MapaInversiones, por nombre, entidad o SNIP."
+          }
+          mas={obras.total > obras.obras.length ? `/obras?q=${encodeURIComponent(q)}` : undefined}
+        >
+          <ul className="divide-y divide-hairline">
+            {obras.obras.map((o) => (
+              <li key={o.snip}>
+                <Fila
+                  href={`/obras/${o.snip}`}
+                  titulo={desdeMayusculas(o.nombre)}
+                  detalle={`SNIP ${o.snip} · ${o.estado} · ${formatPesos(o.valor)}`}
+                />
+              </li>
+            ))}
+          </ul>
+        </Grupo>
+      ),
+    },
+    {
+      titulo: "Cargos en la nómina",
+      vacio: cargos.length === 0,
+      el: (
+        <Grupo
+          titulo="Cargos en la nómina"
+          nota="En la foto de nómina de las instituciones que la publican en formato procesable."
+        >
+          <ul className="divide-y divide-hairline">
+            {cargos.map((c) => (
+              <li key={c.cargo}>
+                <Fila
+                  href={`/nomina?q=${encodeURIComponent(c.cargo)}`}
+                  titulo={desdeMayusculas(c.cargo)}
+                  detalle={`${formatInt(c.plazas)} plazas en ${c.instituciones} ${c.instituciones === 1 ? "institución" : "instituciones"}`}
+                />
+              </li>
+            ))}
+          </ul>
+        </Grupo>
+      ),
+    },
+  ];
+  const llenos = grupos.filter((g) => !g.vacio);
+  const vacios = grupos.filter((g) => g.vacio);
+  const todoVacio = llenos.length === 0;
+
+  const sigueBuscando = (
+    <Card as="section" className="p-5">
+      <CardTitle>Sigue buscando «{q}» en</CardTitle>
+      <ul className="mt-2 divide-y divide-hairline">
+        {sigue.map((d) => (
+          <li key={d.href}>
+            <Fila href={`${d.href}?q=${encodeURIComponent(q)}`} titulo={d.etiqueta} detalle={d.alcance} />
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <header>
@@ -65,79 +174,27 @@ export default async function BuscarPage({
 
       {q && (
         <>
-          <Grupo titulo="Instituciones" vacio={instituciones.length === 0} nota="Por nombre o siglas.">
-            <ul className="divide-y divide-hairline">
-              {instituciones.map((i) => (
-                <li key={i.id}>
-                  <Fila href={hrefInstitucion(i)} titulo={i.nombre} detalle={[i.acronimo, i.tipo].filter(Boolean).join(" · ")} />
-                </li>
-              ))}
-            </ul>
-          </Grupo>
+          {/*
+            Los grupos vacíos no se pintan uno por uno. Cinco tarjetas que dicen
+            «Nada aquí.» empujaban fuera de la pantalla lo único útil —dónde
+            seguir buscando— y obligaban a leer cinco veces lo mismo; ahora se
+            nombran juntos en una línea. Y si no hubo nada en ninguno, lo
+            primero es «Sigue buscando», con el alcance de cada vertical.
+          */}
+          {llenos.map((g) => (
+            <Fragment key={g.titulo}>{g.el}</Fragment>
+          ))}
+          {vacios.length > 0 && (
+            <SinCoincidencias q={q} donde={vacios.map((g) => g.titulo)} />
+          )}
 
-          <Grupo
-            titulo="Normativa"
-            vacio={normas.normas.length === 0}
-            nota={
-              normas.total > normas.normas.length
-                ? `${formatInt(normas.total)} normas de los últimos cuatro años mencionan «${q}» en el título; estas son las más recientes.`
-                : "En el título de leyes, decretos y resoluciones de los últimos cuatro años."
-            }
-          >
-            <ul className="divide-y divide-hairline">
-              {normas.normas.map((n) => (
-                <li key={`${n.tipo}-${n.numero}-${n.fecha ?? ""}`}>
-                  <Fila
-                    href={n.href}
-                    titulo={desdeMayusculas(n.titulo)}
-                    detalle={`${n.tipo} ${n.numero}${n.fecha ? ` · ${formatFecha(n.fecha)}` : ""}`}
-                  />
-                </li>
-              ))}
-            </ul>
-          </Grupo>
+          {todoVacio && sigueBuscando}
 
-          <Grupo
-            titulo="Obras públicas"
-            vacio={obras.obras.length === 0}
-            nota={
-              obras.total > obras.obras.length
-                ? `${formatInt(obras.total)} proyectos de inversión coinciden; estos son los de mayor valor.`
-                : "Proyectos de inversión de MapaInversiones, por nombre, entidad o SNIP."
-            }
-            mas={obras.total > obras.obras.length ? `/obras?q=${encodeURIComponent(q)}` : undefined}
-          >
-            <ul className="divide-y divide-hairline">
-              {obras.obras.map((o) => (
-                <li key={o.snip}>
-                  <Fila
-                    href={`/obras/${o.snip}`}
-                    titulo={desdeMayusculas(o.nombre)}
-                    detalle={`SNIP ${o.snip} · ${o.estado} · ${formatPesos(o.valor)}`}
-                  />
-                </li>
-              ))}
-            </ul>
-          </Grupo>
-
-          <Grupo
-            titulo="Cargos en la nómina"
-            vacio={cargos.length === 0}
-            nota="En la foto de nómina de las instituciones que la publican en formato procesable."
-          >
-            <ul className="divide-y divide-hairline">
-              {cargos.map((c) => (
-                <li key={c.cargo}>
-                  <Fila
-                    href={`/nomina?q=${encodeURIComponent(c.cargo)}`}
-                    titulo={desdeMayusculas(c.cargo)}
-                    detalle={`${formatInt(c.plazas)} plazas en ${c.instituciones} ${c.instituciones === 1 ? "institución" : "instituciones"}`}
-                  />
-                </li>
-              ))}
-            </ul>
-          </Grupo>
-
+          {/*
+            Diputados se lee en vivo y llega aparte. Su vacío se dice en la
+            misma línea corta que los demás; su caída, no: «el SIL no
+            respondió» es otra pantalla, y se queda en su tarjeta.
+          */}
           <Suspense
             fallback={
               <Card as="section" className="p-5" aria-busy="true">
@@ -149,16 +206,7 @@ export default async function BuscarPage({
             <Diputados q={q} />
           </Suspense>
 
-          <Card as="section" className="p-5">
-            <CardTitle>Sigue buscando «{q}» en</CardTitle>
-            <ul className="mt-2 divide-y divide-hairline">
-              {sigue.map((d) => (
-                <li key={d.href}>
-                  <Fila href={`${d.href}?q=${encodeURIComponent(q)}`} titulo={d.etiqueta} detalle={d.alcance} />
-                </li>
-              ))}
-            </ul>
-          </Card>
+          {!todoVacio && sigueBuscando}
         </>
       )}
     </div>
@@ -182,10 +230,10 @@ async function Diputados({ q }: { q: string }) {
     );
   }
   const lista = pagina.results.slice(0, 6).map(normalizarIniciativa);
+  if (lista.length === 0) return <SinCoincidencias q={q} donde={["Diputados"]} />;
   return (
     <Grupo
       titulo="Diputados"
-      vacio={lista.length === 0}
       nota={
         pagina.total > lista.length
           ? `${formatInt(pagina.total)} iniciativas de la Cámara lo mencionan; estas son las primeras.`
@@ -211,13 +259,11 @@ async function Diputados({ q }: { q: string }) {
 function Grupo({
   titulo,
   nota,
-  vacio,
   mas,
   children,
 }: {
   titulo: string;
   nota: string;
-  vacio: boolean;
   mas?: string;
   children: React.ReactNode;
 }) {
@@ -225,15 +271,30 @@ function Grupo({
     <Card as="section" className="p-5">
       <div className="flex items-baseline justify-between gap-3">
         <CardTitle>{titulo}</CardTitle>
-        {mas && !vacio && (
+        {mas && (
           <Link href={mas} className="text-xs font-medium text-brand-700 hover:underline">
             Ver todas
           </Link>
         )}
       </div>
-      <p className="mt-1 text-xs leading-relaxed text-ink-soft">{vacio ? "Nada aquí." : nota}</p>
-      {!vacio && <div className="mt-2">{children}</div>}
+      <p className="mt-1 text-xs leading-relaxed text-ink-soft">{nota}</p>
+      <div className="mt-2">{children}</div>
     </Card>
+  );
+}
+
+/**
+ * Los grupos que no trajeron nada, nombrados juntos en una línea: «Nada con
+ * «agua» en Normativa u Obras públicas.» Se lee de una vez y no empuja fuera
+ * de la pantalla lo que sí trajo algo. Una lista disyuntiva y no «ni»: la
+ * frase afirma que no apareció en ninguno, y «o» lo dice sin doble negación.
+ */
+function SinCoincidencias({ q, donde }: { q: string; donde: string[] }) {
+  const lista = new Intl.ListFormat("es", { type: "disjunction" }).format(donde);
+  return (
+    <p className="px-1 text-sm leading-relaxed text-ink-soft">
+      Nada con «{q}» en {lista}.
+    </p>
   );
 }
 

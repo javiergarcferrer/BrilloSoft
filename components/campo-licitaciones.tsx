@@ -10,6 +10,8 @@ import {
   removeBusqueda,
   type Busqueda,
 } from "@/lib/busquedas";
+import { BUSQUEDAS } from "@/lib/secciones";
+import { Input } from "@/components/ui/input";
 import {
   IconBookmark,
   IconCheck,
@@ -28,17 +30,25 @@ import {
 } from "@/components/ui/popover";
 
 /**
- * Intelligent top-bar search. Lives in the global header and is the single
- * entry point for search + quick filtering across the app. It drives the
- * buscador purely through the URL (the app's source of truth): typing updates
- * `?q=`, quick filters set/clear params, and saved/recent searches navigate to
- * a full querystring. Works from any page (navigates to the buscador when
- * needed) — that buscador now lives at `/licitaciones`, since `/` is the
- * panorama of the whole platform.
+ * El campo de texto del buscador de licitaciones, con sus filtros rápidos,
+ * recientes y guardadas.
+ *
+ * Vivía en la cabecera, y solo en compras: la misma franja del chrome buscaba
+ * toda la plataforma en unas páginas y solo procesos de la DGCP en otras, y en
+ * el teléfono se comía la marca. Ahora la cabecera es siempre la búsqueda de
+ * toda la plataforma (`components/paleta.tsx`) y este campo vive dentro de
+ * `/licitaciones`, debajo del titular, con su alcance escrito debajo —la
+ * misma frase que la paleta pone junto al destino, sacada de `BUSQUEDAS`—.
+ *
+ * Sigue manejando el buscador solo a través de la URL, que es la fuente de
+ * verdad de la página: teclear pone `?q=`, un filtro rápido pone o quita
+ * parámetros, y una guardada navega a su querystring entero.
  */
 const BUSCADOR = "/licitaciones";
 
-export default function TopSearch() {
+const ALCANCE = BUSQUEDAS.find((b) => b.href === BUSCADOR)?.alcance;
+
+export default function CampoLicitaciones() {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
@@ -46,7 +56,7 @@ export default function TopSearch() {
     Solo el `?q=` del buscador es suyo. Otras vistas de la vertical usan el
     mismo nombre de parámetro para su propia búsqueda —`/proveedores?q=` busca
     en el registro de proveedores—, y reflejarlo aquí pondría el término de una
-    búsqueda bajo la etiqueta «Buscar licitaciones…»: exactamente la trampa
+    búsqueda bajo la etiqueta de licitaciones: exactamente la trampa
     cognitiva que este campo dice evitar. Fuera del buscador arranca vacío.
   */
   const spq = pathname === BUSCADOR ? (sp.get("q") ?? "") : "";
@@ -165,12 +175,16 @@ export default function TopSearch() {
       `modal={false}` deja la página detrás viva.
     */
     <Popover open={open} onOpenChange={setOpen} modal={false}>
-      <PopoverAnchor asChild>
-        <div className="relative w-full max-w-xl">
-          <div className="group flex items-center gap-2 rounded-lg bg-canvas/10 px-3 ring-1 ring-inset ring-canvas/20 transition focus-within:bg-surface focus-within:ring-canvas/40">
-            <IconSearch className="h-5 w-5 shrink-0 text-canvas/60 transition-colors group-focus-within:text-ink" />
-            <input
+      <div role="search">
+        <PopoverAnchor asChild>
+          <div className="relative">
+            <IconSearch
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft"
+            />
+            <Input
               ref={inputRef}
+              type="search"
               value={text}
               onChange={(e) => setText(e.target.value)}
               onFocus={() => {
@@ -187,20 +201,16 @@ export default function TopSearch() {
                   inputRef.current?.blur();
                 }
               }}
-              placeholder="Buscar licitaciones…"
-              aria-label="Buscar licitaciones"
-              /*
-                16 px en el teléfono y 15 desde `sm`. Es la misma regla que ya
-                llevan `Input` y `SelectTrigger`: por debajo de 16 px Safari de
-                iOS **hace zoom** al enfocar el campo y deja la página
-                desencuadrada, con el header y la tab bar fuera de sitio. Este
-                era el único campo crudo de la plataforma y se había quedado sin
-                la regla.
-              */
-              className="h-10 w-full bg-transparent text-base text-canvas outline-none placeholder:text-canvas/55 focus:text-ink focus:placeholder:text-ink-soft sm:text-[15px]"
+              placeholder="Buscar en las licitaciones…"
+              aria-label="Buscar en las licitaciones"
+              aria-describedby={ALCANCE ? "alcance-licitaciones" : undefined}
+              enterKeyHint="search"
+              autoComplete="off"
+              className={text ? "pl-9 pr-12 sm:pr-10" : "pl-9 pr-3"}
             />
             {text && (
               <Button
+                type="button"
                 variant="ghost"
                 size="icon-sm"
                 onMouseDown={(e) => {
@@ -208,15 +218,21 @@ export default function TopSearch() {
                   reset();
                   inputRef.current?.focus();
                 }}
-                className="h-7 w-7 shrink-0 text-canvas/60 hover:bg-canvas/10 hover:text-canvas group-focus-within:text-ink-soft group-focus-within:hover:text-ink"
+                // El campo mide 44 px en el teléfono: el aspa cabe entera.
+                className="absolute right-0.5 top-1/2 h-11 w-11 -translate-y-1/2 text-ink-soft sm:right-1 sm:h-8 sm:w-8"
               >
                 <IconX className="h-4 w-4" />
-                <span className="sr-only">Limpiar</span>
+                <span className="sr-only">Limpiar la búsqueda</span>
               </Button>
             )}
           </div>
-        </div>
-      </PopoverAnchor>
+        </PopoverAnchor>
+        {ALCANCE && (
+          <p id="alcance-licitaciones" className="mt-1.5 text-xs leading-relaxed text-ink-soft">
+            {ALCANCE}
+          </p>
+        )}
+      </div>
 
       {/*
         Tres medidas gobiernan este panel en el teléfono y las tres se midieron

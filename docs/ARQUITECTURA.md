@@ -469,7 +469,7 @@ del archivo que las lleva:
 | `components/marca.tsx` | El contrasello: `Sello`, `SelloCompacto`, `Logotipo`. |
 | `components/plegable.tsx` | Revelación progresiva sobre `ui/collapsible`; el botón dice **cuántos hay**, nunca «ver más». |
 | `components/bottom-sheet.tsx` | La hoja de filtros del teléfono, sobre `ui/sheet`. |
-| `components/paleta.tsx` | «¿A dónde vas?» desde cualquier página, sobre `ui/dialog` + `ui/command` (⌘K, Ctrl K, «/»): todas las vistas de `lib/secciones` filtrables sin tildes, y lo tecleado ofrecido a **cada** búsqueda de `BUSQUEDAS` con su alcance debajo. No es un buscador global —no hay índice propio— y no lo finge. |
+| `components/paleta.tsx` | «Buscar» en la cabecera de todas las páginas: «¿a dónde vas?», sobre `ui/dialog` + `ui/command` (⌘K, Ctrl K, «/»): todas las vistas de `lib/secciones` filtrables sin tildes, y lo tecleado ofrecido a **cada** búsqueda de `BUSQUEDAS` con su alcance debajo. No es un buscador global —no hay índice propio— y no lo finge. |
 | `components/ruta.tsx` | La ruta de una ficha sobre `ui/breadcrumb`: la miga entera desde `sm`, solo la vuelta a 44 px en el teléfono. Si se vino de esa vista (`components/rastro.tsx`), volver es el «atrás» del navegador y conserva filtros y posición. |
 | `components/paginador.tsx` | Anterior · página · siguiente, con enlaces (`href`) o con estado (`onPage`). Mandos a 44 px en los bordes; el que no aplica se apaga, no desaparece. |
 | `components/antiguedad.tsx` | La fecha de una fila de listado: `<time>` real, relativa a la vista, exacta en el `title`. |

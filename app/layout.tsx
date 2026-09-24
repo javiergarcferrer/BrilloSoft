@@ -5,7 +5,6 @@ import "./globals.css";
 import MobileTabBar from "@/components/mobile-tab-bar";
 import InstallPrompt from "@/components/install-prompt";
 import ScrollTop from "@/components/scroll-top";
-import HeaderSearch from "@/components/header-search";
 import Megamenu from "@/components/megamenu";
 import { SITIO } from "@/lib/sitio";
 import Paleta from "@/components/paleta";
@@ -107,44 +106,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           {/*
-            `group/header` existe para una sola regla: el logotipo se aparta
-            cuando —y solo cuando— el slot de búsqueda trae campo. Se resuelve
-            con `:has()` sobre el marcador que pone `HeaderSearch`, así que la
-            marca no necesita saber en qué vertical está.
+            La cabecera es la misma en todas las páginas: marca, megamenú y
+            «Buscar». Antes, en compras, el campo de licitaciones ocupaba este
+            sitio y en el teléfono se comía el logotipo y la paleta, así que la
+            misma franja buscaba cosas distintas según la página —y quien
+            tecleaba ahí un decreto desde `/licitaciones` recibía procesos—. La
+            búsqueda con alcance de una vertical vive ahora dentro de su página
+            (`app/buscador.tsx`); la de aquí es siempre la de toda la
+            plataforma.
           */}
-          <div className="group/header mx-auto flex min-h-[64px] max-w-6xl items-center gap-2.5 px-4 py-2 sm:gap-4">
+          <div className="mx-auto flex min-h-[64px] max-w-6xl items-center gap-2.5 px-4 py-2 sm:gap-4">
             <Link
               href="/"
               className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-90"
             >
               <SelloCompacto className="h-9 w-9" fondo="#f7f3ea" trazo="#171d2e" />
-              {/*
-                A 390 px el logotipo y el campo se disputaban la fila y el campo
-                quedaba en 166 px, menos de lo que mide su propio marcador de
-                posición. El sello solo ya identifica la plataforma —es la
-                marca, no una viñeta, y es el icono con el que se instala—, así
-                que cede el sitio mientras hay buscador y vuelve desde `sm`.
-              */}
-              <Logotipo
-                sobreTinta
-                className="text-[19px] max-[380px]:hidden max-sm:group-has-[[data-buscador]]/header:hidden"
-              />
+              <Logotipo sobreTinta className="text-[19px] max-[340px]:hidden" />
             </Link>
 
-            <div className="flex min-w-0 flex-1 justify-center">
-              <HeaderSearch />
-            </div>
+            <div className="min-w-0 flex-1" />
 
             <Megamenu />
 
             {/*
-              La paleta —«¿a dónde vas?»— vive en el borde derecho, que es donde
-              llega el pulgar de la mano que sostiene el teléfono. Por debajo de
-              `lg` cede su sitio cuando el header trae el campo de licitaciones:
-              los dos no caben a 390 px y ahí el campo es la búsqueda que el
-              lector vino a hacer. El atajo de teclado la sigue abriendo.
+              «Buscar» vive en el borde derecho, que es donde llega el pulgar de
+              la mano que sostiene el teléfono, y dice su nombre en todas las
+              anchuras: una lupa sola no dice qué recorre.
             */}
-            <div className="shrink-0 max-lg:group-has-[[data-buscador]]/header:hidden">
+            <div className="shrink-0">
               <Paleta />
             </div>
           </div>

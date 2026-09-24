@@ -42,11 +42,12 @@ import {
  * toda la arquitectura de `lib/secciones` en una lista que se filtra al
  * teclear, y el texto tecleado ofrecido a **cada** búsqueda de la plataforma.
  *
- * Lo que no hace es fingir un buscador global. La plataforma no tiene índice
- * propio —no tiene base de datos, y no la va a tener—, así que no hay «buscar
- * en todo»: hay una fila por destino y cada una dice debajo qué recorre. Es la
- * trampa que `header-search.tsx` documenta, evitada al revés: el alcance no
- * se esconde tras un campo único, se declara en cada opción.
+ * Lo que no hace es fingir un índice. La plataforma no tiene uno propio —no
+ * tiene base de datos, y no la va a tener—, así que lo tecleado se ofrece a
+ * cada destino y cada fila dice debajo qué recorre; «Toda la plataforma»
+ * (`/buscar`) encabeza y declara igual su alcance. Es la trampa del campo de
+ * licitaciones que vivía en la cabecera, evitada al revés: el alcance no se
+ * esconde tras un campo único, se declara en cada opción.
  *
  * Se abre con el botón del header, con ⌘K / Ctrl K y con «/» fuera de un
  * campo, que es la tecla que la web ya enseñó para buscar.
@@ -143,13 +144,20 @@ export default function Paleta() {
     <Dialog open={abierta} onOpenChange={setAbierta}>
       <DialogTrigger
         aria-keyshortcuts="Meta+K Control+K /"
+        /*
+          El mismo mando en todas las páginas y en todas las anchuras, con su
+          nombre escrito: «Buscar». Antes era una lupa sola en el teléfono y
+          «Ir a…» en escritorio, y en compras cedía su sitio a un campo que
+          solo buscaba licitaciones. El filete lo distingue de los enlaces del
+          megamenú: es la caja donde se escribe, no un destino más.
+        */
         className={cn(
-          buttonVariants({ variant: "tinta", size: "icon" }),
-          "lg:h-8 lg:w-auto lg:gap-2 lg:px-2.5 lg:text-[13px] lg:font-medium",
+          buttonVariants({ variant: "tinta", size: "default" }),
+          "gap-2 px-3 text-canvas/80 ring-1 ring-inset ring-canvas/20 lg:h-8 lg:px-2.5 lg:text-[13px] lg:font-medium",
         )}
       >
         <IconSearch className="h-5 w-5 lg:h-4 lg:w-4" />
-        <span className="sr-only lg:not-sr-only">Ir a…</span>
+        <span>Buscar</span>
         <kbd className="hidden rounded-sm border border-canvas/25 px-1 font-mono text-[11px] text-canvas/65 xl:inline">
           {atajo}
         </kbd>
