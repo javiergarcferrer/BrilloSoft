@@ -1,28 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { IconArrowUp } from "./icons";
 import { Button } from "@/components/ui/button";
-
-/** Sube al principio de la página, sin animar si se pidió menos movimiento. */
-export function subirArriba() {
-  const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  window.scrollTo({ top: 0, behavior: quieto ? "auto" : "smooth" });
-}
+import { subeConLaPestana, subirArriba } from "@/components/mobile-tab-bar";
+import { cn } from "@/lib/cn";
 
 /**
- * Botón flotante para volver arriba — solo desde `xl` y solo tras tres
- * pantallas.
+ * Botón flotante para volver arriba — tras tres pantallas.
  *
- * Por debajo de `xl` no existe, y es una decisión, no un olvido. Medido a
- * 390 px en `/licitaciones`, el botón aparecía a los 700 px de desplazamiento
- * y caía sobre el título de las tarjetas: en el teléfono la columna de
- * contenido ocupa todo el ancho, así que cualquier cosa que flote encima tapa
- * algo. Ahí volver arriba es de la tab bar —tocar la pestaña de la página en
- * la que ya se está sube al principio, como en las apps del sistema— y, en
- * iOS, de tocar la barra de estado. Entre `lg` y `xl` la columna de 72 rem
- * deja menos de 60 px de margen y el botón seguiría pisando el borde derecho
- * del contenido; desde 1280 px el margen le cabe entero.
+ * Desde `lg`, donde no hay tab bar, aparece siempre en la esquina inferior
+ * derecha. Por debajo de `lg` depende de la página. En las cuatro raíces de
+ * la tab bar (`/`, `/licitaciones`, `/congreso`, `/nomina`) no se pinta:
+ * ahí sube al principio tocar la pestaña encendida, como en las apps del
+ * sistema, y un botón encima de la columna —que en el teléfono ocupa todo el
+ * ancho— tapaba los títulos de las tarjetas. En cualquier otra ruta —una
+ * ficha, una vista interna, una página de «Más»— ninguna pestaña es la página
+ * actual, así que tocarla navega en vez de subir; sin el botón, el teléfono se
+ * quedaba sin manera de volver arriba. Ahí flota por encima de la tab bar y,
+ * si la ficha monta su barra de acciones (`data-barra-acciones`), por encima
+ * de ella también, igual que el aviso de instalación.
  *
  * Tres pantallas y no 700 px: antes de eso, volver arriba es un gesto del
  * pulgar o de la rueda y el botón no ahorra nada; solo estorba.
@@ -32,6 +30,7 @@ export function subirArriba() {
  * aviso de instalación ocupa su esquina.
  */
 export default function ScrollTop() {
+  const pathname = usePathname();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -43,11 +42,18 @@ export default function ScrollTop() {
 
   if (!show) return null;
 
+  // En una raíz de pestaña, en el teléfono sube la pestaña: el botón solo desde `lg`.
+  const soloEscritorio = subeConLaPestana(pathname);
+
   return (
     <Button
       size="icon"
       onClick={subirArriba}
-      className="boton-subir fixed bottom-4 right-4 z-40 hidden h-11 w-11 rounded-lg bg-ink text-canvas shadow-card hover:bg-brand-700 xl:inline-flex"
+      className={cn(
+        "boton-subir fixed right-4 z-40 h-11 w-11 rounded-lg bg-ink text-canvas shadow-card hover:bg-brand-700",
+        "bottom-[calc(5.25rem+env(safe-area-inset-bottom))] max-lg:[[data-barra-acciones]_&]:bottom-[calc(9.75rem+env(safe-area-inset-bottom))] lg:bottom-4",
+        soloEscritorio ? "hidden lg:inline-flex" : "inline-flex",
+      )}
     >
       <IconArrowUp className="h-5 w-5" />
       <span className="sr-only">Volver arriba</span>

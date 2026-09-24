@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Suspense, type ReactNode } from "react";
+import { cache, Suspense, type ReactNode } from "react";
 import type { Metadata } from "next";
 import IniciativaCard from "@/components/iniciativa-card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 import BuscadorCongreso from "./buscador-congreso";
 import SelectorTema from "./selector-tema";
 import { hrefCongreso, TIPO_INICIAL, type FiltrosCongreso } from "./filtros";
-import { EsqueletoFilas } from "@/components/esqueleto";
+import { Esqueleto, EsqueletoFilas } from "@/components/esqueleto";
 import {
   buscarIniciativas,
   getGrupos,
@@ -38,43 +38,71 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 /*
-  La página se pinta en dos tiempos. La cabecera, la alerta de legislatura, el
-  buscador y los filtros no dependen del listado y llegan con la primera
-  respuesta; el listado espera al SIL dentro de su propio `Suspense` y cae en
-  su hueco al contestar. Quien busca ve al instante que la búsqueda se está
-  haciendo, en lugar de una pantalla congelada mientras el SIL tarda.
+  La página se pinta en tres tiempos. La cabecera, la alerta de legislatura y
+  el buscador no dependen del SIL y llegan con la primera respuesta. Los
+  filtros esperan a los temas del SIL (cacheados un día) en su propio
+  `Suspense`, y el listado espera a la página de iniciativas en el suyo. Quien
+  busca ve al instante que la búsqueda se está haciendo, en lugar de una
+  pantalla congelada mientras el SIL tarda: con el SIL lento, el `fetch` de
+  los temas podía retener la página entera hasta 25 s por intento.
 */
+
+interface ParamsCongreso {
+  q?: string;
+  page?: string;
+  tema?: string;
+  tipo?: string;
+  estado?: string;
+  /** Enlace viejo: el tema por su nombre, que se filtraba sobre una sola página. */
+  grupo?: string;
+}
+
+type Tema = { id: number; nombre: string };
+
+/**
+ * Los 15 temas del SIL. `cache` porque los piden los filtros y el listado en
+ * la misma petición: una sola lectura. Si el SIL no contesta, la lista queda
+ * vacía, el selector no se pinta y el listado es el registro entero.
+ */
+const leerTemas = cache(async (): Promise<Tema[]> =>
+  (await getGrupos()).map((g) => ({ id: g.id, nombre: limpiarTexto(g.descripcion) })),
+);
+
+/**
+ * El tema que de verdad vale: el id pedido si el SIL lo conoce o, en un
+ * enlace viejo, el nombre de `?grupo=`. Se resuelve dentro de cada `Suspense`
+ * —no con un `redirect`, que ya no puede reescribir la respuesta una vez
+ * empezado el streaming—, y los enlaces que se construyen desde ahí llevan ya
+ * el `?tema=` por id, así que el enlace viejo se cura al primer clic.
+ */
+function resolverTema(temas: Tema[], filtros: FiltrosCongreso, grupoViejo: string): Tema | null {
+  return (
+    temas.find((t) => t.id === filtros.tema) ??
+    (grupoViejo ? temas.find((t) => t.nombre === grupoViejo) : undefined) ??
+    null
+  );
+}
+
+/** Los filtros con el tema resuelto; sin tema, tipo y estado vuelven a los de fábrica. */
+function conTemaResuelto(filtros: FiltrosCongreso, tema: Tema | null): FiltrosCongreso {
+  return tema ? { ...filtros, tema: tema.id } : { ...filtros, tema: null };
+}
+
 export default async function CongresoPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    q?: string;
-    page?: string;
-    tema?: string;
-    tipo?: string;
-    estado?: string;
-    /** Enlace viejo: el tema por su nombre, que se filtraba sobre una sola página. */
-    grupo?: string;
-  }>;
+  searchParams: Promise<ParamsCongreso>;
 }) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page ?? "1") || 1);
 
-  // Los 15 temas del SIL, cacheados un día. Si no contestan, el selector no se
-  // pinta y el listado sigue siendo el registro entero.
-  const temas = (await getGrupos()).map((g) => ({
-    id: g.id,
-    nombre: limpiarTexto(g.descripcion),
-  }));
-  const grupoViejo = params.grupo?.trim();
-  const tema =
-    temas.find((t) => t.id === Number(params.tema)) ??
-    (grupoViejo ? temas.find((t) => t.nombre === grupoViejo) : undefined) ??
-    null;
-
+  // El tema tal como llega en la URL; lo validan contra el SIL los filtros y
+  // el listado, cada uno dentro de su `Suspense`.
+  const temaPedido = Number(params.tema);
+  const grupoViejo = params.grupo?.trim() ?? "";
   const filtros: FiltrosCongreso = {
     q: params.q?.trim() ?? "",
-    tema: tema?.id ?? null,
+    tema: Number.isInteger(temaPedido) && temaPedido > 0 ? temaPedido : null,
     tipo: params.tipo === "resolucion" ? "resolucion" : TIPO_INICIAL,
     perimidas: params.estado === "perimidas",
   };
@@ -130,13 +158,65 @@ export default async function CongresoPage({
 
       <BuscadorCongreso initial={filtros.q} filtros={filtros} />
 
-      {temas.length > 0 && (
-        <FiltrosIniciativas filtros={filtros} temas={temas} nombreTema={tema?.nombre ?? null} />
-      )}
-
-      <Suspense key={hrefCongreso(filtros, page)} fallback={<ListaEsqueleto q={filtros.q} />}>
-        <ListaIniciativas filtros={filtros} nombreTema={tema?.nombre ?? null} page={page} />
+      {/*
+        Sin `key`: al cambiar de filtro, los filtros de antes siguen a la vista
+        mientras llegan los nuevos (los temas ya están en caché), en vez de
+        parpadear en silueta a cada clic.
+      */}
+      <Suspense fallback={<FiltrosEsqueleto conTema={filtros.tema !== null || !!grupoViejo} />}>
+        <FiltrosCargados filtros={filtros} grupoViejo={grupoViejo} />
       </Suspense>
+
+      <Suspense
+        key={`${hrefCongreso(filtros, page)}|${grupoViejo}`}
+        fallback={<ListaEsqueleto q={filtros.q} />}
+      >
+        <ListaIniciativas filtros={filtros} grupoViejo={grupoViejo} page={page} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function FiltrosCargados({
+  filtros,
+  grupoViejo,
+}: {
+  filtros: FiltrosCongreso;
+  grupoViejo: string;
+}) {
+  const temas = await leerTemas();
+  if (temas.length === 0) return null;
+  const tema = resolverTema(temas, filtros, grupoViejo);
+  return (
+    <FiltrosIniciativas
+      filtros={conTemaResuelto(filtros, tema)}
+      temas={temas}
+      nombreTema={tema?.nombre ?? null}
+    />
+  );
+}
+
+/**
+ * La silueta de la barra de filtros mientras el SIL da los temas. Las alturas
+ * se midieron contra la barra real: a 390 px, 44 px sin tema (el botón
+ * «Filtros») y 135 con tema (botón, fila de chips y la nota de los fijos, en
+ * dos líneas); a 1366, 91,5 y 157 px el panel entero.
+ */
+function FiltrosEsqueleto({ conTema }: { conTema: boolean }) {
+  return (
+    <div aria-hidden className="mt-4">
+      <div className="lg:hidden">
+        <Esqueleto className="h-11 w-32 sm:h-10" />
+        {conTema && (
+          <>
+            <Esqueleto className="-mb-0.5 mt-2 h-10 w-full" />
+            <div className="mt-1.5 h-[2.4375rem] sm:h-[1.21875rem]" />
+          </>
+        )}
+      </div>
+      <div className={cn("hidden lg:block", conTema ? "h-[9.8125rem]" : "h-[5.71875rem]")}>
+        <Esqueleto className="h-[3.75rem] w-full" />
+      </div>
     </div>
   );
 }
@@ -182,7 +262,6 @@ function FiltrosIniciativas({
             clave: "tipo",
             label: NOMBRE_TIPO.ley,
             porDefecto: true,
-            nota: "Por defecto. Dentro de un tema el SIL exige un tipo: cámbialo en los filtros.",
           }
         : {
             clave: "tipo",
@@ -201,13 +280,16 @@ function FiltrosIniciativas({
             clave: "estado",
             label: "sin las perimidas",
             porDefecto: true,
-            nota: "Por defecto. El SIL separa las perimidas del resto: cámbialo en los filtros.",
           },
     );
   }
 
   return (
-    <BarraFiltros chips={chips} className="mt-4">
+    <BarraFiltros
+      chips={chips}
+      notaFijos="Los grises vienen de fábrica: dentro de un tema el SIL siempre pide un tipo y un estado, así que se cambian, no se quitan."
+      className="mt-4"
+    >
       <div className="grid gap-4 lg:grid-cols-[16rem_1fr_1fr] lg:items-start">
         <SelectorTema filtros={filtros} temas={temas} />
 
@@ -294,15 +376,31 @@ function FiltroApagado({ children }: { children: ReactNode }) {
 }
 
 async function ListaIniciativas({
-  filtros,
-  nombreTema,
+  filtros: pedidos,
+  grupoViejo,
   page,
 }: {
   filtros: FiltrosCongreso;
-  nombreTema: string | null;
+  grupoViejo: string;
   page: number;
 }) {
-  const { q } = filtros;
+  const { q } = pedidos;
+  const leerFiltrada = (grupo: number) =>
+    listIniciativasFiltradas(
+      page,
+      { grupo, tipo: pedidos.tipo, perimidas: pedidos.perimidas },
+      q,
+    );
+
+  // Los temas y la página pedida van en paralelo: con el tema de la URL casi
+  // siempre válido, esperar a validarlo antes de pedir el listado sería una
+  // vuelta de más al SIL.
+  const adelantada = pedidos.tema !== null ? leerFiltrada(pedidos.tema) : null;
+  const temas = await leerTemas();
+  const tema = resolverTema(temas, pedidos, grupoViejo);
+  const filtros = conTemaResuelto(pedidos, tema);
+  const nombreTema = tema?.nombre ?? null;
+
   /*
     «No hay resultados» y «la fuente no contestó» dicen cosas opuestas sobre el
     Congreso. Las dos lecturas devuelven `null` cuando el SIL no contesta, así
@@ -310,11 +408,9 @@ async function ListaIniciativas({
   */
   const respuesta =
     filtros.tema !== null
-      ? await listIniciativasFiltradas(
-          page,
-          { grupo: filtros.tema, tipo: filtros.tipo, perimidas: filtros.perimidas },
-          q,
-        )
+      ? await (filtros.tema === pedidos.tema && adelantada
+          ? adelantada
+          : leerFiltrada(filtros.tema))
       : await buscarIniciativas(q, page, 300);
   const silCaido = respuesta === null;
   const iniciativas = (respuesta?.results ?? []).map(normalizarIniciativa);

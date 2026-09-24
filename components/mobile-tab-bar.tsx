@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { SECCIONES, seccionDe } from "@/lib/secciones";
 import { MENU, puntoDe } from "@/lib/menu";
 import { CampoBusqueda } from "@/components/campo-busqueda";
-import { subirArriba } from "@/components/scroll-top";
 import {
   IconChartBar,
   IconCheck,
@@ -70,9 +69,11 @@ import {
  * desde cualquier ficha de esas tres verticales.
  *
  * **Tocar la casilla de la página en la que ya se está sube al principio**, en
- * vez de recargarla. Es el gesto de las apps del sistema, sustituye al botón
- * flotante de «volver arriba» —que en el teléfono tapaba el contenido— y no
- * tira los filtros de `/licitaciones`, que viven en el querystring.
+ * vez de recargarla. Es el gesto de las apps del sistema, sustituye en esas
+ * cuatro raíces al botón flotante de «volver arriba» —que en el teléfono
+ * tapaba el contenido— y no tira los filtros de `/licitaciones`, que viven en
+ * el querystring. Fuera de ellas ninguna casilla es la página actual y el
+ * botón vuelve (`subeConLaPestana`).
  */
 
 const ICONOS: Record<SeccionId, (p: { className?: string }) => React.ReactElement> = {
@@ -86,6 +87,25 @@ const ICONOS: Record<SeccionId, (p: { className?: string }) => React.ReactElemen
 
 /** Las que ocupan casilla fija, en orden. El resto va a la hoja. */
 const FIJAS: SeccionId[] = ["licitaciones", "congreso", "nomina"];
+
+/** Sube al principio de la página, sin animar si se pidió menos movimiento. */
+export function subirArriba() {
+  const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: quieto ? "auto" : "smooth" });
+}
+
+/**
+ * Si en esta ruta tocar una pestaña sube al principio: solo cuando la ruta es
+ * exactamente el `href` de una casilla. En una ficha o en una página de «Más»
+ * tocar la pestaña navega, y entonces el teléfono necesita el botón flotante
+ * de `components/scroll-top.tsx`.
+ */
+export function subeConLaPestana(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    FIJAS.some((id) => SECCIONES.find((s) => s.id === id)?.href === pathname)
+  );
+}
 
 /** La búsqueda de toda la plataforma, tal como la presenta el megamenú. */
 const BUSCAR_TODO = MENU.flatMap((g) => g.destacado).find((d) => d.href === "/buscar");

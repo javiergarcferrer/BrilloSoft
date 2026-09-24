@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type MouseEvent, type ReactNode } from "react";
+import {
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 
 import { cn } from "@/lib/cn";
 import { BottomSheet } from "@/components/bottom-sheet";
@@ -15,7 +21,8 @@ import { IconSliders, IconX } from "@/components/icons";
  * `href` es la página **sin** ese filtro. Un filtro que el origen exige —el SIL
  * no lista «todos los tipos» dentro de un tema— no se puede quitar, y entonces
  * no lleva `href`: se ve, que es lo que pide la regla, pero no finge un aspa
- * que no haría nada.
+ * que no haría nada. Por qué no se quita lo dice `notaFijos` de la barra, en
+ * texto a la vista: un `title` no existe en una pantalla táctil.
  */
 export interface ChipFiltro {
   clave: string;
@@ -23,8 +30,6 @@ export interface ChipFiltro {
   href?: string;
   /** Viene de fábrica: se pinta en gris, no en la firma. */
   porDefecto?: boolean;
-  /** Por qué no se puede quitar, cuando no hay `href`. */
-  nota?: string;
 }
 
 /**
@@ -42,16 +47,25 @@ export interface ChipFiltro {
  *
  * Los controles se pasan como `children` y se pintan en los dos sitios: el
  * panel de escritorio y la hoja. Al pulsar un enlace dentro de la hoja, la hoja
- * se cierra: la navegación ya es la respuesta.
+ * se cierra: la navegación ya es la respuesta. Lo mismo al elegir una opción
+ * de un `Select`, que no es un enlace —navega desde `onValueChange`—, y como
+ * red, cuando lo puesto cambia: los chips llegan distintos del servidor. Así
+ * ningún selector tiene que saber que vive dentro de una hoja.
  */
 export function BarraFiltros({
   chips,
   conteo,
   children,
   titulo = "Filtros",
+  notaFijos,
   className,
 }: {
   chips: ChipFiltro[];
+  /**
+   * Por qué los chips sin `href` no se pueden quitar. Se escribe una vez,
+   * debajo de los chips, solo si hay alguno así.
+   */
+  notaFijos?: string;
   /** El recuento que se ve junto al botón en el teléfono, con su base. */
   conteo?: string;
   children: ReactNode;
@@ -59,9 +73,39 @@ export function BarraFiltros({
   className?: string;
 }) {
   const [abierta, setAbierta] = useState(false);
-  const cerrarSiEnlace = (e: MouseEvent) => {
-    if ((e.target as Element).closest("a[href]")) setAbierta(false);
+  /*
+    Se cierra al elegir: un enlace, o una opción de un `Select`. Las opciones
+    viven en un portal, pero los eventos de React suben por el árbol de
+    componentes y no por el DOM, así que llegan aquí igual. Radix elige con el
+    `pointerup` del ratón, con el `click` del dedo y con Intro o Espacio.
+  */
+  const cerrarSiElige = (e: MouseEvent | PointerEvent | KeyboardEvent) => {
+    // Radix anula el `pointerup` que abrió la lista para que no elija nada.
+    if (e.defaultPrevented) return;
+    const t = e.target as Element;
+    if (e.type === "keydown") {
+      const k = (e as KeyboardEvent).key;
+      if ((k === "Enter" || k === " ") && t.closest("[role=option]")) setAbierta(false);
+      return;
+    }
+    if (e.type === "pointerup" && (e as PointerEvent).pointerType !== "mouse") return;
+    if (t.closest(e.type === "click" ? "a[href], [role=option]" : "[role=option]")) {
+      setAbierta(false);
+    }
   };
+
+  // Y, por si un control navega sin pasar por ahí, cuando lo puesto cambia.
+  const firma = chips.map((c) => `${c.clave}=${c.label}`).join("|");
+  const [firmaVista, setFirmaVista] = useState(firma);
+  if (firma !== firmaVista) {
+    setFirmaVista(firma);
+    setAbierta(false);
+  }
+
+  const nota =
+    notaFijos && chips.some((c) => !c.href) ? (
+      <p className="mt-1.5 text-xs leading-relaxed text-ink-soft">{notaFijos}</p>
+    ) : null;
 
   return (
     <div className={className}>
@@ -75,6 +119,7 @@ export function BarraFiltros({
             ))}
           </div>
         )}
+        {nota}
       </div>
 
       {/* Teléfono: un botón con cuántos hay, y los chips en una fila que se desliza. */}
@@ -84,7 +129,7 @@ export function BarraFiltros({
             <IconSliders className="h-4 w-4 text-brand-600" />
             {titulo}
             {chips.length > 0 && (
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 font-mono text-[11px] font-semibold tabular-nums text-canvas">
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 font-mono text-xs font-semibold tabular-nums text-canvas">
                 {chips.length}
               </span>
             )}
@@ -102,6 +147,7 @@ export function BarraFiltros({
             ))}
           </div>
         )}
+        {nota}
       </div>
 
       <BottomSheet
@@ -114,7 +160,12 @@ export function BarraFiltros({
           </Button>
         }
       >
-        <div className="pb-2" onClickCapture={cerrarSiEnlace}>
+        <div
+          className="pb-2"
+          onClickCapture={cerrarSiElige}
+          onPointerUpCapture={cerrarSiElige}
+          onKeyDownCapture={cerrarSiElige}
+        >
           {children}
         </div>
       </BottomSheet>
@@ -141,7 +192,6 @@ function Chip({ chip, className }: { chip: ChipFiltro; className?: string }) {
       <Badge
         forma="etiqueta"
         variant="contorno"
-        title={chip.nota}
         className={cn(
           "h-7 whitespace-nowrap bg-canvas px-2.5 text-xs font-medium text-ink-soft",
           className,

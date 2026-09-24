@@ -241,10 +241,12 @@ primitivas: lo que sigue se hereda, no se repite en cada página.
   una ficha y aviso de instalación se pisaban entre sí; ahora la barra marca
   la raíz con `data-barra-acciones` y el aviso sube por encima. Cualquier
   pieza nueva que flote abajo se suma a ese reparto, no se inventa el suyo.
-  El botón de volver arriba ya no flota en el teléfono —tapaba los títulos
-  de las tarjetas—: ahí sube al principio tocar la pestaña de la página en
-  la que ya se está, y el botón solo aparece desde `xl`, tras tres pantallas,
-  en el margen que la columna deja libre.
+  El botón de volver arriba aparece tras tres pantallas. Desde `lg` flota
+  siempre en la esquina. En el teléfono, en las cuatro raíces de la tab bar
+  no se pinta —tapaba los títulos de las tarjetas— y sube al principio tocar
+  la pestaña encendida; en cualquier otra ruta (fichas, vistas internas,
+  páginas de «Más») ninguna pestaña es la página actual, así que el botón
+  vuelve, por encima de la tab bar y de la barra de acciones si la hay.
 - **El chrome fijo no pasa de un quinto de la pantalla.** Cabecera, barra de
   filtros y tab bar llegaron a sumar el 28 % a 390 × 844. Una barra pegajosa
   de página es una fila de 48 px, se aparta al bajar y vuelve al subir (sin
