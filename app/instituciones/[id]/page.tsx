@@ -11,7 +11,9 @@ import {
   type SenalesDeCompra,
 } from "@/lib/instituciones";
 import { etiquetaCorte, getInstitucionFiscal } from "@/lib/fiscal";
-import { getNominaDeInstitucion } from "@/lib/nomina-server";
+import { getNominaDeInstitucion, getResumenNomina } from "@/lib/nomina-server";
+import { obrasDeInstitucion } from "@/lib/obras";
+import { sismapDeInstitucion } from "@/lib/sismap";
 import { normasDeInstitucion, RUTA_POR_TIPO } from "@/lib/normativa";
 import { listPacc } from "@/lib/dgcp";
 import { desdeMayusculas } from "@/lib/congreso";
@@ -22,7 +24,6 @@ import { ObrasDeInstitucion } from "@/components/fuentes-nuevas/obras-de-institu
 import { SismapDeInstitucion } from "@/components/fuentes-nuevas/sismap-de-institucion";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
@@ -30,6 +31,17 @@ import { IconExternal } from "@/components/icons";
 import { Cifra, TiraDeCifras } from "@/components/papel";
 import Plegable from "@/components/plegable";
 import AccionesFicha from "@/components/acciones-ficha";
+import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
+
+/** Normas a la vista en «Lo que decreta el Ejecutivo»; el resto, plegado. */
+const NORMAS_A_LA_VISTA = 2;
+/**
+ * Tope de normas en la ficha. La Dirección de Jubilaciones tiene 488: la
+ * lista entera no cabe en una ficha ni plegada, y el conteo lo declara.
+ */
+const NORMAS_MAX = 50;
+/** Adjudicaciones recientes a la vista en Compras; el resto, plegado. */
+const ADJUDICACIONES_A_LA_VISTA = 2;
 
 /*
   Dinámica a propósito: lo caro —el resumen de compras— ya se cachea una hora
@@ -67,12 +79,32 @@ export default async function InstitucionPage({ params }: Props) {
   const i = institucionDeSlug((await params).id);
   if (!i) notFound();
 
-  const [fiscal, nomina, normas] = await Promise.all([
+  const [fiscal, nomina, resumenNomina, normas, obras, sismap] = await Promise.all([
     i.capitulo ? getInstitucionFiscal(i.capitulo) : null,
     i.nomina ? getNominaDeInstitucion(i.nomina) : null,
+    // Solo para decir de cuántas se lee la nómina cuando esta no está.
+    i.nomina ? null : getResumenNomina(),
     normasDeInstitucion(i.consultoria),
+    obrasDeInstitucion(i.id),
+    sismapDeInstitucion(i.id),
   ]);
   const hermanas = i.capitulo ? institucionesDelCapitulo(i.capitulo).filter((h) => h.id !== i.id) : [];
+  const nObras = obras?.obras.length ?? 0;
+
+  /*
+    El índice de la ficha: una entrada por sección que de verdad está en la
+    página, en su orden. Eran marcas teñidas de azul de firma que no llevaban
+    a ninguna parte —el azul dice «se puede pulsar»—; ahora lo son.
+  */
+  const indice = [
+    { id: "presupuesto", texto: i.capitulo ? `Presupuesto · cap. ${i.capitulo}` : "Presupuesto" },
+    { id: "compras", texto: `Compras · DGCP ${i.id}` },
+    nObras > 0 && { id: "obras", texto: `Obras · ${formatInt(nObras)}` },
+    sismap && { id: "gestion", texto: "Gestión" },
+    { id: "nomina", texto: nomina ? "Nómina" : "Nómina · sin datos" },
+    { id: "decretos", texto: normas.docs.length > 0 ? `Normativa · ${formatInt(normas.docs.length)}` : "Normativa" },
+    { id: "plan", texto: "Plan de compras" },
+  ].filter((e): e is { id: string; texto: string } => Boolean(e));
 
   return (
     <div className="space-y-5">
@@ -85,8 +117,9 @@ export default async function InstitucionPage({ params }: Props) {
         <h1 className="mt-1 font-display text-2xl leading-tight sm:text-3xl">{i.nombre}</h1>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
           Lo que el Estado publica sobre esta institución en cuatro sitios distintos,
-          reunido aquí: su presupuesto, lo que compra y a quién, su nómina y lo que
-          el Ejecutivo decreta sobre ella.
+          reunido aquí: su presupuesto, lo que compra y a quién,{" "}
+          {nomina ? "su nómina" : "si publica su nómina"} y lo que el Ejecutivo
+          decreta sobre ella.
         </p>
         <AccionesFicha
           className="mt-3"
@@ -96,107 +129,131 @@ export default async function InstitucionPage({ params }: Props) {
           href={hrefInstitucion(i)}
           feed={`/api/feed?uc=${i.id}`}
         />
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          <Badge variant={i.capitulo ? "firma" : "neutro"}>
-            {i.capitulo ? `Presupuesto · capítulo ${i.capitulo}` : "Sin capítulo presupuestario"}
-          </Badge>
-          <Badge variant="firma">Compras · DGCP {i.id}</Badge>
-          {i.nomina && <Badge variant="firma">Nómina publicada</Badge>}
-          {normas.docs.length > 0 && <Badge variant="firma">Normativa</Badge>}
-        </div>
+        <NavFiltros etiqueta="Secciones de esta ficha" className="mt-4">
+          {indice.map((e) => (
+            <FiltroEnlace key={e.id} href={`#${e.id}`} activo={false}>
+              {e.texto}
+            </FiltroEnlace>
+          ))}
+        </NavFiltros>
       </Card>
 
-      {fiscal ? (
-        <Presupuesto datos={fiscal} institucion={i} hermanas={hermanas} />
-      ) : (
-        <EstadoVacio rotulo="Presupuesto" titulo="Sin presupuesto propio en el SIGEF">
-          La DGCP no adscribe esta unidad de compra a un capítulo del Presupuesto
-          General del Estado —pasa con ayuntamientos, empresas públicas y órganos
-          con presupuesto aparte—, así que su gasto no aparece en la instantánea
-          del SIGEF.
-        </EstadoVacio>
-      )}
-
-      <Suspense fallback={<Cargando titulo="Compras" texto="Consultando sus contratos en la DGCP…" />}>
-        <Compras institucion={i} />
-      </Suspense>
-
-      <ObrasDeInstitucion uc={i.id} />
-      <SismapDeInstitucion uc={i.id} />
-
-      {nomina && (
-        <Card as="section" className="p-5 sm:p-6">
-          <CardTitle>Nómina</CardTitle>
-          <p className="mt-1 text-xs text-ink-soft">
-            Foto de {nomina.periodo}: el último mes que la institución publicó en
-            formato procesable. Sin nombres: cargo y sueldo bruto.
-          </p>
-          <TiraDeCifras className="mt-4 lg:grid-cols-3">
-            <Cifra etiqueta="Plazas" valor={formatInt(nomina.plazas)} ancla={{ alcance: "instantanea", periodo: nomina.periodo }} />
-            <Cifra etiqueta="Masa salarial del mes" valor={formatPesos(nomina.masa)} ancla={{ alcance: "instantanea", periodo: nomina.periodo }} />
-            <Cifra etiqueta="Sueldo mediano" valor={formatDOP(nomina.mediana)} ancla={{ alcance: "instantanea", periodo: nomina.periodo }} />
-          </TiraDeCifras>
-          <ul className="mt-4 divide-y divide-hairline text-sm">
-            {nomina.cargos.map((c) => (
-              <li key={c.cargo} className="flex items-baseline justify-between gap-3 py-2">
-                <span className="min-w-0">{desdeMayusculas(c.cargo)}</span>
-                <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">
-                  {formatInt(c.plazas)} · {formatDOP(c.mediana)}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <Button asChild variant="secondary" className="mt-4">
-            <Link href={`/nomina?inst=${encodeURIComponent(nomina.codigo)}`}>Explorar su nómina</Link>
-          </Button>
-        </Card>
-      )}
-
-      <Card as="section" className="p-5 sm:p-6">
-        <CardTitle>Lo que decreta el Ejecutivo</CardTitle>
-        {normas.docs.length === 0 ? (
-          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-            No encontramos normas de los últimos cuatro años con una etiqueta de la
-            Consultoría Jurídica que coincida con este nombre. El cruce es por
-            nombre: si la Consultoría escribe la institución de otra forma, aquí
-            no aparece.
-          </p>
+      <div id="presupuesto">
+        {fiscal ? (
+          <Presupuesto datos={fiscal} institucion={i} hermanas={hermanas} />
         ) : (
-          <>
-            <p className="mt-1 text-xs text-ink-soft">
-              {formatInt(normas.docs.length)} normas que la Consultoría Jurídica
-              etiqueta con esta institución, de las más recientes a las más antiguas.
-            </p>
-            <ul className="mt-3 divide-y divide-hairline">
-              {normas.docs.slice(0, 10).map((d) => {
-                const ruta = RUTA_POR_TIPO[d.tipo];
-                const href = ruta ? `/normativa/${ruta}/${d.numero}` : d.url;
-                return (
-                  <li key={`${d.tipo}-${d.numero}-${d.fechaIso ?? ""}`} className="py-2.5">
-                    {href && (
-                      <Link href={href} className="group block">
-                        <span className="font-mono text-xs font-semibold tabular-nums text-brand-700">
-                          {d.tipo} {d.numero}
-                        </span>
-                        {d.fechaIso && (
-                          <span className="ml-2 text-xs text-ink-soft">{formatFecha(d.fechaIso)}</span>
-                        )}
-                        <span className="mt-0.5 block text-sm leading-snug text-ink group-hover:text-brand-700">
-                          {desdeMayusculas(d.titulo)}
-                        </span>
-                      </Link>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </>
+          <EstadoVacio rotulo="Presupuesto" titulo="Sin presupuesto propio en el SIGEF">
+            La DGCP no adscribe esta unidad de compra a un capítulo del Presupuesto
+            General del Estado —pasa con ayuntamientos, empresas públicas y órganos
+            con presupuesto aparte—, así que su gasto no aparece en la instantánea
+            del SIGEF.
+          </EstadoVacio>
         )}
+      </div>
+
+      <div id="compras">
+        <Suspense fallback={<Cargando titulo="Compras" texto="Consultando sus contratos en la DGCP…" />}>
+          <Compras institucion={i} />
+        </Suspense>
+      </div>
+
+      {nObras > 0 && (
+        <div id="obras">
+          <ObrasDeInstitucion uc={i.id} />
+        </div>
+      )}
+      {sismap && (
+        <div id="gestion">
+          <SismapDeInstitucion uc={i.id} />
+        </div>
+      )}
+
+      <div id="nomina">
+        {nomina ? (
+          <Card as="section" className="p-5 sm:p-6">
+            <CardTitle>Nómina</CardTitle>
+            <p className="mt-1 text-xs text-ink-soft">
+              Foto de {nomina.periodo}: el último mes que la institución publicó en
+              formato procesable. Sin nombres: cargo y sueldo bruto.
+            </p>
+            <TiraDeCifras className="mt-4 lg:grid-cols-3">
+              <Cifra etiqueta="Plazas" valor={formatInt(nomina.plazas)} ancla={{ alcance: "instantanea", periodo: nomina.periodo }} />
+              <Cifra etiqueta="Masa salarial del mes" valor={formatPesos(nomina.masa)} ancla={{ alcance: "instantanea", periodo: nomina.periodo }} />
+              <Cifra etiqueta="Sueldo mediano" valor={formatDOP(nomina.mediana)} ancla={{ alcance: "instantanea", periodo: nomina.periodo }} />
+            </TiraDeCifras>
+            <ul className="mt-4 divide-y divide-hairline text-sm">
+              {nomina.cargos.map((c) => (
+                <li key={c.cargo} className="flex items-baseline justify-between gap-3 py-2">
+                  <span className="min-w-0">{desdeMayusculas(c.cargo)}</span>
+                  <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">
+                    {formatInt(c.plazas)} · {formatDOP(c.mediana)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Button asChild variant="secondary" className="mt-4">
+              <Link href={`/nomina?inst=${encodeURIComponent(nomina.codigo)}`}>Explorar su nómina</Link>
+            </Button>
+          </Card>
+        ) : i.nomina ? (
+          <EstadoVacio variante="caida" rotulo="Nómina" titulo="No pudimos leer su nómina">
+            Esta institución está en la foto de nómina, pero el archivo no se pudo
+            leer ahora. No es que no la publique: es que no pudimos mirar.
+          </EstadoVacio>
+        ) : (
+          /*
+            La cabecera prometía «su nómina» a toda institución y la mayoría no
+            está en la foto: callar dejaba al lector buscando una sección que no
+            existe. Se dice, con cuántas sí y el camino a ellas.
+          */
+          <EstadoVacio
+            rotulo="Nómina"
+            titulo="Su nómina no está entre las que leemos"
+            accion={
+              <Button asChild variant="secondary">
+                <Link href="/nomina">
+                  {resumenNomina
+                    ? `Ver las ${formatInt(resumenNomina.instituciones)} que sí`
+                    : "Ver las que sí"}
+                </Link>
+              </Button>
+            }
+          >
+            La plataforma lee la nómina de{" "}
+            {resumenNomina ? `${formatInt(resumenNomina.instituciones)} instituciones` : "un grupo de instituciones"}{" "}
+            cuyos portales de transparencia la publican en un formato que se puede
+            procesar, y esta no está entre ellas: puede que la publique en su
+            portal, pero aquí no hay cargos ni sueldos suyos.
+          </EstadoVacio>
+        )}
+      </div>
+
+      <Card as="section" id="decretos">
+        <div className="p-5 pb-3 sm:p-6 sm:pb-3">
+          <CardTitle>Lo que decreta el Ejecutivo</CardTitle>
+          {normas.docs.length === 0 ? (
+            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+              No encontramos normas de los últimos cuatro años con una etiqueta de la
+              Consultoría Jurídica que coincida con este nombre. El cruce es por
+              nombre: si la Consultoría escribe la institución de otra forma, aquí
+              no aparece.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+              {formatInt(normas.docs.length)} normas que la Consultoría Jurídica
+              etiqueta con esta institución, de las más recientes a las más antiguas
+              {normas.docs.length > NORMAS_MAX ? `; se muestran las ${NORMAS_MAX} más recientes` : ""}.
+            </p>
+          )}
+        </div>
+        {normas.docs.length > 0 && <ListaNormas docs={normas.docs.slice(0, NORMAS_MAX)} />}
       </Card>
 
-      <Suspense fallback={<Cargando titulo="Plan anual de compras" texto="Consultando su PACC…" />}>
-        <Planes institucion={i} />
-      </Suspense>
+      <div id="plan">
+        <Suspense fallback={<Cargando titulo="Plan anual de compras" texto="Consultando su PACC…" />}>
+          <Planes institucion={i} />
+        </Suspense>
+      </div>
 
       <p className="text-xs leading-relaxed text-ink-soft">
         Fuentes: DGCP (unidad de compra {i.id}), SIGEF
@@ -210,6 +267,58 @@ export default async function InstitucionPage({ params }: Props) {
         .
       </p>
     </div>
+  );
+}
+
+type Norma = Awaited<ReturnType<typeof normasDeInstitucion>>["docs"][number];
+
+/**
+ * Las normas de la institución: las dos más recientes a la vista y el resto
+ * a un toque. Diez en bruto eran 2.200 px en el teléfono entre las compras y
+ * el plan anual, y las demás no se podían ver de ninguna forma.
+ */
+function ListaNormas({ docs }: { docs: Norma[] }) {
+  const lista = (filas: Norma[]) => (
+    <ul className="divide-y divide-hairline px-5 sm:px-6">
+      {filas.map((d) => (
+        <FilaNorma key={`${d.tipo}-${d.numero}-${d.fechaIso ?? ""}`} d={d} />
+      ))}
+    </ul>
+  );
+  const vista = docs.slice(0, NORMAS_A_LA_VISTA);
+  const resto = docs.slice(NORMAS_A_LA_VISTA);
+  if (resto.length === 0) return <div className="pb-2">{lista(vista)}</div>;
+  return (
+    <Plegable resumen={lista(vista)} etiqueta={`Ver las otras ${formatInt(resto.length)} normas`}>
+      {lista(resto)}
+    </Plegable>
+  );
+}
+
+function FilaNorma({ d }: { d: Norma }) {
+  const ruta = RUTA_POR_TIPO[d.tipo];
+  const href = ruta ? `/normativa/${ruta}/${d.numero}` : d.url;
+  const cuerpo = (
+    <>
+      <span className="font-mono text-xs font-semibold tabular-nums text-brand-700">
+        {d.tipo} {d.numero}
+      </span>
+      {d.fechaIso && <span className="ml-2 text-xs text-ink-soft">{formatFecha(d.fechaIso)}</span>}
+      <span className="mt-0.5 block text-sm leading-snug text-ink group-hover:text-brand-700">
+        {desdeMayusculas(d.titulo)}
+      </span>
+    </>
+  );
+  return (
+    <li>
+      {href ? (
+        <Link href={href} className="group block py-2.5">
+          {cuerpo}
+        </Link>
+      ) : (
+        <div className="py-2.5">{cuerpo}</div>
+      )}
+    </li>
   );
 }
 
@@ -375,21 +484,24 @@ async function Compras({ institucion: i }: { institucion: Institucion }) {
       {compras.recientes.length > 0 && (
         <>
           <h3 className="mt-5 text-sm font-semibold">Últimas adjudicaciones</h3>
-          <ul className="mt-2 divide-y divide-hairline">
-            {compras.recientes.map((c) => (
-              <li key={c.codigo_contrato} className="py-2.5 text-sm">
-                <Link href={`/procesos/${c.codigo_proceso}`} className="group block">
-                  <span className="line-clamp-2 leading-snug group-hover:text-brand-700">
-                    {c.descripcion || c.codigo_proceso}
-                  </span>
-                  <span className="mt-0.5 block text-xs text-ink-soft">
-                    {c.razon_social} · {formatMonto(c.valor_contratado, c.divisa)} ·{" "}
-                    {formatFecha(c.fecha_adjudicacion)}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {/*
+            Las dos últimas responden «¿qué acaba de comprar?»; las otras seis
+            quedan a un toque. En bruto eran ocho filas de dos renglones en
+            medio de una ficha que ya medía ocho pantallas en el teléfono.
+          */}
+          {compras.recientes.length > ADJUDICACIONES_A_LA_VISTA ? (
+            <Plegable
+              className="-mx-5 mt-2 sm:-mx-6"
+              resumen={<ListaAdjudicaciones contratos={compras.recientes.slice(0, ADJUDICACIONES_A_LA_VISTA)} />}
+              etiqueta={`Ver las otras ${formatInt(compras.recientes.length - ADJUDICACIONES_A_LA_VISTA)} adjudicaciones recientes`}
+            >
+              <ListaAdjudicaciones contratos={compras.recientes.slice(ADJUDICACIONES_A_LA_VISTA)} />
+            </Plegable>
+          ) : (
+            <div className="-mx-5 mt-2 sm:-mx-6">
+              <ListaAdjudicaciones contratos={compras.recientes} />
+            </div>
+          )}
         </>
       )}
 
@@ -399,6 +511,28 @@ async function Compras({ institucion: i }: { institucion: Institucion }) {
         </Button>
       </div>
     </Card>
+  );
+}
+
+type Adjudicacion = NonNullable<Awaited<ReturnType<typeof getComprasDeInstitucion>>>["recientes"][number];
+
+function ListaAdjudicaciones({ contratos }: { contratos: Adjudicacion[] }) {
+  return (
+    <ul className="divide-y divide-hairline px-5 sm:px-6">
+      {contratos.map((c) => (
+        <li key={c.codigo_contrato} className="py-2.5 text-sm">
+          <Link href={`/procesos/${c.codigo_proceso}`} className="group block">
+            <span className="line-clamp-2 leading-snug group-hover:text-brand-700">
+              {c.descripcion || c.codigo_proceso}
+            </span>
+            <span className="mt-0.5 block text-xs text-ink-soft">
+              {c.razon_social} · {formatMonto(c.valor_contratado, c.divisa)} ·{" "}
+              {formatFecha(c.fecha_adjudicacion)}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
