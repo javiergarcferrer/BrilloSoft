@@ -15,7 +15,7 @@ import { BuscadorUrl } from "@/components/buscador-url";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { desdeMayusculas } from "@/lib/congreso";
-import { formatFecha } from "@/lib/format";
+import { formatFecha, formatMes } from "@/lib/format";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import Antiguedad from "@/components/antiguedad";
 import { Button } from "@/components/ui/button";
@@ -384,7 +384,7 @@ function Designaciones({
               activo={m.mes === mes}
               mono
             >
-              {m.mes} · {m.designa + m.cesa}
+              {formatMes(m.mes)} · {m.designa + m.cesa}
             </FiltroEnlace>
           ))}
         </NavFiltros>
