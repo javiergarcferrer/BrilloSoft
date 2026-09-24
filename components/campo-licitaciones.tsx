@@ -106,6 +106,12 @@ export default function CampoLicitaciones() {
     else router.push(url);
   }
 
+  /** El aspa del campo: borra el texto y solo el texto; los filtros se quedan. */
+  function limpiarTexto() {
+    setText("");
+    if (pathname === BUSCADOR) navWith((p) => p.delete("q"));
+  }
+
   function reset() {
     setText("");
     if (pathname === BUSCADOR) router.replace(BUSCADOR);
@@ -213,9 +219,9 @@ export default function CampoLicitaciones() {
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  reset();
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  limpiarTexto();
                   inputRef.current?.focus();
                 }}
                 // El campo mide 44 px en el teléfono: el aspa cabe entera.
@@ -262,8 +268,8 @@ export default function CampoLicitaciones() {
                 key={p.label}
                 variant="secondary"
                 size="sm"
-                onMouseDown={(e) => {
-                  e.preventDefault();
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
                   p.run();
                   setOpen(false);
                 }}
@@ -284,10 +290,9 @@ export default function CampoLicitaciones() {
             {recientes.slice(0, 5).map((t) => (
               <button
                 key={t}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  aplicarTermino(t);
-                }}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => aplicarTermino(t)}
                 className="flex min-h-11 w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-canvas sm:min-h-0"
               >
                 <IconClock className="h-4 w-4 shrink-0 text-ink-soft" />
@@ -303,13 +308,11 @@ export default function CampoLicitaciones() {
             <Button
               variant="link"
               size="sm"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                guardarActual();
-              }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={guardarActual}
               // Era un enlace de 16 px de alto: imposible de acertar con el
               // pulgar. El texto no crece; crece el área que lo rodea.
-              className="-mr-2 h-11 gap-1 px-2 text-[11px] sm:h-8"
+              className="-mr-2 h-11 gap-1 px-2 text-xs sm:h-8"
             >
               <IconBookmark className="h-3.5 w-3.5" />
               Guardar actual
@@ -330,10 +333,9 @@ export default function CampoLicitaciones() {
               {busquedas.map((b) => (
                 <li key={b.id} className="flex items-center gap-1">
                   <button
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      aplicarGuardada(b);
-                    }}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => aplicarGuardada(b)}
                     className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-canvas sm:min-h-0"
                   >
                     <IconBookmark className="h-4 w-4 shrink-0 text-brand-600" filled />
@@ -342,10 +344,8 @@ export default function CampoLicitaciones() {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setBusquedas(removeBusqueda(b.id));
-                    }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setBusquedas(removeBusqueda(b.id))}
                     // Borrar es irreversible: si el objetivo es pequeño se
                     // acierta por accidente. 44 px en el teléfono.
                     className="h-11 w-11 shrink-0 text-ink-soft hover:bg-canvas hover:text-ink sm:h-9 sm:w-9"

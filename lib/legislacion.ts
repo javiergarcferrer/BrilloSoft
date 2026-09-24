@@ -202,7 +202,15 @@ export function queSigue(condicion: string | null | undefined): string | null {
   if (c.includes("depositad")) {
     return "Fue registrada en la secretaría. El siguiente paso es su lectura en sesión y el envío a comisión.";
   }
-  if (c.includes("agenda") || c.includes("consideraci")) {
+  if (c.includes("liberado de comisi")) {
+    return "El pleno la liberó del trámite de comisión: se conoce directamente en sesión, sin informe.";
+  }
+  // «En Orden del Día para 2da. discusión» (SIL): está agendada, no aprobada.
+  // Va antes de las lecturas, que se reconocen por el mismo «2da».
+  if (c.includes("agenda") || c.includes("orden del d")) {
+    return "Está en el orden del día: el pleno la conocerá en sesión.";
+  }
+  if (c.includes("consideraci")) {
     return "Está en la agenda de la sesión: la cámara debe tomarla en consideración antes de enviarla a comisión.";
   }
   if (c.includes("comisi")) {
@@ -284,10 +292,16 @@ export function enQuePunto(s: SituacionTramite): string | null {
   const fino = queSigue(s.estado);
   const grueso = queSigue(s.condicion);
   const aprobada = /aprobad/.test((s.condicion ?? "").toLowerCase());
+  const estado = (s.estado ?? "").toLowerCase();
+  // «Aprobado en 1ra. lectura» (así lo escribe el SIL) contiene «aprobad» pero
+  // no cierra nada: falta la segunda en esta misma cámara. Solo la aprobación
+  // que termina el paso por la cámara —«2da. lectura», «única lectura» o un
+  // «aprobado» sin más— autoriza a decir que pasó al Ejecutivo o a la otra.
+  const aMedias = /\b1ra\b|primera/.test(estado);
   // «Aprobada en esta cámara, necesita la otra» solo es cierto para una ley
   // que nació aquí. Una resolución interna termina con el voto de su cámara, y
   // una ley que llegó del Senado ya pasó por la otra.
-  if (aprobada && (!fino || /aprobad/.test((s.estado ?? "").toLowerCase()))) {
+  if (aprobada && !aMedias && (!fino || /aprobad/.test(estado))) {
     const tipo = (s.tipo ?? "").toLowerCase();
     if (tipo.includes("interna")) {
       return "Aprobada. Es una resolución interna de la cámara: con su voto termina el trámite, sin pasar por la otra cámara ni por el Poder Ejecutivo.";
