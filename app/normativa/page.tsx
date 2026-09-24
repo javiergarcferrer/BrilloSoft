@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 import { Termino } from "@/components/termino";
+import { Paginador } from "@/components/paginador";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/normativa" },
@@ -35,20 +36,38 @@ export const revalidate = 3600;
 const ANIO_ACTUAL = 2026;
 const ANIOS = [ANIO_ACTUAL, ANIO_ACTUAL - 1, ANIO_ACTUAL - 2, ANIO_ACTUAL - 3];
 
-/** Enlace de la página con los filtros dados; lo por defecto no viaja. */
-function hrefNormativa(f: { tipo: string; anio: number; q?: string; mes?: string }): string {
+/**
+ * Normas por página. Un año de decretos son cientos: la lista entera en una
+ * página medía 24.000 px en el teléfono y se cortaba en 200 sin decirlo hasta
+ * el final. Veinticinco caben en unas pocas pantallas y el resto está a un
+ * toque, en una URL que se comparte (docs/IDENTIDAD.md §2).
+ */
+const POR_PAGINA = 25;
+
+/**
+ * Enlace de la página con los filtros dados; lo por defecto no viaja. La
+ * página no viaja salvo que se pida: cambiar de filtro vuelve a la primera.
+ */
+function hrefNormativa(f: {
+  tipo: string;
+  anio: number;
+  q?: string;
+  mes?: string;
+  pagina?: number;
+}): string {
   const p = new URLSearchParams();
   p.set("tipo", f.tipo);
   if (f.anio !== ANIO_ACTUAL) p.set("anio", String(f.anio));
   if (f.q) p.set("q", f.q);
   if (f.mes) p.set("mes", f.mes);
+  if (f.pagina && f.pagina > 1) p.set("pagina", String(f.pagina));
   return `/normativa?${p}`;
 }
 
 export default async function NormativaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string; anio?: string; q?: string; mes?: string }>;
+  searchParams: Promise<{ tipo?: string; anio?: string; q?: string; mes?: string; pagina?: string }>;
 }) {
   const params = await searchParams;
   const tipo = (params.tipo && params.tipo in TIPOS_NORMATIVA ? params.tipo : "3") as TipoNormativa;
@@ -60,6 +79,8 @@ export default async function NormativaPage({
     tipo === "3" && /^\d{4}-(0[1-9]|1[0-2])$/.test(mesPedido) && mesPedido.startsWith(String(anio))
       ? mesPedido
       : undefined;
+  // La página pedida; la lista la acota a las que existen cuando sabe cuántas hay.
+  const pagina = /^\d{1,4}$/.test(params.pagina ?? "") ? Math.max(1, Number(params.pagina)) : 1;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -125,8 +146,11 @@ export default async function NormativaPage({
         La Consultoría responde por año y tipo, y no siempre rápido. Los
         filtros llegan al instante; el listado cae en su hueco al contestar.
       */}
-      <Suspense key={`${tipo}-${anio}-${q}-${mes ?? ""}`} fallback={<ListaEsqueleto tipo={tipo} anio={anio} />}>
-        <ListaNormativa tipo={tipo} anio={anio} q={q} mes={mes} />
+      <Suspense
+        key={`${tipo}-${anio}-${q}-${mes ?? ""}-${pagina}`}
+        fallback={<ListaEsqueleto tipo={tipo} anio={anio} />}
+      >
+        <ListaNormativa tipo={tipo} anio={anio} q={q} mes={mes} pagina={pagina} />
       </Suspense>
 
       <p className="mt-4 text-xs leading-relaxed text-ink-soft">
@@ -147,13 +171,20 @@ async function ListaNormativa({
   anio,
   q,
   mes,
+  pagina: paginaPedida,
 }: {
   tipo: TipoNormativa;
   anio: number;
   q: string;
   mes?: string;
+  pagina: number;
 }) {
   const { docs, origen, total, todos } = await listaNormativa({ tipo, anio, q, mes });
+  const paginas = Math.max(1, Math.ceil(docs.length / POR_PAGINA));
+  const pagina = Math.min(paginas, paginaPedida);
+  const desde = (pagina - 1) * POR_PAGINA;
+  const visibles = docs.slice(desde, desde + POR_PAGINA);
+  const nombreTipo = TIPOS_NORMATIVA[tipo].toLowerCase();
 
   /*
     «No hay» y «no contestó» dicen cosas opuestas sobre el Ejecutivo. La capa
@@ -172,25 +203,36 @@ async function ListaNormativa({
 
   return (
     <>
-      {designaciones.length > 0 && (
+      {/*
+        El resumen de designaciones responde «¿qué pasó este año?», y eso se
+        pregunta en la primera página. Desde la segunda el lector ya está
+        recorriendo la lista: la tarjeta solo empujaría las normas hacia abajo.
+      */}
+      {designaciones.length > 0 && pagina === 1 && (
         <Designaciones meses={designaciones} anio={anio} mes={mes} />
       )}
 
       {(docs.length > 0 || filtrada) && !consultoriaCaida && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          {/*
+            El conteo dice también qué parte se ve: una lectura partida lo
+            declara junto a la cifra, no después de la última fila.
+          */}
           <p className="font-mono text-sm tabular-nums text-ink-soft" aria-live="polite">
             {filtrada
-              ? `${docs.length.toLocaleString("es-DO")} de ${total.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} de ${anio}${
+              ? `${docs.length.toLocaleString("es-DO")} de ${total.toLocaleString("es-DO")} ${nombreTipo} de ${anio}${
                   mes ? ` · nombramientos y ceses de ${nombreMes(mes)}` : ""
                 }${q ? ` · «${q}»` : ""}`
-              : `${docs.length.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} en ${anio}`}
+              : `${docs.length.toLocaleString("es-DO")} ${nombreTipo} en ${anio}`}
+            {paginas > 1 &&
+              ` · se muestran del ${(desde + 1).toLocaleString("es-DO")} al ${(desde + visibles.length).toLocaleString("es-DO")}, lo más reciente primero`}
           </p>
           {docs.length > 0 && (
             <Button asChild variant="secondary" size="sm" className="h-10 shrink-0 self-start sm:h-9 sm:self-auto">
               <a
                 href={csv}
                 download
-                title={`Descarga las ${docs.length.toLocaleString("es-DO")} normas de esta lista, no solo las 200 que se muestran`}
+                title={`Descarga las ${docs.length.toLocaleString("es-DO")} normas de esta lista, no solo las ${visibles.length} de esta página`}
               >
                 <IconDownload className="h-4 w-4" /> CSV ({docs.length.toLocaleString("es-DO")})
               </a>
@@ -217,13 +259,24 @@ async function ListaNormativa({
       )}
 
       {docs.length > 0 ? (
-        <Card as="section" className="mt-3">
-          <ul className="divide-y divide-hairline">
-            {docs.slice(0, 200).map((d, i) => (
-              <FilaDoc key={`${d.documentId}-${i}`} doc={d} />
-            ))}
-          </ul>
-        </Card>
+        <>
+          <Card as="section" className="mt-3">
+            <ul className="divide-y divide-hairline">
+              {visibles.map((d, i) => (
+                <FilaDoc key={`${d.documentId}-${desde + i}`} doc={d} />
+              ))}
+            </ul>
+          </Card>
+          {paginas > 1 && (
+            <Paginador
+              className="mt-3"
+              pagina={pagina}
+              paginas={paginas}
+              href={(n) => hrefNormativa({ tipo, anio, q, mes, pagina: n })}
+              etiqueta={`Páginas de ${nombreTipo} de ${anio}`}
+            />
+          )}
+        </>
       ) : consultoriaCaida ? (
         <EstadoVacio
           variante="caida"
@@ -251,12 +304,6 @@ async function ListaNormativa({
           no tiene {TIPOS_NORMATIVA[tipo].toLowerCase()} de {anio}.
           Prueba otro año o cambia el tipo de documento.
         </EstadoVacio>
-      )}
-
-      {docs.length > 200 && (
-        <p className="mt-4 text-xs text-ink-soft">
-          Se muestran los 200 más recientes de {docs.length.toLocaleString("es-DO")}.
-        </p>
       )}
     </>
   );

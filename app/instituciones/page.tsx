@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import {
   INSTITUCIONES,
   buscarInstituciones,
+  cabezaDelCapitulo,
   hrefInstitucion,
   type Institucion,
 } from "@/lib/instituciones";
@@ -14,6 +15,16 @@ import { BuscadorUrl } from "@/components/buscador-url";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EstadoVacio } from "@/components/estado-vacio";
+import Plegable from "@/components/plegable";
+import { IconChevronRight } from "@/components/icons";
+import { normalize } from "@/lib/dgcp";
+
+/**
+ * Filas que se ven en cada capítulo antes de plegar. El Ministerio de Defensa
+ * tiene 35 unidades de compra y el Servicio Nacional de Salud 185: en bruto,
+ * la página era una pared de siglas.
+ */
+const A_LA_VISTA = 5;
 
 export const metadata: Metadata = {
   alternates: { canonical: "/instituciones" },
@@ -48,6 +59,18 @@ export default async function InstitucionesPage({
   const capitulos = (fiscal?.instituciones ?? [])
     .filter((c) => porCapitulo.has(c.codigo))
     .sort((a, b) => b.devengado - a.devengado);
+  /*
+    Un capítulo con una sola unidad que además lo encabeza —el INAIPI, la
+    Superintendencia de Electricidad— no necesita tarjeta: es una institución
+    con su presupuesto, y como fila de un mismo listado ocupa un tercio.
+    Medio centenar de tarjetas así eran la mayor parte de la página.
+  */
+  const propios = capitulos.flatMap((c) => {
+    const unidades = porCapitulo.get(c.codigo) ?? [];
+    const cabeza = unidades.length === 1 ? cabezaDelCapitulo(c.nombreLegible, unidades) : null;
+    return cabeza ? [{ i: cabeza, devengado: c.devengado }] : [];
+  });
+  const conTarjeta = capitulos.filter((c) => !propios.some((p) => p.i.capitulo === c.codigo));
   const locales = INSTITUCIONES.filter((i) => i.tipo === "Gobierno local").length;
   const hospitales = INSTITUCIONES.filter((i) => i.tipo === "Hospital").length;
   const resultados = q ? buscarInstituciones(q, 60) : [];
@@ -88,38 +111,32 @@ export default async function InstitucionesPage({
         )
       ) : (
         <div className="space-y-4">
-          {capitulos.map((c) => {
-            const unidades = (porCapitulo.get(c.codigo) ?? []).sort(
-              (a, b) => Number(b.tipo === "Institución") - Number(a.tipo === "Institución"),
-            );
-            return (
-              <Card as="section" key={c.codigo} className="p-5">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <CardTitle>{c.nombreLegible}</CardTitle>
-                  <Link
-                    href={`/finanzas/${c.codigo}`}
-                    className="font-mono text-xs tabular-nums text-ink-soft hover:text-brand-700"
-                  >
-                    {formatPesos(c.devengado)} devengado
-                  </Link>
-                </div>
-                <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
-                  {unidades.slice(0, 12).map((u) => (
-                    <li key={u.id}>
-                      <Link href={hrefInstitucion(u)} className="inline-flex min-h-6 items-center text-brand-700 hover:underline">
-                        {u.acronimo || u.nombre}
-                      </Link>
-                    </li>
-                  ))}
-                  {unidades.length > 12 && (
-                    <li className="text-xs text-ink-soft">
-                      y {unidades.length - 12} más: búscalas por nombre
-                    </li>
-                  )}
-                </ul>
-              </Card>
-            );
-          })}
+          {conTarjeta.map((c) => (
+            <TarjetaCapitulo
+              key={c.codigo}
+              codigo={c.codigo}
+              nombre={c.nombreLegible}
+              devengado={c.devengado}
+              unidades={porCapitulo.get(c.codigo) ?? []}
+            />
+          ))}
+          {propios.length > 0 && (
+            <Card as="section" aria-labelledby="propios">
+              <div className="px-5 pb-3 pt-4">
+                <CardTitle id="propios">Organismos con presupuesto propio</CardTitle>
+                <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+                  {formatInt(propios.length)} instituciones que son, cada una, un
+                  capítulo del presupuesto. La cifra es lo devengado en el año; su
+                  ejecución mes a mes está en la ficha.
+                </p>
+              </div>
+              <ul className="divide-y divide-hairline border-t border-hairline">
+                {propios.map(({ i, devengado }) => (
+                  <FilaInstitucion key={i.id} i={i} compacta devengado={devengado} />
+                ))}
+              </ul>
+            </Card>
+          )}
         </div>
       )}
 
@@ -132,23 +149,144 @@ export default async function InstitucionesPage({
   );
 }
 
-function FilaInstitucion({ i }: { i: Institucion }) {
+/**
+ * Un capítulo del presupuesto con sus unidades de compra.
+ *
+ * El titular lleva a la ficha de quien encabeza el capítulo —el Ministerio de
+ * Educación, no el capítulo en abstracto—; el monto, a su ejecución en
+ * Finanzas, como enlace secundario. Antes era al revés: el titular no llevaba
+ * a ninguna parte y el único enlace era la cifra. Las unidades son filas
+ * enteras con su nombre completo: una sigla sola («ARSSEMMA», «OCI») obliga a
+ * recordar qué es, y un enlace de cinco letras es un objetivo de 16 px.
+ */
+function TarjetaCapitulo({
+  codigo,
+  nombre,
+  devengado,
+  unidades,
+}: {
+  codigo: string;
+  nombre: string;
+  devengado: number;
+  unidades: Institucion[];
+}) {
+  const cabeza = cabezaDelCapitulo(nombre, unidades);
+  const resto = unidades
+    .filter((u) => u.id !== cabeza?.id)
+    .sort(
+      (a, b) =>
+        Number(b.tipo === "Institución") - Number(a.tipo === "Institución") ||
+        a.nombre.localeCompare(b.nombre, "es"),
+    );
+  const vista = resto.slice(0, A_LA_VISTA);
+  const plegadas = resto.slice(A_LA_VISTA);
+  const lista = (filas: Institucion[]) => (
+    <ul className="divide-y divide-hairline">
+      {filas.map((u) => (
+        <FilaInstitucion key={u.id} i={u} compacta />
+      ))}
+    </ul>
+  );
+
+  return (
+    <Card as="section" aria-label={nombre}>
+      <div className="px-5 pb-3 pt-4">
+        <CardTitle>
+          {cabeza ? (
+            <Link
+              href={hrefInstitucion(cabeza)}
+              className="group -mx-1 flex min-h-11 items-center gap-1.5 rounded-md px-1 hover:text-brand-700 sm:min-h-10"
+            >
+              <span>{nombre}</span>
+              <IconChevronRight className="h-4 w-4 shrink-0 text-brand-700" />
+            </Link>
+          ) : (
+            <span className="flex min-h-11 items-center sm:min-h-10">{nombre}</span>
+          )}
+        </CardTitle>
+        <Link
+          href={`/finanzas/${codigo}`}
+          className="inline-flex min-h-11 items-center font-mono text-xs tabular-nums text-ink-soft hover:text-brand-700 hover:underline sm:min-h-0"
+        >
+          {formatPesos(devengado)} devengado · ver en Finanzas
+        </Link>
+      </div>
+      {vista.length > 0 &&
+        (plegadas.length > 0 ? (
+          <Plegable
+            resumen={<div className="border-t border-hairline">{lista(vista)}</div>}
+            etiqueta={`Ver las otras ${formatInt(plegadas.length)} unidades de compra del capítulo`}
+          >
+            {lista(plegadas)}
+          </Plegable>
+        ) : (
+          <div className="border-t border-hairline">{lista(vista)}</div>
+        ))}
+    </Card>
+  );
+}
+
+/** ¿Dice la sigla algo que el nombre no dice ya? «Bellas Artes» no. */
+function siglaUtil(i: Institucion): string | null {
+  const s = i.acronimo.trim();
+  if (!s) return null;
+  return normalize(i.nombre).includes(normalize(s)) ? null : s;
+}
+
+/**
+ * Una unidad de compra como fila entera: nombre completo y, detrás, su sigla.
+ * `compacta` es la fila dentro de un capítulo, donde decir «Presupuesto» en
+ * cada una no informa: todas lo tienen.
+ */
+function FilaInstitucion({
+  i,
+  compacta = false,
+  devengado,
+}: {
+  i: Institucion;
+  compacta?: boolean;
+  /** Lo devengado por su capítulo, cuando la fila es un capítulo entero. */
+  devengado?: number;
+}) {
+  const sigla = siglaUtil(i);
   return (
     <li>
       <Link
         href={hrefInstitucion(i)}
-        className="flex items-start justify-between gap-3 px-4 py-3 transition-colors hover:bg-canvas/60 sm:px-5"
+        className={
+          compacta
+            ? "flex min-h-11 items-center justify-between gap-3 px-5 py-2.5 transition-colors hover:bg-canvas/60 active:bg-canvas"
+            : "flex items-start justify-between gap-3 px-4 py-3 transition-colors hover:bg-canvas/60 active:bg-canvas sm:px-5"
+        }
       >
-        <span className="min-w-0">
-          <span className="block text-[15px] leading-snug text-ink">{i.nombre}</span>
-          <span className="mt-0.5 block text-xs text-ink-soft">
-            {[i.acronimo, i.tipo].filter(Boolean).join(" · ")}
+        {compacta ? (
+          <span className="min-w-0">
+            <span className="block text-[15px] leading-snug text-ink">
+              {i.nombre}
+              {sigla && <span className="font-mono text-xs text-ink-soft"> · {sigla}</span>}
+            </span>
+            {devengado !== undefined && (
+              <span className="mt-0.5 block font-mono text-xs tabular-nums text-ink-soft">
+                {formatPesos(devengado)} devengado
+              </span>
+            )}
           </span>
-        </span>
-        <span className="flex shrink-0 flex-wrap justify-end gap-1">
-          {i.capitulo && <Badge variant="neutro">Presupuesto</Badge>}
-          {i.nomina && <Badge variant="neutro">Nómina</Badge>}
-        </span>
+        ) : (
+          <span className="min-w-0">
+            <span className="block text-[15px] leading-snug text-ink">{i.nombre}</span>
+            <span className="mt-0.5 block text-xs text-ink-soft">
+              {[i.acronimo, i.tipo].filter(Boolean).join(" · ")}
+            </span>
+          </span>
+        )}
+        {compacta ? (
+          <IconChevronRight className="h-4 w-4 shrink-0 text-ink-soft" />
+        ) : (
+          <span className="flex shrink-0 flex-wrap justify-end gap-1">
+            {i.capitulo && <Badge variant="neutro">Presupuesto</Badge>}
+            {i.nomina && <Badge variant="neutro">Nómina</Badge>}
+          </span>
+        )}
       </Link>
     </li>
   );

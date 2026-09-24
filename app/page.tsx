@@ -250,12 +250,20 @@ function PuertaInstituciones() {
         Cada ministerio, dirección, hospital y ayuntamiento en una página: su
         presupuesto, lo que compra y a quién, su nómina y lo que se decreta sobre él.
       </p>
-      <ul className="mt-3 flex flex-1 flex-wrap content-start gap-x-4 gap-y-1.5 text-sm">
+      {/*
+        Seis siglas de 16 px de alto con cuatro de aire eran seis objetivos que
+        el pulgar no acierta. Cada atajo es un mando de la talla de la casa
+        —44 px en el teléfono, 40 desde `sm`— y lleva el nombre entero en el
+        `title` y en lo que lee un lector de pantalla.
+      */}
+      <ul className="mt-3 flex flex-1 flex-wrap content-start gap-2">
         {atajos.map((i) => (
           <li key={i.id}>
-            <Link href={hrefInstitucion(i)} className="font-medium text-brand-700 hover:underline">
-              {i.acronimo}
-            </Link>
+            <Button asChild variant="outline" className="px-3 font-mono text-xs tracking-wide text-brand-700">
+              <Link href={hrefInstitucion(i)} title={i.nombre} aria-label={`${i.nombre} (${i.acronimo})`}>
+                {i.acronimo}
+              </Link>
+            </Button>
           </li>
         ))}
       </ul>

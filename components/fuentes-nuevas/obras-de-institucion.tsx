@@ -33,7 +33,7 @@ export async function ObrasDeInstitucion({ uc }: { uc: number }) {
         </p>
       </div>
       <ul className="divide-y divide-hairline border-t border-hairline">
-        {obras.slice(0, 5).map((o) => (
+        {obras.slice(0, 3).map((o) => (
           <FilaObra key={o.snip} obra={o} />
         ))}
       </ul>

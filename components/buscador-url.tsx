@@ -35,6 +35,9 @@ export function BuscadorUrl({
     const q = texto.trim();
     if (q) siguiente.set("q", q);
     else siguiente.delete("q");
+    // Una búsqueda nueva es una lista nueva: empieza en su primera página, no
+    // en la página por la que iba la anterior.
+    siguiente.delete("pagina");
     const cadena = siguiente.toString();
     iniciar(() => router.push(cadena ? `${pathname}?${cadena}` : pathname));
   };
