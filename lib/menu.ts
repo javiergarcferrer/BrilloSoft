@@ -130,8 +130,10 @@ export const MENU: GrupoMenu[] = [
         enlaces: [
           { href: "/instituciones", label: "Instituciones", nota: "Cada ministerio, dirección y ayuntamiento" },
           { href: "/provincias", label: "Provincias", nota: "El Estado visto desde tu provincia" },
+          { href: "/pais", label: "El país en cifras", nota: "Seguridad, escuela y vivienda, provincia por provincia" },
           { href: "/luz", label: "Cortes de luz programados", nota: "Los mantenimientos anunciados para esta semana" },
           { href: "/gestion", label: "Gestión pública", nota: "El ranking SISMAP de instituciones y municipios" },
+          { href: "/auditorias", label: "Auditorías y declaraciones", nota: "Quién audita a quién y quién rinde cuentas" },
           { href: "/documentos", label: "Biblioteca del Estado", nota: "Informes, memorias y estadísticas que publica cada institución" },
           { href: "/datos", label: "Datos abiertos", nota: "Todo el catálogo de datos.gob.do en un buscador" },
         ],

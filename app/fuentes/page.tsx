@@ -646,6 +646,23 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="Contraloría y Cámara de Cuentas — auditorías y declaraciones" estado="activa" etiqueta="Instantánea local">
+          <p>
+            En{" "}
+            <Link href="/auditorias" className="font-medium text-brand-700 hover:underline">
+              auditorías y declaraciones
+            </Link>{" "}
+            se juntan los informes de auditoría de la Contraloría (y su Índice de
+            Control Interno trimestral) y los de la Cámara de Cuentas, que volvió a
+            responder después de meses de bloqueo. De la Cámara solo se leen los 10
+            informes más recientes de su canal, de unos 216 publicados; la página lo
+            dice. Las listas de quién presentó su declaración jurada a tiempo, tarde o
+            no la presentó son PDF: se enlazan con su fecha de corte y todavía no se
+            cuentan. Aquí no se muestra ningún nombre. La fecha de los informes de la
+            Contraloría es la de subida, no la del informe.
+          </p>
+        </Fuente>
+
         <Fuente nombre="Biblioteca del Estado — documentos de las instituciones" estado="activa" etiqueta="Instantánea local">
           <p>
             Muchas instituciones publican en WordPress, y WordPress trae una vía
@@ -822,13 +839,27 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="Interior, MINERD y MIVHED — el país en cifras" estado="activa" etiqueta="Instantánea local">
+          <p>
+            <Link href="/pais" className="font-medium text-brand-700 hover:underline">
+              El país en cifras
+            </Link>{" "}
+            junta, al regenerar, tres archivos públicos: las denuncias de robo y las
+            armas incautadas y registradas del Ministerio de Interior (fuente
+            primaria: Policía Nacional; son denuncias, no delitos, y provisionales),
+            la matrícula escolar del MINERD por regional (hasta el año escolar
+            2023-24; sin doble conteo entre regional y distrito) y las licencias de
+            construcción del MIVHED (permisos, no obras terminadas; la inversión
+            declarada se lee como orden de magnitud). Cada bloque se valida contra
+            su propio total y, si falla, no se publica. Los homicidios solo se
+            publican como imagen y no están.
+          </p>
+        </Fuente>
+
         <Fuente nombre="Mapeadas en la tercera pasada, aún sin integrar" estado="descartada" etiqueta="Pendientes">
           <p>
-            Verificadas y sin clave, a la espera de su turno: los informes de auditoría de
-            la Contraloría, las listas de cumplimiento de la declaración jurada de la
-            Cámara de Cuentas —que volvió a responder—, los robos y armas del
-            Ministerio de Interior, la matrícula del MINERD y las licencias de
-            construcción del MIVHED.
+            Verificadas y sin clave, a la espera de su turno: el conteo por institución
+            de las listas de declaraciones juradas, que necesita leer PDF en build.
           </p>
         </Fuente>
 

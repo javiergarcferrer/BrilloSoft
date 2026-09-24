@@ -194,6 +194,13 @@ composed in `app/page.tsx`):
   XLSX (§G.5), `ComercioExterior`. Daily.
 - **`lib/energia.ts`** — Organismo Coordinador hourly generation and marginal
   plant for yesterday (§G.8), `DiaElectrico`. Hourly.
+- **`lib/sociedad.ts`** — MIP robberies and firearms, MINERD enrolment,
+  MIVHED permits (§G.14), snapshot from `scripts/build-sociedad.py` (each block
+  validated alone, a failed block keeps the previous one marked `heredadoDe`);
+  `/pais`.
+- **`lib/auditorias.ts`** — Contraloría and Cámara de Cuentas audit reports
+  plus the sworn-declaration lists as titled links, no names (§G.12);
+  snapshot from `scripts/build-auditorias.py`; `/auditorias`.
 - **`lib/banca.ts`** — SIMBAD chart data (`type=results`, never the query)
   for four banking series (§G.13), `IndicadoresBanca` on `/`. Daily.
 - **`lib/subastas.ts`** — Crédito Público auction results (§G.13), snapshot

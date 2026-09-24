@@ -1456,6 +1456,40 @@ documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
   enlaza su página.
 - Implementado: `lib/cortes.ts` (en vivo, 6 h, solo de hoy en adelante) y `/luz`.
 
+### G.12 Contraloría y Cámara de Cuentas — auditorías y declaraciones
+
+- ✅ Contraloría: `/informes-de-auditorias/` → 38 PDF (29 atados a ficha; dos
+  son respuestas de la institución auditada, no informes); ICI trimestral, 10
+  PDF (T1-2024…T2-2026; la URL escribe `resulados-ici-2026`). Fechas = subida
+  (35 de 38 el 5–6 de marzo de 2025).
+- ✅ Cámara de Cuentas (sin 470 el 2026-09-24): informes por el RSS de K2 (los
+  10 más recientes; K2 ignora un tamaño de página mayor; ~216 en 72 páginas de
+  3). Declaraciones juradas por Phoca Download (`?limit=0` sirve la categoría
+  entera): 12 listas de omisos al corte 31-08-2026 (una por grupo: Diputados,
+  Senado, PARLACEN, ayuntamientos, SCJ, PGR, UASD, Banreservas…), 53 de
+  tardíos (2015→2026), 10 de «en tiempo hábil» (la última de abril de 2024).
+  ⚠️ Todas son PDF con nombres: se guardan título, corte y URL; **sin nombres
+  y todavía sin conteos** (no hay lector de PDF en build). Siguiente: contar por
+  institución con un lector de PDF en build, sin guardar nombres.
+- Implementado: `scripts/build-auditorias.py` → `public/data/auditorias.json`,
+  `lib/auditorias.ts`, `/auditorias`.
+
+### G.14 El país en cifras: robos, armas, matrícula, licencias
+
+- ✅ MIP robos (`datos-abiertos-robos-2018-2025-v2.xlsx`): 2025 83,716 denuncias
+  (robo simple 47,911, asalto 15,166, motocicletas 5,812); solo vehículos,
+  motos y armas vienen desde 2018; los demás tipos desde 2024. Títulos de
+  bloque erróneos («Robo Vehículos 4 Motocicletas»); provinciales cuadran con
+  el total (1,650 sin provincia). Armas: incautadas 4,124 en 2025; registradas
+  246,071 a T1-2026 (acumulado; 2021 cae por debajo de sus vecinos, tal cual).
+- ✅ MINERD matrícula: suma de las 18 regionales = suma de distritos en cada
+  año; 2,773,255 (2015-16) → 2,617,801 (2023-24). Salto primaria→secundaria en
+  2016-17: probable cambio de estructura de niveles (hipótesis, declarada).
+- ✅ MIVHED licencias 2022–jun-2026 (robots 404): 2025 952 licencias, 4.49 M m²;
+  la inversión declarada ≈ RD$60 mil/m² casi siempre (calculada, no medida).
+- Implementado: `scripts/build-sociedad.py` (stdlib; valida cada bloque) →
+  `public/data/sociedad.json`, `lib/sociedad.ts`, `/pais`.
+
 ### G.13 Banca (SIMBAD) y subastas de Crédito Público
 
 - ✅ SIMBAD (`simbad.sb.gob.do`, Apache Superset; robots 404): se leen solo
