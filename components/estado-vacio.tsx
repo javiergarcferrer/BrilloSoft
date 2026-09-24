@@ -58,7 +58,7 @@ export function EstadoVacio({
       <div className="px-5 py-9 text-center sm:py-14">
         <Titulo
           className={cn(
-            "text-sm font-medium",
+            "font-sans text-sm font-medium",
             variante === "caida" ? "text-alerta-700" : "text-ink",
           )}
         >
