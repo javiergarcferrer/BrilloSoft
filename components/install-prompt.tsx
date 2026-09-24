@@ -93,7 +93,7 @@ export default function InstallPrompt() {
       <div className="flex items-center gap-3">
         <SelloCompacto className="h-11 w-11 shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ink">Instala Socrático.do</p>
+          <p className="text-sm font-semibold text-ink">Instala Socrático</p>
           <p className="text-xs text-ink-soft">
             Acceso directo, a pantalla completa, desde tu inicio.
           </p>

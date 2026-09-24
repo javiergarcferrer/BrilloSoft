@@ -5,14 +5,20 @@
  * aprobación —certifica que se preguntó—: el aro lleva el registro y el centro,
  * la «¿», que en español anuncia que la pregunta apenas empieza.
  *
- * Dos formas, un solo glifo:
+ * Desde el 2026-09-24 (decisión del dueño) la marca es una sola palabra,
+ * «socrático», sin «.do»: el acento de la «á» es el sello, la única marca roja.
+ * El ícono es la «s» con ese mismo acento. La circular (`Sello`) queda como
+ * sello de firma —pie de página, tarjeta social—, con «¿» al centro.
+ *
+ * Tres formas:
  *  - `Sello` — la circular completa, con el aro de texto. Es la marca de
  *    verdad: pie de página, tarjeta social, momentos de firma.
- *  - `SelloCompacto` — el mismo glifo en una plaquita, para tamaños donde el
- *    aro de texto sería ilegible (cabecera, favicon, avatar).
+ *  - `SelloCompacto` — la «s» con su acento en una plaquita: cabecera,
+ *    favicon, ícono de la app.
+ *  - `Logotipo` — «socrático» en serif, el acento en rojo.
  *
- * Regla invariable: **el punto es el sello**. El punto de la «¿» va siempre en
- * rojo, en las dos formas y sobre cualquier fondo.
+ * Regla invariable: **la marca roja es el sello**: el acento del logotipo y del
+ * ícono, y el punto de la «¿» de la circular. Nada más va en rojo.
  */
 
 const PAPEL = "#f7f3ea";
@@ -52,7 +58,7 @@ export function Sello({
       viewBox="0 0 200 200"
       className={className}
       role="img"
-      aria-label="Socrático.do"
+      aria-label="Socrático"
     >
       <circle cx="100" cy="100" r="96" fill="none" stroke={trazo} strokeWidth="3" />
       <circle cx="100" cy="100" r="84" fill="none" stroke={trazo} strokeWidth="1" />
@@ -67,12 +73,12 @@ export function Sello({
           </defs>
           <text
             fontFamily="var(--font-plex-mono), ui-monospace, monospace"
-            fontSize="11"
-            letterSpacing="2.6"
+            fontSize="10"
+            letterSpacing="1.3"
             fill={trazo}
           >
             <textPath href={`#${id}`}>
-              SOCRÁTICO.DO · REPÚBLICA DOMINICANA · MMXXVI{" "}
+              SOCRÁTICO · PREGÚNTALE AL ESTADO · REPÚBLICA DOMINICANA ·{" "}
             </textPath>
           </text>
         </>
@@ -84,28 +90,54 @@ export function Sello({
   );
 }
 
+/**
+ * El acento del sello sobre una letra: un trazo rojo inclinado, en `em` para
+ * que escale con el cuerpo de la letra.
+ */
+function Acento({ className = "left-[0.24em]", color = "bg-sello-600" }: { className?: string; color?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`absolute top-[0.1em] h-[0.19em] w-[0.07em] origin-bottom rotate-[38deg] rounded-[0.015em] ${color} ${className}`}
+    />
+  );
+}
+
 export function SelloCompacto({
   className = "h-9 w-9",
   fondo = TINTA,
   trazo = PAPEL,
+  acento = fondo === PAPEL ? SELLO : "#d0503c",
 }: {
   className?: string;
   fondo?: string;
   trazo?: string;
+  /** El rojo del sello; sobre tinta se aclara para no perderse. */
+  acento?: string;
 }) {
+  // La «s» de Instrument Serif con su acento; en SVG para que escale igual a
+  // 18 px que a 180. El acento es un trazo inclinado como el del logotipo.
   return (
-    <svg viewBox="0 0 96 96" className={className} role="img" aria-label="Socrático.do">
-      <rect width="96" height="96" rx="20" fill={fondo} />
-      <g transform="translate(48 50) scale(0.5) translate(-100 -96)">
-        <Interrogacion trazo={trazo} grosor={15} />
-      </g>
+    <svg viewBox="0 0 96 96" className={className} role="img" aria-label="Socrático">
+      <rect width="96" height="96" rx="21" fill={fondo} />
+      <text
+        x="48"
+        y="80"
+        textAnchor="middle"
+        fontFamily="var(--font-instrument-serif), Georgia, serif"
+        fontSize="96"
+        fill={trazo}
+      >
+        s
+      </text>
+      <rect x="51" y="6" width="6.5" height="19" rx="1.5" fill={acento} transform="rotate(38 54.25 25)" />
     </svg>
   );
 }
 
 /**
- * El logotipo. El «.do» es el mismo punto del sello: va siempre en rojo, salvo
- * sobre fondo tinta, donde se aclara para no perderse.
+ * El logotipo: «socrático», una palabra en minúscula. El acento de la «á» es el
+ * sello: va en rojo, más claro sobre fondo tinta para no perderse.
  */
 export function Logotipo({
   className = "text-[19px]",
@@ -115,9 +147,16 @@ export function Logotipo({
   sobreTinta?: boolean;
 }) {
   return (
-    <span className={`font-display leading-none ${className}`}>
-      Socrático
-      <span className={sobreTinta ? "text-sello-300" : "text-sello-600"}>.do</span>
+    <span className={`font-display leading-none tracking-[-0.035em] whitespace-nowrap ${className}`}>
+      <span className="sr-only">Socrático</span>
+      <span aria-hidden>
+        socr
+        <span className="relative inline-block">
+          a
+          <Acento color={sobreTinta ? "bg-sello-300" : "bg-sello-600"} />
+        </span>
+        tico
+      </span>
     </span>
   );
 }

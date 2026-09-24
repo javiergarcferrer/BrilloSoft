@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/seguridad" },
   title: "Seguridad y cumplimiento",
   description:
-    "Postura de seguridad, privacidad y cumplimiento normativo de Socrático.do: minimización de datos según la Ley 172-13, acceso a información pública bajo la Ley 200-04 y estándares NORTIC de la OGTIC.",
+    "Postura de seguridad, privacidad y cumplimiento normativo de Socrático: minimización de datos según la Ley 172-13, acceso a información pública bajo la Ley 200-04 y estándares NORTIC de la OGTIC.",
 };
 
 export const revalidate = 3600;
@@ -24,7 +24,7 @@ export default function SeguridadPlataformaPage() {
           ¿Cómo cuidamos los datos y a quién le rendimos cuentas?
         </h1>
         <p className="mt-1.5 text-[15px] leading-relaxed text-ink-soft sm:text-sm">
-          Socrático.do es una herramienta independiente y no oficial, pero se
+          Socrático es una herramienta independiente y no oficial, pero se
           construye con los estándares que una institución del Estado exigiría.
           Esta página declara la postura de seguridad, privacidad y cumplimiento
           de toda la plataforma, con el marco normativo dominicano como

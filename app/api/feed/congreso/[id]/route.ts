@@ -69,7 +69,7 @@ ${fecha && !Number.isNaN(fecha.getTime()) ? `      <pubDate>${fecha.toUTCString(
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>${esc(`Iniciativa ${numero} — Socrático.do`)}</title>
+    <title>${esc(`Iniciativa ${numero} — Socrático`)}</title>
     <link>${esc(link)}</link>
     <description>${esc(`Cada cambio de estado de «${titulo}» en la Cámara de Diputados, según el SIL. Herramienta independiente y no oficial.`)}</description>
     <language>es-do</language>

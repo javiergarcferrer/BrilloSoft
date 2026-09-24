@@ -1,10 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
-  <!-- El contrasello: la pregunta como sello. Su punto va siempre en rojo. -->
-  <rect width="96" height="96" rx="20" fill="#171d2e"/>
-  <g transform="translate(48 50) scale(0.5) translate(-100 -96)">
-    <g transform="rotate(180 100 96)">
-      <path d="M 74 72 C 74 42 126 42 126 72 C 126 94 103 93 103 114" fill="none" stroke="#f7f3ea" stroke-width="15" stroke-linecap="round"/>
-      <circle cx="103" cy="143" r="10" fill="#a63a2a"/>
-    </g>
-  </g>
+  <!-- La marca: la «s» de socrático con su acento, que es el sello y va siempre en rojo. -->
+  <rect width="96" height="96" rx="21" fill="#171d2e"/>
+  <text x="48" y="80" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="96" fill="#f7f3ea">s</text>
+  <rect x="51" y="6" width="6.5" height="19" rx="1.5" fill="#d0503c" transform="rotate(38 54.25 25)"/>
 </svg>

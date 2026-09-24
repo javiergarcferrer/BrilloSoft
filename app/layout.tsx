@@ -47,23 +47,23 @@ export const metadata: Metadata = {
   // compartido y cada canónica salía relativa.
   metadataBase: new URL(SITIO),
   title: {
-    default: "Socrático.do — Preguntarle al Estado con sus propios datos",
-    template: "%s · Socrático.do",
+    default: "Socrático — Preguntarle al Estado con sus propios datos",
+    template: "%s · Socrático",
   },
   description:
     "El Estado dominicano con sus propios datos: compras públicas, presupuesto, deuda, Congreso, decretos, nómina, obras e instituciones, leídos desde sus fuentes oficiales. Herramienta independiente y no oficial.",
   openGraph: {
-    title: "Socrático.do",
+    title: "Socrático",
     description:
       "Compras, presupuesto, leyes, nómina, obras e instituciones del Estado dominicano en un solo lugar. Independiente y no oficial.",
     locale: "es_DO",
     type: "website",
-    siteName: "Socrático.do",
+    siteName: "Socrático",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Socrático.do",
+    title: "Socrático",
   },
 };
 

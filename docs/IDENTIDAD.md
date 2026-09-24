@@ -1,4 +1,4 @@
-# Socrático.do — identidad «El Contrasello»
+# Socrático — identidad «El Contrasello»
 
 Fuente de verdad del diseño. Si algo en la interfaz contradice este documento,
 la interfaz está mal. Los tokens viven en `app/globals.css`; aquí está el
@@ -58,7 +58,7 @@ enlaces, botones y estados activos — cientos de apariciones. Si fuera rojo, el
 sello estaría en todas partes y dejaría de pesar. *El sello aparece poco, y por
 eso pesa.*
 
-Dónde sí va el sello: el punto de la «¿», el «.do», la vertical de compras,
+Dónde sí va el sello: el acento del logotipo, el punto de la «¿», la vertical de compras,
 lo que **deroga**, y el punto del rótulo. En ningún otro sitio sin motivo.
 
 ## Tipografía — tres familias, tres oficios
@@ -77,18 +77,25 @@ Regla de reparto: **si es una pregunta o un titular, serif; si es un dato que
 se verifica, mono; todo lo demás, sans.** Un título de panel pequeño (14px) es
 sans en negrita, no serif: la serif a ese tamaño se lee floja.
 
-## La marca — el contrasello
+## La marca — «socrático», el acento es el sello
 
-`components/marca.tsx`. Dos formas del mismo glifo:
+`components/marca.tsx`. Desde el 2026-09-24 (decisión del dueño) la marca es
+una sola palabra en minúscula, **sin «.do»**: el nombre es Socrático.
 
-- `Sello` — circular completa con el aro de texto. Es la marca de verdad:
-  pie de página, tarjeta social, portada. Nunca por debajo de 72px, donde el
-  aro deja de leerse (`conAro={false}` para tamaños menores).
-- `SelloCompacto` — el glifo en una plaquita, para cabecera y favicon.
-- `Logotipo` — «Socrático» en serif + «.do» en sello.
+- `Logotipo` — «socrático» en Instrument Serif; **el acento de la «á» es el
+  sello**, un trazo rojo inclinado (`bg-sello-600`; `bg-sello-300` sobre tinta).
+  Cabecera y pie.
+- `SelloCompacto` — la «s» con el mismo acento en una placa (SVG): cabecera
+  en teléfono, favicon (`app/icon.svg`), ícono de la app. Sobre tinta el acento
+  se aclara.
+- `Sello` — la circular con «¿» al centro y el aro «SOCRÁTICO · PREGÚNTALE AL
+  ESTADO · REPÚBLICA DOMINICANA». Es el sello de firma (pie de página, tarjeta
+  social), no el logotipo. Nunca por debajo de 72 px con aro.
 
-**El punto es el sello.** El punto de la «¿», el del «.do» y las viñetas de
-lista van en rojo. Es la regla única y no admite excepción.
+**La marca roja es el sello.** El acento del logotipo y del ícono, el punto de
+la «¿» y el punto del rótulo van en rojo. Es la regla única y no admite
+excepción. Lo patrio está en la paleta —azul de firma, rojo de sello, papel—, nunca
+en la bandera ni el escudo: la herramienta es independiente y no oficial.
 
 ## La voz
 
