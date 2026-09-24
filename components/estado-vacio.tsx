@@ -23,6 +23,7 @@ export function EstadoVacio({
   accion,
   rotulo,
   variante = "vacio",
+  como: Titulo = "p",
   className,
 }: {
   titulo: ReactNode;
@@ -33,6 +34,12 @@ export function EstadoVacio({
   /** Epígrafe opcional: el nombre del panel que se quedó sin contenido. */
   rotulo?: ReactNode;
   variante?: "vacio" | "caida";
+  /**
+   * Cuando el estado **es** la página —una ficha que no existe, una fuente
+   * caída sin nada más que mostrar— su título es el h1: sin él, el lector de
+   * pantalla llega a una página sin nombre.
+   */
+  como?: "p" | "h1" | "h2";
   className?: string;
 }) {
   return (
@@ -49,14 +56,14 @@ export function EstadoVacio({
         vista. 36 px en el teléfono, los 56 desde `sm`.
       */}
       <div className="px-5 py-9 text-center sm:py-14">
-        <p
+        <Titulo
           className={cn(
             "text-sm font-medium",
             variante === "caida" ? "text-alerta-700" : "text-ink",
           )}
         >
           {titulo}
-        </p>
+        </Titulo>
         {children && (
           <div className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-ink-soft">
             {children}

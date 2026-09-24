@@ -58,6 +58,7 @@ function FuenteCaida() {
   return (
     <EstadoVacio
       variante="caida"
+      como="h1"
       titulo="La DGCP no respondió"
       accion={
         <Button asChild>

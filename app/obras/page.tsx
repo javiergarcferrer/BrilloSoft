@@ -49,6 +49,7 @@ export default async function ObrasPage({ searchParams }: { searchParams: Promis
     return (
       <EstadoVacio
         variante="caida"
+        como="h1"
         className="mx-auto max-w-2xl"
         titulo="No pudimos leer las obras"
         accion={

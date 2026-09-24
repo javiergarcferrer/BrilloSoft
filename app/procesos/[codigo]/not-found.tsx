@@ -6,6 +6,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 export default function NotFound() {
   return (
     <EstadoVacio
+      como="h1"
       titulo="¿Y este proceso?"
       accion={
         <Button asChild>

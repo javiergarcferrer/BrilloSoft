@@ -42,6 +42,7 @@ export default async function GestionPage({
     return (
       <EstadoVacio
         variante="caida"
+        como="h1"
         className="mx-auto max-w-2xl"
         titulo="No pudimos leer el ranking del SISMAP"
         accion={
