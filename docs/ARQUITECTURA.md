@@ -199,6 +199,12 @@ composed in `app/page.tsx`):
 - **`lib/alertas.ts`** — INDOMET CAP feed (§G.4), `AlertasTiempo`. 15 min.
 - **`lib/siniestralidad.ts`** — OPSEVI's undocumented JSON (§G.7),
   `SiniestralidadVial`; current year vs the same months of the previous one.
+- **`lib/tse.ts`** — Tribunal Superior Electoral rulings (§G.6), same shape
+  as `lib/tc.ts` (unstable_cache over parsed rows; follows «Siguiente», 15
+  pages max, `truncado` declared); `/tse`.
+- **`lib/justicia.ts`** — Poder Judicial monthly entradas/salidas by
+  departamento (§G.6), snapshot from `scripts/build-justicia.py`, card
+  `EstadisticasJudiciales` on `/`.
 - **`lib/tc.ts`** — Tribunal Constitucional rulings, one year per read (§G.6);
   `/constitucional`. The exception in this list: a year is up to ~1.1 MB of
   HTML, near the 2 MB fetch-cache limit, so it fetches `no-store` inside

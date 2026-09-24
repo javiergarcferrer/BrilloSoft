@@ -1362,6 +1362,19 @@ documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
   preliminares). ❌ El buscador de la SCJ (`consultasentenciascj…/Home/GetExpedientes`)
   solo acepta POST de formulario.
 - ✅ **TSE**: `visorpdf.tse.do/?y=2026` lista sus sentencias por GET (26 en 2026).
+  Implementado (`lib/tse.ts`, `/tse`): 60 por página (`?pos=N&y=AAAA&s=`), los
+  enlaces de página son una ventana, así que se sigue «Siguiente» (tope 15);
+  el filtro dice «Año de expediente» pero filtra por año de la sentencia;
+  numeración irregular (`TSE/007/2021`, `TSE-006-2021`, punto final) y números
+  repetidos con fichas distintas; desde 2021. 2024: 402 sentencias.
+- ✅ **Estadísticas del Poder Judicial** implementadas (`scripts/build-justicia.py`
+  → `public/data/justicia.json`, `lib/justicia.ts`, tarjeta en `/`): hoja
+  `EST_02_tribunales_de_jurisdiccion_ordinaria_<mes>_<año>`, **mensual** (no
+  acumulada), cuenta **solicitudes de servicio judicial**, salidas sin
+  considerar la fecha de entrada, sin la SCJ. Jul-2026: 129,375 entradas,
+  108,472 salidas (84 por cada 100; jul-2025: 81). Nombres de archivo con sufijos
+  y rótulos erróneos: el script elige por patrón, comprueba el mes dentro de la
+  hoja y que los 11 departamentos sumen el total.
 - ⚠️ JCE: seis peticiones sin CAPTCHA; «Organizaciones políticas reconocidas» en
   PDF. El padrón solo está en Issuu.
 - ✅ Contraloría: `/informes-de-auditorias/` enlaza ~38 PDF; Índice de Control

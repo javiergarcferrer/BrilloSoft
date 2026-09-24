@@ -687,6 +687,32 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="Tribunal Superior Electoral — sentencias" estado="activa" etiqueta="Conectada">
+          <p>
+            Su visor público lista las sentencias por año, 60 por página, desde 2021:{" "}
+            <Link href="/tse" className="font-medium text-brand-700 hover:underline">
+              las sentencias del TSE
+            </Link>{" "}
+            se leen de ahí, siguiendo las páginas hasta un tope de 15 que la página
+            declara si lo alcanza. La numeración de la fuente es irregular y un mismo
+            número puede tener dos fichas: cada fila es una ficha. El PDF se abre
+            desde la ficha, en el sitio del tribunal.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Poder Judicial — estadísticas de los tribunales ordinarios" estado="activa" etiqueta="Instantánea local">
+          <p>
+            Del boletín estadístico mensual del Poder Judicial se lee, al regenerar,
+            la hoja de entradas y salidas de los tribunales de jurisdicción ordinaria
+            por departamento judicial, el último mes y el mismo mes del año anterior.
+            Cuenta solicitudes de servicio judicial, no expedientes, y las salidas no
+            corresponden a las entradas del mismo mes: la razón dice si los
+            tribunales dan abasto, no qué parte de lo nuevo se resolvió. No incluye la
+            Suprema Corte. Son cifras preliminares; el script rechaza el archivo si los
+            departamentos no suman el total.
+          </p>
+        </Fuente>
+
         <Fuente nombre="Banco Central — remesas, reservas y tasa activa" estado="activa" etiqueta="Conectada">
           <p>
             Tres archivos públicos del CDN del Banco Central, sin clave, en el
@@ -771,16 +797,12 @@ export default async function FuentesPage() {
 
         <Fuente nombre="Mapeadas en la tercera pasada, aún sin integrar" estado="descartada" etiqueta="Pendientes">
           <p>
-            Verificadas y sin clave, a la espera de su turno: las estadísticas
-            judiciales mensuales del Poder Judicial (índice de 943 archivos), las
-            sentencias del Tribunal Superior Electoral, los informes de auditoría de
+            Verificadas y sin clave, a la espera de su turno: los informes de auditoría de
             la Contraloría, las listas de cumplimiento de la declaración jurada de la
-            Cámara de Cuentas —que volvió a responder—, el subsidio a las
-            distribuidoras eléctricas por la misma API del SIGEF, los mantenimientos
-            programados de Edenorte y Edesur, las llegadas de turistas y el IPC del
-            Banco Central, los indicadores de SIMBAD de la Superintendencia de
-            Bancos, las subastas de Crédito Público, los robos y armas del
-            Ministerio de Interior y la matrícula del MINERD.
+            Cámara de Cuentas —que volvió a responder—, los indicadores de SIMBAD de
+            la Superintendencia de Bancos, las subastas de Crédito Público, los robos
+            y armas del Ministerio de Interior, la matrícula del MINERD y las
+            licencias de construcción del MIVHED.
           </p>
         </Fuente>
 

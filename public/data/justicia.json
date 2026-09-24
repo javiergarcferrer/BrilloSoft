@@ -1,0 +1,497 @@
+{
+ "generadoEn": "2026-09-24",
+ "indice": "https://transparencia.poderjudicial.gob.do/transparencia/estadisticas_judiciales/BoletinesEstadisticos",
+ "mesesListados": 54,
+ "actual": {
+  "mes": "2026-07",
+  "preliminar": true,
+  "nota": "* Salidas sin considerar la fecha de entrada Nota: Cifras de carácter preliminar, sujetas a verificación",
+  "entradas": 129375,
+  "salidas": 108472,
+  "tasa": 0.8384,
+  "categorias": {
+   "corte": {
+    "entradas": 20225,
+    "salidas": 18489
+   },
+   "primeraInstancia": {
+    "entradas": 98124,
+    "salidas": 82335
+   },
+   "paz": {
+    "entradas": 11026,
+    "salidas": 7648
+   }
+  },
+  "departamentos": [
+   {
+    "nombre": "San Juan de la Maguana",
+    "entradas": 2909,
+    "salidas": 2688,
+    "tasa": 0.924,
+    "categorias": {
+     "corte": {
+      "entradas": 196,
+      "salidas": 151
+     },
+     "primeraInstancia": {
+      "entradas": 2397,
+      "salidas": 2296
+     },
+     "paz": {
+      "entradas": 316,
+      "salidas": 241
+     }
+    }
+   },
+   {
+    "nombre": "Montecristi",
+    "entradas": 3274,
+    "salidas": 2968,
+    "tasa": 0.9065,
+    "categorias": {
+     "corte": {
+      "entradas": 325,
+      "salidas": 272
+     },
+     "primeraInstancia": {
+      "entradas": 2793,
+      "salidas": 2584
+     },
+     "paz": {
+      "entradas": 156,
+      "salidas": 112
+     }
+    }
+   },
+   {
+    "nombre": "Puerto Plata",
+    "entradas": 4739,
+    "salidas": 4237,
+    "tasa": 0.8941,
+    "categorias": {
+     "corte": {
+      "entradas": 462,
+      "salidas": 382
+     },
+     "primeraInstancia": {
+      "entradas": 3920,
+      "salidas": 3609
+     },
+     "paz": {
+      "entradas": 357,
+      "salidas": 246
+     }
+    }
+   },
+   {
+    "nombre": "Santiago",
+    "entradas": 16348,
+    "salidas": 14525,
+    "tasa": 0.8885,
+    "categorias": {
+     "corte": {
+      "entradas": 3062,
+      "salidas": 2929
+     },
+     "primeraInstancia": {
+      "entradas": 12154,
+      "salidas": 10825
+     },
+     "paz": {
+      "entradas": 1132,
+      "salidas": 771
+     }
+    }
+   },
+   {
+    "nombre": "Barahona",
+    "entradas": 4007,
+    "salidas": 3505,
+    "tasa": 0.8747,
+    "categorias": {
+     "corte": {
+      "entradas": 353,
+      "salidas": 320
+     },
+     "primeraInstancia": {
+      "entradas": 3365,
+      "salidas": 3013
+     },
+     "paz": {
+      "entradas": 289,
+      "salidas": 172
+     }
+    }
+   },
+   {
+    "nombre": "San Francisco de Macorís",
+    "entradas": 8958,
+    "salidas": 7716,
+    "tasa": 0.8614,
+    "categorias": {
+     "corte": {
+      "entradas": 1233,
+      "salidas": 1076
+     },
+     "primeraInstancia": {
+      "entradas": 7216,
+      "salidas": 6253
+     },
+     "paz": {
+      "entradas": 509,
+      "salidas": 387
+     }
+    }
+   },
+   {
+    "nombre": "San Pedro de Macorís",
+    "entradas": 15360,
+    "salidas": 13176,
+    "tasa": 0.8578,
+    "categorias": {
+     "corte": {
+      "entradas": 1891,
+      "salidas": 1945
+     },
+     "primeraInstancia": {
+      "entradas": 12332,
+      "salidas": 10340
+     },
+     "paz": {
+      "entradas": 1137,
+      "salidas": 891
+     }
+    }
+   },
+   {
+    "nombre": "La Vega",
+    "entradas": 12284,
+    "salidas": 10101,
+    "tasa": 0.8223,
+    "categorias": {
+     "corte": {
+      "entradas": 1236,
+      "salidas": 1235
+     },
+     "primeraInstancia": {
+      "entradas": 10110,
+      "salidas": 8076
+     },
+     "paz": {
+      "entradas": 938,
+      "salidas": 790
+     }
+    }
+   },
+   {
+    "nombre": "Distrito Nacional",
+    "entradas": 29298,
+    "salidas": 24017,
+    "tasa": 0.8197,
+    "categorias": {
+     "corte": {
+      "entradas": 8204,
+      "salidas": 7210
+     },
+     "primeraInstancia": {
+      "entradas": 18353,
+      "salidas": 14838
+     },
+     "paz": {
+      "entradas": 2741,
+      "salidas": 1969
+     }
+    }
+   },
+   {
+    "nombre": "Santo Domingo",
+    "entradas": 21134,
+    "salidas": 17203,
+    "tasa": 0.814,
+    "categorias": {
+     "corte": {
+      "entradas": 2267,
+      "salidas": 2255
+     },
+     "primeraInstancia": {
+      "entradas": 16334,
+      "salidas": 13555
+     },
+     "paz": {
+      "entradas": 2533,
+      "salidas": 1393
+     }
+    }
+   },
+   {
+    "nombre": "San Cristóbal",
+    "entradas": 11064,
+    "salidas": 8336,
+    "tasa": 0.7534,
+    "categorias": {
+     "corte": {
+      "entradas": 996,
+      "salidas": 714
+     },
+     "primeraInstancia": {
+      "entradas": 9150,
+      "salidas": 6946
+     },
+     "paz": {
+      "entradas": 918,
+      "salidas": 676
+     }
+    }
+   }
+  ],
+  "fuente": "https://transparencia.poderjudicial.gob.do/documentos/PDF/estaditicas/EST_02_tribunales_de_jurisdiccion_ordinaria_julio_2026.xlsx",
+  "pdf": "https://transparencia.poderjudicial.gob.do/documentos/PDF/estaditicas/EST_02_tribunales_de_jurisdiccion_ordinaria_julio_2026.pdf"
+ },
+ "anterior": {
+  "mes": "2025-07",
+  "preliminar": true,
+  "nota": "* Salidas sin considerar la fecha de entrada Nota: Cifras de carácter preliminar, sujetas a verificación",
+  "entradas": 117820,
+  "salidas": 94927,
+  "tasa": 0.8057,
+  "categorias": {
+   "corte": {
+    "entradas": 16808,
+    "salidas": 13867
+   },
+   "primeraInstancia": {
+    "entradas": 91136,
+    "salidas": 74232
+   },
+   "paz": {
+    "entradas": 9876,
+    "salidas": 6828
+   }
+  },
+  "departamentos": [
+   {
+    "nombre": "Santiago",
+    "entradas": 15092,
+    "salidas": 13190,
+    "tasa": 0.874,
+    "categorias": {
+     "corte": {
+      "entradas": 2536,
+      "salidas": 2433
+     },
+     "primeraInstancia": {
+      "entradas": 11409,
+      "salidas": 9936
+     },
+     "paz": {
+      "entradas": 1147,
+      "salidas": 821
+     }
+    }
+   },
+   {
+    "nombre": "Puerto Plata",
+    "entradas": 4867,
+    "salidas": 4144,
+    "tasa": 0.8514,
+    "categorias": {
+     "corte": {
+      "entradas": 509,
+      "salidas": 433
+     },
+     "primeraInstancia": {
+      "entradas": 3890,
+      "salidas": 3424
+     },
+     "paz": {
+      "entradas": 468,
+      "salidas": 287
+     }
+    }
+   },
+   {
+    "nombre": "San Francisco de Macorís",
+    "entradas": 8053,
+    "salidas": 6793,
+    "tasa": 0.8435,
+    "categorias": {
+     "corte": {
+      "entradas": 892,
+      "salidas": 804
+     },
+     "primeraInstancia": {
+      "entradas": 6659,
+      "salidas": 5571
+     },
+     "paz": {
+      "entradas": 502,
+      "salidas": 418
+     }
+    }
+   },
+   {
+    "nombre": "San Cristóbal",
+    "entradas": 10175,
+    "salidas": 8508,
+    "tasa": 0.8362,
+    "categorias": {
+     "corte": {
+      "entradas": 878,
+      "salidas": 723
+     },
+     "primeraInstancia": {
+      "entradas": 8445,
+      "salidas": 7136
+     },
+     "paz": {
+      "entradas": 852,
+      "salidas": 649
+     }
+    }
+   },
+   {
+    "nombre": "San Juan de la Maguana",
+    "entradas": 2706,
+    "salidas": 2235,
+    "tasa": 0.8259,
+    "categorias": {
+     "corte": {
+      "entradas": 213,
+      "salidas": 173
+     },
+     "primeraInstancia": {
+      "entradas": 2197,
+      "salidas": 1862
+     },
+     "paz": {
+      "entradas": 296,
+      "salidas": 200
+     }
+    }
+   },
+   {
+    "nombre": "San Pedro de Macorís",
+    "entradas": 14516,
+    "salidas": 11724,
+    "tasa": 0.8077,
+    "categorias": {
+     "corte": {
+      "entradas": 1653,
+      "salidas": 1325
+     },
+     "primeraInstancia": {
+      "entradas": 11913,
+      "salidas": 9882
+     },
+     "paz": {
+      "entradas": 950,
+      "salidas": 517
+     }
+    }
+   },
+   {
+    "nombre": "Barahona",
+    "entradas": 4110,
+    "salidas": 3281,
+    "tasa": 0.7983,
+    "categorias": {
+     "corte": {
+      "entradas": 315,
+      "salidas": 254
+     },
+     "primeraInstancia": {
+      "entradas": 3504,
+      "salidas": 2854
+     },
+     "paz": {
+      "entradas": 291,
+      "salidas": 173
+     }
+    }
+   },
+   {
+    "nombre": "Distrito Nacional",
+    "entradas": 27722,
+    "salidas": 22082,
+    "tasa": 0.7966,
+    "categorias": {
+     "corte": {
+      "entradas": 6730,
+      "salidas": 5129
+     },
+     "primeraInstancia": {
+      "entradas": 18370,
+      "salidas": 14812
+     },
+     "paz": {
+      "entradas": 2622,
+      "salidas": 2141
+     }
+    }
+   },
+   {
+    "nombre": "La Vega",
+    "entradas": 11586,
+    "salidas": 9199,
+    "tasa": 0.794,
+    "categorias": {
+     "corte": {
+      "entradas": 1112,
+      "salidas": 1001
+     },
+     "primeraInstancia": {
+      "entradas": 9650,
+      "salidas": 7647
+     },
+     "paz": {
+      "entradas": 824,
+      "salidas": 551
+     }
+    }
+   },
+   {
+    "nombre": "Montecristi",
+    "entradas": 3016,
+    "salidas": 2322,
+    "tasa": 0.7699,
+    "categorias": {
+     "corte": {
+      "entradas": 192,
+      "salidas": 177
+     },
+     "primeraInstancia": {
+      "entradas": 2670,
+      "salidas": 2034
+     },
+     "paz": {
+      "entradas": 154,
+      "salidas": 111
+     }
+    }
+   },
+   {
+    "nombre": "Santo Domingo",
+    "entradas": 15977,
+    "salidas": 11449,
+    "tasa": 0.7166,
+    "categorias": {
+     "corte": {
+      "entradas": 1778,
+      "salidas": 1415
+     },
+     "primeraInstancia": {
+      "entradas": 12429,
+      "salidas": 9074
+     },
+     "paz": {
+      "entradas": 1770,
+      "salidas": 960
+     }
+    }
+   }
+  ],
+  "fuente": "https://transparencia.poderjudicial.gob.do/documentos/PDF/estaditicas/EST_02_tribunales_de_jurisdiccion_ordinaria_julio_2025.xlsx",
+  "pdf": "https://transparencia.poderjudicial.gob.do/documentos/PDF/estaditicas/EST_02_tribunales_de_jurisdiccion_ordinaria_julio_2025.pdf"
+ }
+}

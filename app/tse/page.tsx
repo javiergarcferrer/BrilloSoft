@@ -1,0 +1,251 @@
+import Link from "next/link";
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import { aniosTSE, anioActualTSE, listarSentenciasTSE, urlListadoTSE } from "@/lib/tse";
+import { formatFecha } from "@/lib/format";
+import { formatInt } from "@/lib/nomina";
+import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
+import { NavFiltros, FiltroEnlace } from "@/components/nav-filtros";
+import { BuscadorUrl } from "@/components/buscador-url";
+import { EstadoVacio } from "@/components/estado-vacio";
+import { Paginador } from "@/components/paginador";
+import { Card } from "@/components/ui/card";
+import Plegable from "@/components/plegable";
+import Antiguedad from "@/components/antiguedad";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/tse" },
+  title: "Sentencias del Tribunal Superior Electoral",
+  description:
+    "Las sentencias contenciosas del Tribunal Superior Electoral dominicano por año, desde 2021: número, fecha, expediente y de qué trata cada una, con enlace a su ficha y su PDF en el visor del Tribunal.",
+};
+
+export const revalidate = 21600;
+
+const POR_PAGINA = 40;
+/** Años a la vista como chips; el resto, a un toque. */
+const ANIOS_VISIBLES = 5;
+
+function sinTildes(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+/**
+ * ¿Qué ha decidido el Tribunal Superior Electoral? — el visor de sentencias
+ * contenciosas del Tribunal (`lib/tse.ts`), leído entero por año y filtrado aquí.
+ *
+ * Año, búsqueda y página viven en la URL: una búsqueda se comparte tal cual.
+ * El PDF no se enlaza directo porque su dirección solo aparece en la ficha de
+ * cada sentencia; la fila lleva a esa ficha, en el visor del Tribunal.
+ */
+export default async function TsePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ anio?: string; q?: string; pagina?: string }>;
+}) {
+  const sp = await searchParams;
+  const anios = aniosTSE();
+  const actual = anioActualTSE();
+  const pedido = Number(sp.anio);
+  const anio = anios.includes(pedido) ? pedido : actual;
+  const q = (sp.q ?? "").trim().slice(0, 120);
+
+  const url = (cambios: { anio?: number; q?: string; pagina?: number }) => {
+    const u = new URLSearchParams();
+    const a = "anio" in cambios ? cambios.anio : anio;
+    const t = "q" in cambios ? cambios.q : q;
+    if (a && a !== actual) u.set("anio", String(a));
+    if (t) u.set("q", t);
+    if (cambios.pagina && cambios.pagina > 1) u.set("pagina", String(cambios.pagina));
+    const s = u.toString();
+    return s ? `/tse?${s}` : "/tse";
+  };
+
+  // El año pedido siempre queda a la vista, aunque sea de los antiguos.
+  const visibles = anios.slice(0, ANIOS_VISIBLES);
+  if (!visibles.includes(anio)) visibles.push(anio);
+  const antiguos = anios.slice(ANIOS_VISIBLES).filter((a) => a !== anio);
+  const chip = (a: number) => (
+    <FiltroEnlace key={a} href={url({ anio: a, pagina: undefined })} activo={a === anio} mono>
+      {a}
+    </FiltroEnlace>
+  );
+  const chipsVisibles = (
+    <NavFiltros etiqueta="Año de las sentencias" className="px-5 py-4 sm:px-6">
+      {visibles.map(chip)}
+    </NavFiltros>
+  );
+  // La tarjeta de los años: los recientes a la vista, los antiguos a un toque.
+  const chipsAnios = (
+    <Card as="section" className="overflow-hidden">
+      {antiguos.length > 0 ? (
+        <Plegable
+          resumen={chipsVisibles}
+          etiqueta={
+            antiguos.length === 1
+              ? `Ver el año anterior, ${antiguos[0]}`
+              : `Ver los ${formatInt(antiguos.length)} años anteriores, de ${antiguos[antiguos.length - 1]} a ${antiguos[0]}`
+          }
+          etiquetaCerrar="Ocultar los años anteriores"
+        >
+          <NavFiltros etiqueta="Años anteriores" className="px-5 py-4 sm:px-6">
+            {antiguos.map(chip)}
+          </NavFiltros>
+        </Plegable>
+      ) : (
+        chipsVisibles
+      )}
+    </Card>
+  );
+
+  const d = await listarSentenciasTSE(anio);
+  if (!d) {
+    return (
+      <div className="space-y-5">
+        <EstadoVacio
+          variante="caida"
+          como="h1"
+          className="mx-auto max-w-2xl"
+          titulo={`No pudimos leer las sentencias de ${anio} del Tribunal Superior Electoral`}
+          accion={
+            <a
+              href={urlListadoTSE(anio)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-brand-700 hover:underline"
+            >
+              Abrir el listado en el visor del Tribunal
+            </a>
+          }
+        >
+          El visor de sentencias del Tribunal no contestó a tiempo o devolvió otra
+          cosa que el listado. No es que no haya sentencias: es que no pudimos
+          mirar. Los demás años pueden estar disponibles, y el resto de la
+          plataforma sigue en pie.
+        </EstadoVacio>
+        <div className="mx-auto max-w-2xl">{chipsAnios}</div>
+      </div>
+    );
+  }
+
+  const todas = d.sentencias;
+  const palabras = sinTildes(q).split(/\s+/).filter(Boolean);
+  const filas = palabras.length
+    ? todas.filter((s) => {
+        const h = sinTildes(`${s.numero} ${s.expediente ?? ""} ${s.relativo}`);
+        return palabras.every((p) => h.includes(p));
+      })
+    : todas;
+  const paginas = Math.max(1, Math.ceil(filas.length / POR_PAGINA));
+  const pagina = Math.min(Math.max(1, Math.floor(Number(sp.pagina)) || 1), paginas);
+  const vista = filas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+  const fechadas = todas.filter((s) => s.fecha);
+  const ultima = fechadas[0];
+  const primera = fechadas[fechadas.length - 1];
+
+  return (
+    <div className="space-y-5">
+      <Portada
+        rotulo={`Tribunal Superior Electoral · sentencias de ${anio} · consultado el ${formatFecha(d.consultado)}`}
+        titulo="¿Qué ha decidido el Tribunal Superior Electoral?"
+        descripcion={
+          <>
+            El Tribunal Superior Electoral es quien resuelve los pleitos de la
+            política: impugnaciones de convenciones y asambleas de los partidos,
+            amparos contra la Junta Central Electoral, recursos contra una
+            candidatura o un resultado. Aquí está cada sentencia del año tal como
+            la publica el Tribunal en su visor: número, fecha, expediente y de qué
+            trata. El texto completo está en la ficha de cada una.
+          </>
+        }
+      >
+        <PortadaCifras>
+          <PortadaCifra etiqueta={`Sentencias de ${anio}`} valor={formatInt(todas.length)} destacar />
+          <PortadaCifra etiqueta="La más reciente" valor={ultima?.fecha ? formatFecha(ultima.fecha) : "—"} />
+          <PortadaCifra etiqueta="Su número" valor={ultima?.numero ?? "—"} />
+          <PortadaCifra etiqueta="La primera del año" valor={primera?.fecha ? formatFecha(primera.fecha) : "—"} />
+        </PortadaCifras>
+      </Portada>
+
+      {chipsAnios}
+
+      <Suspense>
+        <BuscadorUrl
+          etiqueta={`Buscar en las sentencias de ${anio}`}
+          placeholder="TSE/0028/2026, TSE-05-0009-2026, amparo, Fuerza del Pueblo…"
+          ayuda={`Busca todas las palabras en el número, el expediente y el «relativo a» de las ${formatInt(todas.length)} sentencias de ${anio}, sin distinguir tildes. No busca dentro del texto de la sentencia.`}
+        />
+      </Suspense>
+
+      {filas.length === 0 ? (
+        <EstadoVacio titulo={q ? `Ninguna sentencia de ${anio} coincide con «${q}»` : `El Tribunal no lista sentencias de ${anio} todavía`}>
+          {q
+            ? "Prueba con menos palabras o con otro año. Se busca en el resumen que publica el Tribunal, no dentro de la sentencia."
+            : "El visor del Tribunal llegó sin filas para este año."}
+        </EstadoVacio>
+      ) : (
+        <Card as="section" className="overflow-hidden">
+          <p className="px-5 pt-4 text-xs text-ink-soft sm:px-6" aria-live="polite">
+            {q
+              ? `${formatInt(filas.length)} de ${formatInt(todas.length)} sentencias de ${anio} coinciden`
+              : `${formatInt(todas.length)} sentencias de ${anio}`}
+            , de la más reciente a la más antigua.
+            {d.truncado &&
+              ` El visor tiene más páginas de las ${formatInt(d.paginas)} que leemos: la lista de este año está incompleta.`}
+          </p>
+          <ol className="mt-2 divide-y divide-hairline border-t border-hairline">
+            {vista.map((s) => (
+              <li key={s.ficha} className="relative px-5 py-3 sm:px-6">
+                <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs text-ink-soft">
+                  <a
+                    href={s.ficha}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-sm font-semibold text-ink after:absolute after:inset-0 hover:text-brand-700"
+                  >
+                    {s.numero}
+                    <span className="sr-only"> (abre la ficha en el visor del Tribunal)</span>
+                  </a>
+                  {s.fecha ? <Antiguedad iso={s.fecha} /> : <span>sin fecha legible</span>}
+                </span>
+                <span className="mt-1 block text-[15px] leading-snug text-ink [overflow-wrap:anywhere]">
+                  {s.relativo || "Sin resumen en el listado"}
+                </span>
+                {s.expediente && (
+                  <span className="mt-1 block font-mono text-xs text-ink-soft [overflow-wrap:anywhere]">
+                    Expediente {s.expediente}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+          {paginas > 1 && (
+            <div className="border-t border-hairline px-5 py-3 sm:px-6">
+              <Paginador pagina={pagina} paginas={paginas} href={(p) => url({ pagina: p })} />
+            </div>
+          )}
+        </Card>
+      )}
+
+      <p className="text-xs leading-relaxed text-ink-soft">
+        Fuente:{" "}
+        <a href={d.fuente} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 hover:underline">
+          visor de sentencias contenciosas del Tribunal Superior Electoral
+        </a>
+        , leído el {formatFecha(d.consultado)} y guardado{" "}
+        {anio === actual ? "seis horas" : "una semana"}. El visor muestra 60
+        sentencias por página y las recorremos todas: {formatInt(d.paginas)}{" "}
+        {d.paginas === 1 ? "página" : "páginas"}, {formatInt(d.escaneados)} filas
+        leídas, {formatInt(todas.length)} sentencias. Publica desde 2021; lo
+        anterior no está en el visor. Un mismo número puede aparecer dos veces
+        cuando el Tribunal subió dos documentos con él; se muestran los dos. El
+        «relativo a» y el expediente son los que escribe el Tribunal; cada número
+        abre la ficha, con la síntesis y el PDF del texto completo. Ver{" "}
+        <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
+          el estado de las fuentes
+        </Link>
+        .
+      </p>
+    </div>
+  );
+}

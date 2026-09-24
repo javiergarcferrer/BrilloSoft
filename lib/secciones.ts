@@ -158,11 +158,12 @@ export const SECCIONES: Seccion[] = [
     nombre: "Normativa",
     pregunta: "¿Qué decreta?",
     href: "/normativa",
-    descriptor: "Decretos, leyes y sentencias constitucionales",
-    rutas: ["/normativa", "/constitucional"],
+    descriptor: "Decretos, leyes y sentencias de los altos tribunales",
+    rutas: ["/normativa", "/constitucional", "/tse"],
     vistas: [
       { href: "/normativa", label: "Decretos y leyes" },
       { href: "/constitucional", label: "Tribunal Constitucional" },
+      { href: "/tse", label: "Tribunal Electoral" },
     ],
     hue: {
       activo: "text-v-normativa",
@@ -324,6 +325,12 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
     etiqueta: "Tribunal Constitucional",
     href: "/constitucional",
     alcance: "Número, expediente y asunto de las sentencias del año elegido; el texto está en el PDF de cada una.",
+  },
+  {
+    seccion: "normativa",
+    etiqueta: "Tribunal Superior Electoral",
+    href: "/tse",
+    alcance: "Número, expediente y asunto de las sentencias del año elegido, desde 2021; el texto está en la ficha de cada una.",
   },
   {
     etiqueta: "Documentos",

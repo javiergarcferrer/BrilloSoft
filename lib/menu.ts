@@ -97,11 +97,12 @@ export const MENU: GrupoMenu[] = [
         ],
       },
       {
-        titulo: "Ejecutivo y Constitucional",
+        titulo: "Ejecutivo y altos tribunales",
         seccion: "normativa",
         enlaces: [
           { href: "/normativa", label: "Decretos y leyes", nota: "Lo que se promulga y se firma, por año" },
           { href: "/constitucional", label: "Tribunal Constitucional", nota: "Sus sentencias, año por año" },
+          { href: "/tse", label: "Tribunal Superior Electoral", nota: "Sus sentencias desde 2021" },
         ],
       },
       {

@@ -52,6 +52,7 @@ import { DiaElectrico } from "@/components/fuentes-nuevas/dia-electrico";
 import { IndicadoresMacro } from "@/components/fuentes-nuevas/indicadores-macro";
 import { ComercioExterior } from "@/components/fuentes-nuevas/comercio-exterior";
 import { InflacionTurismo } from "@/components/fuentes-nuevas/inflacion-turismo";
+import { EstadisticasJudiciales } from "@/components/fuentes-nuevas/estadisticas-judiciales";
 
 export const revalidate = 1800;
 
@@ -214,6 +215,11 @@ export default function Panorama() {
       {/* Precios y turismo: las dos series del BCRD que solo vienen en .xls viejo (instantánea). */}
       <Suspense fallback={<Esqueleto className="h-[640px] sm:h-[460px]" />}>
         <InflacionTurismo />
+      </Suspense>
+
+      {/* La carga de los tribunales ordinarios, del boletín mensual del Poder Judicial (instantánea). */}
+      <Suspense fallback={<Esqueleto className="h-[640px] sm:h-[460px]" />}>
+        <EstadisticasJudiciales />
       </Suspense>
 
       {/* Lo que el Estado avisa y registra de la calle: la luz, el tiempo y las vías. */}
