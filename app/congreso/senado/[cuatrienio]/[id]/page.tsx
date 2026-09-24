@@ -88,7 +88,6 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
           {ficha.titulo}
         </h1>
-        <AccionesFicha className="mt-3" tipo="expediente-senado" id={`${ficha.cuatrienio}/${ficha.id}`} titulo={ficha.titulo} href={`/congreso/senado/${ficha.cuatrienio}/${ficha.id}`} situacion={{ condicion: ficha.condicion, estadoActual: ficha.estadoActual, promulgada: ficha.promulgada, perimida: ficha.perimida }} />
 
         {ficha.tituloModificado && (
           <div className="mt-3 rounded-lg border-l-[3px] border-brand-500 bg-surface py-3 pl-4 pr-3">
@@ -100,6 +99,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
             </p>
           </div>
         )}
+        <AccionesFicha className="mt-3" tipo="expediente-senado" id={`${ficha.cuatrienio}/${ficha.id}`} titulo={ficha.titulo} href={`/congreso/senado/${ficha.cuatrienio}/${ficha.id}`} situacion={{ condicion: ficha.condicion, estadoActual: ficha.estadoActual, promulgada: ficha.promulgada, perimida: ficha.perimida }} />
       </header>
 
       {ficha.promulgada && (

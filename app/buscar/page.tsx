@@ -139,7 +139,6 @@ export default async function BuscarPage({
   ];
   const llenos = grupos.filter((g) => !g.vacio);
   const vacios = grupos.filter((g) => g.vacio);
-  const todoVacio = llenos.length === 0;
 
   const sigueBuscando = (
     <Card as="section" className="p-5">
@@ -178,8 +177,7 @@ export default async function BuscarPage({
             Los grupos vacíos no se pintan uno por uno. Cinco tarjetas que dicen
             «Nada aquí.» empujaban fuera de la pantalla lo único útil —dónde
             seguir buscando— y obligaban a leer cinco veces lo mismo; ahora se
-            nombran juntos en una línea. Y si no hubo nada en ninguno, lo
-            primero es «Sigue buscando», con el alcance de cada vertical.
+            nombran juntos en una línea.
           */}
           {llenos.map((g) => (
             <Fragment key={g.titulo}>{g.el}</Fragment>
@@ -187,8 +185,6 @@ export default async function BuscarPage({
           {vacios.length > 0 && (
             <SinCoincidencias q={q} donde={vacios.map((g) => g.titulo)} />
           )}
-
-          {todoVacio && sigueBuscando}
 
           {/*
             Diputados se lee en vivo y llega aparte. Su vacío se dice en la
@@ -206,7 +202,11 @@ export default async function BuscarPage({
             <Diputados q={q} />
           </Suspense>
 
-          {!todoVacio && sigueBuscando}
+          {/*
+            Al final, siempre: Diputados llega aparte y puede traer lo único
+            que se encontró; «Sigue buscando» antes lo empujaría por debajo.
+          */}
+          {sigueBuscando}
         </>
       )}
     </div>

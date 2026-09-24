@@ -75,7 +75,8 @@ export const formatInt = (n: number) => int.format(Math.round(n));
  */
 export function formatCompactDOP(n: number): string {
   const a = Math.abs(n);
-  if (a >= 1e6) return formatPesos(n);
+  // Desde 999,500 el redondeo a miles diría «1000 mil»: pasa a millones.
+  if (a >= 999_500) return formatPesos(n);
   if (a >= 1e3) return `RD$ ${Math.round(n / 1e3)} mil`;
   return `RD$ ${Math.round(n)}`;
 }

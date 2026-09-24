@@ -17,9 +17,10 @@ que lo posea; lo que exija una decisión del dueño va a `docs/DECISIONES.md`.
 2. **No existe la institución.** El mismo ministerio es una unidad de compra
    (DGCP), un capítulo (`lib/capitulos.ts`) y un código de nómina
    (`lib/nomina.ts`), y nada los une. Es el mayor atasco de la plataforma.
-3. **Solo se busca en compras.** `conBuscadorGlobal` es `true` únicamente en
-   Licitaciones (`lib/secciones.ts:114`). Normativa y Finanzas no tienen
-   búsqueda de texto. Quien escribe «MINERD» o «Ley 47-25» no tiene dónde.
+3. **Solo se busca en compras.** El buscador de la cabecera existía únicamente
+   en Licitaciones (hoy la cabecera abre siempre la búsqueda global y cada
+   vertical lleva su campo en la página). Normativa y Finanzas no tenían
+   búsqueda de texto. Quien escribía «MINERD» o «Ley 47-25» no tenía dónde.
 4. **Seguir, compartir y alertas son solo de compras.** `lib/seguimiento.ts`
    guarda procesos; `components/compartir.tsx` dice «Mira esta licitación»;
    el RSS (`app/api/feed/route.ts`) es de procesos. No se puede seguir un

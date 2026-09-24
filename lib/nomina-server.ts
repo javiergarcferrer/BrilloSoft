@@ -22,12 +22,27 @@ export interface ResumenNomina {
   periodoReciente: string;
 }
 
+/*
+  La instantánea es fija en cada despliegue: se lee y resume una vez por
+  instancia. Antes, cada ficha de institución sin nómina parseaba los 750 KB
+  de nomina.json solo para decir de cuántas se lee. Una lectura fallida no se
+  recuerda, para que la siguiente lo vuelva a intentar.
+*/
+let resumenMemo: Promise<ResumenNomina | null> | null = null;
+
 /**
  * `loadNomina` usa una URL relativa y solo sirve en el cliente; el panorama es
- * un Server Component, así que lee el mismo archivo desde disco. Corre una vez
- * por ventana de `revalidate`.
+ * un Server Component, así que lee el mismo archivo desde disco.
  */
-export async function getResumenNomina(): Promise<ResumenNomina | null> {
+export function getResumenNomina(): Promise<ResumenNomina | null> {
+  resumenMemo ??= leerResumenNomina().then((r) => {
+    if (!r) resumenMemo = null;
+    return r;
+  });
+  return resumenMemo;
+}
+
+async function leerResumenNomina(): Promise<ResumenNomina | null> {
   try {
     const crudo = await readFile(
       join(process.cwd(), "public", "data", "nomina.json"),

@@ -79,7 +79,7 @@ export default function AccionesFicha({
       {/* En el teléfono, dentro de «Más opciones»: 44 px por fila, se pulsan con el pulgar. */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="sm:hidden">
+          <Button variant="outline" size="sm" className="h-11 sm:hidden">
             Más opciones
             <IconChevronDown className="h-3.5 w-3.5" />
           </Button>

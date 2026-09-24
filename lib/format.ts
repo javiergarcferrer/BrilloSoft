@@ -167,8 +167,11 @@ export function tituloLegible(valor: string): string {
   if (letras.length < 4) return valor;
   const mayus = letras.filter((l) => l !== l.toLowerCase()).length;
   if (mayus / letras.length <= 0.6) return valor;
-  const bajo = valor.replace(/[\p{L}\p{N}]+/gu, (t) =>
-    SIGLAS.has(t) || /\d/.test(t) ? t : t.toLowerCase(),
+  // Una racha unida por guion, barra o punto es una sola pieza: un código
+  // como «MINERD-CCC-LPN-2025-0012» se conserva entero si lleva cifras.
+  const palabra = (t: string) => (SIGLAS.has(t) ? t : t.toLowerCase());
+  const bajo = valor.replace(/[\p{L}\p{N}]+(?:[-/.][\p{L}\p{N}]+)*/gu, (t) =>
+    /\d/.test(t) ? t : t.replace(/[\p{L}\p{N}]+/gu, palabra),
   );
   // Mayúscula inicial y tras punto final; una coma pegada gana su espacio.
   return bajo

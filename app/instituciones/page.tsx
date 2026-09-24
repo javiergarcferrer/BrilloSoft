@@ -8,7 +8,7 @@ import {
   hrefInstitucion,
   type Institucion,
 } from "@/lib/instituciones";
-import { getFiscal } from "@/lib/fiscal";
+import { etiquetaCorte, getFiscal } from "@/lib/fiscal";
 import { formatPesos } from "@/lib/format";
 import { desdeMayusculas } from "@/lib/congreso";
 import { formatInt } from "@/lib/nomina";
@@ -112,6 +112,12 @@ export default async function InstitucionesPage({
         )
       ) : (
         <div className="space-y-4">
+          {fiscal && (
+            <p className="rotulo text-ink-soft">
+              Montos: lo devengado en {fiscal.anio}, con corte a{" "}
+              {etiquetaCorte(fiscal.mesCorte, fiscal.anio)} · SIGEF
+            </p>
+          )}
           {conTarjeta.map((c) => (
             <TarjetaCapitulo
               key={c.codigo}
