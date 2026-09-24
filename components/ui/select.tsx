@@ -69,13 +69,19 @@ function SelectContent({
   position = "popper",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  /*
+    La lista va en `z-[90]`, por encima de la hoja (`z-[80]`, components/ui/
+    sheet.tsx). Con el `z-50` de shadcn, un selector dentro de la hoja de
+    filtros del teléfono abría su lista **debajo del velo**: se veía, pero
+    ningún toque llegaba a las opciones.
+  */
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
         position={position}
         className={cn(
-          "capa z-50 max-h-[min(24rem,60dvh)] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg border border-hairline bg-surface text-sm text-ink shadow-card",
+          "capa z-[90] max-h-[min(24rem,60dvh)] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg border border-hairline bg-surface text-sm text-ink shadow-card",
           className,
         )}
         {...props}

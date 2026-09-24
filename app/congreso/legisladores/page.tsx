@@ -15,7 +15,11 @@ import {
   hrefLegislador,
   type Legislador,
 } from "@/lib/congreso";
-import FiltrosLegisladores from "./filtros-legisladores";
+import BuscadorLegisladores, {
+  SelectoresLegisladores,
+  type OpcionPartido,
+} from "./filtros-legisladores";
+import { BarraFiltros, type ChipFiltro } from "@/components/barra-filtros";
 import { hrefDirectorio, type FiltrosDirectorio } from "./href";
 
 export const metadata: Metadata = {
@@ -147,12 +151,48 @@ async function Directorio({ filtros, pagina }: { filtros: FiltrosDirectorio; pag
     (filtros.provincia && todos.find((l) => claveProvincia(l.provincia) === clave)?.provincia) ||
     filtros.provincia;
   const filtrosSil: FiltrosDirectorio = { ...filtros, provincia: provinciaSil };
-  const partidos = [...contar(porProvincia, (l) => l.partidoSiglas).entries()].sort(
-    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
-  );
-  const provincias = [...contar(porCamara, (l) => l.provincia).entries()]
+  // El nombre completo de cada partido sale del propio SIL (`partido.nombre`),
+  // no de una tabla nuestra: si el origen no lo trae, se queda en las siglas.
+  const nombrePartido = new Map<string, string>();
+  for (const l of todos) {
+    if (l.partidoSiglas && l.partidoNombre && !nombrePartido.has(l.partidoSiglas)) {
+      nombrePartido.set(l.partidoSiglas, l.partidoNombre);
+    }
+  }
+  const cuentaPartidos = contar(porProvincia, (l) => l.partidoSiglas);
+  // El elegido siempre figura, aunque los otros filtros lo dejen en cero: si
+  // no, el selector quedaría en blanco y no se sabría qué está puesto.
+  if (filtros.partido && !cuentaPartidos.has(filtros.partido)) {
+    cuentaPartidos.set(filtros.partido, 0);
+  }
+  const partidos: OpcionPartido[] = [...cuentaPartidos.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([siglas, cuantos]) => ({ siglas, nombre: nombrePartido.get(siglas) ?? null, cuantos }));
+  const cuentaProvincias = contar(porCamara, (l) => l.provincia);
+  if (filtrosSil.provincia && !cuentaProvincias.has(filtrosSil.provincia)) {
+    cuentaProvincias.set(filtrosSil.provincia, 0);
+  }
+  const provincias = [...cuentaProvincias.entries()]
     .map(([nombre, cuantos]) => ({ nombre, cuantos }))
     .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+  // Lo que está puesto en la barra, con el enlace que lo quita.
+  const chips: ChipFiltro[] = [];
+  if (filtrosSil.provincia) {
+    chips.push({
+      clave: "provincia",
+      label: filtrosSil.provincia,
+      href: hrefDirectorio({ ...filtrosSil, provincia: "" }),
+    });
+  }
+  if (filtros.partido) {
+    const nombre = nombrePartido.get(filtros.partido);
+    chips.push({
+      clave: "partido",
+      label: nombre ? `${nombre} (${filtros.partido})` : filtros.partido,
+      href: hrefDirectorio({ ...filtrosSil, partido: "" }),
+    });
+  }
 
   const q = plano(filtros.q);
   const filtrados = porProvincia
@@ -165,8 +205,15 @@ async function Directorio({ filtros, pagina }: { filtros: FiltrosDirectorio; pag
 
   return (
     <>
-      <FiltrosLegisladores filtros={filtrosSil} provincias={provincias} total={todos.length} />
+      <BuscadorLegisladores filtros={filtrosSil} total={todos.length} />
 
+      {/*
+        La cámara se queda a la vista: son tres enlaces, caben en una fila y
+        es el primer corte que alguien hace. Demarcación y partido van en la
+        barra de filtros —en el teléfono, detrás de «Filtros (n)», con lo que
+        está puesto en chips—: antes eran dieciséis botones, unos 790 px de
+        pantalla antes del primer nombre.
+      */}
       <NavFiltros etiqueta="Cámara" className="mt-4">
         <FiltroEnlace href={hrefDirectorio({ ...filtrosSil, camara: "" })} activo={!filtros.camara}>
           {`Ambas cámaras (${todos.length})`}
@@ -185,21 +232,9 @@ async function Directorio({ filtros, pagina }: { filtros: FiltrosDirectorio; pag
         </FiltroEnlace>
       </NavFiltros>
 
-      <NavFiltros etiqueta="Partido" className="mt-2">
-        <FiltroEnlace href={hrefDirectorio({ ...filtrosSil, partido: "" })} activo={!filtros.partido}>
-          Todos los partidos
-        </FiltroEnlace>
-        {partidos.map(([siglas, n]) => (
-          <FiltroEnlace
-            key={siglas}
-            href={hrefDirectorio({ ...filtrosSil, partido: siglas })}
-            activo={filtros.partido === siglas}
-            mono
-          >
-            {`${siglas} ${n}`}
-          </FiltroEnlace>
-        ))}
-      </NavFiltros>
+      <BarraFiltros chips={chips} className="mt-4">
+        <SelectoresLegisladores filtros={filtrosSil} provincias={provincias} partidos={partidos} />
+      </BarraFiltros>
 
       {directorio.fallidas.length > 0 && (
         <Alert variant="aviso" className="mt-4">

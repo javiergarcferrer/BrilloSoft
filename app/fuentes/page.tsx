@@ -225,6 +225,12 @@ export default async function FuentesPage() {
             porque el catch-all de la SPA devuelve HTML con estado 200 en rutas
             inexistentes.
           </p>
+          <p className="mt-2 text-[13px] text-ink-soft sm:text-xs">
+            Filtros del listado: el SIL filtra en origen por tema (sus 15 grupos)
+            y, solo dentro de un tema, por tipo (proyectos de ley o resoluciones)
+            y por perimidas. No filtra un tipo en todos los temas a la vez, y por
+            eso la vista no lo ofrece.
+          </p>
         </Fuente>
 
         <Fuente

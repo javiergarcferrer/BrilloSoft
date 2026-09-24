@@ -3,22 +3,31 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { CampoBusqueda } from "@/components/campo-busqueda";
+import { hrefCongreso, type FiltrosCongreso } from "./filtros";
 
 /**
  * Búsqueda de iniciativas.
  *
  * El SIL hace match de subcadena sobre la descripción y soporta frases de
  * varias palabras, así que se envía el texto tal cual, sin trocearlo. La
- * consulta vive en la URL para que cualquier búsqueda sea compartible.
+ * consulta vive en la URL para que cualquier búsqueda sea compartible, y
+ * buscar conserva el tema, el tipo y el estado elegidos: el listado filtrado
+ * del SIL también acepta el texto.
  */
-export default function BuscadorCongreso({ initial = "" }: { initial?: string }) {
+export default function BuscadorCongreso({
+  initial = "",
+  filtros,
+}: {
+  initial?: string;
+  filtros: FiltrosCongreso;
+}) {
   const router = useRouter();
   const [valor, setValor] = useState(initial);
   const [pendiente, startTransition] = useTransition();
 
   const ir = (q: string) => {
     startTransition(() =>
-      router.push(`/congreso${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+      router.push(hrefCongreso({ ...filtros, q })),
     );
   };
 
@@ -38,7 +47,11 @@ export default function BuscadorCongreso({ initial = "" }: { initial?: string })
         dice entero la línea de ayuda, que sí cabe.
       */
       placeholder="Buscar — p. ej. “medio ambiente”"
-      ayuda="Busca dentro de la descripción de la iniciativa, no solo en el título. El SIL compara subcadenas, así que una frase entera también vale."
+      ayuda={
+        filtros.tema
+          ? "Busca dentro de la descripción, solo entre las iniciativas del tema, tipo y estado elegidos. El SIL compara subcadenas, así que una frase entera también vale."
+          : "Busca dentro de la descripción de la iniciativa, no solo en el título. El SIL compara subcadenas, así que una frase entera también vale."
+      }
       pendiente={pendiente}
     />
   );
