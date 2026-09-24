@@ -446,18 +446,12 @@
 }
 
 /*
-  Y una tercera: la ficha de un proceso monta su barra de acciones fija —seguir,
-  compartir, ofertar— justo encima de la tab bar, ocupando la franja de 72 a
-  145 px sobre el borde. El botón de «volver arriba» vive en 84 px y mide 44:
-  caía dentro de esa franja, tapando las dos acciones de la página. Mientras la
-  barra está montada marca la raíz, y aquí el botón sube por encima de ella.
-  Solo por debajo de `lg`, que es donde la barra se pinta.
+  La ficha de un proceso monta su barra de acciones fija —seguir, compartir,
+  ofertar— justo encima de la tab bar y marca la raíz con
+  `data-barra-acciones`; el aviso de instalación la lee para subir por encima
+  (`components/install-prompt.tsx`). El botón de «volver arriba» ya no entra
+  en ese reparto: por debajo de `xl` no se pinta (`components/scroll-top.tsx`).
 */
-@media (max-width: 1023px) {
-  [data-barra-acciones] .boton-subir {
-    bottom: calc(10.25rem + env(safe-area-inset-bottom));
-  }
-}
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
