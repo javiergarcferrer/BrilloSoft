@@ -66,6 +66,52 @@ export function institucionesDelCapitulo(capitulo: string): Institucion[] {
   return INSTITUCIONES.filter((i) => i.capitulo === capitulo);
 }
 
+const VACIAS = new Set(["de", "del", "la", "las", "el", "los", "y", "e", "para", "a", "al", "en", "rep", "dom"]);
+
+/** Las palabras con contenido de un nombre, sin siglas entre paréntesis y sin plural. */
+function palabrasDeNombre(v: string): Set<string> {
+  return new Set(
+    normalize(v.replace(/\([^)]*\)/g, " "))
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 1 && !VACIAS.has(w))
+      .map((w) => (w.length > 4 && w.endsWith("es") ? w.slice(0, -2) : w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w)),
+  );
+}
+
+/**
+ * La unidad de compra que **encabeza** un capítulo: la que lleva su nombre
+ * —el Ministerio de Educación en el capítulo «Ministerio de Educación»—, no
+ * el INABIE ni la ARS de los maestros que la DGCP adscribe al mismo capítulo.
+ *
+ * El cruce no trae ese dato, así que se deduce del nombre: la unidad cuyo
+ * nombre comparte con el del capítulo al menos la mitad de sus palabras con
+ * contenido, contadas sobre las de los dos (así «Dirección de Proyectos
+ * Estratégicos de la Presidencia» no encabeza «Presidencia de la República»
+ * por contener sus dos palabras). Si ninguna llega, no hay cabeza —el
+ * capítulo «Administración de obligaciones del Tesoro» no es la DGII aunque
+ * sea su única unidad— y quien llama no enlaza el capítulo a ninguna ficha:
+ * un enlace adivinado es peor que ninguno.
+ */
+export function cabezaDelCapitulo(nombreCapitulo: string, unidades: Institucion[]): Institucion | null {
+  const buscadas = palabrasDeNombre(nombreCapitulo);
+  if (buscadas.size === 0) return null;
+  let mejor: { i: Institucion; puntos: number } | null = null;
+  for (const i of unidades) {
+    const suyas = palabrasDeNombre(i.nombre);
+    const comunes = [...buscadas].filter((w) => suyas.has(w)).length;
+    const puntos = comunes / (buscadas.size + suyas.size - comunes);
+    // A igualdad, la de tipo «Institución» y luego la de nombre más corto.
+    const gana =
+      !mejor ||
+      puntos > mejor.puntos ||
+      (puntos === mejor.puntos &&
+        (Number(i.tipo === "Institución") - Number(mejor.i.tipo === "Institución") ||
+          mejor.i.nombre.length - i.nombre.length) > 0);
+    if (gana) mejor = { i, puntos };
+  }
+  return mejor && mejor.puntos >= 0.5 ? mejor.i : null;
+}
+
 /** La institución cuya nómina lleva ese código, si está en el cruce. */
 export function institucionDeNomina(codigo: string): Institucion | null {
   return INSTITUCIONES.find((i) => i.nomina === codigo) ?? null;
