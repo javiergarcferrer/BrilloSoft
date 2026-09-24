@@ -30,9 +30,10 @@ export default function AccionesProceso({
     tab bar (72 px desde abajo), esta barra (de 72 a 144) y el botón de «volver
     arriba», que se pone a 84 px y mide 44 — o sea, **dentro** de esta barra,
     encima del botón de ofertar. Se marca la raíz igual que hace el aviso de
-    instalación con `data-oferta-instalar`, y `app/globals.css` sube el botón
-    por encima de la barra mientras esta está en pantalla (solo por debajo de
-    `lg`, que es donde la barra se pinta).
+    instalación con `data-oferta-instalar`, y el propio botón
+    (`components/scroll-top.tsx`) lee la marca para subir por encima de la
+    barra mientras esta está en pantalla (solo por debajo de `lg`, que es donde
+    la barra se pinta).
   */
   useEffect(() => {
     const raiz = document.documentElement;

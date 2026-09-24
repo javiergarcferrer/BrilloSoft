@@ -454,8 +454,9 @@
   La ficha de un proceso monta su barra de acciones fija —seguir, compartir,
   ofertar— justo encima de la tab bar y marca la raíz con
   `data-barra-acciones`; el aviso de instalación la lee para subir por encima
-  (`components/install-prompt.tsx`). El botón de «volver arriba» ya no entra
-  en ese reparto: por debajo de `xl` no se pinta (`components/scroll-top.tsx`).
+  (`components/install-prompt.tsx`). El botón de «volver arriba» sube con la
+  misma variante, escrita en su propia clase (`components/scroll-top.tsx`):
+  en el teléfono se pinta fuera de las raíces de la tab bar.
 */
 
 .no-scrollbar::-webkit-scrollbar {
