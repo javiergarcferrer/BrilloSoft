@@ -51,6 +51,7 @@ import { SiniestralidadVial } from "@/components/fuentes-nuevas/siniestralidad-v
 import { DiaElectrico } from "@/components/fuentes-nuevas/dia-electrico";
 import { IndicadoresMacro } from "@/components/fuentes-nuevas/indicadores-macro";
 import { ComercioExterior } from "@/components/fuentes-nuevas/comercio-exterior";
+import { InflacionTurismo } from "@/components/fuentes-nuevas/inflacion-turismo";
 
 export const revalidate = 1800;
 
@@ -209,6 +210,11 @@ export default function Panorama() {
           <ComercioExterior />
         </Suspense>
       </section>
+
+      {/* Precios y turismo: las dos series del BCRD que solo vienen en .xls viejo (instantánea). */}
+      <Suspense fallback={<Esqueleto className="h-[640px] sm:h-[460px]" />}>
+        <InflacionTurismo />
+      </Suspense>
 
       {/* Lo que el Estado avisa y registra de la calle: la luz, el tiempo y las vías. */}
       <section className="grid gap-4 lg:grid-cols-3" aria-label="Luz, tiempo y vías">

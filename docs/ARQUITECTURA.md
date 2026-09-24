@@ -169,6 +169,12 @@ Snapshots (build-time `scripts/build-*.py` → `public/data/`, read with
   stats without names or gender; served server-side by `/nomina/general`
   (never shipped whole to the browser, unlike `nomina.json`) and used as the
   nómina block of fichas that have no payroll of their own.
+- **`lib/bcrd.ts`** — BCRD IPC and air arrivals from BIFF `.xls` files
+  (§G.5), converted by `scripts/build-bcrd.py` (build-time `xlrd`), card
+  `InflacionTurismo` on `/`.
+- **`lib/subsidio.ts`** — Treasury transfers to the state electricity
+  companies since 2019 from SIGEF `gastos/transferencias` (§G.8),
+  `scripts/build-subsidio.py`; card on `/finanzas`.
 - **`lib/catalogo.ts`** — the whole datos.gob.do catalogue (§G.3) from its HTML
   search, 10 s between requests (`scripts/build-catalogo.py`). `/datos`.
 

@@ -1316,6 +1316,13 @@ documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
   `precios/documents/ipc_base_2019-2020.xls` (BIFF: pide script en build).
   ⚠️ `imae.xlsx` congelado en oct-2024. ✅ llegadas de turistas
   `sector-turismo/documents/lleg_total.xls` (BIFF, 1978–jul-2026).
+- Implementado (2026-09-24): `scripts/build-bcrd.py` (necesita `xlrd` en
+  build, nunca en la app) → `public/data/bcrd.json`, `lib/bcrd.ts` y la tarjeta
+  `InflacionTurismo`. IPC ago-2026: 140.76, +5.13 % interanual. Llegadas
+  jul-2026: 1,024,626 (921,682 no residentes). **Corrección:** los totales de
+  llegadas son enteros con ruido de coma flotante, no estimaciones; lo estimado
+  es el reparto residentes/no residentes (hojas separadas desde 1987). El
+  archivo cuenta pasajeros aéreos, residentes incluidos, sin cruceristas.
 - ✅ Aduanas: `GET https://www.aduanas.gob.do/umbraco/api/searcher/getpageofdocuments?id=3442`
   → índice JSON (8 importaciones, 5 exportaciones, 7 recaudación); las rutas
   `/media/{hash}` cambian en cada publicación. Ago-2026: importaciones FOB
@@ -1390,6 +1397,11 @@ documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
 - ✅ Subsidio a las EDE por la API del SIGEF de `lib/fiscal.ts`:
   `gastos/transferencias/2025/12/json?seccion=11111&capitulo=0999` (2025:
   Edeeste RD$45,063 M, Edesur 29,175 M, Edenorte 28,994 M).
+- Implementado (2026-09-24): `scripts/build-subsidio.py` →
+  `public/data/subsidio-electrico.json`, `lib/subsidio.ts` y la tarjeta de
+  `/finanzas`. Devengado por año: 2019 RD$30.5 mil millones (todo a la CDEEE)
+  → 2024 106.4 → 2025 104.7 (EDEESTE 45.1, EDESUR 29.2, EDENORTE 29.0, ETED
+  1.5). La transferencia pasa de la CDEEE a las distribuidoras en 2023–2024.
 - ✅ Edenorte: RSS semanal de mantenimientos con circuito; Edesur: HTML de la
   semana. ✅ MIVHED: CSV de licencias de construcción 2022–2026. ✅ CAASD: CSV
   del último mes de producción de agua.

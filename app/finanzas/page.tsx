@@ -16,6 +16,7 @@ import { formatMagnitud, formatPesos, hace } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { Termino } from "@/components/termino";
 import { DescargarCsv } from "./descargar-csv";
+import { SubsidioElectrico } from "@/components/fuentes-nuevas/subsidio-electrico";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/finanzas" },
@@ -331,6 +332,8 @@ export default async function FinanzasPage({
           )}
         </Card>
       </div>
+
+      <SubsidioElectrico />
 
       <Card as="section" className="p-5 sm:p-6" id="instituciones">
         <div className="flex flex-wrap items-start justify-between gap-3">

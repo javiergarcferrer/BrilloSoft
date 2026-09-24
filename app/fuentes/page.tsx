@@ -590,6 +590,21 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="SIGEF — subsidio eléctrico" estado="activa" etiqueta="Instantánea local">
+          <p>
+            La misma API del SIGEF da las transferencias del Tesoro por institución
+            receptora. De ahí sale, en{" "}
+            <Link href="/finanzas#subsidio-electrico" className="font-medium text-brand-700 hover:underline">
+              finanzas
+            </Link>
+            , lo que el Tesoro transfiere cada año desde 2019 a las distribuidoras,
+            la transmisora y la hidroeléctrica (hasta 2023, a la CDEEE que lo
+            repartía). Valor devengado del capítulo de Obligaciones del Tesoro: no es
+            todo el costo del sector eléctrico, y el año en curso va hasta el último
+            mes registrado.
+          </p>
+        </Fuente>
+
         <Fuente nombre="MAP — nómina pública general del Estado" estado="activa" etiqueta="Instantánea local">
           <p>
             El Ministerio de Administración Pública publica cada mes un archivo con
@@ -682,6 +697,18 @@ export default async function FuentesPage() {
             se dice. Lo que el Banco marca como preliminar, se marca. El índice de
             actividad (IMAE) del mismo CDN está congelado desde octubre de 2024 y no
             se muestra.
+          </p>
+        </Fuente>
+
+        <Fuente nombre="Banco Central — inflación y llegadas por avión" estado="activa" etiqueta="Instantánea local">
+          <p>
+            El IPC y las llegadas de pasajeros por vía aérea están en el CDN del Banco
+            Central como hojas de cálculo del formato antiguo de Excel, que la
+            plataforma no lee en vivo: un script las convierte al regenerar y el
+            panorama muestra los últimos 36 meses. Las llegadas son pasajeros
+            aéreos, residentes incluidos, sin cruceristas; el reparto entre
+            residentes y no residentes es una estimación del propio Banco. Lo que el
+            Banco marca como sujeto a rectificación, se marca.
           </p>
         </Fuente>
 
