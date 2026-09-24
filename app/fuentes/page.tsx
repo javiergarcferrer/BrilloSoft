@@ -590,6 +590,25 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="MAP — nómina pública general del Estado" estado="activa" etiqueta="Instantánea local">
+          <p>
+            El Ministerio de Administración Pública publica cada mes un archivo con
+            todas las plazas que las instituciones reportan a su sistema de recursos
+            humanos —unas 492 mil, Educación y Salud incluidas—, con nombre, cargo,
+            estatus y sueldo bruto. Se baja al regenerar (unos 60 MB por mes, el último
+            publicado y el anterior) y se agrega por institución y por cargo en{" "}
+            <Link href="/nomina/general" className="font-medium text-brand-700 hover:underline">
+              la nómina de todo el Estado
+            </Link>
+            ; las fichas de institución sin nómina propia muestran sus cifras.{" "}
+            <strong>No se guarda ningún nombre ni el género.</strong> No trae el área
+            de trabajo, y no aparecen quienes no reportan al MAP: Fuerzas Armadas,
+            Policía Nacional, Congreso, Poder Judicial, ayuntamientos, Banco Central
+            ni JCE. Donde coincide con la foto por institución, casa: el MAP y ANAMAR
+            al peso, cinco más en menos de 2 %.
+          </p>
+        </Fuente>
+
         <Fuente nombre="DGCP — historia completa desde 2015" estado="activa" etiqueta="Instantánea local">
           <p>
             La sección «Tablas» de datos abiertos de la DGCP sirve enteras, como

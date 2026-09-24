@@ -25,6 +25,7 @@ import { SismapDeInstitucion } from "@/components/fuentes-nuevas/sismap-de-insti
 import { HistoriaDeInstitucion } from "@/components/fuentes-nuevas/historia-compras";
 import { historiaDeInstitucion, prefijoSinAsignar } from "@/lib/historico";
 import { documentosDeInstitucion } from "@/lib/biblioteca";
+import { claveInstitucion, mesGeneral, nominaGeneralDeInstitucion } from "@/lib/nomina-general";
 import { DocumentosDeInstitucion } from "@/components/fuentes-nuevas/documentos-de-institucion";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -83,7 +84,7 @@ export default async function InstitucionPage({ params }: Props) {
   const i = institucionDeSlug((await params).id);
   if (!i) notFound();
 
-  const [fiscal, nomina, resumenNomina, normas, obras, sismap, historia, sinAsignar, documentos] = await Promise.all([
+  const [fiscal, nomina, resumenNomina, normas, obras, sismap, historia, sinAsignar, documentos, general] = await Promise.all([
     i.capitulo ? getInstitucionFiscal(i.capitulo) : null,
     i.nomina ? getNominaDeInstitucion(i.nomina) : null,
     // Solo para decir de cuántas se lee la nómina cuando esta no está.
@@ -94,6 +95,7 @@ export default async function InstitucionPage({ params }: Props) {
     historiaDeInstitucion(i.id),
     prefijoSinAsignar(i.nombre),
     documentosDeInstitucion(i.id),
+    nominaGeneralDeInstitucion(i.id),
   ]);
   const conHistoria = Boolean(historia?.historia.serie.some((f) => f[1] > 0)) || Boolean(sinAsignar);
   const hermanas = i.capitulo ? institucionesDelCapitulo(i.capitulo).filter((h) => h.id !== i.id) : [];
@@ -110,7 +112,7 @@ export default async function InstitucionPage({ params }: Props) {
     conHistoria && { id: "historia", texto: "Desde 2015" },
     nObras > 0 && { id: "obras", texto: `Obras · ${formatInt(nObras)}` },
     sismap && { id: "gestion", texto: "Gestión" },
-    { id: "nomina", texto: nomina ? "Nómina" : "Nómina · sin datos" },
+    { id: "nomina", texto: nomina || general ? "Nómina" : "Nómina · sin datos" },
     documentos && { id: "documentos", texto: `Documentos · ${formatInt(documentos.fuente.documentos)}` },
     { id: "decretos", texto: normas.docs.length > 0 ? `Normativa · ${formatInt(normas.docs.length)}` : "Normativa" },
     { id: "plan", texto: "Plan de compras" },
@@ -205,6 +207,35 @@ export default async function InstitucionPage({ params }: Props) {
             </ul>
             <Button asChild variant="secondary" className="mt-4">
               <Link href={`/nomina?inst=${encodeURIComponent(nomina.codigo)}`}>Explorar su nómina</Link>
+            </Button>
+          </Card>
+        ) : general ? (
+          <Card as="section" className="p-5 sm:p-6">
+            <CardTitle>Nómina</CardTitle>
+            <p className="mt-1 text-xs text-ink-soft">
+              Según la nómina general del Ministerio de Administración Pública,{" "}
+              {mesGeneral(general.anio, general.mes)}. Sin nombres: cargo y sueldo bruto,
+              sin el área de trabajo.
+            </p>
+            <TiraDeCifras className="mt-4 lg:grid-cols-3">
+              <Cifra etiqueta="Plazas" valor={formatInt(general.inst.plazas)} ancla={{ alcance: "instantanea", periodo: mesGeneral(general.anio, general.mes) }} />
+              <Cifra etiqueta="Masa salarial del mes" valor={formatPesos(general.inst.masa)} />
+              <Cifra etiqueta="Sueldo mediano" valor={formatDOP(general.inst.mediana)} />
+            </TiraDeCifras>
+            <ul className="mt-4 divide-y divide-hairline text-sm">
+              {general.inst.cargos.slice(0, 6).map(([cargo, n, , mediana]) => (
+                <li key={cargo} className="flex items-baseline justify-between gap-3 py-2">
+                  <span className="min-w-0">{desdeMayusculas(cargo)}</span>
+                  <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">
+                    {formatInt(n)} · {formatDOP(mediana)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Button asChild variant="secondary" className="mt-4">
+              <Link href={`/nomina/general?inst=${claveInstitucion(general.inst.nombre)}`}>
+                Ver sus {formatInt(general.inst.cargos.length)} cargos
+              </Link>
             </Button>
           </Card>
         ) : i.nomina ? (

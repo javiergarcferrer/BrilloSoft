@@ -164,6 +164,11 @@ Snapshots (build-time `scripts/build-*.py` → `public/data/`, read with
   upload date, type and the original URL (nothing is rehosted). `/documentos`
   searches titles and file names (all words, no accents);
   `DocumentosDeInstitucion` shows the latest on the institution ficha.
+- **`lib/nomina-general.ts`** — MAP's statewide payroll (§G.10), 492k rows
+  aggregated by `scripts/build-nomina-general.py` into institution → cargo
+  stats without names or gender; served server-side by `/nomina/general`
+  (never shipped whole to the browser, unlike `nomina.json`) and used as the
+  nómina block of fichas that have no payroll of their own.
 - **`lib/catalogo.ts`** — the whole datos.gob.do catalogue (§G.3) from its HTML
   search, 10 s between requests (`scripts/build-catalogo.py`). `/datos`.
 

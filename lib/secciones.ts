@@ -178,7 +178,10 @@ export const SECCIONES: Seccion[] = [
     href: "/nomina",
     descriptor: "Plazas y sueldos · por institución",
     rutas: ["/nomina"],
-    vistas: [{ href: "/nomina", label: "Explorador" }],
+    vistas: [
+      { href: "/nomina", label: "Por institución", exact: true },
+      { href: "/nomina/general", label: "Todo el Estado" },
+    ],
     hue: {
       activo: "text-v-nomina",
       barra: "bg-v-nomina",

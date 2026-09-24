@@ -168,7 +168,8 @@ Barrido del Estado entero en seis frentes (`docs/AUDITORIA.md` §G). Entregado:
   exterior (Aduanas), la luz de ayer (OC), alertas del tiempo (INDOMET) y
   muertes en las vías (OPSEVI).
 - ✅ **Nómina ampliada** de 22 a 86 instituciones (94,659 plazas) por la vía de
-  §A.8; la nómina general del MAP (~492 mil plazas) es la siguiente.
+  §A.8; y la nómina general del MAP (492,488 plazas, 125 instituciones) en
+  `/nomina/general`, agregada en el servidor (§G.10).
 
 Siguiente, por valor ÷ esfuerzo: §G.9.
 

@@ -1397,6 +1397,25 @@ documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
   embebido en su JS: no se usa). IGN: solo WMS raster. COE: RSS vacío.
   ⚠️ Hallazgo de seguridad menor: Tomcat por defecto en `gis.caasd.gob.do`.
 
+### G.10 MAP — la nómina pública general del Estado
+
+- ✅ robots de `map.gob.do`: solo `/wp-admin/`.
+  `GET https://map.gob.do/datosabiertos/data/nomina_publica_general_estado/csv?year=2026&month=7`
+  → 200 `text/csv`, 61.9 MB, `content-disposition` «Nomina Publica General del
+  Estado, MAP, Julio, 2026.csv»: **492,488 filas**, columnas
+  `Nombre_del_empleado, Institución, Cargo, Estatus, Suelto_Bruto` [sic]`,
+  Género, Mes, Año`; UTF-8 con BOM. Agosto y septiembre dan 404: el último
+  publicado es julio de 2026. Junio: 491,472 plazas.
+- ✅ 125 instituciones, RD$20,130 millones al mes; Educación 265,490 plazas,
+  SNS 87,295, INAIPI 16,539. Ningún sueldo en RD$0. Estatus: fijos 424,579,
+  transitorios 46,664, vigilancia 13,717…
+- ⚠️ No trae área. No aparecen Fuerzas Armadas, Policía Nacional, Congreso,
+  Poder Judicial, ayuntamientos, Banco Central ni JCE (comprobado por nombre).
+- Implementado: `scripts/build-nomina-general.py` (sin nombres ni género) →
+  `public/data/nomina-general.json` (~1 MB, servido desde el servidor),
+  `lib/nomina-general.ts`, `/nomina/general` y el bloque de nómina de las
+  fichas sin nómina propia (79 de 125 casan por nombre exacto).
+
 ### G.9 Pendientes que deja esta pasada
 
 1. Estadísticas judiciales (índice + XLSX mensual) y sentencias del TSE.

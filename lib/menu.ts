@@ -69,6 +69,7 @@ export const MENU: GrupoMenu[] = [
         seccion: "nomina",
         enlaces: [
           { href: "/nomina", label: "Nómina pública", nota: "Plazas y sueldos por institución y cargo" },
+          { href: "/nomina/general", label: "Nómina de todo el Estado", nota: "Casi medio millón de plazas, institución por institución" },
           { href: "/obras", label: "Obras públicas", nota: "Si la obra existe y cuánto avanza" },
         ],
       },
