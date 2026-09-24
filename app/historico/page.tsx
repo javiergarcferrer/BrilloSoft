@@ -1,0 +1,308 @@
+import Link from "next/link";
+import type { Metadata } from "next";
+import { getResumenHistorico, nContratos, type ResumenHistorico } from "@/lib/historico";
+import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
+import { desdeMayusculas } from "@/lib/congreso";
+import { formatFecha, formatPesos } from "@/lib/format";
+import { formatInt } from "@/lib/nomina";
+import { Barras } from "@/components/barras";
+import { Card, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { EstadoVacio } from "@/components/estado-vacio";
+import Plegable from "@/components/plegable";
+import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/historico" },
+  title: "Historia de las compras públicas desde 2015",
+  description:
+    "Todo lo que el Estado dominicano ha contratado por el sistema de compras desde 2015: año por año, sus mayores proveedores y las instituciones que más compran.",
+};
+
+/** Instantánea regenerada a mano: un día basta. */
+export const revalidate = 86400;
+
+const VISIBLES = 20;
+
+/** El umbral de atípicos dicho sin decimales: «RD$ 10 mil millones». */
+function umbral(pesos: number): string {
+  return `RD$ ${(pesos / 1e9).toLocaleString("es-DO")} mil millones`;
+}
+
+function nombreInstitucion(uc: number | null, crudo: string | null): { nombre: string; href: string | null } {
+  const i = uc != null ? institucionPorId(uc) : null;
+  if (i) return { nombre: i.nombre, href: hrefInstitucion(i) };
+  return { nombre: crudo ? desdeMayusculas(crudo) : "Sin institución asignada", href: null };
+}
+
+/**
+ * ¿Cuánto ha contratado el Estado, y con quién, desde 2015? — la historia
+ * entera del registro de la DGCP, agregada en build (`lib/historico.ts`).
+ *
+ * El orden es el de la comprensión: la cifra y su serie, quién se llevó más,
+ * quién compró más, y lo que se dejó fuera de las sumas y por qué.
+ */
+export default async function HistoricoPage() {
+  const d = await getResumenHistorico();
+  if (!d || d.anios.length === 0) {
+    return (
+      <EstadoVacio
+        variante="caida"
+        como="h1"
+        className="mx-auto max-w-2xl"
+        titulo="No pudimos leer la historia de las compras"
+        accion={
+          <Link href="/fuentes" className="text-sm font-medium text-brand-700 hover:underline">
+            Ver el estado de las fuentes
+          </Link>
+        }
+      >
+        La copia agregada del registro no está disponible en este momento. No es que
+        el Estado no haya contratado: es que no pudimos mirar.
+      </EstadoVacio>
+    );
+  }
+
+  const anioCorte = Number(d.corte.slice(0, 4));
+  const completos = d.anios.filter((a) => a.anio < anioCorte && a.anio >= 2016);
+  const total = d.anios.reduce((s, a) => s + a.monto, 0);
+  const contratos = d.anios.reduce((s, a) => s + a.contratos, 0);
+  const ultimoCompleto = completos.at(-1);
+  const primero = d.anios[0];
+  const enCurso = d.anios.find((a) => a.anio === anioCorte);
+  const sumaAtipicos = d.atipicos.reduce((s, a) => s + a.valor, 0);
+
+  return (
+    <div className="space-y-5">
+      <Portada
+        rotulo={`Compras públicas · DGCP · registro completo al ${formatFecha(d.corte)}`}
+        titulo="¿Cuánto ha contratado el Estado desde 2015?"
+        descripcion={
+          <>
+            Todos los contratos que el sistema de compras registra desde que existe,
+            sumados por año, por proveedor y por institución. Es valor
+            <strong className="font-medium text-canvas"> contratado</strong>, no
+            pagado: lo que se firmó, en pesos, sin los contratos cancelados. Los
+            contratos de {umbral(d.umbralAtipico)} o más se muestran aparte y no
+            entran en ninguna suma.
+          </>
+        }
+        aviso={`Instantánea del ${formatFecha(d.generado)}: ${formatInt(d.contratosLeidos)} contratos y ${formatInt(d.procesosLeidos)} procesos leídos`}
+      >
+        <PortadaCifras>
+          <PortadaCifra etiqueta={`Contratado ${primero.anio}–${anioCorte}`} valor={formatPesos(total)} destacar />
+          <PortadaCifra etiqueta="Contratos sumados" valor={formatInt(contratos)} />
+          {ultimoCompleto && (
+            <PortadaCifra etiqueta={`En ${ultimoCompleto.anio}, año completo`} valor={formatPesos(ultimoCompleto.monto)} />
+          )}
+          {enCurso && (
+            <PortadaCifra etiqueta={`En ${anioCorte}, hasta ${formatFecha(d.corte)}`} valor={formatPesos(enCurso.monto)} />
+          )}
+        </PortadaCifras>
+      </Portada>
+
+      <Card as="section" className="p-5 sm:p-6">
+        <CardTitle>Año por año</CardTitle>
+        <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+          Valor contratado por año de adjudicación. El sistema arrancó en 2015 con
+          pocas instituciones y fue sumando las demás hasta 2018: la subida de esos
+          años es sobre todo cobertura, no gasto nuevo. {anioCorte} va hasta el{" "}
+          {formatFecha(d.corte)}.
+        </p>
+        <Barras
+          tono="fill-v-compras"
+          etiqueta={`Valor contratado por año, de ${formatPesos(primero.monto)} en ${primero.anio} a ${formatPesos(d.anios.at(-1)!.monto)} en ${d.anios.at(-1)!.anio}`}
+          puntos={d.anios.map((a, i) => ({
+            clave: String(a.anio),
+            valor: a.monto,
+            titulo: `${a.anio}: ${formatPesos(a.monto)} en ${nContratos(a.contratos)}`,
+            marca: i === 0 || i === d.anios.length - 1 || a.anio % 3 === 0 ? String(a.anio) : undefined,
+          }))}
+        />
+        <Plegable
+          className="-mx-5 mt-4 border-t border-hairline sm:-mx-6"
+          etiqueta={`Ver los ${d.anios.length} años en una tabla`}
+          etiquetaCerrar="Ocultar la tabla"
+        >
+          <div className="px-5 py-3 sm:px-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Año</TableHead>
+                  <TableHead className="text-right">Contratado</TableHead>
+                  <TableHead className="hidden text-right sm:table-cell">Contratos</TableHead>
+                  <TableHead className="hidden text-right sm:table-cell">Procesos</TableHead>
+                  <TableHead className="text-right">Por excepción</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...d.anios].reverse().map((a) => (
+                  <TableRow key={a.anio}>
+                    <TableCell className="font-mono tabular-nums">{a.anio}</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">{formatPesos(a.monto)}</TableCell>
+                    <TableCell className="hidden text-right font-mono tabular-nums sm:table-cell">{formatInt(a.contratos)}</TableCell>
+                    <TableCell className="hidden text-right font-mono tabular-nums sm:table-cell">{formatInt(a.procesos)}</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">
+                      {a.procesos > 0 ? `${((a.excepcion / a.procesos) * 100).toFixed(1)} %` : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <p className="mt-2 text-xs leading-relaxed text-ink-soft">
+              «Por excepción» es la parte de los procesos publicados ese año que no
+              siguió el procedimiento ordinario (urgencia, emergencia, proveedor
+              único, seguridad nacional…), según el tipo de excepción que declara
+              cada proceso.
+            </p>
+          </div>
+        </Plegable>
+      </Card>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Ranking
+          titulo="Quién se ha llevado más"
+          nota={`Los ${d.proveedores.length} proveedores con más valor contratado en todo el período. Cada uno lleva a su ficha.`}
+          filas={d.proveedores.map((p) => ({
+            clave: p.rpe,
+            nombre: p.nombre,
+            href: `/proveedores/${p.rpe}`,
+            monto: p.monto,
+            detalle: `${nContratos(p.contratos)} · ${p.desde.slice(0, 4)}–${p.hasta.slice(0, 4)}`,
+          }))}
+        />
+        <Ranking
+          titulo="Quién ha comprado más"
+          nota={`Las ${d.instituciones.length} unidades de compra con más valor contratado en todo el período.`}
+          filas={d.instituciones.map((i) => {
+            const n = nombreInstitucion(i.uc, i.nombre);
+            return {
+              clave: String(i.uc),
+              nombre: n.nombre,
+              href: n.href,
+              monto: i.monto,
+              detalle: `${nContratos(i.contratos)}`,
+            };
+          })}
+        />
+      </div>
+
+      {d.atipicos.length > 0 && <Atipicos d={d} suma={sumaAtipicos} />}
+
+      <p className="text-xs leading-relaxed text-ink-soft">
+        Fuente: las tablas de{" "}
+        <a href={d.fuentes[0]} className="font-medium text-brand-700 hover:underline">contratos</a> y{" "}
+        <a href={d.fuentes[1]} className="font-medium text-brand-700 hover:underline">procesos</a>{" "}
+        de datos abiertos de la Dirección General de Contrataciones Públicas,
+        descargadas enteras el {formatFecha(d.generado)}. La institución de cada
+        contrato se deduce del prefijo de su código, que es el de la unidad que lo
+        firmó; {formatInt(d.sinInstitucion)} contratos no se pueden asignar sin
+        adivinar y cuentan en los años pero no en ninguna institución. Quedan fuera{" "}
+        {formatInt(d.cancelados)} contratos cancelados y{" "}
+        {formatInt(Object.values(d.otrasMonedas).reduce((s, n) => s + n, 0))} en otras
+        monedas. Ver{" "}
+        <Link href="/fuentes" className="font-medium text-brand-700 hover:underline">
+          el estado de las fuentes
+        </Link>
+        .
+      </p>
+    </div>
+  );
+}
+
+function Ranking({
+  titulo,
+  nota,
+  filas,
+}: {
+  titulo: string;
+  nota: string;
+  filas: { clave: string; nombre: string; href: string | null; monto: number; detalle: string }[];
+}) {
+  const fila = (f: (typeof filas)[number], i: number) => (
+    <li key={f.clave} className="relative flex items-baseline gap-3 px-5 py-2.5 sm:px-6">
+      <span className="w-7 shrink-0 font-mono text-xs tabular-nums text-ink-soft">{i + 1}</span>
+      <span className="min-w-0 flex-1">
+        {f.href ? (
+          <Link href={f.href} className="block text-sm leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700">
+            {f.nombre}
+          </Link>
+        ) : (
+          <span className="block text-sm leading-snug text-ink">{f.nombre}</span>
+        )}
+        <span className="block text-xs text-ink-soft">{f.detalle}</span>
+      </span>
+      <span className="shrink-0 font-mono text-sm tabular-nums">{formatPesos(f.monto)}</span>
+    </li>
+  );
+  return (
+    <Card as="section" className="overflow-hidden">
+      <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+        <CardTitle>{titulo}</CardTitle>
+        <p className="mt-1 text-xs leading-relaxed text-ink-soft">{nota}</p>
+      </div>
+      <Plegable
+        className="mt-3"
+        resumen={<ol className="divide-y divide-hairline border-t border-hairline">{filas.slice(0, VISIBLES).map(fila)}</ol>}
+        etiqueta={`Ver los ${filas.length} de la lista`}
+        etiquetaCerrar={`Ver solo los primeros ${VISIBLES}`}
+      >
+        <ol className="divide-y divide-hairline">{filas.slice(VISIBLES).map((f, i) => fila(f, i + VISIBLES))}</ol>
+      </Plegable>
+    </Card>
+  );
+}
+
+function Atipicos({ d, suma }: { d: ResumenHistorico; suma: number }) {
+  return (
+    <Card as="section" className="p-5 sm:p-6">
+      <CardTitle>Lo que no se sumó</CardTitle>
+      <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+        {formatInt(d.atipicos.length)} contratos registrados por {umbral(d.umbralAtipico)}{" "}
+        o más, que juntos declaran {formatPesos(suma)}. Varios son errores de captura
+        evidentes —cifras de miles de millones por bienes de oficina o servicios
+        menores—, así que sumarlos inflaría la serie con dinero que no se contrató. Tampoco
+        se esconden: aquí están, tal como los publica el registro, para que cada uno
+        se juzgue por separado.
+      </p>
+      <ol className="mt-3 divide-y divide-hairline">
+        {d.atipicos.map((a) => {
+          const inst = nombreInstitucion(a.uc, a.institucion);
+          return (
+            <li key={a.codigo} className="flex items-baseline justify-between gap-3 py-2.5">
+              <span className="min-w-0">
+                <span className="block text-sm leading-snug text-ink">
+                  {a.rpe ? (
+                    <Link href={`/proveedores/${a.rpe}`} className="hover:text-brand-700 hover:underline">
+                      {a.proveedor}
+                    </Link>
+                  ) : (
+                    a.proveedor
+                  )}
+                </span>
+                <span className="block text-xs text-ink-soft">
+                  {inst.href ? (
+                    <Link href={inst.href} className="hover:text-brand-700 hover:underline">
+                      {inst.nombre}
+                    </Link>
+                  ) : (
+                    inst.nombre
+                  )}{" "}
+                  · {formatFecha(a.fecha)} · {a.codigo} · {a.estado.toLowerCase()}
+                </span>
+              </span>
+              <span className="shrink-0 font-mono text-sm tabular-nums">{formatPesos(a.valor)}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </Card>
+  );
+}

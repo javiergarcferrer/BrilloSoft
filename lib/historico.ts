@@ -1,0 +1,156 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+/**
+ * Historia de las compras públicas desde 2015 — todos los contratos y procesos
+ * que el registro de la DGCP conserva, agregados.
+ *
+ * Mecánica verificada en docs/AUDITORIA.md §G.1: las tablas `contratos` y
+ * `procesos` de la sección «Tablas» de datos abiertos de la DGCP bajan enteras
+ * como CSV (~115 y ~245 MB). `scripts/build-historico.py` las agrega en build
+ * —nunca por request— y deja en `public/data/historico/`:
+ *
+ *  - `resumen.json` — serie por año, los 100 mayores proveedores y unidades
+ *    de compra de todo el período, y los contratos atípicos;
+ *  - `instituciones.json` — por unidad de compra: serie anual y principales
+ *    proveedores;
+ *  - `proveedores/{0..9}.json` — por RPE (último dígito): serie anual y
+ *    principales clientes.
+ *
+ * Lo que la cifra es y no es (lo declara toda superficie que la pinte):
+ *  - Valor **contratado** en pesos, no pagado; sin contratos cancelados ni en
+ *    otras monedas.
+ *  - Un contrato de RD$10 mil millones o más **no se suma**: se lista aparte
+ *    (`atipicos`), porque varios son errores de captura evidentes.
+ *  - La institución de un contrato se deduce del prefijo de su código; el
+ *    ~0.8 % que no se puede asignar sin adivinar queda fuera de las series por
+ *    institución y se cuenta (`sinInstitucion`).
+ *
+ * Módulo de servidor (`node:fs`), memoizado por instancia.
+ */
+
+export interface AnioHistorico {
+  anio: number;
+  contratos: number;
+  monto: number;
+  procesos: number;
+  /** Procesos publicados por alguna vía de excepción (no «Proceso ordinario»). */
+  excepcion: number;
+  modalidades: Record<string, number>;
+}
+
+export interface Atipico {
+  codigo: string;
+  fecha: string;
+  valor: number;
+  estado: string;
+  rpe: string | null;
+  proveedor: string;
+  uc: number | null;
+  institucion: string | null;
+}
+
+export interface ResumenHistorico {
+  generado: string;
+  /** La última fecha de adjudicación del registro (ISO). */
+  corte: string;
+  fuentes: string[];
+  contratosLeidos: number;
+  procesosLeidos: number;
+  cancelados: number;
+  otrasMonedas: Record<string, number>;
+  sinInstitucion: number;
+  prefijosAmbiguos: string[];
+  umbralAtipico: number;
+  anios: AnioHistorico[];
+  proveedores: { rpe: string; nombre: string; monto: number; contratos: number; desde: string; hasta: string }[];
+  instituciones: { uc: number; nombre: string; monto: number; contratos: number }[];
+  atipicos: Atipico[];
+}
+
+export interface HistoriaInstitucion {
+  nombre: string;
+  /** [año, contratos, monto, procesos publicados] */
+  serie: [number, number, number, number][];
+  /** [rpe, nombre, contratos, monto] */
+  top: [string, string, number, number][];
+  /** Proveedores distintos a los que contrató en todo el período. */
+  proveedores: number;
+}
+
+export interface HistoriaProveedor {
+  nombre: string;
+  desde: string;
+  hasta: string;
+  /** [año, contratos, monto] */
+  serie: [number, number, number][];
+  /** [unidad de compra, contratos, monto] — los ocho mayores clientes. */
+  clientes: [number, number, number][];
+  /** Instituciones distintas que le contrataron. */
+  totalClientes: number;
+}
+
+const DIR = join(process.cwd(), "public", "data", "historico");
+
+const memo = new Map<string, Promise<unknown>>();
+
+function leer<T>(nombre: string): Promise<T | null> {
+  let p = memo.get(nombre) as Promise<T | null> | undefined;
+  if (!p) {
+    p = readFile(join(DIR, nombre), "utf8")
+      .then((t) => JSON.parse(t) as T)
+      .catch((err) => {
+        console.error(`[historico] ${nombre}:`, err);
+        memo.delete(nombre); // un fallo no se queda pegado en la instancia
+        return null;
+      });
+    memo.set(nombre, p);
+  }
+  return p;
+}
+
+export function getResumenHistorico(): Promise<ResumenHistorico | null> {
+  return leer<ResumenHistorico>("resumen.json");
+}
+
+export async function historiaDeInstitucion(
+  uc: number,
+): Promise<{ historia: HistoriaInstitucion; corte: string } | null> {
+  const d = await leer<{ corte: string; filas: Record<string, HistoriaInstitucion> }>("instituciones.json");
+  const h = d?.filas[String(uc)];
+  return h && d ? { historia: h, corte: d.corte } : null;
+}
+
+interface FilaProveedor {
+  n: string;
+  d: string;
+  h: string;
+  s: [number, number, number][];
+  c: [number, number, number][];
+  k: number;
+}
+
+export async function historiaDeProveedor(
+  rpe: string,
+): Promise<{ historia: HistoriaProveedor; corte: string } | null> {
+  if (!/^\d{1,10}$/.test(rpe)) return null;
+  const d = await leer<{ corte: string; filas: Record<string, FilaProveedor> }>(
+    `proveedores/${rpe.slice(-1)}.json`,
+  );
+  const f = d?.filas[rpe];
+  if (!f || !d) return null;
+  return {
+    historia: { nombre: f.n, desde: f.d, hasta: f.h, serie: f.s, clientes: f.c, totalClientes: f.k },
+    corte: d.corte,
+  };
+}
+
+/** Suma de una serie anual por posición (contratos o monto). */
+export function sumar<T extends number[]>(serie: T[], i: number): number {
+  return serie.reduce((s, f) => s + (f[i] ?? 0), 0);
+}
+
+/** «1 contrato», «2,979 contratos». */
+export function nContratos(n: number): string {
+  return `${n.toLocaleString("es-DO")} ${n === 1 ? "contrato" : "contratos"}`;
+}

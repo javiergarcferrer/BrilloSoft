@@ -153,6 +153,24 @@ entre esfuerzo. Todas respetan la invariante (sin llave, instantánea en build).
    trae los dos con su `Suspense`. La tasa sale del `.xlsx` del CDN: el `.xls`
    que citaba la auditoría está congelado desde 2022.
 
+## 4 bis. Horizonte 3b — la tercera pasada (2026-09-24)
+
+Barrido del Estado entero en seis frentes (`docs/AUDITORIA.md` §G). Entregado:
+
+- ✅ **Historia de las compras desde 2015** (`/historico`, §G.1): 722,825
+  contratos y 631,103 procesos agregados por año, institución y proveedor; cada
+  ficha de institución y de proveedor lleva su bloque «desde 2015».
+- ✅ **Biblioteca del Estado** (`/documentos`, §G.2): 18,841 documentos de 22
+  instituciones, buscables por título; «Lo que publica» en la ficha.
+- ✅ **Catálogo de datos abiertos** (`/datos`, §G.3): todo datos.gob.do.
+- ✅ **Sentencias del Tribunal Constitucional** (`/constitucional`, §G.6).
+- ✅ **Panorama ampliado**: remesas, reservas y tasa activa (BCRD), comercio
+  exterior (Aduanas), la luz de ayer (OC), alertas del tiempo (INDOMET) y
+  muertes en las vías (OPSEVI).
+- ✅ **Nómina ampliada** otra vez por la vía de §A.8.
+
+Siguiente, por valor ÷ esfuerzo: §G.9.
+
 ## 5. Horizonte 4 — lo que solo desbloquea el dueño
 
 Gestiones institucionales, ya listadas en `docs/DECISIONES.md` y

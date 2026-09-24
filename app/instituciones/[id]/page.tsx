@@ -22,6 +22,8 @@ import { formatDOP, formatInt } from "@/lib/nomina";
 import { Ruta } from "@/components/ruta";
 import { ObrasDeInstitucion } from "@/components/fuentes-nuevas/obras-de-institucion";
 import { SismapDeInstitucion } from "@/components/fuentes-nuevas/sismap-de-institucion";
+import { HistoriaDeInstitucion } from "@/components/fuentes-nuevas/historia-compras";
+import { DocumentosDeInstitucion } from "@/components/fuentes-nuevas/documentos-de-institucion";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -99,6 +101,7 @@ export default async function InstitucionPage({ params }: Props) {
   const indice = [
     { id: "presupuesto", texto: i.capitulo ? `Presupuesto · cap. ${i.capitulo}` : "Presupuesto" },
     { id: "compras", texto: `Compras · DGCP ${i.id}` },
+    { id: "historia", texto: "Desde 2015" },
     nObras > 0 && { id: "obras", texto: `Obras · ${formatInt(nObras)}` },
     sismap && { id: "gestion", texto: "Gestión" },
     { id: "nomina", texto: nomina ? "Nómina" : "Nómina · sin datos" },
@@ -156,6 +159,8 @@ export default async function InstitucionPage({ params }: Props) {
           <Compras institucion={i} />
         </Suspense>
       </div>
+
+      <HistoriaDeInstitucion uc={i.id} />
 
       {nObras > 0 && (
         <div id="obras">
@@ -227,6 +232,8 @@ export default async function InstitucionPage({ params }: Props) {
           </EstadoVacio>
         )}
       </div>
+
+      <DocumentosDeInstitucion uc={i.id} />
 
       <Card as="section" id="decretos">
         <div className="p-5 pb-3 sm:p-6 sm:pb-3">

@@ -57,7 +57,11 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
   `Socratico-Inteligencia/1.0` on its read-only APIs (AUDITORIA §4.1), ONE whitelist, Cámara de Cuentas and 911 under
   Ley 200-04, JCE electoral archive, BCRD file index, report of the exposed
   311 token and the Cuenta Única client request to OGTIC (AUDITORIA §A.9,
-  §A.11, §F).
+  §A.11, §F). Added by the third pass (AUDITORIA §G.9): responsible-disclosure
+  notes to the Superintendencia de Bancos (SIMBAD's public API exposes chart
+  SQL and staff users) and CAASD (default Tomcat), and Ley 200-04 requests to
+  SNS/MAP/MIDEREC (closed WordPress REST), SIE/SIMV/Agricultura/INFOTEP (WAF),
+  the SCJ (GET on its rulings search) and the Poder Judicial (full TLS chain).
 
 - **Clave del AI Gateway para las instantáneas** (ver «Clasificadores de IA»
   abajo): solo si se quiere Jev en un script de `scripts/`, nunca en Vercel.

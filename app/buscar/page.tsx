@@ -3,6 +3,8 @@ import { Fragment, Suspense } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { buscarCargos, buscarNormas, buscarObras, rutaDirecta } from "@/lib/buscar";
+import { buscarDocumentos, getIndiceBiblioteca, sinTildes } from "@/lib/biblioteca";
+import { getCatalogo, hrefConjunto } from "@/lib/catalogo";
 import { formatPesos } from "@/lib/format";
 import { buscarInstituciones, hrefInstitucion } from "@/lib/instituciones";
 import { buscarIniciativas, desdeMayusculas, marcaDeIniciativa, normalizarIniciativa } from "@/lib/congreso";
@@ -43,6 +45,17 @@ export default async function BuscarPage({
   const [instituciones, normas, cargos, obras] = q
     ? await Promise.all([buscarInstituciones(q, 8), buscarNormas(q), buscarCargos(q), buscarObras(q)])
     : [[], { normas: [], total: 0, generadoEn: null }, [], { obras: [], total: 0 }];
+  const [documentos, indiceDocs, catalogo] = q
+    ? await Promise.all([buscarDocumentos({ q }), getIndiceBiblioteca(), getCatalogo()])
+    : [null, null, null];
+  const nombreFuente = (host: string) => indiceDocs?.fuentes.find((f) => f.host === host)?.nombre ?? host;
+  const palabras = sinTildes(q).split(/[^a-z0-9ñ]+/).filter((w) => w.length > 1);
+  const conjuntos = catalogo && palabras.length
+    ? catalogo.conjuntos.filter((c) => {
+        const k = sinTildes(`${c.titulo} ${c.org}`);
+        return palabras.every((w) => k.includes(w));
+      })
+    : [];
   const sigue = BUSQUEDAS.filter((d) => d.href !== "/buscar");
 
   const grupos = [
@@ -115,6 +128,52 @@ export default async function BuscarPage({
       ),
     },
     {
+      titulo: "Documentos",
+      vacio: !documentos || documentos.total === 0,
+      el: (
+        <Grupo
+          titulo="Documentos"
+          nota={
+            documentos && documentos.total > 6
+              ? `${formatInt(documentos.total)} documentos publicados por las instituciones lo mencionan en el título; estos son los más recientes.`
+              : "En el título de los documentos que publican las instituciones en sus sitios."
+          }
+          mas={documentos && documentos.total > 6 ? `/documentos?q=${encodeURIComponent(q)}` : undefined}
+        >
+          <ul className="divide-y divide-hairline">
+            {documentos?.docs.slice(0, 6).map((d) => (
+              <li key={d.url}>
+                <Fila href={d.url} titulo={d.titulo} detalle={`${d.tipo.toUpperCase()} · ${nombreFuente(d.host)}${d.fecha ? ` · subido el ${formatFecha(d.fecha)}` : ""}`} />
+              </li>
+            ))}
+          </ul>
+        </Grupo>
+      ),
+    },
+    {
+      titulo: "Datos abiertos",
+      vacio: conjuntos.length === 0,
+      el: (
+        <Grupo
+          titulo="Datos abiertos"
+          nota={
+            conjuntos.length > 6
+              ? `${formatInt(conjuntos.length)} conjuntos de datos.gob.do coinciden; estos son los primeros.`
+              : "En el título y la organización de los conjuntos de datos.gob.do."
+          }
+          mas={conjuntos.length > 6 ? `/datos?q=${encodeURIComponent(q)}` : undefined}
+        >
+          <ul className="divide-y divide-hairline">
+            {conjuntos.slice(0, 6).map((c) => (
+              <li key={c.slug}>
+                <Fila href={hrefConjunto(c.slug)} titulo={c.titulo} detalle={`${c.org} · ${c.formatos.slice(0, 3).join(", ")}`} />
+              </li>
+            ))}
+          </ul>
+        </Grupo>
+      ),
+    },
+    {
       titulo: "Cargos en la nómina",
       vacio: cargos.length === 0,
       el: (
@@ -167,7 +226,7 @@ export default async function BuscarPage({
         <BuscadorUrl
           etiqueta="Buscar en toda la plataforma"
           placeholder="MINERD, Ley 47-20, agua potable, chofer, 101000000…"
-          ayuda="Instituciones, normativa y nómina se buscan aquí mismo; Diputados, en vivo. Licitaciones, proveedores y Senado se abren en su vertical."
+          ayuda="Instituciones, normativa, obras, nómina, documentos y datos abiertos se buscan aquí mismo; Diputados, en vivo. Licitaciones, proveedores y Senado se abren en su vertical."
         />
       </Suspense>
 

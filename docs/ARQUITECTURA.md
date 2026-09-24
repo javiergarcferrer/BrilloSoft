@@ -142,6 +142,46 @@ Every UI that shows them states the source's cut date.
   `leerZip` exported from `lib/deuda.ts`). The panorama indicators live in
   `components/fuentes-nuevas/indicadores-bolsillo.tsx` (`SeccionBolsillo`).
 
+## Tercera pasada — el Estado entero (`docs/AUDITORIA.md` §G)
+Same two adapter classes, eight more sources.
+
+Snapshots (build-time `scripts/build-*.py` → `public/data/`, read with
+`node:fs`, memoised; UI states the generation date):
+- **`lib/historico.ts`** — every DGCP contract and process since 2015
+  (§G.1). `scripts/build-historico.py` downloads the two bulk tables
+  (~360 MB), assigns a contract to its purchasing unit by the unambiguous
+  prefix of its code (99.2 %), sums DOP, non-cancelled contracts and **sets
+  aside** every contract ≥ RD$10 000 millones (listed, never summed). Writes
+  `historico/resumen.json`, `historico/instituciones.json` and ten
+  `historico/proveedores/{d}.json` shards by the RPE's last digit. Pages:
+  `/historico`; blocks `HistoriaDeInstitucion` / `HistoriaDeProveedor`
+  (`components/fuentes-nuevas/historia-compras.tsx`) on both fichas. The bar
+  chart is `components/barras.tsx` (extracted from `/deuda`, now with `tono`).
+- **`lib/biblioteca.ts`** — documents published by 22 institutions through
+  WordPress' public `/wp-json/wp/v2/media` (§G.2). `scripts/build-documentos.py`
+  checks robots per host, walks every page up to `X-WP-TotalPages` (empty pages
+  in the middle are normal), 1 s per host, hosts in parallel; keeps title,
+  upload date, type and the original URL (nothing is rehosted). `/documentos`
+  searches titles and file names (all words, no accents);
+  `DocumentosDeInstitucion` shows the latest on the institution ficha.
+- **`lib/catalogo.ts`** — the whole datos.gob.do catalogue (§G.3) from its HTML
+  search, 10 s between requests (`scripts/build-catalogo.py`). `/datos`.
+
+Live sources (fetch `revalidate`, 25 s, one retry, content-type checked, each
+card degrades alone to «no contestó»; cards in `components/fuentes-nuevas/`,
+composed in `app/page.tsx`):
+- **`lib/macro.ts`** — BCRD CDN remittances, gross reserves, weighted lending
+  rate (§G.5), `IndicadoresMacro`. Daily.
+- **`lib/aduanas.ts`** — Aduanas' JSON document index → import/export/revenue
+  XLSX (§G.5), `ComercioExterior`. Daily.
+- **`lib/energia.ts`** — Organismo Coordinador hourly generation and marginal
+  plant for yesterday (§G.8), `DiaElectrico`. Hourly.
+- **`lib/alertas.ts`** — INDOMET CAP feed (§G.4), `AlertasTiempo`. 15 min.
+- **`lib/siniestralidad.ts`** — OPSEVI's undocumented JSON (§G.7),
+  `SiniestralidadVial`; current year vs the same months of the previous one.
+- **`lib/tc.ts`** — Tribunal Constitucional rulings, one year per read (§G.6);
+  `/constitucional`.
+
 ## API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return
 `502` on upstream failure: `procesos` (search/list; `procesos/csv` the whole
