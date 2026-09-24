@@ -39,6 +39,12 @@ if command -v python3 >/dev/null 2>&1; then
   fi
 fi
 
+# 2c. Magnitude travels in words (IDENTIDAD §3): «MM» reads *millones* in
+# Dominican usage, so an amount abbreviated MM/M/K is off by up to 1,000×.
+abrev="$(grep -rnE '\)\}?(MM|M|K)`' app components lib --include=*.ts --include=*.tsx 2>/dev/null \
+         | grep -vE ':[0-9]+:[[:space:]]*(//|/?\*)' | head -5)"
+if [ -z "$abrev" ]; then ok "magnitudes: no MM/M/K abbreviations on amounts"; else mal "amount abbreviated as MM/M/K — use formatPesos/formatMagnitud"; printf '%s\n' "$abrev" | sed 's/^/       /'; fi
+
 # 3. Statelessness: env vars and Supabase confined to /democracia.
 fuera="$( { grep -rlE 'process\.env\.' app lib components --include=*.ts --include=*.tsx 2>/dev/null; \
             grep -rlE '@supabase/supabase-js|@/lib/supabase["'"'"']' app lib components --include=*.ts --include=*.tsx 2>/dev/null; } \
