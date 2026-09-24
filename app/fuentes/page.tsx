@@ -592,9 +592,12 @@ export default async function FuentesPage() {
             y el bloque «desde 2015» de cada ficha. <ResumenHistorico /> Es valor
             contratado en pesos, no pagado, sin cancelados. La tabla de contratos no
             dice qué institución firmó: se deduce del prefijo del código, que es el
-            de la unidad de compra, solo cuando ese prefijo es inequívoco. Los
-            contratos de RD$10 mil millones o más no se suman —varios son errores de
-            captura evidentes— y se listan aparte con nombre y apellido.
+            de la unidad de compra, solo cuando ese prefijo es inequívoco; el del
+            MOPC lo comparte la OPRET, así que sus contratos cuentan en los años pero
+            en ninguna institución, y la página lo dice junto al ranking. Los
+            contratos de RD$10 mil millones o más no se suman —algunos parecen errores
+            de captura, otros pueden ser obras reales, y sin el expediente no se
+            distinguen— y se listan aparte con nombre y apellido.
           </p>
         </Fuente>
 
@@ -611,12 +614,13 @@ export default async function FuentesPage() {
             nada. <ResumenBiblioteca /> El total que anuncia cada sitio incluye
             archivos que cuelgan de páginas no públicas y que nadie puede abrir: se
             da lo que de verdad se leyó. El título es el que puso la institución y la
-            fecha, la de subida. Las declaraciones juradas que algunas instituciones
-            publican por mandato de la Ley 311-14 se indexan como cualquier otro
-            documento público.
+            fecha, la de subida. Las declaraciones juradas de patrimonio que algunas
+            instituciones publican por mandato de la Ley 311-14 se dejan fuera del
+            índice, por título, hasta decidir si un buscador por nombre de
+            funcionario es proporcionado: siguen en el sitio de cada institución.
           </p>
           <p className="mt-3">
-            <strong>Sin acceso:</strong> Salud Pública (SNS), Administración Pública
+            <strong>Sin acceso:</strong> el Servicio Nacional de Salud (SNS), Administración Pública
             (MAP) y Deportes cierran esa vía con un plugin; el Ministerio de la
             Presidencia la veta en su robots; Agricultura e INFOTEP responden con el
             muro de Cloudflare; la ONE, con un desafío. Educación, Obras Públicas,
@@ -677,8 +681,9 @@ export default async function FuentesPage() {
           <p>
             INDOMET emite sus alertas en el estándar internacional CAP y las publica,
             en dominio público, en el repositorio que alimenta a los agregadores de
-            alertas. Se leen cada 15 minutos las 20 más recientes y se muestran las
-            vigentes. Son alertas, no el pronóstico.
+            alertas. Se leen las 20 más recientes con caché de 15 minutos y se
+            muestran las vigentes; el panorama se rehace cada media hora, así que una
+            alerta recién vencida puede seguir a la vista hasta treinta minutos. Son alertas, no el pronóstico.
           </p>
         </Fuente>
 

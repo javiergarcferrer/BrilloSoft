@@ -36,7 +36,7 @@ export async function DiaElectrico() {
         <>
           <TiraDeCifras className="-mx-5 mt-4 sm:grid-cols-3">
             <Cifra etiqueta="Generado" valor={`${formatInt(Math.round(d.generado))} MWh`} nota={`${desvio >= 0 ? "+" : "−"}${Math.abs(desvio).toFixed(1)} % sobre lo programado`} />
-            <Cifra etiqueta="Hora de más demanda" valor={`${formatInt(Math.round(d.pico.mw))} MW`} nota={`de ${String(d.pico.periodo - 1).padStart(2, "0")}:00 a ${String(d.pico.periodo).padStart(2, "0")}:00`} />
+            <Cifra etiqueta="Hora de más generación" valor={`${formatInt(Math.round(d.pico.mw))} MW`} nota={`de ${String(d.pico.periodo - 1).padStart(2, "0")}:00 a ${String(d.pico.periodo).padStart(2, "0")}:00`} />
             {d.desabastecimiento && (
               <Cifra
                 etiqueta="Horas con desabastecimiento"

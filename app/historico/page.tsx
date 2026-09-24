@@ -78,6 +78,9 @@ export default async function HistoricoPage() {
   const primero = d.anios[0];
   const enCurso = d.anios.find((a) => a.anio === anioCorte);
   const sumaAtipicos = d.atipicos.reduce((s, a) => s + a.valor, 0);
+  // Un prefijo sin asignar que pese más de RD$1 mil millones cambia el ranking:
+  // se dice junto al ranking, no solo en el pie.
+  const mayorSinAsignar = d.sinAsignar?.find((x) => x.monto >= 1e9 && x.unidades.length > 0) ?? null;
 
   return (
     <div className="space-y-5">
@@ -158,9 +161,10 @@ export default async function HistoricoPage() {
             </Table>
             <p className="mt-2 text-xs leading-relaxed text-ink-soft">
               «Por excepción» es la parte de los procesos publicados ese año que no
-              siguió el procedimiento ordinario (urgencia, emergencia, proveedor
-              único, seguridad nacional…), según el tipo de excepción que declara
-              cada proceso.
+              siguió el procedimiento ordinario, según el tipo de excepción que
+              declara cada proceso. Las más frecuentes en todo el registro son
+              «Pasajes aéreos, reparaciones y combustibles» y «Publicidad», seguidas
+              de proveedor único, exclusividad, urgencia y emergencia.
             </p>
           </div>
         </Plegable>
@@ -180,7 +184,11 @@ export default async function HistoricoPage() {
         />
         <Ranking
           titulo="Quién ha comprado más"
-          nota={`Las ${d.instituciones.length} unidades de compra con más valor contratado en todo el período.`}
+          nota={`Las ${d.instituciones.length} unidades de compra con más valor contratado en todo el período.${
+            mayorSinAsignar
+              ? ` No aparece ${mayorSinAsignar.unidades[0] ?? mayorSinAsignar.prefijo}: sus ${formatInt(mayorSinAsignar.contratos)} contratos (${formatPesos(mayorSinAsignar.monto)}) comparten prefijo con ${mayorSinAsignar.unidades.slice(1).join(" y ") || "otra unidad"} y no se asignan sin adivinar.`
+              : ""
+          }`}
           filas={d.instituciones.map((i) => {
             const n = nombreInstitucion(i.uc, i.nombre);
             return {
@@ -198,13 +206,16 @@ export default async function HistoricoPage() {
 
       <p className="text-xs leading-relaxed text-ink-soft">
         Fuente: las tablas de{" "}
-        <a href={d.fuentes[0]} className="font-medium text-brand-700 hover:underline">contratos</a> y{" "}
-        <a href={d.fuentes[1]} className="font-medium text-brand-700 hover:underline">procesos</a>{" "}
+        <a href={d.fuentes[0]} className="font-medium text-brand-700 hover:underline">contratos</a> (CSV de
+        unos 115 MB) y{" "}
+        <a href={d.fuentes[1]} className="font-medium text-brand-700 hover:underline">procesos</a> (unos
+        245 MB){" "}
         de datos abiertos de la Dirección General de Contrataciones Públicas,
         descargadas enteras el {formatFecha(d.generado)}. La institución de cada
         contrato se deduce del prefijo de su código, que es el de la unidad que lo
-        firmó; {formatInt(d.sinInstitucion)} contratos no se pueden asignar sin
-        adivinar y cuentan en los años pero no en ninguna institución. Quedan fuera{" "}
+        firmó; {formatInt(d.sinInstitucion)} contratos
+        {d.sinInstitucionMonto ? ` (${formatPesos(d.sinInstitucionMonto)})` : ""} no se pueden
+        asignar sin adivinar y cuentan en los años pero no en ninguna institución. Quedan fuera{" "}
         {formatInt(d.cancelados)} contratos cancelados y{" "}
         {formatInt(Object.values(d.otrasMonedas).reduce((s, n) => s + n, 0))} en otras
         monedas. Ver{" "}
@@ -266,11 +277,12 @@ function Atipicos({ d, suma }: { d: ResumenHistorico; suma: number }) {
       <CardTitle>Lo que no se sumó</CardTitle>
       <p className="mt-1 text-xs leading-relaxed text-ink-soft">
         {formatInt(d.atipicos.length)} contratos registrados por {umbral(d.umbralAtipico)}{" "}
-        o más, que juntos declaran {formatPesos(suma)}. Varios son errores de captura
-        evidentes —cifras de miles de millones por bienes de oficina o servicios
-        menores—, así que sumarlos inflaría la serie con dinero que no se contrató. Tampoco
-        se esconden: aquí están, tal como los publica el registro, para que cada uno
-        se juzgue por separado.
+        o más, vigentes o cerrados, que juntos declaran {formatPesos(suma)}. Algunos
+        parecen errores de captura —un monto de diez mil millones y un peso exactos—;
+        otros pueden ser obras grandes reales, como una autopista o una línea de
+        teleférico. Sin el expediente no se distinguen, así que no se suman: una sola
+        cifra mal tecleada movería la serie entera. Tampoco se esconden: aquí están,
+        tal como los publica el registro, para que cada uno se juzgue por separado.
       </p>
       <ol className="mt-3 divide-y divide-hairline">
         {d.atipicos.map((a) => {

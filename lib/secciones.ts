@@ -158,7 +158,7 @@ export const SECCIONES: Seccion[] = [
     nombre: "Normativa",
     pregunta: "¿Qué decreta?",
     href: "/normativa",
-    descriptor: "Decretos y leyes · Poder Ejecutivo",
+    descriptor: "Decretos, leyes y sentencias constitucionales",
     rutas: ["/normativa", "/constitucional"],
     vistas: [
       { href: "/normativa", label: "Decretos y leyes" },

@@ -180,7 +180,10 @@ composed in `app/page.tsx`):
 - **`lib/siniestralidad.ts`** — OPSEVI's undocumented JSON (§G.7),
   `SiniestralidadVial`; current year vs the same months of the previous one.
 - **`lib/tc.ts`** — Tribunal Constitucional rulings, one year per read (§G.6);
-  `/constitucional`.
+  `/constitucional`. The exception in this list: a year is up to ~1.1 MB of
+  HTML, near the 2 MB fetch-cache limit, so it fetches `no-store` inside
+  `unstable_cache` over the parsed rows (6 h current year, 7 d closed years)
+  with a 60 s timeout (a year measured 7.7 s).
 
 ## API routes — `app/api/*` (all `export const dynamic = "force-dynamic"`)
 Thin proxies that call a `lib/dgcp.ts` function inside try/catch and return

@@ -43,7 +43,7 @@ function comparacionTasa(i: Indicador) {
   if (!i.comparacion) return "El archivo no trae el mes anterior; aquí no se compara.";
   const d = i.valor - i.comparacion.valor;
   const cambio =
-    Math.abs(d) < 0.005 ? "prácticamente igual" : `${d > 0 ? "subió" : "bajó"} ${puntos(i.valor, i.comparacion.valor).slice(1)}`;
+    Math.abs(d) < 0.05 ? "prácticamente igual" : `${d > 0 ? "subió" : "bajó"} ${puntos(i.valor, i.comparacion.valor).slice(1)}`;
   return `En ${i.comparacion.periodo} estaba en ${porciento(i.comparacion.valor)}: ${cambio}.`;
 }
 

@@ -163,17 +163,17 @@ export default async function DatosPage({
           </p>
           <ol className="mt-2 divide-y divide-hairline border-t border-hairline">
             {vista.map((x) => (
-              <li key={x.slug} className="px-5 py-3 sm:px-6">
+              <li key={x.slug} className="relative px-5 py-3 sm:px-6">
                 <a
                   href={hrefConjunto(x.slug)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-[15px] leading-snug text-ink hover:text-brand-700 hover:underline"
+                  className="block text-[15px] leading-snug text-ink [overflow-wrap:anywhere] after:absolute after:inset-0 hover:text-brand-700"
                 >
                   {x.titulo}
                 </a>
                 <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
-                  <Link href={url({ org: x.org, p: null })} className="hover:text-brand-700 hover:underline">
+                  <Link href={url({ org: x.org, p: null })} className="relative z-10 hover:text-brand-700 hover:underline">
                     {x.org || "Sin organización"}
                   </Link>
                   {x.formatos.slice(0, 4).map((f) => (

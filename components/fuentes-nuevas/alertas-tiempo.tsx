@@ -6,8 +6,9 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { IconBell } from "@/components/icons";
 
 const SEVERIDAD: Record<Severidad, { texto: string; variante: "alerta" | "sello" | "neutro" }> = {
-  Extreme: { texto: "Extrema", variante: "sello" },
-  Severe: { texto: "Severa", variante: "sello" },
+  // El ocre es el color del aviso; el sello rojo dice «se anuló»: no se usa aquí.
+  Extreme: { texto: "Extrema", variante: "alerta" },
+  Severe: { texto: "Severa", variante: "alerta" },
   Moderate: { texto: "Moderada", variante: "alerta" },
   Minor: { texto: "Menor", variante: "neutro" },
   Unknown: { texto: "Sin grado", variante: "neutro" },
@@ -69,18 +70,22 @@ export async function AlertasTiempo() {
               <li key={x.id} className="py-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={SEVERIDAD[x.severidad].variante}>{SEVERIDAD[x.severidad].texto}</Badge>
-                  <a
-                    href={x.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-ink hover:text-brand-700 hover:underline"
-                  >
+                  <span className="text-sm font-medium text-ink">
                     {x.evento || x.titulo} · {x.zona}
-                  </a>
+                  </span>
                 </div>
                 {x.descripcion && <p className="mt-1 text-sm leading-relaxed text-ink-soft">{x.descripcion}</p>}
+                {x.instruccion && (
+                  <p className="mt-1 text-sm leading-relaxed text-ink">
+                    <span className="font-medium">Qué hacer: </span>
+                    {x.instruccion}
+                  </p>
+                )}
                 <p className="mt-1 font-mono text-xs tabular-nums text-ink-soft">
-                  {x.desde ? `Desde ${momento(x.desde)} · ` : ""}hasta {x.hasta ? momento(x.hasta) : "—"}
+                  {x.desde ? `Desde ${momento(x.desde)} · ` : ""}hasta {x.hasta ? momento(x.hasta) : "—"} ·{" "}
+                  <a href={x.url} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline">
+                    alerta oficial (XML)
+                  </a>
                 </p>
               </li>
             ))}

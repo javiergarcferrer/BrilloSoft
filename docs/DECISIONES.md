@@ -53,6 +53,13 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
   Vercel, so its snapshot is what production shows and it ages weekly. A
   scheduled cloud session could regenerate and deliver them through the gate;
   it costs sessions, so it is the owner's call.
+- **Sworn asset declarations in the document index** (AUDITORIA §G.2): 115
+  PDFs titled «Declaración jurada de patrimonio <name>» are published by the
+  institutions themselves under Ley 311-14, but a platform-wide index makes
+  them searchable by an official's name, which is a Ley 172-13 proportionality
+  call. Until decided, `scripts/build-documentos.py` excludes them by title
+  (`DECLARACION`); including them is deleting that one condition and
+  regenerating.
 - **Institutional requests**: Consultoría Jurídica's Cloudflare allowance for
   `Socratico-Inteligencia/1.0` on its read-only APIs (AUDITORIA §4.1), ONE whitelist, Cámara de Cuentas and 911 under
   Ley 200-04, JCE electoral archive, BCRD file index, report of the exposed
