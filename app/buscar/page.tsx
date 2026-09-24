@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { buscarCargos, buscarNormas, buscarObras, rutaDirecta } from "@/lib/buscar";
 import { formatPesos } from "@/lib/format";
 import { buscarInstituciones, hrefInstitucion } from "@/lib/instituciones";
-import { buscarIniciativas, desdeMayusculas, normalizarIniciativa } from "@/lib/congreso";
+import { buscarIniciativas, desdeMayusculas, marcaDeIniciativa, normalizarIniciativa } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { BUSQUEDAS } from "@/lib/secciones";
@@ -247,7 +247,7 @@ async function Diputados({ q }: { q: string }) {
             <Fila
               href={`/congreso/${i.id}`}
               titulo={desdeMayusculas(i.titulo)}
-              detalle={[i.numero?.completo, i.condicion && desdeMayusculas(i.condicion)].filter(Boolean).join(" · ")}
+              detalle={[i.numero?.completo, marcaDeIniciativa(i).label].filter(Boolean).join(" · ")}
             />
           </li>
         ))}
