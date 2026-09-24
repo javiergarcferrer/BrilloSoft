@@ -734,6 +734,21 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="Edenorte y Edesur — mantenimientos programados" estado="activa" etiqueta="Conectada">
+          <p>
+            <Link href="/luz" className="font-medium text-brand-700 hover:underline">
+              Los cortes de luz programados
+            </Link>{" "}
+            se leen de lo que publica cada distribuidora, con caché de seis horas y
+            solo de hoy en adelante: Edenorte, de su canal RSS (trae municipio y
+            circuito, no provincia; a veces no publica la semana, y la página lo
+            dice); Edesur, de su página de la semana (provincia, horario y sectores,
+            sin circuito). Edeeste solo publica un PDF semanal, que se enlaza. Las
+            averías y los apagones por falta de generación no se anuncian y no están
+            aquí.
+          </p>
+        </Fuente>
+
         <Fuente nombre="INDOMET — alertas meteorológicas" estado="activa" etiqueta="Conectada">
           <p>
             INDOMET emite sus alertas en el estándar internacional CAP y las publica,

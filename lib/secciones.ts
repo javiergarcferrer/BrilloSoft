@@ -359,6 +359,7 @@ export const PAGINAS_PLATAFORMA: { href: string; label: string; descriptor: stri
   { href: "/buscar", label: "Buscar en todo", descriptor: "Una caja para toda la plataforma" },
   { href: "/provincias", label: "Provincias", descriptor: "El Estado visto desde cada provincia" },
   { href: "/obras", label: "Obras públicas", descriptor: "¿Existe la obra y avanza? Proyectos de inversión con su avance" },
+  { href: "/luz", label: "Cortes de luz programados", descriptor: "Los mantenimientos que anuncian Edenorte y Edesur esta semana" },
   { href: "/gestion", label: "Gestión pública", descriptor: "El ranking SISMAP de instituciones y ayuntamientos" },
   { href: "/documentos", label: "Biblioteca del Estado", descriptor: "Los documentos que publica cada institución, en un buscador" },
   { href: "/datos", label: "Datos abiertos", descriptor: "El catálogo entero de datos.gob.do, buscable" },

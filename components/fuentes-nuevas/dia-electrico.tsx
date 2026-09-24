@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getDiaElectrico } from "@/lib/energia";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
@@ -50,6 +51,11 @@ export async function DiaElectrico() {
             «desabastecimiento» es una hora en que el OC registró que la oferta de
             generación no alcanzó para toda la demanda: es la huella pública de los
             apagones por falta de energía, no de las averías de las distribuidoras.
+            Los cortes programados por mantenimiento están en{" "}
+            <Link href="/luz" className="font-medium text-brand-700 hover:underline">
+              cortes de luz programados
+            </Link>
+            .
           </p>
         </>
       ) : (

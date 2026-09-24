@@ -145,6 +145,13 @@ Every UI that shows them states the source's cut date.
 ## Tercera pasada — el Estado entero (`docs/AUDITORIA.md` §G)
 Same two adapter classes, eight more sources.
 
+⚠️ **Dev-only:** the first `next dev` render of `/` logs `RangeError: Maximum
+call stack size exceeded` and truncates the stream; later renders pass. It
+reproduces at `8eba621` (before this pass), and `next build` + `next start`
+serve `/` at 200 (~230 KB). React 19's dev debug info serialises awaited
+values and the panorama awaits large ones. Not yet fixed; verify pages with
+a production build, not the first dev hit.
+
 Snapshots (build-time `scripts/build-*.py` → `public/data/`, read with
 `node:fs`, memoised; UI states the generation date):
 - **`lib/historico.ts`** — every DGCP contract and process since 2015
@@ -187,6 +194,8 @@ composed in `app/page.tsx`):
   XLSX (§G.5), `ComercioExterior`. Daily.
 - **`lib/energia.ts`** — Organismo Coordinador hourly generation and marginal
   plant for yesterday (§G.8), `DiaElectrico`. Hourly.
+- **`lib/cortes.ts`** — scheduled maintenance outages from Edenorte's RSS and
+  Edesur's weekly page (§G.11), today onward; `/luz`.
 - **`lib/alertas.ts`** — INDOMET CAP feed (§G.4), `AlertasTiempo`. 15 min.
 - **`lib/siniestralidad.ts`** — OPSEVI's undocumented JSON (§G.7),
   `SiniestralidadVial`; current year vs the same months of the previous one.

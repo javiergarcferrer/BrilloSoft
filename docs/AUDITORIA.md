@@ -1428,6 +1428,21 @@ documentos (§G.2), catálogo de datos abiertos (§G.3), alertas de INDOMET
   `lib/nomina-general.ts`, `/nomina/general` y el bloque de nómina de las
   fichas sin nómina propia (79 de 125 casan por nombre exacto).
 
+### G.11 Mantenimientos programados de las distribuidoras
+
+- ✅ Edenorte: `https://edenorte.com.do/category/programa-de-mantenimiento-de-redes/feed/`
+  → `application/rss+xml`, ~530 KB, 10 ítems; cada uno, una tabla Municipio |
+  Circuito | Fecha (D/M/AAAA) | Periodo («9:00 a. m. a 12:00 p. m.») | Zonas |
+  Causa. Sin provincia. ⚠️ Publica tarde o salta semanas: el 2026-09-24 lo
+  último era la semana del 12 al 18. REST de WP cerrada (401).
+- ✅ Edesur: `https://edesur.com.do/enlaces-empresa/mantenimientos-programados/`
+  → HTML (Umbraco), siete pestañas por día; provincia (`h4`) → ventana
+  (`h5.title-zona`) → sectores. Sin circuito ni causa; solo la semana sábado–viernes
+  en curso. 59 ventanas en 12 provincias la semana del 19 al 25.
+- ⚠️ Edeeste: solo PDF semanal (WP Download Manager con `refresh` por visita): se
+  enlaza su página.
+- Implementado: `lib/cortes.ts` (en vivo, 6 h, solo de hoy en adelante) y `/luz`.
+
 ### G.9 Pendientes que deja esta pasada
 
 1. Estadísticas judiciales (índice + XLSX mensual) y sentencias del TSE.
