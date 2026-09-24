@@ -359,9 +359,10 @@ sources impose:
   «Designaciones del mes» (`designacionesPorMes`): decrees tagged «Cámara de
   Cuentas» by the Consultoría (appointments and their revocations), per month,
   cargo read from the first mention in the title — derived, and declared so.
-  Decretos also get a subject (`materiaDe`: 16 ordered rules over the plain
-  title and the source's `Institucion` tag, first match wins, «Otros asuntos»
-  ~6 % of 2023–2026). The «¿De qué tratan…?» card counts the whole year and
+  Decretos also get a subject (`materiaDe`: ordered rules over the plain
+  title and the source's `Institucion` tag, first match wins; the «Cámara de
+  Cuentas» tag only decides an appointment last, because the source also puts
+  it on emergency and errata decrees; «Otros asuntos» ~5 % of 2023–2026). The «¿De qué tratan…?» card counts the whole year and
   each subject links to `?materia=`; rows and the CSV (`materia_derivada`)
   carry it. Rules, not a model: they run on the live read with no key
   (docs/DECISIONES.md, Jev).

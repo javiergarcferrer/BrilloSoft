@@ -59,6 +59,13 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
   311 token and the Cuenta Única client request to OGTIC (AUDITORIA §A.9,
   §A.11, §F).
 
+- **Clave del AI Gateway para las instantáneas** (ver «Clasificadores de IA»
+  abajo): solo si se quiere Jev en un script de `scripts/`, nunca en Vercel.
+  Candidato: familias de cargo sobre los ~3.250 títulos de la nómina
+  (`scripts/build-nomina.py`). La conexión de Vercel de las sesiones no puede
+  crear claves del Gateway ni tokens OIDC (403, verificado 24-09-2026): la
+  crea el dueño en su panel, con tope de gasto.
+
 ## Cerradas, para que nadie las reabra
 
 - **Clasificadores de IA (Jev, `typesafe-ai/jev` por el AI Gateway de
@@ -71,10 +78,7 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
   institución, así que `materiaDe` (`lib/normativa.ts`) deja 6 % sin materia,
   corre sobre la lectura en vivo, cuesta cero y es auditable. Obras ya trae
   sector oficial, el Congreso sus 15 grupos (RECON §9) y compras se lee en
-  vivo. Candidato si vuelve: familias de cargo sobre los ~3.250 títulos de la
-  nómina, en `scripts/build-nomina.py`. La conexión de Vercel de las sesiones
-  no puede crear claves del Gateway ni tokens OIDC (403, verificado
-  24-09-2026): la clave la crea el dueño en su panel.
+  vivo. Lo que queda abierto (la clave) está arriba, en Abiertas.
 
 - **Cabecera sin preguntas; megamenú** (23-09-2026). El dueño pidió quitar
   las preguntas («¿Qué compra?») de la cabecera y un megamenú. La cabecera

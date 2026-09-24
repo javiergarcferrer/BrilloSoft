@@ -20,7 +20,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha, formatMes } from "@/lib/format";
-import { EsqueletoFilas } from "@/components/esqueleto";
+import { Esqueleto, EsqueletoFilas } from "@/components/esqueleto";
 import Antiguedad from "@/components/antiguedad";
 import { Button } from "@/components/ui/button";
 import { EstadoVacio } from "@/components/estado-vacio";
@@ -94,7 +94,10 @@ export default async function NormativaPage({
       ? mesPedido
       : undefined;
   // La materia solo existe en los decretos (`materiaDe`); otro valor no filtra.
-  const materia = tipo === "3" ? materiaPorSlug(params.materia)?.slug : undefined;
+  // Con un mes elegido la lista ya son sus nombramientos: la materia no viaja,
+  // o una URL escrita a mano dejaría al lector sin ninguna tarjeta para salir.
+  const materia = tipo === "3" && !mes ? materiaPorSlug(params.materia)?.slug : undefined;
+  const nombreMateria = materiaPorSlug(materia)?.nombre;
   // La página pedida; la lista la acota a las que existen cuando sabe cuántas hay.
   const pagina = /^\d{1,4}$/.test(params.pagina ?? "") ? Math.max(1, Number(params.pagina)) : 1;
 
@@ -122,7 +125,9 @@ export default async function NormativaPage({
         <BuscadorUrl
           etiqueta="Buscar en los títulos"
           placeholder="Una palabra del título o un número: embajador, 606-26, pensión…"
-          ayuda={`Busca en el número y el título de ${TIPOS_NORMATIVA[tipo].toLowerCase()} de ${anio}, sin distinguir tildes; todas las palabras tienen que aparecer. No busca dentro del texto de la norma.`}
+          ayuda={`Busca en el número y el título de ${TIPOS_NORMATIVA[tipo].toLowerCase()} de ${anio}${
+            nombreMateria ? `, solo en ${nombreMateria.toLowerCase()}` : ""
+          }${mes ? `, solo en los nombramientos y ceses de ${nombreMes(mes)}` : ""}, sin distinguir tildes; todas las palabras tienen que aparecer. No busca dentro del texto de la norma.`}
         />
       </Suspense>
 
@@ -164,7 +169,7 @@ export default async function NormativaPage({
       */}
       <Suspense
         key={`${tipo}-${anio}-${q}-${mes ?? ""}-${materia ?? ""}-${pagina}`}
-        fallback={<ListaEsqueleto tipo={tipo} anio={anio} />}
+        fallback={<ListaEsqueleto tipo={tipo} anio={anio} conMaterias={tipo === "3" && !mes && pagina === 1} />}
       >
         <ListaNormativa tipo={tipo} anio={anio} q={q} mes={mes} materia={materia} pagina={pagina} />
       </Suspense>
@@ -217,6 +222,7 @@ async function ListaNormativa({
   // mes elegido la lista ya es de nombramientos, así que no se ofrecen.
   const materias = tipo === "3" && !mes ? materiasDe(todos) : [];
   const nombreMateria = materiaPorSlug(materia)?.nombre;
+  const enMateria = materia ? todos.filter((d) => materiaDe(d)?.slug === materia).length : total;
   const filtrada = Boolean(q || mes || materia);
   const consulta = new URLSearchParams({ tipo, anio: String(anio) });
   if (q) consulta.set("q", q);
@@ -227,12 +233,26 @@ async function ListaNormativa({
   return (
     <>
       {/*
-        El resumen de designaciones responde «¿qué pasó este año?», y eso se
-        pregunta en la primera página. Desde la segunda el lector ya está
-        recorriendo la lista: la tarjeta solo empujaría las normas hacia abajo.
+        Las dos tarjetas responden «¿qué pasó este año?», y eso se pregunta en
+        la primera página. Desde la segunda el lector ya está recorriendo la
+        lista: la tarjeta solo empujaría las normas hacia abajo, así que de
+        ella queda la materia elegida con su salida.
       */}
       {materias.length > 1 && pagina === 1 && (
-        <Materias materias={materias} anio={anio} q={q} activa={materia} />
+        <Materias materias={materias} anio={anio} q={q} activa={materia} instantanea={instantanea} />
+      )}
+      {nombreMateria && pagina > 1 && (
+        <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-soft">
+          <span>
+            Solo <span className="font-semibold text-ink">{nombreMateria.toLowerCase()}</span>
+          </span>
+          <Link
+            href={hrefNormativa({ tipo, anio, q })}
+            className="inline-flex min-h-11 items-center font-medium text-brand-700 hover:underline sm:min-h-0"
+          >
+            Ver todos los decretos de {anio}
+          </Link>
+        </p>
       )}
 
       {designaciones.length > 0 && pagina === 1 && (
@@ -331,9 +351,11 @@ async function ListaNormativa({
           className="mt-4"
         >
           {q
-            ? `Entre ${total.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()} de ${anio}${
-                nombreMateria ? ` (${nombreMateria.toLowerCase()})` : ""
-              }, ninguno tiene esas palabras en el número o el título. Prueba con menos palabras, otra forma de escribirlas u otro año.`
+            ? `Entre ${nombreMateria ? "los " : ""}${enMateria.toLocaleString("es-DO")} ${TIPOS_NORMATIVA[tipo].toLowerCase()}${
+                nombreMateria ? ` de ${nombreMateria.toLowerCase()}` : ""
+              } de ${anio}, ninguno tiene esas palabras en el número o el título. Prueba con menos palabras, otra forma de escribirlas${
+                nombreMateria ? ", quita la materia" : ""
+              } u otro año.`
             : mes
               ? "No hay nombramientos ni ceses con fecha de ese mes en la lista del año."
               : "Ningún decreto del año cae en esa materia. Prueba otro año o vuelve a todos los decretos."}
@@ -437,7 +459,8 @@ function Designaciones({
         que derogan esa designación; aquí se cuentan esos decretos por su fecha
         de promulgación. El cargo es el primero que el título menciona: un
         decreto que nombra a varias personas cuenta una vez. Los ceses no se
-        reparten por cargo.
+        reparten por cargo. Por eso suma menos que la materia «Nombramientos y
+        ceses», que también lee el título.
       </p>
     </Card>
   );
@@ -458,11 +481,14 @@ function Materias({
   anio,
   q,
   activa,
+  instantanea,
 }: {
   materias: (Materia & { n: number })[];
   anio: number;
   q: string;
   activa?: string;
+  /** Fecha de la instantánea si la lista no es en vivo: se dice junto a la cifra. */
+  instantanea: string | null;
 }) {
   const total = materias.reduce((s, m) => s + m.n, 0);
   const max = Math.max(1, ...materias.map((m) => m.n));
@@ -480,24 +506,28 @@ function Materias({
       {ms.map((m) => {
         const elegida = m.slug === activa;
         return (
-          <li key={m.slug}>
-            <Link
-              href={hrefNormativa({ tipo: "3", anio, q, materia: m.slug })}
-              aria-current={elegida ? "page" : undefined}
-              className="-mx-2 block min-h-11 rounded-md px-2 py-2 transition-colors hover:bg-canvas/60"
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <span className={elegida ? "font-semibold text-brand-700" : "text-ink"}>{m.nombre}</span>
-                <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">
-                  {m.n.toLocaleString("es-DO")}
-                </span>
-              </div>
-              <Progress
-                value={Math.max(2, (m.n / max) * 100)}
-                aria-label={`${m.nombre}: ${m.n}`}
-                className="mt-1"
-              />
-            </Link>
+          <li key={m.slug} className="relative -mx-2 min-h-11 rounded-md px-2 py-2 hover:bg-canvas/60">
+            <div className="flex items-baseline justify-between gap-2">
+              <Link
+                href={hrefNormativa({ tipo: "3", anio, q, materia: m.slug })}
+                aria-current={elegida ? "page" : undefined}
+                className={
+                  elegida
+                    ? "font-semibold text-brand-700 after:absolute after:inset-0"
+                    : "text-ink after:absolute after:inset-0 hover:text-brand-700"
+                }
+              >
+                {m.nombre}
+              </Link>
+              <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">
+                {m.n.toLocaleString("es-DO")}
+              </span>
+            </div>
+            <Progress
+              value={Math.max(2, (m.n / max) * 100)}
+              aria-label={`${m.nombre}: ${m.n}`}
+              className="mt-1"
+            />
           </li>
         );
       })}
@@ -510,8 +540,9 @@ function Materias({
         ¿De qué tratan los {total.toLocaleString("es-DO")} decretos de {anio}?
       </CardTitle>
       <p className="mt-1 text-sm text-ink-soft">
+        {instantanea ? `Según la instantánea del ${formatFecha(instantanea)}. ` : ""}
         Toca una materia para ver solo sus decretos
-        {q ? `; la búsqueda «${q}» se mantiene` : ""}.
+        {q ? `; las cuentas son del año entero, sin la búsqueda «${q}», que se mantiene al tocar` : ""}.
       </p>
 
       <div className="mt-3">{lista(visibles)}</div>
@@ -537,15 +568,28 @@ function Materias({
         de institución que pone la Consultoría Jurídica, con reglas fijas y
         públicas, no con un modelo. Cada decreto cuenta en una sola materia, la
         primera que reconoce; «Otros asuntos» reúne lo que ninguna regla
-        reconoce. Las cuentas son del año entero, sin la búsqueda.
+        reconoce. «Nombramientos y ceses» es más amplia que las designaciones
+        del mes: suma los decretos cuyo título nombra o revoca a alguien aunque
+        no lleven la etiqueta de la Cámara de Cuentas. Las cuentas son del año
+        entero, sin la búsqueda.
       </p>
     </Card>
   );
 }
 
-function ListaEsqueleto({ tipo, anio }: { tipo: TipoNormativa; anio: number }) {
+function ListaEsqueleto({
+  tipo,
+  anio,
+  conMaterias,
+}: {
+  tipo: TipoNormativa;
+  anio: number;
+  /** La tarjeta de materias va encima de la lista: su hueco también. */
+  conMaterias: boolean;
+}) {
   return (
     <div role="status" aria-busy="true">
+      {conMaterias && <Esqueleto className="mt-5 h-[42rem] sm:h-[35rem]" />}
       <p className="mt-4 text-sm text-ink-soft">
         Consultando {TIPOS_NORMATIVA[tipo].toLowerCase()} de {anio} en la Consultoría…
       </p>
@@ -594,7 +638,9 @@ function FilaDoc({ doc }: { doc: Documento }) {
           )}
           {doc.gaceta && <span className="text-ink-soft">Gaceta {doc.gaceta}</span>}
           {materia && materia.slug !== "otros" && (
-            <span className="text-ink-soft">{materia.nombre}</span>
+            <span className="text-ink-soft" title="Materia leída del título y la etiqueta del origen, no un campo de la Consultoría">
+              {materia.nombre}
+            </span>
           )}
         </div>
         <p className="mt-1 text-[15px] leading-snug text-ink group-hover:text-brand-700">

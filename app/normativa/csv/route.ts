@@ -18,10 +18,11 @@ const COLUMNAS: ColumnaCsv<Documento>[] = [
   ["fecha_promulgacion", (d) => d.fechaIso ?? d.fecha],
   ["titulo", (d) => d.titulo],
   ["gaceta", (d) => d.gaceta],
-  // Derivada con reglas del título y la etiqueta (`materiaDe`), no del origen.
-  ["materia_derivada", (d) => materiaDe(d)?.nombre ?? null],
   ["etiqueta_institucion", (d) => d.institucion],
   ["url_documento", (d) => d.url],
+  // Derivada con reglas del título y la etiqueta (`materiaDe`), no del origen.
+  // Al final, para no correr las columnas de quien lee por posición.
+  ["materia_derivada", (d) => materiaDe(d)?.nombre ?? null],
 ];
 
 /**
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
     tipo === "3" && /^\d{4}-(0[1-9]|1[0-2])$/.test(mesPedido) && mesPedido.startsWith(String(anio))
       ? mesPedido
       : undefined;
-  const materia = tipo === "3" ? materiaPorSlug(sp.get("materia"))?.slug : undefined;
+  const materia = tipo === "3" && !mes ? materiaPorSlug(sp.get("materia"))?.slug : undefined;
 
   const r = await listaNormativa({ tipo, anio, q, mes, materia });
   if (r.origen === null) {

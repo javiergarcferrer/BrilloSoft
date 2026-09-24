@@ -456,13 +456,16 @@ export function designacionesPorMes(docs: Documento[]): MesDesignaciones[] {
  * `Institucion`. Pero los títulos son de fórmula —«QUE CONCEDE PENSIONES…»,
  * «QUE DECLARA DE UTILIDAD PÚBLICA…»— y la etiqueta lo termina de decidir, así
  * que la materia se lee con reglas, no con un modelo: son auditables, corren
- * sobre la lectura en vivo sin clave ni secreto, y medidas sobre los 2.729
- * decretos de 2023–2026 de la instantánea dejan 6 % en «Otros asuntos» con
- * muestras por materia sin errores de bulto (septiembre de 2026).
+ * sobre la lectura en vivo sin clave ni secreto. Medidas sobre los 2.729
+ * decretos de 2023–2026 de la instantánea (24-09-2026), dejan 5 % en «Otros
+ * asuntos»; se revisaron muestras de cada materia y la lista completa de lo
+ * que solo reconoce la etiqueta.
  *
- * El orden importa: gana la primera regla que casa. Los nombramientos van
- * primero porque la etiqueta «Cámara de Cuentas» es del origen (ver
- * `esDesignacion`) y un embajador designado es un nombramiento antes que
+ * El orden importa: gana la primera regla que casa. Las emergencias van
+ * primero porque la Consultoría etiqueta con la Cámara de Cuentas también
+ * decretos que no nombran a nadie; por eso esa etiqueta (`esDesignacion`)
+ * decide un nombramiento solo al final, cuando ninguna materia más precisa
+ * reconoció el título. Un embajador designado es un nombramiento antes que
  * relaciones exteriores; las condecoraciones van antes que Defensa y
  * Exteriores, que las tramitan, y un ascenso es militar aunque lo etiquete
  * Exteriores. `t` es el título plano, sin «que» inicial;
@@ -470,12 +473,19 @@ export function designacionesPorMes(docs: Documento[]): MesDesignaciones[] {
  */
 const REGLAS_MATERIA: { slug: string; nombre: string; casa: (t: string, i: string) => boolean }[] = [
   {
+    slug: "emergencias",
+    nombre: "Emergencias y compras de excepción",
+    casa: (t) =>
+      /declara de emergencia|emergencia nacional|situacion de desastre|articulo 23 de la ley (num\.? )?147-02|procedimientos? de excepcion/.test(t),
+  },
+  {
     slug: "nombramientos",
     nombre: "Nombramientos y ceses",
-    casa: (t, i) =>
-      i.includes("camara de cuentas") ||
-      /^(nombra|designa|confirma)\b(?! como organizacion)/.test(t) ||
-      /^(deroga|deja sin efecto)\b.{0,240}\b(designo|designaron|nombro|nombraron)\b/.test(t),
+    casa: (t) =>
+      /^(nombra|designa|confirma|encarga a)\b(?! como organizacion)/.test(t) ||
+      /^(deroga|deja sin efecto)\b.{0,240}\b(designo|designaron|nombro|nombraron)\b/.test(t) ||
+      // «QUE MODIFICA EL ARTÍCULO 1 DEL DECRETO… DESIGNA A LA SEÑORA…».
+      /\b(designa (a|al)|se designa|queda designad[oa]|mantiene la designacion)\b/.test(t),
   },
   {
     slug: "pensiones",
@@ -490,11 +500,6 @@ const REGLAS_MATERIA: { slug: string; nombre: string; casa: (t: string, i: strin
   },
   { slug: "extradiciones", nombre: "Extradiciones", casa: (t) => t.includes("extradicion") },
   { slug: "expropiaciones", nombre: "Expropiaciones", casa: (t) => t.includes("utilidad publica") },
-  {
-    slug: "emergencias",
-    nombre: "Compras de emergencia",
-    casa: (t) => /declara de emergencia|emergencia nacional/.test(t),
-  },
   {
     slug: "honores",
     nombre: "Condecoraciones y conmemoraciones",
@@ -544,8 +549,18 @@ const REGLAS_MATERIA: { slug: string; nombre: string; casa: (t: string, i: strin
     slug: "organizacion",
     nombre: "Organización del Estado",
     casa: (t) =>
-      /^(crea|integra|suprime|adscribe|fusiona|reestructura|constituye|conforma)\b/.test(t) ||
+      /^(crea|integra|suprime|adscribe|fusiona|reestructura|constituye|conforma|instruye)\b/.test(t) ||
+      /^dispone la (fusion|readecuacion|reorganizacion|formalizacion)\b/.test(t) ||
       /fideicomiso|\bcomision\b|\bconsejo\b|\bgabinete\b|\bcomite\b/.test(t),
+  },
+  {
+    // La etiqueta del origen, cuando ninguna materia más precisa reconoció el
+    // título: la Consultoría la pone también a decretos que no nombran a nadie
+    // —emergencias, aumentos de pensión, unidades nuevas, fe de errata—, y esos
+    // ya cayeron arriba o se excluyen aquí.
+    slug: "nombramientos",
+    nombre: "Nombramientos y ceses",
+    casa: (t, i) => i.includes("camara de cuentas") && !t.startsWith("fe de errata"),
   },
 ];
 
@@ -558,7 +573,11 @@ export interface Materia {
 
 /** Las materias en el orden de sus reglas, con «Otros asuntos» al final. */
 export const MATERIAS: readonly Materia[] = [
-  ...REGLAS_MATERIA.map(({ slug, nombre }) => ({ slug, nombre })),
+  // Una materia puede tener dos reglas (nombramientos: el título y, al final,
+  // la etiqueta); se lista una vez, en el sitio de la primera.
+  ...REGLAS_MATERIA.filter((r, k) => REGLAS_MATERIA.findIndex((o) => o.slug === r.slug) === k).map(
+    ({ slug, nombre }) => ({ slug, nombre }),
+  ),
   OTROS_ASUNTOS,
 ];
 
