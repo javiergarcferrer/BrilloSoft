@@ -226,7 +226,9 @@
     }
   }
 
-  h3 {
+  /* El título de tarjeta pasó de h3 a h2 por semántica; el tracking lo sigue. */
+  h3,
+  [data-slot="card-title"] {
     letter-spacing: -0.01em;
   }
 
