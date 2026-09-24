@@ -28,6 +28,7 @@ import os
 import re
 import sys
 import unicodedata
+import urllib.parse
 import urllib.request
 
 DIR = os.path.join(os.path.dirname(__file__), "fuentes-nomina")
@@ -93,6 +94,190 @@ MANIFEST = {
                  "https://digepres.gob.do/transparencia/wp-content/uploads/2026/09/NOMINA-DATOS-ABIERTOS-2018-2026.xlsxf_.csv"),
     "LOTERIA": ("Lotería Nacional",
                 "https://loterianacional.gob.do/transparencia/archivos/datos-abiertos/archivo/Nomina%20de%20Empleados,%20Agosto%202026.csv"),
+    # Ampliación del 2026-09-24 (AUDITORIA §A.8): 64 fuentes más, del catálogo
+    # completo de datos.gob.do (public/data/catalogo.json: 1,065 conjuntos, 126
+    # candidatos de nómina fuera de los ya integrados) y de sus fichas HTML, con
+    # el robots respetado. Cada archivo se leyó fila a fila (área, cargo,
+    # sueldo) y su conteo se contrastó con la «Nómina Pública General del
+    # Estado» del MAP de julio de 2026: MAP y ANAMAR coinciden al peso; DAEH,
+    # Agricultura, OPRET (sus dos archivos), INTRANT y Bellas Artes, en ±2 %.
+    # Agricultura sirve su CSV dentro de un ZIP; INAPA (por programa), OPRET
+    # (vigilancia aparte) y Registro Inmobiliario (fijos y contratados)
+    # publican varios archivos. Descartados ese día, con el porqué:
+    # - Columnas cambiadas en las filas recientes sin cambiar la cabecera, y
+    #   sanear() no lo ve: INDOTEL y Hospital Vinicio Calventi (área↔cargo),
+    #   SGN y Cambio Climático (dependencias como cargo), CNC y APORDOM (el
+    #   estatus como cargo).
+    # - Sin puesto: Catastro (cargo vacío en los meses recientes), ProDominicana
+    #   («Posición» es la dependencia), Ministerio de Trabajo, Ayuntamiento de
+    #   La Romana.
+    # - Solo sueldo neto: INDRHI, FARD, PROPEEP (honorarios + movilidad + neto).
+    # - Sueldo partido o ambiguo: Ejército («SUELDO RANGO» + «SUELDO CARGO»;
+    #   sumarlos es interpretar), SENPA (una columna «TOTAL»).
+    # - Agregados, no una fila por plaza: Policía Nacional (16 filas, una por
+    #   rango), COREPOL (cantidad por cargo), CESFRONT (una fila «CANT 477» es
+    #   el 51 % de la masa), Ayuntamiento de Mella.
+    # - Sin mes o sin año legible: Juventud (una «Fecha»), COAAROM, Efemérides
+    #   Patrias (el año como nombre de columna), ONESVIE (cabecera «AÑ» en otra
+    #   codificación que las filas), INABIE (fijos sin mes; contratados con
+    #   12 % de plazas en RD$0).
+    # - Desactualizadas (último mes antes de 2025): CONAPOFA 2024-12, Comisión
+    #   Hípica 2024-11, DICOM 2022-12, INVI 2021-12, Ayuntamiento de Santo
+    #   Domingo Este 2018-12.
+    # - No son CSV: Acuario (ODS/XLS), Padre Billini y Tecnificación de Riego
+    #   (ODS), FONDOMARENA (un XLS con nombre .csv), INAVI (informe con
+    #   membrete), FODEARTE (presupuesto, no nómina), Dragas (sin formato).
+    # - No se pudieron bajar: INAZUCAR (403 en SharePoint), INAFOCAM (el
+    #   certificado TLS no valida; no se desactiva la verificación), IDSS,
+    #   DIAPE, DIGECOOM y Comunidad Digna (el host no resuelve o no conecta),
+    #   PROINDUSTRIA (conexión cortada), CORAABO (500), ayuntamientos de San
+    #   Pedro de Macorís, Baní y San Cristóbal (503), Instituto Duartiano,
+    #   Pasaportes, CODOPESCA y CPP (404), y COE, CONIAF, MIDEREC, DIGEV,
+    #   INDOCAFE, CEA, Tribunal Constitucional e INCABIDE (el enlace lleva a
+    #   una página, no al archivo).
+    # La «Nómina Pública General del Estado» del MAP (492,488 plazas de 129
+    # instituciones en julio de 2026, siete CSV mensuales) no entra aquí: foto
+    # de ese tamaño cambia el contrato de nomina.json, que el explorador baja
+    # entero. Decisión pendiente, AUDITORIA §A.8.
+    "MA": ("Ministerio de Agricultura",
+           "http://agricultura.gob.do/transparencia/wp-content/uploads/2026/09/Nomina-Empleados-Enero-2017-Agosto-2026_comprimida.zip"),
+    "DAEH": ("Dirección de Servicios de Atención a Emergencias Extrahospitalarias (DAEH)",
+             "https://daeh.gob.do/inicio/download/348/nomina-daeh/39971/nomina-daeh-2026.csv"),
+    "INAPA": ("Instituto Nacional de Aguas Potables y Alcantarillados (INAPA)",
+              (
+               "https://inapa.gob.do/wp-content/uploads/2024/07/Nomina-MILITARES-Programa-01-INAPA-2025-1-1-1-1-2.csv",
+               "https://inapa.gob.do/wp-content/uploads/2024/07/Nomina-SUELDO-FIJO-Programa-01-03-11-13-INAPA-2025-1-1-1-2-1.csv",
+               "https://inapa.gob.do/wp-content/uploads/2024/07/Nomina-TEMPORALES-Programa-01-03-11-13-INAPA-2025-1-1-1-1-2.csv",
+               "https://inapa.gob.do/wp-content/uploads/2024/07/Nomina-TRAMITE-DE-PENSION-Programa-01-INAPA-2025-1-1-1-1-1.csv",
+              )),
+    "CAASD": ("Corporación del Acueducto y Alcantarillado de Santo Domingo (CAASD)",
+              "https://transparencia.caasd.gob.do/wp-content/uploads/2026/09/NOMINAS-PARA-DATOS-ABIERTOS-2016-2026-AGOSTO.csv"),
+    "CEED": ("Comedores Económicos del Estado",
+             "https://comedoreseconomicos.gob.do/wp-content/uploads/2024/04/Nomina-de-Empleados-Agosto-2026-CSV.csv"),
+    "OMSA": ("Operadora Metropolitana de Servicios de Autobuses (OMSA)",
+             "https://wp.omsa.gob.do/wp-content/uploads/2026/02/NOMINA-DE-EMPLEADO-AGOSTO-2018-2026-CVS.csv"),
+    "OPRET": ("Oficina para el Reordenamiento del Transporte (OPRET)",
+              (
+               "https://www.opret.gob.do/Documentos/Datos%20Abiertos/N%C3%B3mina%20De%20Empleados%20Fijos%20y%20Contratados%20Opret.csv",
+               "https://www.opret.gob.do/Documentos/Datos%20Abiertos/Personal%20De%20Vigilancia.csv",
+              )),
+    "MIVHED": ("Ministerio de la Vivienda, Hábitat y Edificaciones",
+               "https://mivhed.gob.do/wp-content/uploads/2026/09/Nomina_de_Empleados_MIVHED_2022_2026_-.csv"),
+    "ETED": ("Empresa de Transmisión Eléctrica Dominicana (ETED)",
+             "https://eted.gob.do/transparencia/download/1154/nomina-de-empleados/11482/nomina-empleados-fijos-y-contratados-eted-2018-2025-3.csv"),
+    "INESPRE": ("Instituto de Estabilización de Precios (INESPRE)",
+                "https://www.inespre.gov.do/transparencia/download/datos_nomina-de-empleados-fijos-2017-2018-csv/?wpdmdl=4025"),
+    "CESMET": ("Cuerpo Especializado para la Seguridad del Metro (CESMET)",
+               "https://cesmet.mil.do/download/695/2026/4539/nomina-de-miembros-2026-marzo-3.csv"),
+    "INTRANT": ("Instituto Nacional de Tránsito y Transporte Terrestre (INTRANT)",
+                "https://intrant.gob.do/wp-content/uploads/2023/06/Historico-Nomina-de-empleados-INTRANT-2018-2026-5.csv"),
+    "RI": ("Registro Inmobiliario (servidores administrativos)",
+           (
+            "https://ri.gob.do/wp-content/uploads/Transparencia/DatosAbiertos/DA_NominaServidoresFijos.csv",
+            "https://ri.gob.do/wp-content/uploads/Transparencia/DatosAbiertos/DA_NominaServidoresContratados.csv",
+           )),
+    "DGBA": ("Dirección General de Bellas Artes",
+             "https://bellasartesrd.gob.do/wp-content/uploads/2026/09/Nomina-Datos-Abiertos-2019-2026-AGOSTO-CSV.csv"),
+    "PROMIPYME": ("Consejo Nacional de Promoción y Apoyo a la Micro, Pequeña y Mediana Empresa (PROMIPYME)",
+                  "https://promipyme.gob.do/files/1180/Nomina-Empleados-Fijos/7018/Historico-De-Nomina-de-Empleados-2018-2026.csv"),
+    "MEPYD": ("Ministerio de Economía, Planificación y Desarrollo",
+              "https://mepyd.gob.do/download/17161/nomina-de-empleados/420963/nomina-de-empleados-mepyd-2018-2025-3.csv"),
+    "AYTOMOCA": ("Ayuntamiento Municipal de Moca",
+                 "https://ayuntamientomoca.gob.do/transparencia/wp-content/uploads/2025/04/Nominas-Octubre-Marzo-2025.csv"),
+    "INPOSDOM": ("Instituto Postal Dominicano (INPOSDOM)",
+                 "https://inposdom.gob.do/transparencia/transparencia%20files/409/2021/2727/nomina-empleados-inposdom-2021-3.csv"),
+    "AYTOSFM": ("Ayuntamiento Municipal de San Francisco de Macorís",
+                "https://ayuntamientosfm.gob.do/wp-content/uploads/2023/06/Nominas-de-empleados-ASFM-2021-2026-7.csv"),
+    "FEDA": ("Fondo Especial para el Desarrollo Agropecuario (FEDA)",
+             "https://feda.gob.do/transparencia/index.php?option=com_phocadownload&view=category&download=2220:nomina-dato-abierto-desde-enero-2022-hasta-julio-2026&id=517:nomina-dato-abierto&Itemid=405"),
+    "INTABACO": ("Instituto del Tabaco de la República Dominicana (INTABACO)",
+                 "https://intabaco.gob.do/wp-content/uploads/2025/01/Nomina-General-de-Empleados-INTABACO-2018-2026-3.csv"),
+    "ONDP": ("Oficina Nacional de Defensa Pública",
+             "https://www.defensapublica.gob.do/transparencia/index.php/datos-abiertos/category/822-nomina-empleados-fijos-contratados-y-probatorios-2018-2019?download=959:nomina-empleados-fijos-contratados-y-probatorio-2018-2019-2020-csv"),
+    "CORAAPLATA": ("Corporación de Acueducto y Alcantarillado de Puerto Plata (CORAAPLATA)",
+                   "https://coraapplata.gob.do/wp-content/uploads/2023/06/Nomina-de-Empleados-CORAAPPLATA-2017-2026-7.csv"),
+    "HDSSD": ("Hospital Docente Semma Santo Domingo",
+              "https://hdssd.gob.do/transparencia/index.php/datos-abiertos/category/1332-nomina-personal-fijo-2026?download=4889:nomina-personal-fijo-agosto-2025-2026"),
+    "OGTIC": ("Oficina Gubernamental de Tecnologías de la Información y Comunicación (OGTIC)",
+              "https://ogtic.gob.do/wp-content/uploads/2023/06/NOMINA-OGTIC-DATOS-ABIERTOS-ENERO-2018-JULIO-2026-csv.csv"),
+    "MAPRE": ("Ministerio Administrativo de la Presidencia",
+              "https://mapre.gob.do/transparencia/download/datos_abiertos/nomina/Nomina-Datos-Abiertos-2017-2026.csv"),
+    "IDIAF": ("Instituto Dominicano de Investigaciones Agropecuarias y Forestales (IDIAF)",
+              "https://idiaf.gob.do/transparencia/index.php/datos-abiertos/category/391-nomina-empleados-fijos-y-contratados-2018-2025?download=5549:nomina-de-empleados-idiaf-2018-2025"),
+    "MAP": ("Ministerio de Administración Pública",
+            "https://map.gob.do/datosabiertos/data/nomina_fijos_map/csv"),
+    "IDOPPRIL": ("Instituto Dominicano de Prevención y Protección de Riesgos Laborales (IDOPPRIL)",
+                 "https://idoppril.gob.do/download/nomina-enero2023-noviembre-2024-csv/?wpdmdl=16142&refresh=6970f7f47c4a11769011188"),
+    "SISALRIL": ("Superintendencia de Salud y Riesgos Laborales (SISALRIL)",
+                 "https://www.sisalril.gob.do/transparencia/wp/download/885/nomina-sisalril-2015-2026/987537600/nomina-de-empleados-2015-2026-csv-2.csv"),
+    "MMUJER": ("Ministerio de la Mujer",
+               "https://mujer.gob.do/transparencia/index.php/datos-abiertos/datos-abiertos/category/2593-2026?download=10954:datos-abiertos-nominas-empleados-enero-2017-a-mayo-2026-csv"),
+    "DGMUSEOS": ("Dirección General de Museos",
+                 "https://dgm.gob.do/transparencia/index.php/datos-abiertos/category/1288-agosto?download=1505:nominas-2023-2026-agosto-csv"),
+    "DGDF": ("Dirección General de Desarrollo Fronterizo",
+             "https://wp.dgdf.gob.do/wp-content/uploads/2023/06/Nomina-DGDF-2021-2026-07.csv"),
+    "LMD": ("Liga Municipal Dominicana",
+            "https://lmd.gob.do/transparencia/index.php/datos-abiertos/category/1088-nomina-empleados-2018-2026?download=1378:nomina-datos-abiertos-enero-2018-ago-2026-csv"),
+    "DIGECOG": ("Dirección General de Contabilidad Gubernamental",
+                "https://digecog.gob.do/wp-content/uploads/2024/03/Nomina-colaboradores-Junio-2026-datos-abiertos-DIGECOG.csv"),
+    "DIECOM": ("Dirección de Estrategia y Comunicación Gubernamental (DIECOM)",
+               "https://diecom.gob.do/transparencia/wp-content/uploads/datos_abiertos/nomina/N%C3%B3mina%20de%20Empleados%2C%20DIECOM%2C%202022-2026.csv?oiu"),
+    "MINPRE": ("Ministerio de la Presidencia",
+               "https://minpre.gob.do/wp-content/uploads/2026/06/NominasMINPRE-.csv"),
+    "AGN": ("Archivo General de la Nación",
+            "https://agn.gob.do/wp-content/uploads/2023/06/Nomina-de-Empleados-AGN-2019-2026-4.csv"),
+    "ECO5RD": ("Unidad Ejecutora ECO5RD",
+               "https://eco5rd.gob.do/download/909/nomina-personal-fijo/26726/nomina-personal-fijo-2024-2025-2.csv"),
+    "TN": ("Tesorería Nacional",
+           "https://www.tesoreria.gob.do/transparencia/index.php/datos-abrierto/category/145-nomina-empleados-fijos-y-contratados?download=3493:nmina-empleados-fijos-y-contratados"),
+    "MERCADOM": ("Mercados Dominicanos de Abasto Agropecuario (MERCADOM)",
+                 "https://mercadom.gob.do/transparencia/index.php/portal-datos-abiertos/category/848-nomina-empleados-fijos-y-contratados?download=2229:nomina-empleados-fijos-y-contratados"),
+    "IIBI": ("Instituto de Innovación en Biotecnología e Industria (IIBI)",
+             "https://iibi.gob.do/transparencia/index.php/portal-de-datos-abiertos/category/437-nomina-empleados-fijos-y-contratados-2018-3-documentos?download=1214:nomina-empleados-fijos-y-contratados-2018-2021"),
+    "CEIZTUR": ("Comité Ejecutor de Infraestructuras en Zonas Turísticas (CEIZTUR)",
+                "https://wp.ceiztur.gob.do/wp-content/uploads/2023/06/NOMINA-EMPLEADOS-FIJOS-Y-CONTRATADOS-A-JUNIO-2026.csv"),
+    "ZOODOM": ("Parque Zoológico Nacional",
+               "https://zoodom.gob.do/wp-content/uploads/2023/06/Nomina-Actualizada-Enero-Marzo-2026.csv"),
+    "DGM": ("Dirección General de Minería",
+            "https://mineria.gob.do/wp-content/uploads/2026/02/Historico-Nominas-Empleados-MINERIA-2022-2026-CSV-6.csv"),
+    "DEFENSOR": ("Defensor del Pueblo",
+                 "https://defensordelpueblo.gob.do/wp-content/uploads/2026/09/Nomina-de-Empleados-DP-2019-2026.8.3.csv"),
+    "BNPHU": ("Biblioteca Nacional Pedro Henríquez Ureña",
+              "https://bnphu.gob.do/wp-content/uploads/2025/03/Nomina-Empleados-Fijos-y-Contratados-hasta-Junio2026NEW.csv"),
+    "INAGUJA": ("Industria Nacional de la Aguja (INAGUJA)",
+                "https://inaguja.gob.do/transparencia/index.php/datos-abiertos/category/3174-agosto?download=3724:nomina-personal-fijo-agosto-2026-csv"),
+    "INAP": ("Instituto Nacional de Administración Pública (INAP)",
+             "https://inap.gob.do/download/18829/?tmstv=1738609577"),
+    "CONADIS": ("Consejo Nacional de Discapacidad (CONADIS)",
+                "https://conadis.gob.do/wp-content/uploads/2023/06/Nomina-empleados-CONADIS-2018-2026-1.csv"),
+    "CORPHOTELS": ("Corporación de Fomento de la Industria Hotelera y Desarrollo del Turismo (CORPHOTELS)",
+                   "https://corphotels.gob.do/transparencia/index.php/datos-abiertos/category/381-nomina-de-empleados?download=5409:nomina-empleados-corphotels-2018-2026-agosto"),
+    "DGAPP": ("Dirección General de Alianzas Público Privadas (DGAPP)",
+              "https://transparencia.dgapp.gob.do/index.php/datos-abiertos/category/562-nomina-empleados-fijos-y-contratados-2021-2022?download=4108:nmina-de-empleados-2021-2026-csv"),
+    "CNSS": ("Consejo Nacional de Seguridad Social (personal fijo)",
+             "https://cnss.gob.do/wp-content/uploads/2024/10/XLS-Nomina_desde_junio_2018_hasta_agosto_2026.csv"),
+    "INESDYC": ("Instituto de Educación Superior en Formación Diplomática y Consular (INESDYC)",
+                "https://www.inesdyc.edu.do/transparencia/download/181/nominas/29564/nomina-de-empleados-inesdyc-2023-2026-2.csv"),
+    "PROCOMPETENCIA": ("Comisión Nacional de Defensa de la Competencia (PROCOMPETENCIA)",
+                       "https://procompetencia.gob.do/transparencia/download/190/nomina-empleados/20706/nomina-empleados-2017-2026-24.csv"),
+    "INM": ("Instituto Nacional de Migración (INM RD)",
+            "https://inm.gob.do/wp-content/uploads/2025/09/Nomina-Empleados-INMRD-2019-2026-5.csv"),
+    "ODAC": ("Organismo Dominicano de Acreditación (ODAC)",
+             "https://odac.gob.do/transparencia/index.php/datos-abiertos/category/324-nomina-2018?download=367:nomina-csv"),
+    "EGAEE": ("Escuela de Graduados de Altos Estudios Estratégicos (EGAEE)",
+              "https://egae.mil.do/descargar/875/nomina-de-empleados-egaee/15579/datos-abiertos-nomina-de-empleados-egaee-2019-2025.csv"),
+    "DIGERA": ("Dirección General de Riesgos Agropecuarios (DIGERA)",
+               "https://digera.gob.do/wp-content/uploads/2023/06/Historico-de-Nomina-2018-%E2%80%93-2026-5.csv"),
+    "HTDC": ("Hospital Traumatológico Dr. Darío Contreras (personal contratado)",
+             "https://dariocontreras.gob.do/transparencia/index.php/datos-abiertos/category/988-nomina-2021-nomina-2026?download=4332:nomina-hdc-datosabiertos-abril-2021-hasta-agosto-2026"),
+    "CONALECHE": ("Consejo Nacional para la Reglamentación y Fomento de la Industria Lechera (CONALECHE)",
+                  "https://datos.gob.do/dataset/87545b6a-e54d-47f0-988c-3b0b900fb296/resource/a9257b14-3dc4-4030-8c5b-8d181aacc5ee/download/nomina-de-empleados-conaleche-2026.csv"),
+    "IGN": ("Instituto Geográfico Nacional José Joaquín Hungría Morell",
+            "https://ign.gob.do/transparencia/descargas/296/nomina-de-empleados/3310/nomina-de-empleados-ign-jjhm-3.csv"),
+    "SIE": ("Superintendencia de Electricidad",
+            "https://sie.gob.do/wp-content/uploads/2025/02/Copia-de-Reporte-de-Datos-Abiertos-csv-xls.csv"),
+    "ANAMAR": ("Autoridad Nacional de Asuntos Marítimos (ANAMAR)",
+               "https://anamar.gob.do/wp-content/uploads/2023/06/Nomina-Empleados-Fijos-y-Contratados-ANAMAR-2011-2026-csv.csv"),
 }
 
 
@@ -150,16 +335,33 @@ def col_map(header):
         k = hkey(h)
         # «FECHA DE INGRESO» (Poder Judicial) contiene «INGRESO» y va antes que
         # «SUELDO»: una fecha leída como sueldo daba 6.897 plazas en RD$0.
-        if m["sueldo"] is None and "APORT" not in k and "FECHA" not in k and (
+        # «F-INGRESO» (Registro Inmobiliario) es la fecha de ingreso abreviada:
+        # sus números de serie (44522) pasaban por sueldos y ningún control lo
+        # veía. Nada «NETO» es sueldo: la foto es de sueldo bruto, y una fuente
+        # que solo publica el neto (INDRHI, FARD) queda fuera, no se mezcla.
+        if m["sueldo"] is None and "APORT" not in k and "FECHA" not in k \
+                and not k.startswith("FINGRESO") and "NETO" not in k and (
                 "SUELDOBRUTO" in k or "INGRESOBRUTO" in k or "SUELDOFIJO" in k
                 or "SUELDOBASE" in k or k in ("SUELDO", "SBASE")
                 or k.startswith("SUELDO") or "INGRESO" in k
-                or k in ("SALARIOBRUTO", "SALARIO")):
+                or k in ("SALARIOBRUTO", "SALARIO", "SALARIOBASE")
+                # Ampliación del 2026-09-24, cada una vista en su archivo:
+                # «S. BRUTO» (INAPA), «Suedo bruto» (IDOPPRIL), «Total Bruto»
+                # (Ayuntamiento de San Francisco de Macorís), «SALARIO BASE»
+                # (Defensa Pública, gemelo de «SUELDO BASE»), y «MENSUAL»
+                # (SISALRIL), comprobado fila a fila: MENSUAL − RETENCIONES =
+                # NETO A PAGAR.
+                or k in ("SBRUTO", "SUEDOBRUTO", "TOTALBRUTO", "MENSUAL")):
             m["sueldo"] = i
         # «PUESTO» / «NOMBRE DEL PUESTO»: DIGEPRES y Lotería Nacional (2026-09-23).
         # «LUGAR DE FUNCIONES» (Cultura) es un sitio, no un puesto.
-        if m["cargo"] is None and "LUGAR" not in k and ("CARGO" in k or "FUNCI" in k or k == "RANGO"
-                                   or k in ("PUESTO", "NOMBREDELPUESTO")):
+        # «SUELDO CARGO» (Ejército) es un monto, no un puesto. «POSICIÓN» y
+        # «PUESTO O DESIGNACIÓN» (OPRET, CESMET, CESFRONT, MAPRE, HDSSD) sí.
+        if m["cargo"] is None and "LUGAR" not in k and "SUELDO" not in k \
+                and "SALARIO" not in k and (
+                "CARGO" in k or "FUNCI" in k or k == "RANGO"
+                or k in ("PUESTO", "NOMBREDELPUESTO", "POSICION")
+                or k.startswith("PUESTOODESIGNACI")):
             m["cargo"] = i
         if m["area"] is None and ("DEPARTAMENTO" in k or "OFICINA" in k
                 or k == "AREA" or "NOMBREAREA" in k or "LUGAR" in k
@@ -189,7 +391,12 @@ def read_rows(path):
     lines = raw.decode(enc, errors="replace").splitlines()
     if not lines:
         return [], enc
-    delim = ";" if lines[0].count(";") > lines[0].count(",") else ","
+    # El delimitador se decide sobre la primera línea con alguno, sin las
+    # columnas vacías del final: CNSS parte la cabecera en varias líneas entre
+    # comillas («"Reg.⏎No."») e INM empaqueta cada fila con «;» y la cierra
+    # con «,,,,,,».
+    sonda = next((l for l in lines[:5] if l.count(";") + l.count(",")), lines[0]).rstrip(",; \t")
+    delim = ";" if sonda.count(";") > sonda.count(",") else ","
     reader = csv.reader(lines, delimiter=delim)
     header = next(reader, [])
     cm = col_map(header)
@@ -269,6 +476,14 @@ def sanear(code, rows):
             raise SystemExit(f"{code}: un sueldo es {sueldos[-1] / mediana:.0f} veces la mediana — ¿decimales perdidos?")
     if sum(1 for r in rows if DEPENDENCIA.match(r[3])) / n > 0.5:
         raise SystemExit(f"{code}: la mayoría de los «cargos» parecen dependencias")
+    # Sin puesto no hay foto de cargos: ProDominicana llama «Posición» a la
+    # dependencia y, cambiadas las columnas, el cargo queda vacío.
+    if sum(1 for r in rows if r[3] in ("", "(sin cargo)")) / n > 0.5:
+        raise SystemExit(f"{code}: la mayoría de las plazas no tiene cargo")
+    # Un «cargo» que es un número es una columna de montos leída como puesto
+    # (el Ejército publica «SUELDO CARGO»). Control añadido el 2026-09-24.
+    if sum(1 for r in rows if re.fullmatch(r"[\d.,$\s-]+", r[3])) / n > 0.05:
+        raise SystemExit(f"{code}: los «cargos» son números — ¿columna de montos leída como puesto?")
     return rows
 
 
@@ -283,33 +498,63 @@ def ultimo_mes(rows):
     return key // 100, key % 100, [r for r in rows if r[0] * 100 + r[1] == key]
 
 
+def urls_de(urls):
+    """Una fuente puede publicar su nómina en varios archivos (fijos aparte de
+    contratados, o por programa): el manifiesto acepta una tupla."""
+    if not urls:
+        return []
+    return [urls] if isinstance(urls, str) else list(urls)
+
+
+def archivos(code):
+    """Rutas locales de una fuente: CODE.csv, CODE-2.csv, CODE-3.csv…"""
+    n = max(1, len(urls_de(MANIFEST[code][1])))
+    return [os.path.join(DIR, f"{code}.csv" if i == 0 else f"{code}-{i + 1}.csv")
+            for i in range(n)]
+
+
 def descargar():
     """Baja cada CSV: UA identificable, un reintento, `content-type` validado
     (un 200 puede ser una página HTML) y, en datos.gob.do, la pausa de diez
     segundos que pide su `Crawl-Delay`."""
     import time
     os.makedirs(DIR, exist_ok=True)
-    for code, (_, url) in MANIFEST.items():
-        if not url:
-            continue
-        dest = os.path.join(DIR, f"{code}.csv")
-        if "datos.gob.do" in url:
-            time.sleep(10)
-        print(f"  ↓ {code} ← {url[:80]}…")
-        for intento in (1, 2):
-            try:
-                req = urllib.request.Request(url, headers={"User-Agent": UA})
-                with urllib.request.urlopen(req, timeout=90) as r:
-                    tipo = r.headers.get("Content-Type", "")
-                    if "html" in tipo.lower():
-                        raise ValueError(f"respondió {tipo}, no un CSV")
-                    datos = r.read()
-                with open(dest, "wb") as f:
-                    f.write(datos)
-                break
-            except Exception as err:  # noqa: BLE001 — se reporta y se sigue
-                if intento == 2:
-                    print(f"  ! {code}: {err}")
+    import io
+    import zipfile
+    ultimo = {}  # host -> instante de la última petición
+    for code, (_, urls) in MANIFEST.items():
+        for dest, url in zip(archivos(code), urls_de(urls)):
+            host = urllib.parse.urlsplit(url).hostname or ""
+            # datos.gob.do pide `Crawl-Delay: 10`; al resto, dos segundos.
+            pausa = (10 if host.endswith("datos.gob.do") else 2) - (time.time() - ultimo.get(host, 0))
+            if pausa > 0:
+                time.sleep(pausa)
+            print(f"  ↓ {code} ← {url[:80]}…")
+            for intento in (1, 2):
+                ultimo[host] = time.time()
+                try:
+                    req = urllib.request.Request(url, headers={"User-Agent": UA})
+                    with urllib.request.urlopen(req, timeout=120) as r:
+                        tipo = r.headers.get("Content-Type", "")
+                        if "html" in tipo.lower():
+                            raise ValueError(f"respondió {tipo}, no un CSV")
+                        datos = r.read()
+                    if datos[:2] == b"PK":
+                        # Agricultura sirve su «CSV» dentro de un ZIP con un
+                        # solo .csv; un ODS (también ZIP) no trae ninguno.
+                        z = zipfile.ZipFile(io.BytesIO(datos))
+                        csvs = [n for n in z.namelist() if n.lower().endswith(".csv")]
+                        if len(csvs) != 1:
+                            raise ValueError(f"ZIP sin un único CSV: {z.namelist()[:5]}")
+                        datos = z.read(csvs[0])
+                    if datos.lstrip()[:1] == b"<":
+                        raise ValueError("el cuerpo es HTML, no un CSV")
+                    with open(dest, "wb") as f:
+                        f.write(datos)
+                    break
+                except Exception as err:  # noqa: BLE001 — se reporta y se sigue
+                    if intento == 2:
+                        print(f"  ! {code}: {err}")
 
 
 def main():
@@ -330,12 +575,22 @@ def main():
         if code in EXCLUIDAS:
             print(f"  - {code}: fuera — {EXCLUIDAS[code]}")
             continue
-        path = os.path.join(DIR, f"{code}.csv")
-        if not os.path.exists(path):
-            print(f"  ! {code}: falta {path} (correr con --descargar)")
+        paths = archivos(code)
+        faltan = [p for p in paths if not os.path.exists(p)]
+        if faltan:
+            print(f"  ! {code}: falta {faltan[0]} (correr con --descargar)")
             continue
-        rows, enc = read_rows(path)
-        lt = ultimo_mes(rows)
+        rows, tope = [], None
+        for path in paths:
+            filas, enc = read_rows(path)
+            rows += filas
+            # Con varios archivos, el mes de la foto es el último que publican
+            # todos: si uno va adelantado, la foto no sale con la mitad.
+            lt1 = ultimo_mes(filas)
+            if lt1:
+                k1 = lt1[0] * 100 + lt1[1]
+                tope = k1 if tope is None else min(tope, k1)
+        lt = ultimo_mes([r for r in rows if tope and r[0] * 100 + r[1] <= tope])
         if not lt:
             print(f"  ! {code}: sin filas válidas")
             continue

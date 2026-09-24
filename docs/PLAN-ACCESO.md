@@ -167,7 +167,8 @@ Barrido del Estado entero en seis frentes (`docs/AUDITORIA.md` §G). Entregado:
 - ✅ **Panorama ampliado**: remesas, reservas y tasa activa (BCRD), comercio
   exterior (Aduanas), la luz de ayer (OC), alertas del tiempo (INDOMET) y
   muertes en las vías (OPSEVI).
-- ✅ **Nómina ampliada** otra vez por la vía de §A.8.
+- ✅ **Nómina ampliada** de 22 a 86 instituciones (94,659 plazas) por la vía de
+  §A.8; la nómina general del MAP (~492 mil plazas) es la siguiente.
 
 Siguiente, por valor ÷ esfuerzo: §G.9.
 

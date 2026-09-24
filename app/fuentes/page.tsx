@@ -257,11 +257,19 @@ export default async function FuentesPage() {
           )}
           <p className="mt-4 text-[13px] text-ink-soft sm:text-xs">
             Cobertura parcial declarada: es lo publicado en CSV procesable, no
-            todo el Estado. De las nóminas que indexa datos.gob.do, la de
-            Migración y la del Ayuntamiento de Santiago rechazan la descarga
-            (403), y la del TSE, la del IDECOOP y la de la Comisión de Defensa
-            Comercial vienen en formatos que no se pueden leer sin adivinar
-            columnas; quedan fuera en vez de entrar mal. Por lo mismo sale el
+            todo el Estado. De los 169 conjuntos de nómina que indexa
+            datos.gob.do se leyeron todas las fichas; entran los que pasan los
+            controles del script fila a fila. Quedan fuera, en vez de entrar mal:
+            los que cambiaron columnas sin cambiar la cabecera (INDOTEL, CNC,
+            APORDOM…), los que no traen puesto (Catastro, ProDominicana, Trabajo),
+            los que solo publican el sueldo neto (INDRHI, FARD), los agregados por
+            rango en vez de una fila por plaza (Policía Nacional, CESFRONT), los
+            desactualizados de antes de 2025 y los que no se pudieron bajar
+            (Migración y el Ayuntamiento de Santiago con 403, INAZUCAR, varios
+            ayuntamientos con 503). Educación y el Servicio Nacional de Salud no
+            publican su nómina en formato procesable por su cuenta; sí aparecen en
+            la nómina general del MAP, que se integrará cuando el explorador la
+            pueda cargar sin descargar decenas de megabytes. Por lo mismo sale el
             Instituto Cartográfico Militar, que escribe unos sueldos sin el punto
             decimal. De la Cancillería solo entran las plazas pagadas en pesos:
             el personal en el exterior cobra en dólares y no se mezclan monedas. La nómina estatal completa (con nombres) vive en el
@@ -338,7 +346,7 @@ export default async function FuentesPage() {
             unidades de compra de la DGCP (739 activas) trae el capítulo
             presupuestario de cada una, y con él se ata al SIGEF sin emparejar
             nombres. La nómina se ata a mano donde la correspondencia es
-            inequívoca (20 de 22 instituciones: el Consejo del Café y el Poder Judicial no tienen unidad de compra en la DGCP) y los decretos por la etiqueta de
+            inequívoca (82 de 86 instituciones: el Consejo del Café, el Poder Judicial, el Registro Inmobiliario y EGAEE no tienen unidad de compra en la DGCP) y los decretos por la etiqueta de
             institución de la Consultoría Jurídica. Alimenta las{" "}
             <Link href="/instituciones" className="font-medium text-brand-700 hover:underline">
               fichas de institución

@@ -894,6 +894,35 @@ sueldo de más de 40 veces su mediana o una mayoría de «cargos» que parecen
 dependencias; y la descarga valida `content-type`, reintenta una vez y espera
 diez segundos antes de cada petición a datos.gob.do.
 
+**Ampliado el 2026-09-24: de 22 a 86 instituciones** (94,659 plazas, RD$4,065
+millones de masa mensual). Candidatos sacados del catálogo completo (§G.3: 169
+títulos de nómina/empleados/personal/sueldos, 126 candidatos nuevos); sus 126
+fichas se leyeron una a una con `Crawl-Delay: 10`. Cada archivo se revisó fila a
+fila y su conteo se contrastó con la **Nómina Pública General del MAP** (julio
+2026): MAP y ANAMAR coinciden al peso; DAEH, Agricultura, OPRET, INTRANT y
+Bellas Artes, en ±2 %; Mujer publica 487 plazas frente a 1,037 del MAP.
+- ⚠️ Trampas nuevas del parser, corregidas: «F-INGRESO» (fecha) se leía como
+  sueldo; «SUELDO CARGO» (Ejército) como puesto; nada «NETO» es sueldo. Controles
+  nuevos que rechazan: mayoría de plazas sin cargo, «cargos» numéricos.
+- ❌ Descartes, por causa: columnas corridas sin cambiar la cabecera (INDOTEL,
+  Hospital Vinicio Calventi, SGN, Cambio Climático, CNC, APORDOM); sin puesto
+  (Catastro, ProDominicana, Trabajo, Ayuntamiento de La Romana); solo neto
+  (INDRHI, FARD, PROPEEP); sueldo partido (Ejército, SENPA); agregados (Policía
+  Nacional, COREPOL, CESFRONT, Ayuntamiento de Mella); sin mes/año legible
+  (Juventud, COAAROM, Efemérides, ONESVIE, INABIE); anteriores a 2025 (CONAPOFA,
+  Comisión Hípica, DICOM, INVI, ASDE); no CSV (Acuario, Padre Billini, Riego,
+  FONDOMARENA, INAVI, FODEARTE, Dragas); no descargables (INAZUCAR 403, INAFOCAM
+  TLS, IDSS/DIAPE/DIGECOOM/Comunidad Digna sin host, PROINDUSTRIA, CORAABO 500,
+  ayuntamientos de SPM, Baní y San Cristóbal 503, cuatro 404 y ocho enlaces a
+  páginas en vez de archivos).
+- ⭐ **Siguiente:** la Nómina Pública General del MAP
+  (`map.gob.do/datosabiertos/data/nomina_publica_general_estado/csv?year=2026&month=N`)
+  trae ~492,488 plazas y RD$20,130 millones al mes de 129 instituciones,
+  Educación (265 mil) y SNS (87 mil) incluidas, sin columna de área. Filas
+  sueltas sumarían ~13 MB a un archivo que `/nomina` carga entero en el
+  navegador: exige agrupar (cargo × sueldo × cuenta) o paginar en servidor
+  antes de integrarla.
+
 - ✅ `/dataset?q=nomina&page=1..9` sigue dando **159** conjuntos (19–20 por
   página, 6 en la novena). Las fichas `/dataset/{slug}` son HTML servido y
   traen los enlaces directos al CSV/ODS/XLSX en el portal de cada institución.

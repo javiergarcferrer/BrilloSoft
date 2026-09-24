@@ -41,6 +41,24 @@ NOMINA = {
     # unidad de compra con ese nombre en el catálogo de la DGCP.
     "DGCP": 7, "IDEICE": 869, "IAD": 724, "CGR": 139, "TSS": 545, "MIREX": 1,
     "S911": 887, "INABIMA": 812, "SVSP": 181, "DIGEPRES": 217, "LOTERIA": 655,
+    # Ampliación del 2026-09-24, cada una por nombre exacto en el catálogo de
+    # la DGCP. Fuera: Registro Inmobiliario (sin unidad de compra propia) y la
+    # EGAEE (el catálogo solo trae el Instituto de Altos Estudios de las FFAA,
+    # que la contiene pero no es ella). Comedores Económicos se ata a la única
+    # unidad que tiene, aunque la DGCP la rotule «(Inactiva)».
+    "MA": 226, "DAEH": 1379, "INAPA": 635, "CAASD": 625, "CEED": 200, "OMSA": 1414,
+    "OPRET": 247, "MIVHED": 1154, "ETED": 612, "INESPRE": 633, "CESMET": 551,
+    "INTRANT": 249, "DGBA": 977, "PROMIPYME": 255, "MEPYD": 131, "AYTOMOCA": 732,
+    "INPOSDOM": 622, "AYTOSFM": 867, "FEDA": 673, "INTABACO": 693, "ONDP": 700,
+    "CORAAPLATA": 629, "HDSSD": 747, "OGTIC": 703, "MAPRE": 134, "IDIAF": 825,
+    "MAP": 175, "IDOPPRIL": 735, "SISALRIL": 591, "MMUJER": 174, "DGMUSEOS": 1369,
+    "DGDF": 201, "LMD": 828, "DIGECOG": 2, "DIECOM": 1155, "MINPRE": 197,
+    "AGN": 894, "ECO5RD": 1387, "TN": 222, "MERCADOM": 1006, "IIBI": 694,
+    "CEIZTUR": 589, "ZOODOM": 837, "DGM": 253, "DEFENSOR": 964, "BNPHU": 940,
+    "INAGUJA": 258, "INAP": 176, "CONADIS": 205, "CORPHOTELS": 733, "DGAPP": 1067,
+    "CNSS": 586, "INESDYC": 874, "PROCOMPETENCIA": 831, "INM": 936, "ODAC": 872,
+    "DIGERA": 1364, "HTDC": 1105, "CONALECHE": 889, "IGN": 981, "SIE": 637,
+    "ANAMAR": 818,
 }
 
 ETIQUETA_NOMBRAMIENTOS = "camara de cuentas"
