@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { CondicionBadge } from "@/components/iniciativa-card";
+import { CondicionBadge, MarcaIniciativa } from "@/components/iniciativa-card";
 import { desdeMayusculas, iniciativaPorNumero, type Iniciativa } from "@/lib/congreso";
 import { gemeloEnSenado } from "@/lib/senado";
 import { fraseDeBusqueda, numeroDeNorma, proyectosDeNorma } from "@/lib/legislacion";
@@ -93,7 +93,7 @@ export async function EnDiputados({
           <span className="font-mono text-sm tabular-nums text-ink">
             {numero ?? ini?.numero?.completo}
           </span>
-          {ini && <CondicionBadge tono={ini.tono}>{ini.condicion ?? "—"}</CondicionBadge>}
+          {ini && <MarcaIniciativa iniciativa={ini} />}
         </div>
         {ini ? (
           <>
@@ -181,7 +181,7 @@ function FilaProyecto({ ini }: { ini: Iniciativa }) {
         >
           {ini.numero?.completo ?? `#${ini.id}`}
         </Link>
-        <CondicionBadge tono={ini.tono}>{ini.condicion ?? "—"}</CondicionBadge>
+        <MarcaIniciativa iniciativa={ini} />
       </div>
       <p className="mt-1 text-sm leading-snug text-ink">{desdeMayusculas(ini.titulo)}</p>
     </li>

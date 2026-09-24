@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   desdeMayusculas,
   evaluarPerencion,
+  marcaDeIniciativa,
   type CondicionTono,
   type Iniciativa,
 } from "@/lib/congreso";
@@ -21,16 +22,40 @@ import { cn } from "@/lib/cn";
 export function CondicionBadge({
   tono,
   children,
+  title,
   className,
 }: {
   tono: CondicionTono;
   children: React.ReactNode;
+  /** El literal crudo del origen. */
+  title?: string;
   className?: string;
 }) {
   return (
-    <MarcaEstado tono={tono} conPunto={false} className={className}>
+    <MarcaEstado tono={tono} conPunto={false} title={title} className={className}>
       {children}
     </MarcaEstado>
+  );
+}
+
+/**
+ * La marca de una iniciativa de Diputados: **una sola**, del punto más
+ * avanzado que se conoce (`marcaDeIniciativa`), en caja mixta y con el literal
+ * del SIL en el `title`. Ficha, fila y cruces la piden aquí en vez de pintar la
+ * condición cruda, que llega en versales y en masculino.
+ */
+export function MarcaIniciativa({
+  iniciativa,
+  className,
+}: {
+  iniciativa: Pick<Iniciativa, "condicion" | "estado" | "tono" | "promulgada" | "numPromulgacion">;
+  className?: string;
+}) {
+  const marca = marcaDeIniciativa(iniciativa);
+  return (
+    <CondicionBadge tono={marca.tono} title={marca.original} className={className}>
+      {marca.label}
+    </CondicionBadge>
   );
 }
 
@@ -50,13 +75,7 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
             {iniciativa.numero?.completo ?? `#${iniciativa.id}`}
           </span>
 
-          <CondicionBadge tono={iniciativa.tono}>
-            {iniciativa.condicion ?? "—"}
-          </CondicionBadge>
-
-          {iniciativa.promulgada && (
-            <CondicionBadge tono="cumplido">Promulgada</CondicionBadge>
-          )}
+          <MarcaIniciativa iniciativa={iniciativa} />
 
           {enRiesgo && (
             <MarcaEstado tono="aviso" conPunto={false}>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense, cache } from "react";
 import { notFound } from "next/navigation";
-import { CondicionBadge } from "@/components/iniciativa-card";
+import { MarcaIniciativa } from "@/components/iniciativa-card";
 import {
   desdeMayusculas,
   documentoUrl,
@@ -108,15 +108,18 @@ export default async function IniciativaPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl">
       <Ruta seccion="congreso" actual={`Iniciativa ${ini.numero?.completo ?? ini.id}`} />
-      <AccionesFicha className="mt-2" tipo="proyecto" id={String(ini.id)} titulo={titulo} href={`/congreso/${ini.id}`} situacion={ini} feed={`/api/feed/congreso/${ini.id}`} />
 
       <header className="mt-1 sm:mt-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-sm font-semibold tabular-nums text-brand-700">
             {ini.numero?.completo ?? `#${ini.id}`}
           </span>
-          <CondicionBadge tono={ini.tono}>{ini.condicion ?? "—"}</CondicionBadge>
-          {ini.promulgada && <CondicionBadge tono="cumplido">Promulgada</CondicionBadge>}
+          {/*
+            Una sola marca, del punto más avanzado que se conoce: antes eran
+            dos —«APROBADO» en versales del SIL junto a «Promulgada»—, y el
+            lector tenía que decidir cuál de las dos mandaba.
+          */}
+          <MarcaIniciativa iniciativa={ini} />
         </div>
 
         <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
@@ -174,11 +177,21 @@ export default async function IniciativaPage({ params }: Props) {
           titulo={ini.titulo}
           tipo={ini.tipo}
           condicion={ini.condicion ?? ini.estado}
+          estado={ini.estado}
+          camaraOrigen={ini.camaraOrigen}
           materia={ini.grupo ?? ini.materia}
           proponente={proponentePrincipal}
           promulgadaComo={ini.numPromulgacion}
         />
       </Suspense>
+
+      {/*
+        Seguir, compartir y el RSS van después de entender la pieza, no antes:
+        encima del título empujaban el h1 a media pantalla del teléfono, y
+        nadie sigue una iniciativa antes de saber qué es y en qué punto está
+        (docs/IDENTIDAD.md §4, el orden de los bloques).
+      */}
+      <AccionesFicha className="mt-4" tipo="proyecto" id={String(ini.id)} titulo={titulo} href={`/congreso/${ini.id}`} situacion={ini} feed={`/api/feed/congreso/${ini.id}`} />
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-5">

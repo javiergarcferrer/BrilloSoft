@@ -176,11 +176,9 @@ export async function getCountIniciativas(): Promise<number | null> {
 
 /**
  * Listado de iniciativas. `keyword` hace match de subcadena sobre la
- * descripción y funciona con frases de varias palabras.
- *
- * El endpoint filtrado del SIL (`iniciativa/iniciativas`, con grupo/tipo/
- * perimidas) devuelve 400 en todas las combinaciones probadas, así que el
- * filtrado por tema se hace del lado de la aplicación.
+ * descripción y funciona con frases de varias palabras. Es el registro entero,
+ * sin más filtro que el texto: para cortar por tema, tipo o perimidas está
+ * `listIniciativasFiltradas`.
  */
 export async function listIniciativas(
   page = 1,
@@ -189,6 +187,48 @@ export async function listIniciativas(
 ): Promise<SilPage<SilIniciativa>> {
   const q = `iniciativa/getIniciativas?page=${page}&keyword=${encodeURIComponent(keyword)}`;
   return (await silFetchSafe<SilPage<SilIniciativa>>(q, revalidate)) ?? emptyPage();
+}
+
+/** Los dos tipos que el endpoint filtrado distingue: un booleano, no un id. */
+export type TipoIniciativa = "ley" | "resolucion";
+
+export interface FiltroIniciativas {
+  /** Id de uno de los 15 temas de `iniciativa/Grupos`. Obligatorio en el origen. */
+  grupo: number;
+  tipo: TipoIniciativa;
+  /** `true`: solo las perimidas; `false`: todas las demás. No hay «ambas». */
+  perimidas: boolean;
+}
+
+/**
+ * El listado filtrado del SIL (`iniciativa/iniciativas`), el mismo que usa su
+ * portal al entrar a un tema. Mecánica verificada el 2026-09-24 leyendo el
+ * bundle del portal y contra el origen (docs/RECON.md §2.2):
+ *
+ *  · `tipo` es un **booleano**, no el `tipoId`: `true` son los proyectos de
+ *    ley y `false` las resoluciones (internas y bicamerales). Con el id
+ *    numérico —lo que se había probado— responde 400.
+ *  · `perimidas=true` trae solo las perimidas y `false` todas las demás.
+ *  · `grupo` es **obligatorio**: sin él la ruta no existe (404), vacío da 400 y
+ *    `0` devuelve cero filas. No hay forma de pedir un tipo en todos los temas.
+ *  · Los 15 temas × 2 tipos × 2 valores de `perimidas` suman exactamente el
+ *    censo de `getIniciativas` (6,357 el día de la prueba): el reparto es una
+ *    partición, así que cada filtro dice la verdad sobre el registro entero.
+ *
+ * `null` si el SIL no contestó, para que la vista no confunda «no hay» con
+ * «no pudimos mirar».
+ */
+export async function listIniciativasFiltradas(
+  page: number,
+  filtro: FiltroIniciativas,
+  keyword = "",
+  revalidate = 300,
+): Promise<SilPage<SilIniciativa> | null> {
+  const q =
+    `iniciativa/iniciativas?page=${page}&grupo=${filtro.grupo}` +
+    `&tipo=${filtro.tipo === "ley"}&perimidas=${filtro.perimidas}` +
+    `&keyword=${encodeURIComponent(keyword)}`;
+  return silFetchSafe<SilPage<SilIniciativa>>(q, revalidate);
 }
 
 /**
@@ -370,6 +410,63 @@ export function tonoDeCondicion(condicion: string | null | undefined): Condicion
   return "contexto";
 }
 
+/**
+ * Cómo se **dice** la condición del SIL en una marca de estado.
+ *
+ * El SIL publica la condición en versales —«APROBADO», «VIGENTE»— y la ficha la
+ * pintaba tal cual al lado de una marca escrita en caja mixta («Promulgada»):
+ * dos voces en la misma fila, y la primera en masculino hablando de una
+ * iniciativa. Además «vigente» se lee como «ley vigente», cuando en el SIL
+ * significa lo contrario: que sigue en trámite y todavía puede perimir.
+ */
+const ETIQUETA_CONDICION: [RegExp, string][] = [
+  [/PERIMID/, "Perimida"],
+  [/PROMULGAD/, "Promulgada"],
+  [/APROBAD/, "Aprobada"],
+  [/RECHAZAD/, "Rechazada"],
+  [/RETIRAD/, "Retirada"],
+  [/ARCHIVAD/, "Archivada"],
+  [/FUSIONAD/, "Fusionada"],
+  [/DEPOSITAD/, "Depositada"],
+  [/VIGENTE/, "En trámite"],
+];
+
+export interface MarcaIniciativa {
+  /** Lo que se lee, en caja mixta y en llano. */
+  label: string;
+  tono: CondicionTono;
+  /** El literal del origen, para el `title` de la marca. */
+  original: string;
+}
+
+/**
+ * La **única** marca de estado de una iniciativa, derivada del punto más
+ * avanzado que se conoce.
+ *
+ * La ficha pintaba dos: la condición cruda («APROBADO») y, al lado,
+ * «Promulgada». Una pieza promulgada ya fue aprobada; decirlo dos veces obliga
+ * al lector a decidir cuál de las dos manda. Manda la promulgación, y la
+ * condición del SIL queda en el `title` para quien quiera el literal.
+ */
+export function marcaDeIniciativa(
+  ini: Pick<Iniciativa, "condicion" | "estado" | "tono" | "promulgada" | "numPromulgacion">,
+): MarcaIniciativa {
+  const literal = [ini.condicion, ini.estado].filter(Boolean).join(" · ") || "—";
+  const original = `El SIL la registra como «${literal}»`;
+  if (ini.promulgada || /promulgad/i.test(ini.estado ?? "")) {
+    return {
+      label: "Promulgada",
+      tono: "cumplido",
+      original: ini.numPromulgacion ? `${original} · ${ini.numPromulgacion}` : original,
+    };
+  }
+  const c = (ini.condicion ?? "").toUpperCase();
+  const label =
+    ETIQUETA_CONDICION.find(([re]) => re.test(c))?.[1] ??
+    (ini.condicion ? desdeMayusculas(ini.condicion.toUpperCase()) : "Sin condición");
+  return { label, tono: ini.tono, original };
+}
+
 export interface Iniciativa {
   id: number;
   numero: NumeroExpediente | null;
@@ -396,7 +493,16 @@ export interface Iniciativa {
 
 export function normalizarIniciativa(raw: SilIniciativa): Iniciativa {
   const condicion = limpiarTexto(raw.condicion) || null;
-  const tono = tonoDeCondicion(condicion);
+  // `promulgada` sigue siendo lo que dicen los campos de promulgación, y nada
+  // más: entra en la huella del seguimiento (`huellaDe`) y cambiar su
+  // significado avisaría de un cambio que no ocurrió. El estado «Promulgado»
+  // —el listado de propuestas de un legislador no trae aquellos campos— lo
+  // leen la marca y el dossier, que miran el punto más avanzado.
+  const promulgada = Boolean(raw.fechaPromulgacion || raw.numPromulgacion);
+  // Una pieza promulgada llegó al final aunque la condición no lo diga: ni
+  // sigue viva ni puede perimir.
+  const tono: CondicionTono =
+    promulgada || /promulgad/i.test(raw.estado ?? "") ? "cumplido" : tonoDeCondicion(condicion);
   const { titulo, tituloModificado } = separarTitulo(
     limpiarTexto(raw.descripcion) || "(sin descripción)",
   );
@@ -419,7 +525,7 @@ export function normalizarIniciativa(raw: SilIniciativa): Iniciativa {
     periodoRegistro: limpiarTexto(raw.periodoRegistro) || null,
     fechaDeposito: raw.fechaDeposito,
     fechaUltimoCambio: raw.fechaUltimoCambioPrincipal,
-    promulgada: Boolean(raw.fechaPromulgacion || raw.numPromulgacion),
+    promulgada,
     numPromulgacion: limpiarTexto(raw.numPromulgacion) || null,
     fechaPromulgacion: raw.fechaPromulgacion,
   };

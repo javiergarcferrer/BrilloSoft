@@ -195,6 +195,9 @@ export function queSigue(condicion: string | null | undefined): string | null {
   if (c.includes("retirad")) return "Fue retirada por quien la propuso.";
   if (c.includes("rechazad")) return "Fue rechazada.";
   if (c.includes("archivad")) return "Fue archivada: el trámite se cerró sin convertirla en ley.";
+  if (c.includes("fusionad")) {
+    return "Se fusionó con otra iniciativa sobre lo mismo: su trámite sigue en esa otra pieza, no en esta.";
+  }
 
   if (c.includes("depositad")) {
     return "Fue registrada en la secretaría. El siguiente paso es su lectura en sesión y el envío a comisión.";
@@ -230,9 +233,70 @@ export function queSigue(condicion: string | null | undefined): string | null {
     return "El Poder Ejecutivo la observó: vuelve al Congreso, que decide si acoge los reparos o insiste.";
   }
   if (c.includes("aprobad")) {
-    return "Aprobada en esta cámara. Todavía necesita el voto de la otra en los mismos términos y la promulgación del Presidente.";
+    return "Aprobada en esta cámara. Para ser ley necesita además el voto de la otra en los mismos términos y la promulgación del Presidente.";
   }
   return null;
+}
+
+/** Lo que se sabe del trámite de una pieza, de las dos taxonomías y la promulgación. */
+export interface SituacionTramite {
+  /** La condición gruesa del SIL: VIGENTE, APROBADO, PERIMIDO… */
+  condicion: string | null | undefined;
+  /** El estado del último trámite: «Enviado a Comisión», «Promulgado»… */
+  estado?: string | null;
+  /** Hay número o fecha de promulgación, o la ley resolvió en la Consultoría. */
+  promulgada?: boolean;
+  /** «Ley núm. 43-26», tal como lo guarda la cámara. */
+  numPromulgacion?: string | null;
+  tipo?: string | null;
+  /** «Cámara de Diputados», «Senado»: de dónde partió la pieza. */
+  camaraOrigen?: string | null;
+}
+
+/** Lo que cierra el trámite: gana a cualquier estado intermedio. */
+const TERMINAL = /promulgad|perimid|retirad|rechazad|archivad|fusionad/;
+
+/**
+ * «En qué punto está», derivado del **punto más avanzado que se conoce**.
+ *
+ * El dossier leía solo la condición del SIL, y la condición es gruesa: una ley
+ * ya promulgada, con su número y su Gaceta, sigue diciendo «APROBADO». La ficha
+ * de la Ley 43-26 decía arriba «Ya es ley», abajo «Promulgado» en los trámites,
+ * y en medio que «todavía necesita el voto de la otra cámara y la promulgación
+ * del Presidente»: tres bloques contradiciéndose en la misma pantalla.
+ *
+ * El orden: la promulgación manda; después lo que cierra el trámite
+ * (perimida, retirada, rechazada) en cualquiera de las dos taxonomías, porque
+ * una pieza perimida conserva el estado del último trámite que tuvo; después
+ * el estado del último trámite, que es el dato fino; y la condición al final.
+ */
+export function enQuePunto(s: SituacionTramite): string | null {
+  const numero = numeroDeNorma(s.numPromulgacion);
+  if (s.promulgada) {
+    return numero
+      ? `Completó el trámite: se promulgó como Ley ${numero} y es ley vigente.`
+      : "Completó el trámite: es ley vigente.";
+  }
+  for (const valor of [s.condicion, s.estado]) {
+    if (TERMINAL.test((valor ?? "").toLowerCase())) return queSigue(valor);
+  }
+
+  const fino = queSigue(s.estado);
+  const grueso = queSigue(s.condicion);
+  const aprobada = /aprobad/.test((s.condicion ?? "").toLowerCase());
+  // «Aprobada en esta cámara, necesita la otra» solo es cierto para una ley
+  // que nació aquí. Una resolución interna termina con el voto de su cámara, y
+  // una ley que llegó del Senado ya pasó por la otra.
+  if (aprobada && (!fino || /aprobad/.test((s.estado ?? "").toLowerCase()))) {
+    const tipo = (s.tipo ?? "").toLowerCase();
+    if (tipo.includes("interna")) {
+      return "Aprobada. Es una resolución interna de la cámara: con su voto termina el trámite, sin pasar por la otra cámara ni por el Poder Ejecutivo.";
+    }
+    if (/senado/i.test(s.camaraOrigen ?? "") && !/diputad/i.test(s.camaraOrigen ?? "")) {
+      return "Aprobada en la Cámara de Diputados, que la recibió del Senado. Si la aprobó en los mismos términos pasa al Poder Ejecutivo para su promulgación; si la modificó, vuelve al Senado.";
+    }
+  }
+  return fino ?? grueso;
 }
 
 /* ------------------------------------------------- cruces entre fuentes */

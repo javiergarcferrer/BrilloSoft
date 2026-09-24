@@ -97,7 +97,7 @@ Base: `https://www.diputadosrd.gob.do/sil/api/`
 
 | Servicio | Rutas |
 |---|---|
-| `iniciativa/` | `CountIniciativas` ✅, `getIniciativas?page=&keyword=` ✅, `iniciativa/{id}` ✅, `historicos?page=&id=` ✅, `proponentes?page=&id=` ✅, `documentos?page=&id=` ✅, `comisiones?page=&id=`, `votaciones?page=&id=` ✅ (§14), `Actividades?page=&id=`, `Grupos` ✅, `Grupo?id=`, `Materias?grupo=` |
+| `iniciativa/` | `CountIniciativas` ✅, `getIniciativas?page=&keyword=` ✅, `iniciativas?page=&grupo=&tipo=&perimidas=&keyword=` ✅ (abajo), `iniciativa/{id}` ✅, `historicos?page=&id=` ✅, `proponentes?page=&id=` ✅, `documentos?page=&id=` ✅, `comisiones?page=&id=`, `votaciones?page=&id=` ✅ (§14), `Actividades?page=&id=`, `Grupos` ✅, `Grupo?id=`, `Materias?grupo=` |
 | `comision/` | `comisiones?tipoId=`, `comisiones?page=&keyword=` ✅, `comision/{id}`, `miembros`, `temas` (404) |
 | `legislador/` | `legisladores?page=&nivel=` ✅ (§14), `legisladores?page=&keyword=` ✅, `legislador/{id}` ✅, `Iniciativas?page=&legisladorId=&keyword=` ✅, `votaciones?page=&legisladorId=&keyword=` ✅, `Provincias/{padre}` ✅, `Representaciones` ✅ |
 | `sesion/` | `sesiones?page=&keyword=`, `sesion/{id}`, `documentos?page=&id=`, `ordendia?page=&id=`, `historicos` |
@@ -109,11 +109,27 @@ Base: `https://www.diputadosrd.gob.do/sil/api/`
 | `comun/` | `GetRutaDocumento/` ✅, `GetRutaHost/` ✅, `GetRutaRendicion/` ✅ |
 | `suscriptor/` | `suscribirse` (**POST — no tocar**) |
 
-⚠️ `iniciativa/iniciativas?page=&grupo=&tipo=&perimidas=&keyword=` devuelve **400
-"The request is invalid."** en todas las combinaciones probadas, incluidas ids
-reales de grupo y tipo (`grupo=11&tipo=9`) y variantes de booleano
-(`false`/`False`/`0`). Los tipos que espera el binder de ASP.NET siguen sin
-determinar. **Ya no es bloqueante** — ver §2.4.
+✅ **Resuelto el 2026-09-24:** `iniciativa/iniciativas?page=&grupo=&tipo=&perimidas=&keyword=`
+funciona. Las pasadas anteriores recibían **400 "The request is invalid."** porque
+mandaban el `tipoId` numérico (`tipo=9`); el bundle del portal (`populate()` del
+listado por tema) muestra que `tipo` es un **booleano** (`1===parseInt(n)`) y
+`perimidas` otro. Verificado contra el origen con el User-Agent de la plataforma:
+
+- `tipo=true` → proyectos de ley; `tipo=false` → resoluciones (internas y bicamerales).
+- `perimidas=true` → solo las perimidas; `false` → todas las demás (vigentes,
+  depositadas, aprobadas, retiradas, fusionadas). No hay valor para «ambas».
+- `grupo` es **obligatorio**: sin él la ruta no existe (404), vacío da 400, `0` o
+  `-1` devuelven 0 filas. No se puede pedir un tipo en todos los temas a la vez.
+- `keyword` filtra igual que en `getIniciativas` (Justicia/ley/sin perimir: 176
+  sin texto, 175 con `keyword=ley`).
+- **Es una partición exacta:** 15 grupos × 2 tipos × 2 valores de `perimidas`
+  suman **6,357**, el mismo `total` que `getIniciativas?keyword=` ese día.
+  Todas las iniciativas tienen tema.
+
+Consecuencia para la vista (`/congreso`): tema, tipo y perimidas se filtran en el
+origen; tipo y estado solo existen **dentro de un tema** y la interfaz lo dice.
+El filtro por tema que antes se aplicaba sobre la página de diez ya leída se
+retiró: daba páginas cortas y un recuento que no correspondía a nada.
 
 ### 2.3 Paginación
 
