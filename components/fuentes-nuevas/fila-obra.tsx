@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { finVencido, tonoDeObra, type Obra } from "@/lib/obras";
-import { formatPesos } from "@/lib/format";
+import { formatPesos, tituloLegible } from "@/lib/format";
 import { MarcaEstado } from "@/components/marca-estado";
 import { Progress } from "@/components/ui/progress";
 
@@ -28,12 +28,13 @@ export function FilaObra({ obra: o }: { obra: Obra }) {
       </div>
       <Link
         href={`/obras/${o.snip}`}
+        title={o.nombre}
         className="mt-1.5 block text-[15px] leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700"
       >
-        {o.nombre}
+        {tituloLegible(o.nombre)}
       </Link>
       <p className="mt-0.5 text-xs text-ink-soft">
-        {[o.entidad, lugar].filter(Boolean).join(" · ")}
+        {[o.entidad && tituloLegible(o.entidad), lugar].filter(Boolean).join(" · ")}
       </p>
       <div className="mt-2 flex items-center gap-3">
         <Progress

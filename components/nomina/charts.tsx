@@ -248,7 +248,7 @@ export function Histogram({ bins }: { bins: { label: string; count: number }[] }
             </div>
             <div className="mt-1.5 flex h-9 flex-col items-center justify-start text-center">
               <span className="font-mono text-xs font-semibold tabular-nums leading-tight text-ink">
-                {compactCount(b.count)}
+                {formatInt(b.count)}
               </span>
               <span className="text-xs leading-tight text-ink-soft">{b.label}</span>
             </div>
@@ -257,9 +257,4 @@ export function Histogram({ bins }: { bins: { label: string; count: number }[] }
       })}
     </div>
   );
-}
-
-function compactCount(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return String(n);
 }

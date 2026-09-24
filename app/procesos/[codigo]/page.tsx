@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getCompetencia, getProceso, normalize, type Documento } from "@/lib/dgcp";
 import { pesoDocumento, urlDeLectura } from "@/lib/documentos";
 import VisorDocumento from "@/components/visor-documento";
-import { diasHasta, formatFecha, formatMonto } from "@/lib/format";
+import { diasHasta, formatFecha, formatMonto, tituloLegible } from "@/lib/format";
 import { cierreMeta, estadoMeta, etapaDe } from "@/lib/estados";
 import { cn } from "@/lib/cn";
 import PreciosHistoricos from "./precios";
@@ -57,7 +57,7 @@ export async function generateMetadata({
     const { proceso: p } = await cargarProceso(limpio);
     if (p) {
       return {
-        title: p.titulo || limpio,
+        title: p.titulo ? tituloLegible(p.titulo) : limpio,
         alternates: { canonical: `/procesos/${encodeURIComponent(limpio)}` },
         description: `${p.unidad_compra} · ${p.modalidad} · ${p.estado_proceso} · cierre de ofertas ${p.fecha_fin_recepcion_ofertas?.slice(0, 10) ?? "n/d"}`,
       };
@@ -93,10 +93,13 @@ export default async function ProcesoPage({
 
   const dias = diasHasta(p.fecha_fin_recepcion_ofertas);
   const est = estadoMeta(p.estado_proceso);
-  const cierreBadge = est.abierto ? cierreMeta(dias) : null;
   // `est.abierto` y no el literal: la condición de «abierto» se decide en un
   // solo sitio (lib/estados.ts, por etapa) y no en cada página por su cuenta.
   const abiertoParaOfertar = est.abierto && dias !== null && dias >= 0;
+  // Vencido el plazo, manda la fecha y no el estado que la DGCP aún no mueve
+  // (la misma regla que la tarjeta): una sola marca, «Recepción cerrada».
+  const vencido = est.abierto && dias !== null && dias < 0;
+  const cierreBadge = abiertoParaOfertar ? cierreMeta(dias) : null;
   const docsClave = documentos.filter(esDocClave);
   const docsOtros = documentos.filter((d) => !esDocClave(d));
 
@@ -151,11 +154,11 @@ export default async function ProcesoPage({
       <Card as="section" className="p-6">
         <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
           <MarcaEstado
-            tono={etapaDe(p.estado_proceso).tono}
+            tono={vencido ? "contexto" : etapaDe(p.estado_proceso).tono}
             vivo={abiertoParaOfertar}
             title={`La DGCP lo publica como «${p.estado_proceso}»`}
           >
-            {est.label}
+            {vencido ? "Recepción cerrada" : est.label}
           </MarcaEstado>
           <Badge forma="etiqueta" className="bg-hairline text-ink-soft">
             {p.modalidad}
@@ -170,7 +173,10 @@ export default async function ProcesoPage({
           )}
         </div>
 
-        <h1 className="mt-3 font-display text-3xl leading-tight">{p.titulo}</h1>
+        <h1 className="mt-3 font-display text-3xl leading-tight">{tituloLegible(p.titulo)}</h1>
+        {tituloLegible(p.titulo) !== p.titulo && (
+          <p className="mt-1 text-xs text-ink-soft">Publicado en la DGCP como «{p.titulo}».</p>
+        )}
         <p className="mt-1 text-ink-soft">
           {institucion ? (
             <Link href={hrefInstitucion(institucion)} className="text-ink hover:text-brand-700 hover:underline">

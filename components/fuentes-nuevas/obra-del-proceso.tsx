@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { obrasDeProceso, tonoDeObra } from "@/lib/obras";
-import { formatPesos } from "@/lib/format";
+import { formatPesos, tituloLegible } from "@/lib/format";
 import { MarcaEstado } from "@/components/marca-estado";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -37,7 +37,7 @@ export async function ObraDelProceso({ codigo, snip }: { codigo: string; snip?: 
               href={`/obras/${o.snip}`}
               className="mt-1.5 block text-[15px] leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700"
             >
-              {o.nombre}
+              {tituloLegible(o.nombre)}
             </Link>
             <div className="mt-2 flex items-center gap-3">
               <Progress

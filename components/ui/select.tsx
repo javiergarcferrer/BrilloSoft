@@ -124,7 +124,7 @@ function SelectItem({
     >
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
       {ayuda && (
-        <span className="text-[11px] leading-snug text-ink-soft">{ayuda}</span>
+        <span className="text-xs leading-snug text-ink-soft">{ayuda}</span>
       )}
       <span className="absolute right-2.5 top-2.5 flex h-4 w-4 items-center justify-center">
         <SelectPrimitive.ItemIndicator>

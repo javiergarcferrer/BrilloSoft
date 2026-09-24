@@ -8,7 +8,7 @@ import { contarProveedoresRegistrados } from "@/lib/dgcp";
 import { CUATRIENIOS, getCensoSenado } from "@/lib/senado";
 import { getDeuda } from "@/lib/deuda";
 import { consultarNormativa } from "@/lib/normativa";
-import { formatFecha } from "@/lib/format";
+import { formatFecha, formatMagnitud } from "@/lib/format";
 import { etiquetaCorte, getResumenFiscal } from "@/lib/fiscal";
 import { formatInt } from "@/lib/nomina";
 import { getResumenNomina } from "@/lib/nomina-server";
@@ -366,7 +366,7 @@ export default async function FuentesPage() {
             <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
               <Metrica
                 etiqueta="Deuda total"
-                valor={`US$${(deuda.saldoTotal / 1000).toFixed(1)}MM`}
+                valor={formatMagnitud(deuda.saldoTotal)}
               />
               <Metrica etiqueta="Saldo a" valor={deuda.periodo} />
               <Metrica

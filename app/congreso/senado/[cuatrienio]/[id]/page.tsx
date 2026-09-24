@@ -355,7 +355,7 @@ function Dato({
       >
         {valor ?? "—"}
       </dd>
-      {nota && <p className="mt-0.5 text-[11px] text-ink-soft">{nota}</p>}
+      {nota && <p className="mt-0.5 text-xs text-ink-soft">{nota}</p>}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Proceso } from "@/lib/dgcp";
-import { diasHasta, formatMonto } from "@/lib/format";
+import { diasHasta, formatMonto, tituloLegible } from "@/lib/format";
 import { cierreMeta, estadoMeta } from "@/lib/estados";
 import { cn } from "@/lib/cn";
 import {
@@ -29,7 +29,16 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
 
   const estado = estadoMeta(p.estado_proceso);
   const dias = diasHasta(p.fecha_fin_recepcion_ofertas);
-  const cierre = estado.abierto ? cierreMeta(dias) : null;
+  /*
+    La DGCP tarda en mover el estado: un proceso sigue «abierto» días después de
+    vencido su plazo, y la tarjeta decía a la vez «Abiertos a ofertar» y
+    «Recepción cerrada». Manda la fecha: si ya pasó, la marca dice lo que el
+    lector puede hacer —nada: ya no se oferta— y el estado publicado queda en
+    el `title`.
+  */
+  const vencido = estado.abierto && dias !== null && dias < 0;
+  const abierto = estado.abierto && !vencido;
+  const cierre = abierto ? cierreMeta(dias) : null;
   /*
     En un proceso ya cerrado la tarjeta no decía **cuándo** cerró: el plazo
     solo se pintaba mientras corría, y al pasar a «Sobres abiertos» o
@@ -38,7 +47,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
     fila. Solo si la fecha ya pasó: un cerrado con cierre futuro es el registro
     contradiciéndose, y ahí la fecha no se afirma.
   */
-  const cerroHace = !estado.abierto && dias !== null && dias < 0;
+  const cerroHace = !abierto && dias !== null && dias < 0;
   const href = `/procesos/${encodeURIComponent(p.codigo_proceso)}`;
 
   const titulo = p.titulo || p.descripcion || p.codigo_proceso;
@@ -66,11 +75,11 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <MarcaEstado
-            tono={etapaDe(p.estado_proceso).tono}
-            vivo={estado.abierto}
+            tono={vencido ? "contexto" : etapaDe(p.estado_proceso).tono}
+            vivo={abierto}
             title={`La DGCP lo publica como «${estado.original}»`}
           >
-            {estado.label}
+            {vencido ? "Recepción cerrada" : estado.label}
           </MarcaEstado>
           <Badge forma="etiqueta" variant="contorno" className="bg-canvas font-medium">
             {p.modalidad}
@@ -114,7 +123,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
           title={titulo}
           className="line-clamp-2 transition-colors after:absolute after:inset-0 after:content-[''] hover:text-brand-700 focus-visible:outline-none"
         >
-          {titulo}
+          {tituloLegible(titulo)}
         </Link>
       </h2>
       <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink-soft">

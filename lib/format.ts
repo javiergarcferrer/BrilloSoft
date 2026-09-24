@@ -30,6 +30,15 @@ export function formatFecha(iso: string | undefined, conHora = false): string {
   }).format(d);
 }
 
+const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+/** «2026-08» → «ago 2026»: un mes se nombra, no se codifica. */
+export function formatMes(aaaamm: string): string {
+  const m = /^(\d{4})-(\d{2})/.exec(aaaamm);
+  const i = m ? Number(m[2]) - 1 : -1;
+  return m && i >= 0 && i < 12 ? `${MESES_CORTOS[i]} ${m[1]}` : aaaamm;
+}
+
 /** Días (con decimales truncados hacia abajo) hasta una fecha; negativo si ya pasó. */
 export function diasHasta(iso: string | undefined): number | null {
   if (!iso) return null;
@@ -130,4 +139,39 @@ export function formatMagnitud(millonesUSD: number): string {
     return `US$ ${miles.toFixed(1)} mil millones`;
   }
   return `US$ ${Math.round(millonesUSD).toLocaleString("es-DO")} millones`;
+}
+
+/**
+ * Siglas que sobreviven al paso a minúsculas. No es exhaustiva ni necesita
+ * serlo: una sigla que falte queda en minúsculas, que se lee; una frase entera
+ * en mayúsculas no se lee.
+ */
+const SIGLAS = new Set([
+  "RD", "DN", "SDE", "SDN", "SDO", "RNC", "ITBIS", "SNIP", "DGCP", "DGII", "MIPYME", "MIPYMES",
+  "MINERD", "MOPC", "MISPAS", "SNS", "INAPA", "CAASD", "CORAASAN", "INDRHI", "INABIE", "INAIPI",
+  "EDESUR", "EDENORTE", "EDEESTE", "ETED", "CDEEE", "IDAC", "INTRANT", "OMSA", "OPRET", "MIREX",
+  "MESCYT", "INFOTEP", "ISFODOSU", "UASD", "PN", "FFAA", "ARD", "DNCD", "TSS", "AFP", "ARS",
+  "CESAC", "CESFRONT", "INESPRE", "BCRD", "PGR", "JCE", "TIC", "TI", "PVC", "LED", "GPS", "UPS",
+  "CCTV", "HVAC", "PC", "USB", "SAS", "SRL", "EIRL",
+]);
+
+/**
+ * Un título que la fuente copia TODO EN MAYÚSCULAS, en oración: «ADQUISICIÓN
+ * DE PAÑALES» → «Adquisición de pañales». Solo actúa si más del 60 % de las
+ * letras son mayúsculas —lo demás es de la fuente y se respeta—; conserva
+ * siglas conocidas y los códigos con cifras. El original va en el `title` del
+ * elemento y entero en la ficha: se hace legible, no se reescribe.
+ */
+export function tituloLegible(valor: string): string {
+  const letras = valor.match(/\p{L}/gu) ?? [];
+  if (letras.length < 4) return valor;
+  const mayus = letras.filter((l) => l !== l.toLowerCase()).length;
+  if (mayus / letras.length <= 0.6) return valor;
+  const bajo = valor.replace(/[\p{L}\p{N}]+/gu, (t) =>
+    SIGLAS.has(t) || /\d/.test(t) ? t : t.toLowerCase(),
+  );
+  // Mayúscula inicial y tras punto final; una coma pegada gana su espacio.
+  return bajo
+    .replace(/,(?=\p{L})/gu, ", ")
+    .replace(/(^[^\p{L}]*|[.!?]\s+)(\p{Ll})/gu, (_, pre: string, l: string) => pre + l.toUpperCase());
 }

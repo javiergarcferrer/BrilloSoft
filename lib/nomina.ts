@@ -9,6 +9,8 @@
  * publica en formato procesable: se declara, no se disimula.
  */
 
+import { formatPesos } from "@/lib/format";
+
 /** Una fila es una tupla compacta de índices de diccionario + sueldo. */
 export type Row = readonly [inst: number, area: number, cargo: number, sueldo: number];
 
@@ -66,13 +68,16 @@ export const formatDOP = (n: number) => dop.format(Math.round(n));
 /** 1,234,567 */
 export const formatInt = (n: number) => int.format(Math.round(n));
 
-/** Compact pesos for axes / chips: RD$60.5M, RD$21K. */
+/**
+ * Pesos compactos para barras y tarjetas. La magnitud se escribe en palabras
+ * por la misma razón que en `formatPesos`: «MM» se lee *millones* en el uso
+ * dominicano, y abreviar así mil millones se equivoca por tres órdenes.
+ */
 export function formatCompactDOP(n: number): string {
   const a = Math.abs(n);
-  if (a >= 1e9) return `RD$${(n / 1e9).toFixed(2)}MM`;
-  if (a >= 1e6) return `RD$${(n / 1e6).toFixed(1)}M`;
-  if (a >= 1e3) return `RD$${Math.round(n / 1e3)}K`;
-  return `RD$${Math.round(n)}`;
+  if (a >= 1e6) return formatPesos(n);
+  if (a >= 1e3) return `RD$ ${Math.round(n / 1e3)} mil`;
+  return `RD$ ${Math.round(n)}`;
 }
 
 /** "May '26" para el período de una institución. */
@@ -84,11 +89,11 @@ export type Bucket = { label: string; min: number; max: number };
 /** Salary brackets used by the distribution chart (RD$). */
 export const SALARY_BUCKETS: Bucket[] = [
   { label: "RD$0", min: 0, max: 0 },
-  { label: "1–15K", min: 1, max: 15000 },
-  { label: "15–25K", min: 15001, max: 25000 },
-  { label: "25–50K", min: 25001, max: 50000 },
-  { label: "50–80K", min: 50001, max: 80000 },
-  { label: "80K+", min: 80001, max: Infinity },
+  { label: "1–15 mil", min: 1, max: 15000 },
+  { label: "15–25 mil", min: 15001, max: 25000 },
+  { label: "25–50 mil", min: 25001, max: 50000 },
+  { label: "50–80 mil", min: 50001, max: 80000 },
+  { label: "80 mil+", min: 80001, max: Infinity },
 ];
 
 export function bucketOf(sueldo: number): number {

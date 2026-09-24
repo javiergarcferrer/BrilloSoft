@@ -10,7 +10,7 @@ import {
   urlFichaMapaInversiones,
 } from "@/lib/obras";
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
-import { formatFecha, formatMonto, formatPesos } from "@/lib/format";
+import { formatFecha, formatMonto, formatPesos, tituloLegible } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { Ruta } from "@/components/ruta";
 import { MarcaEstado } from "@/components/marca-estado";
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const d = /^\d{1,7}$/.test(snip) ? await getObra(snip) : null;
   if (!d) return { title: "Obra no encontrada" };
   return {
-    title: d.obra.nombre,
+    title: tituloLegible(d.obra.nombre),
     alternates: { canonical: `/obras/${snip}` },
     description: `Estado, valor, avance declarado y contratos de la obra SNIP ${snip}, ejecutada por ${d.obra.entidad}.`,
   };
@@ -65,7 +65,12 @@ export default async function ObraPage({ params }: Props) {
           </MarcaEstado>
           <span className="rotulo text-ink-soft">{o.sector}</span>
         </div>
-        <h1 className="mt-3 font-display text-2xl leading-tight sm:text-3xl">{o.nombre}</h1>
+        <h1 className="mt-3 font-display text-2xl leading-tight sm:text-3xl">{tituloLegible(o.nombre)}</h1>
+        {tituloLegible(o.nombre) !== o.nombre && (
+          <p className="mt-1 text-xs text-ink-soft">
+            Registrada en el Banco de Proyectos como «{o.nombre}».
+          </p>
+        )}
         <p className="mt-2 text-sm text-ink-soft">
           Ejecuta{" "}
           {institucion ? (

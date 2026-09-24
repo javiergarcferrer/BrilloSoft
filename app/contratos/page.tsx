@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { muestrearContratos, type AgregadoContrato } from "@/lib/dgcp";
-import { formatMonto, formatFecha } from "@/lib/format";
+import { formatMonto, formatFecha, formatMes, tituloLegible } from "@/lib/format";
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import Antiguedad from "@/components/antiguedad";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,14 +99,14 @@ export default async function ContratosPage() {
             {r.porMes.map((m) => (
               <li key={m.mes}>
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-medium tabular-nums">{m.mes}</span>
+                  <time dateTime={m.mes} className="font-medium tabular-nums">{formatMes(m.mes)}</time>
                   <span className="shrink-0 text-xs text-ink-soft">
                     {formatInt(m.n)} · {formatMonto(m.monto, "DOP")}
                   </span>
                 </div>
                 <Progress
                   value={Math.max(2, (m.monto / maxMes) * 100)}
-                  aria-label={`${m.mes}: ${formatMonto(m.monto, "DOP")}`}
+                  aria-label={`${formatMes(m.mes)}: ${formatMonto(m.monto, "DOP")}`}
                   className="mt-1"
                 />
               </li>
@@ -163,7 +163,7 @@ export default async function ContratosPage() {
                   title={c.descripcion || c.codigo_contrato}
                   className="line-clamp-1 text-sm font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:text-brand-700"
                 >
-                  {c.descripcion || c.codigo_contrato}
+                  {tituloLegible(c.descripcion || c.codigo_contrato)}
                 </Link>
                 <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-ink">
                   {formatMonto(c.valor_contratado, c.divisa)}
