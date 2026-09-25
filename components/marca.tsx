@@ -29,7 +29,7 @@ const MARCA = "#0b2d6b";
 const ACENTO_CLARO = "#ff5a5f";
 
 /** La «¿»: el signo de cierre girado media vuelta. */
-function Interrogacion({ trazo, grosor = 13 }: { trazo: string; grosor?: number }) {
+function Interrogacion({ trazo, punto = SELLO, grosor = 13 }: { trazo: string; punto?: string; grosor?: number }) {
   return (
     <g transform="rotate(180 100 96)">
       <path
@@ -39,7 +39,7 @@ function Interrogacion({ trazo, grosor = 13 }: { trazo: string; grosor?: number 
         strokeWidth={grosor}
         strokeLinecap="round"
       />
-      <circle cx="103" cy="143" r="9" fill={SELLO} />
+      <circle cx="103" cy="143" r="9" fill={punto} />
     </g>
   );
 }
@@ -47,12 +47,15 @@ function Interrogacion({ trazo, grosor = 13 }: { trazo: string; grosor?: number 
 export function Sello({
   className = "h-20 w-20",
   trazo = TINTA,
+  /** El punto de la «¿»: `sello` sobre papel, `marca-acento` sobre azul. */
+  punto = trazo === PAPEL ? ACENTO_CLARO : SELLO,
   /** El aro de texto se omite por debajo de ~72px: no se leería. */
   conAro = true,
   id = "aro",
 }: {
   className?: string;
   trazo?: string;
+  punto?: string;
   conAro?: boolean;
   id?: string;
 }) {
@@ -87,7 +90,7 @@ export function Sello({
         </>
       )}
       <g transform="translate(100 100) scale(0.62) translate(-100 -96)">
-        <Interrogacion trazo={trazo} />
+        <Interrogacion trazo={trazo} punto={punto} />
       </g>
     </svg>
   );
@@ -139,16 +142,12 @@ export function SelloCompacto({
 }
 
 /**
- * El logotipo: «socrático», una palabra en minúscula. El acento de la «á» es el
- * sello: va en rojo; sobre el azul de la marca, en su rojo claro.
+ * La palabra «socrático». Vive solo sobre el azul `marca` (decisión del dueño,
+ * 2026-09-25): sobre papel la marca es la placa del ícono, nunca la palabra.
+ * Por eso lleva siempre el acento claro y el color lo pone el fondo que la
+ * contiene (`text-canvas` sobre `bg-marca`).
  */
-export function Logotipo({
-  className = "text-[19px]",
-  sobreTinta = false,
-}: {
-  className?: string;
-  sobreTinta?: boolean;
-}) {
+export function Logotipo({ className = "text-[19px]" }: { className?: string }) {
   return (
     <span className={`font-display leading-none tracking-[-0.035em] whitespace-nowrap ${className}`}>
       <span className="sr-only">Socrático</span>
@@ -156,7 +155,7 @@ export function Logotipo({
         socr
         <span className="relative inline-block">
           a
-          <Acento color={sobreTinta ? "bg-marca-acento" : "bg-sello-600"} />
+          <Acento color="bg-marca-acento" />
         </span>
         tico
       </span>

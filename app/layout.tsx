@@ -121,7 +121,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-90"
             >
               <SelloCompacto className="h-9 w-9" fondo="#f7f3ea" trazo="#171d2e" acento="#c8102e" />
-              <Logotipo sobreTinta className="text-[19px] max-[340px]:hidden" />
+              <Logotipo className="text-[19px] max-[340px]:hidden" />
             </Link>
 
             <div className="min-w-0 flex-1" />
@@ -155,9 +155,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-ink-soft sm:py-10">
             <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
               <div className="shrink-0 lg:w-60">
-                <div className="flex items-center gap-3 sm:flex-col sm:items-start">
-                  <Sello className="h-14 w-14 shrink-0 sm:h-20 sm:w-20" />
-                  <Logotipo className="text-[19px] text-ink" />
+                {/* La palabra solo vive sobre el azul: el pie la lleva en su placa. */}
+                <div className="flex items-center gap-4 rounded-lg bg-marca p-4 text-canvas sm:flex-col sm:items-start sm:p-5">
+                  <Sello className="h-14 w-14 shrink-0 sm:h-20 sm:w-20" trazo="#f7f3ea" id="aro-pie" />
+                  <Logotipo className="text-[22px] sm:text-[28px]" />
                 </div>
                 <p className="mt-4 max-w-xs text-xs leading-relaxed">
                   Qué compra, qué legisla y a quién paga el Estado dominicano,

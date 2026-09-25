@@ -85,6 +85,11 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
   `socratico.vercel.app` como dirección de producción; el dueño pidió borrar
   `brillo-soft.vercel.app`.
 
+- **La palabra «socrático» solo sobre azul** (25-09-2026). El dueño aprobó la
+  versión sobre el azul `marca` y rechazó la palabra entera sobre blanco. El
+  sistema de diseño (artefacto «Socrático») y `docs/IDENTIDAD.md` lo fijan:
+  sobre papel, la marca es la placa del ícono.
+
 - **Clasificadores de IA (Jev, `typesafe-ai/jev` por el AI Gateway de
   Vercel) solo donde cambian la experiencia** (24-09-2026). El dueño pidió
   usarlo donde marque una diferencia grande y en ningún otro sitio. Evaluado:

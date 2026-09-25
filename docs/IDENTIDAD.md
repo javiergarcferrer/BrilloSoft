@@ -85,14 +85,17 @@ sans en negrita, no serif: la serif a ese tamaño se lee floja.
 una sola palabra en minúscula, **sin «.do»**: el nombre es Socrático.
 
 - `Logotipo` — «socrático» en Instrument Serif; **el acento de la «á» es el
-  sello**, un trazo rojo inclinado (`bg-sello-600` sobre papel; `bg-marca-acento`
-  sobre la cabecera, que va en el azul `marca`). Cabecera y pie.
+  sello**, un trazo inclinado en `marca-acento`. **La palabra vive solo sobre el
+  azul `marca`** (decisión del dueño, 2026-09-25): la cabecera, la placa azul
+  del pie, la tarjeta para compartir. Nunca sobre blanco ni sobre papel; sobre
+  papel la marca es la placa del ícono.
 - `SelloCompacto` — la «s» con el mismo acento en una placa (SVG): en la
   cabecera, placa de papel sobre el azul; en el favicon (`app/icon.svg`) y el
   ícono de la app, placa azul `marca` con el acento en `marca-acento`.
 - `Sello` — la circular con «¿» al centro y el aro «SOCRÁTICO · PREGÚNTALE AL
   ESTADO · REPÚBLICA DOMINICANA». Es el sello de firma (pie de página, tarjeta
-  social), no el logotipo. Nunca por debajo de 72 px con aro.
+  social), no el logotipo. Nunca por debajo de 72 px con aro. Sobre azul, trazo `papel` y el punto
+  de la «¿» en `marca-acento`.
 
 **La marca roja es el sello.** El acento del logotipo y del ícono, el punto de
 la «¿» y el punto del rótulo van en rojo. Es la regla única y no admite
