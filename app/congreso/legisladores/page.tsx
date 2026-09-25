@@ -305,7 +305,7 @@ function FilaLegislador({ legislador: l }: { legislador: Legislador }) {
         <div className="min-w-0 flex-1">
           <Link
             href={hrefLegislador(l.id)}
-            className="text-[15px] font-medium leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700"
+            className="text-[15px] font-medium leading-snug text-ink estira hover:text-brand-700"
           >
             {l.nombre}
           </Link>

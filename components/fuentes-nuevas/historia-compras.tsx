@@ -138,7 +138,7 @@ export async function HistoriaDeProveedor({ rpe }: { rpe: string }) {
               return (
                 <li key={uc} className="relative flex min-h-11 items-baseline justify-between gap-3 py-2 text-sm">
                   {i ? (
-                    <Link href={hrefInstitucion(i)} className="min-w-0 text-ink after:absolute after:inset-0 hover:text-brand-700">
+                    <Link href={hrefInstitucion(i)} className="min-w-0 text-ink estira hover:text-brand-700">
                       {i.nombre}
                     </Link>
                   ) : (
@@ -218,7 +218,7 @@ export async function HistoriaDeInstitucion({ uc, nombre }: { uc: number; nombre
           <ol className="mt-1 divide-y divide-hairline">
             {h.top.map(([rpe, nombreProv, n, monto]) => (
               <li key={rpe} className="relative flex min-h-11 items-baseline justify-between gap-3 py-2 text-sm">
-                <Link href={`/proveedores/${rpe}`} className="min-w-0 text-ink after:absolute after:inset-0 hover:text-brand-700">
+                <Link href={`/proveedores/${rpe}`} className="min-w-0 text-ink estira hover:text-brand-700">
                   {desdeMayusculas(nombreProv) || `RPE ${rpe}`}
                 </Link>
                 <span className="shrink-0 text-right font-mono tabular-nums">

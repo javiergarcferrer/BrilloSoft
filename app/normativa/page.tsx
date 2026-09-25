@@ -513,8 +513,8 @@ function Materias({
                 aria-current={elegida ? "page" : undefined}
                 className={
                   elegida
-                    ? "font-semibold text-brand-700 after:absolute after:inset-0"
-                    : "text-ink after:absolute after:inset-0 hover:text-brand-700"
+                    ? "font-semibold text-brand-700 estira"
+                    : "text-ink estira hover:text-brand-700"
                 }
               >
                 {m.nombre}

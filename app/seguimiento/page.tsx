@@ -396,7 +396,7 @@ function FilaSeguida({
         </div>
         <Link
           href={item.href}
-          className="mt-0.5 line-clamp-2 font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:text-brand-700"
+          className="mt-0.5 line-clamp-2 font-medium text-ink estira hover:text-brand-700"
         >
           {item.titulo}
         </Link>

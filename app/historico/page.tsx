@@ -242,7 +242,7 @@ function Ranking({
       <span className="w-7 shrink-0 font-mono text-xs tabular-nums text-ink-soft">{i + 1}</span>
       <span className="min-w-0 flex-1">
         {f.href ? (
-          <Link href={f.href} className="block text-sm leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700">
+          <Link href={f.href} className="block text-sm leading-snug text-ink estira hover:text-brand-700">
             {f.nombre}
           </Link>
         ) : (

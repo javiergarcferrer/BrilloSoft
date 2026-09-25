@@ -11,8 +11,12 @@ are enforced by `.claude/hooks/guard-edit.sh` and `verificar.sh`.
 
 ## Prohibitions (the 215 violations that were once cleaned up)
 1. No gradients, no blur washes (`bg-gradient-*`, `blur-3xl`). Dark panels are flat ink.
-2. No glass shadows. Surfaces separate with the hairline (`border-hairline`).
-   `shadow-card`/`shadow-soft` only for what truly floats: menus, sheets, the FAB.
+2. No glass shadows. Surfaces you **read** separate with the hairline
+   (`border-hairline`); `shadow-card`/`shadow-soft` only for what truly floats.
+   Depth is semantic (docs/IDENTIDAD.md §Relieve): flat = read, `relieve`
+   (grain + 2 px canto) = press, sunk = on (`aria-current`/`aria-pressed`/
+   `data-state=on`), `shadow-pop` = overlays. A stretched link is `estira`
+   inside a `relative` container, which then gets relief or row response.
 3. `rounded-lg` (8 px) is the maximum on surfaces; `rounded-full` only for
    dots, seals, avatars. Never `rounded-2xl`/`rounded-3xl`. `rounded-full`
    with real horizontal padding (`px-2`+) is a pill — a badge or button
@@ -24,6 +28,12 @@ are enforced by `.claude/hooks/guard-edit.sh` and `verificar.sh`.
    `white` — the `Button` primitive already decided this.
 7. No mute controls: a `hover:` whose value repeats what the element already
    has changes nothing, and a ring colour with no ring width never paints.
+8. Motion only through its tokens (docs/IDENTIDAD.md §Movimiento): `ease-firma`
+   /`sello`/`salida`/`estampa`, `--dur-toque…--dur-trazo`; nothing animates on
+   load, numbers never count up, exits faster than entries, reduced motion
+   keeps the meaning. The gate rejects hand-written curves and >300 ms.
+9. Every static page is in `lib/menu.ts` with its `tarea`, or in
+   `FUERA_DEL_INDICE` (`lib/indice.ts`) with a reason — gate-checked.
 
 ## Use the primitives, not hand-rolled markup
 Two layers (docs/IDENTIDAD.md §8). **Never hand-roll a surface, a button, a
@@ -51,7 +61,7 @@ forces you to say what happened, what still stands and the one useful action),
 disclosure; the button says how many, never "ver más"),
 `components/antiguedad.tsx` (a date in a **listing row** is «hace 2 meses» in a
 real `<time>`, with the exact date in `title`; the absolute date belongs on the
-ficha), `components/paleta.tsx` (⌘K «¿a dónde vas?»: every view of `lib/secciones`,
+ficha), `components/paleta.tsx` (⌘K «¿a dónde vas?»: the whole `lib/indice.ts` grouped by task,
 and typed text offered to each `BUSQUEDAS` destination **with its scope** —
 never a fake global search), `components/ruta.tsx` (a ficha's way back; a new
 ficha uses it, never a hand-rolled «Volver» link), `components/paginador.tsx`

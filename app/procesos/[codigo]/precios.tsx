@@ -153,7 +153,7 @@ async function SubclaseStats({
                       </span>
                       <Link
                         href={`/procesos/${encodeURIComponent(e.codigo_proceso)}`}
-                        className="font-mono text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
+                        className="font-mono text-brand-700 estira hover:underline"
                       >
                         {e.codigo_proceso}
                       </Link>{" "}

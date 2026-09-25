@@ -27,7 +27,7 @@ function ToggleGroup({
     <ToggleGroupPrimitive.Root
       data-slot="toggle-group"
       className={cn(
-        "inline-flex w-fit items-center gap-0.5 rounded-lg border border-hairline bg-surface p-1",
+        "inline-flex w-fit items-center gap-0.5 rounded-lg border border-hairline bg-canvas p-1",
         className,
       )}
       {...props}

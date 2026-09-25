@@ -149,7 +149,7 @@ export default async function NominaGeneralPage({
                 <div className="flex items-baseline justify-between gap-3">
                   <Link
                     href={`/nomina/general?inst=${claveInstitucion(i.nombre)}`}
-                    className="min-w-0 text-[15px] leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700"
+                    className="min-w-0 text-[15px] leading-snug text-ink estira hover:text-brand-700"
                   >
                     {i.nombre}
                   </Link>
@@ -211,7 +211,7 @@ function ListaMejorPagados({
           <span className="min-w-0 flex-1">
             <Link
               href={`/nomina/general?inst=${claveInstitucion(f.institucion)}&q=${encodeURIComponent(f.cargo)}`}
-              className="block text-sm leading-snug text-ink [overflow-wrap:anywhere] after:absolute after:inset-0 hover:text-brand-700"
+              className="block text-sm leading-snug text-ink [overflow-wrap:anywhere] estira hover:text-brand-700"
             >
               {f.cargo}
             </Link>

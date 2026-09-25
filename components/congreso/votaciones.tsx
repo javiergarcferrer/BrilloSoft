@@ -34,7 +34,7 @@ export function FilaVotacion({
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
           <Link
             href={`/congreso/votaciones/${votacion.id}`}
-            className="font-mono text-xs font-semibold tabular-nums text-brand-700 after:absolute after:inset-0 hover:underline"
+            className="font-mono text-xs font-semibold tabular-nums text-brand-700 estira hover:underline"
           >
             {votacion.titulo}
           </Link>

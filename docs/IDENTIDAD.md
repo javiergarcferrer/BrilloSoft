@@ -19,10 +19,12 @@ bien compuesto.
 
 1. **Sin degradados.** Ni de fondo, ni de texto, ni manchas difuminadas
    (`blur-3xl`, `bg-gradient-*`). Un panel oscuro es tinta plana.
-2. **Sin sombras de vidrio.** El papel no flota. Las superficies se separan
-   con **filete** (`border-hairline`), no con `shadow-*`. `shadow-card` y
-   `shadow-soft` quedan reservados a lo que de verdad se superpone: menús,
-   hojas modales, el botón flotante.
+2. **Sin sombras de vidrio.** El papel no flota. Las superficies que se
+   **leen** se separan con **filete** (`border-hairline`), no con `shadow-*`.
+   `shadow-card` y `shadow-soft` quedan reservados a lo que de verdad se
+   superpone: menús, hojas modales, el botón flotante. Lo que se **pulsa**
+   lleva canto —papel más hondo, sin difuminar—, que no es una sombra de
+   vidrio sino el borde de una hoja: §Relieve.
 3. **Esquinas contenidas.** `rounded-lg` (8px) como máximo en superficies;
    `rounded-full` solo en puntos, sellos y avatares. Nada de `rounded-2xl`
    ni `rounded-3xl`: una tarjeta con esquinas de app rompe la metáfora.
@@ -101,6 +103,80 @@ una sola palabra en minúscula, **sin «.do»**: el nombre es Socrático.
 la «¿» y el punto del rótulo van en rojo. Es la regla única y no admite
 excepción. Lo patrio está en la paleta —azul de firma, rojo de sello, papel—, nunca
 en la bandera ni el escudo: la herramienta es independiente y no oficial.
+
+## Relieve — lo que se toca tiene canto
+
+Desde el 2026-09-25 (decisión del dueño) la profundidad existe, y **es
+semántica**: dice qué se puede hacer con cada cosa. Hay cuatro estados y
+ninguno es decorativo.
+
+| Estrato | Qué dice | Cómo se ve | Dónde |
+|---|---|---|---|
+| **Plano** | Se lee | Papel y filete. Sin sombra, sin fibra. | Todo el contenido: tarjetas informativas, tablas, textos. |
+| **Relieve** | Se pulsa | Fibra de papel (`--grano`), luz de 1 px arriba y **canto** de 2 px abajo, sin difuminar. Al apuntar sube 1 px y el canto crece; al pulsar baja 2 px y el canto desaparece. | `Button` con caja (principal, secundario, filete, sello), la tarjeta que es un enlace. |
+| **Hundido** | Está puesto | Sin canto, sombra por dentro. | El filtro que es la página actual (`aria-current`), «Siguiendo» (`aria-pressed`), la opción elegida de un conmutador, la bandeja del conmutador. |
+| **Capa** | Se superpone | `shadow-pop`. | Menús, hojas, diálogos. |
+
+La fila de una lista no tiene canto —la lista ya es una hoja—: se tiñe de
+firma al apuntarla y se **hunde** al pulsarla.
+
+Tres reglas que lo sostienen:
+
+1. **El borde inferior no se mueve.** El relieve sube y baja dentro de su
+   canto, así que nada de alrededor salta ni cambia de sitio.
+2. **La semántica sale del marcado, no de una clase que haya que recordar.**
+   El enlace que se estira sobre su hoja o su fila lleva `estira`
+   (`app/globals.css`); con eso, el contenedor `relative` que lo recibe toma
+   solo el relieve si es una `Card` o la respuesta de fila si no lo es. Una
+   `Card` que es un `<a>` lo toma también. El foco dibuja el anillo alrededor
+   del objetivo entero, no del renglón de texto.
+3. **El estado no se dice solo con color.** Hundido contra en relieve se ve
+   con el sol de frente y lo ve quien no distingue la firma del sello.
+
+`--canto` y `--luz` se redefinen en un relleno saturado (la firma, el sello):
+el canto es el mismo tono más hondo. La fibra es ruido fractal teñido de tinta
+al 6 %, una tesela de 180 px que el navegador rasteriza una vez.
+
+## Movimiento — el movimiento explica causa, nunca adorna
+
+Los tokens viven en `app/globals.css`: cuatro curvas en `@theme` (Tailwind
+genera `ease-firma`, `ease-sello`…) y cinco duraciones en `:root`.
+
+| Curva | Oficio |
+|---|---|
+| `firma` | Un cambio en su sitio: color, relieve, estado. Es la de toda transición que no diga otra. |
+| `sello` | Algo llega: frena al final, como el papel que se apoya. Capas, hojas, pliegues, barras. |
+| `salida` | Algo se va: acelera y desaparece sin pedir atención. |
+| `estampa` | El único rebote de la casa: el sello que cae cuando el lector **confirma algo suyo** (seguir una pieza). Nunca en otra cosa. |
+
+| Duración | Valor | Para |
+|---|---|---|
+| `--dur-toque` | 90 ms | La respuesta al dedo. Por debajo de 100 ms causa y efecto se leen como una sola cosa. |
+| `--dur-breve` | 150 ms | Color, relieve al apuntar, menús que abren. |
+| `--dur-media` | 220 ms | Pliegues, velos, lo que sale de una hoja. |
+| `--dur-hoja` | 280 ms | Una hoja entera que entra; la estampa. Techo de la interfaz. |
+| `--dur-trazo` | 700 ms | Solo dibujar una barra de datos, que se lee cuando termina. |
+
+Reglas:
+
+1. **Solo se mueve lo que el lector movió** o lo que responde a él. Nada entra
+   animado al cargar una página: el contenido está quieto porque se lee.
+2. **Lo que sale va más rápido que lo que entra.** La atención ya está en lo
+   siguiente.
+3. **Las cifras no se animan.** Un número que cuenta hacia arriba es un número
+   falso durante medio segundo, y alguien le hace captura. Las barras sí se
+   dibujan —su final es el dato— y, donde el navegador sabe atarlas al
+   desplazamiento (`animation-timeline: view()`), se dibujan al entrar en
+   pantalla; la que ya está a la vista al llegar se pinta entera, quieta.
+4. **Movimiento reducido apaga el desplazamiento, no el significado.** Con
+   `prefers-reduced-motion` no hay traslación ni animación, pero el relieve
+   sigue cambiando —al instante— entre en reposo, apuntado y hundido.
+5. **Nada se escribe a mano.** Una curva `cubic-bezier` en un componente, un
+   `animate-bounce` o una duración por encima de 300 ms los rechaza el gate.
+
+Lo nativo antes que la librería: `interpolate-size` y `animation-timeline`
+donde el navegador los tiene, la altura que mide Radix para los pliegues, y
+ninguna dependencia de animación.
 
 ## La voz
 
@@ -346,3 +422,42 @@ el anillo no se pinta nunca—. El tercero no es cuestión de estilo: el control
 *parece* interactivo y no responde, que es «un control apagado explica por qué»
 fallando en silencio. Uno de los tres era la llamada a la acción principal del
 panorama.
+
+### 11. Heurísticas ergonómicas — y dónde se cumplen
+
+Una heurística que no apunta a un sitio del código es un deseo. Cada una de
+estas tiene dueño:
+
+| Heurística | La regla aquí | Dónde vive |
+|---|---|---|
+| **Fitts** — el objetivo grande y cerca se acierta antes | 44 px en teléfono; la fila entera es el enlace; lo principal abajo, donde llega el pulgar. | `Button`, `estira`, tab bar, `data-barra-acciones` |
+| **Hick** — más opciones, más tiempo para elegir | Tres puertas en el menú, seis tareas en la paleta; la densidad se despliega bajo demanda. | `lib/menu.ts`, `lib/tareas.ts`, `Plegable` |
+| **Doherty** — por debajo de 400 ms el diálogo no se rompe | Respuesta al toque en 90 ms; ninguna transición pasa de 280 ms; una silueta medida mientras la fuente contesta. | `--dur-*`, `components/esqueleto.tsx` |
+| **Affordance** — la forma dice qué se hace | Plano se lee, relieve se pulsa, hundido está puesto. | §Relieve |
+| **Miller** — la memoria de trabajo es corta | La magnitud viaja con el número; la antigüedad se calcula aquí; el ancla va junto a la cifra. | `lib/cifras.ts`, `Antiguedad` |
+| **Reconocer, no recordar** (Nielsen) | La jerga se traduce en el punto de uso; los filtros de fábrica se ven. | `Termino`, `nav-filtros` |
+| **Postel** — tolerante en lo que se acepta | Un RNC, una cédula o una cita «Ley 47-20» en cualquier forma lleva a su sitio. | `/buscar`, `lib/buscar.ts` |
+| **Tesler** — la complejidad no desaparece, alguien la carga | La carga la plataforma: el cruce de instituciones, el cálculo de variaciones, el alcance de cada búsqueda. | `lib/instituciones.ts`, `BUSQUEDAS` |
+| **Von Restorff** — lo distinto se recuerda | Un solo rojo por pieza; el sello escaso. | §Color, §La marca |
+| **Zeigarnik** — lo pendiente pide volver | «Qué cambió desde tu última visita» en lo que sigues. | `/seguimiento`, `lib/seguimiento.ts` |
+| **Jakob** — el lector trae hábitos de otros sitios | ⌘K y «/» buscan; Escape cierra; el foco vuelve al disparador. | `components/paleta.tsx`, `components/ui/*` |
+| **Proximidad** (Gestalt) | La fuente y la fecha junto a la cifra, no en una nota al pie. | `Rotulo`, `Cifra` |
+
+### 12. El índice: dos ejes, un solo sitio
+
+Toda la plataforma se ordena en dos ejes, y los dos salen de un solo archivo:
+
+- **Tema** — de qué trata: el dinero, las leyes, el Estado, y dentro sus
+  columnas. Es como se **explora**: el megamenú y la hoja «Más».
+- **Tarea** — qué viene a hacer el lector: *ver qué pasa ahora*, *encontrar a
+  alguien*, *medir y comparar*, *leer lo decidido*, *seguir y opinar*,
+  *entender cómo funciona*. Es como se **llega con prisa**: la paleta agrupa
+  por tarea, y teclear «votar» o «comparar» encuentra aunque no sea el nombre
+  de nada.
+
+Cada enlace de `lib/menu.ts` declara su tarea (el tipo la exige);
+`lib/indice.ts` deriva de ahí el índice que leen la paleta y el mapa del sitio.
+Había tres listas de destinos y no coincidían —la paleta no conocía «El país
+en cifras» ni «Cortes de luz»—, que es la «segunda tabla» de §7. Una página
+nueva entra en el menú con su tarea o en `FUERA_DEL_INDICE` con su motivo; si
+no, el gate la rechaza como huérfana.

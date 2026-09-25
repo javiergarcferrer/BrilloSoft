@@ -9,6 +9,7 @@ import {
 } from "@/lib/seguimiento";
 import { IconStar } from "./icons";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
 
 /**
  * Seguir o dejar de seguir cualquier cosa de la plataforma: un proceso, un
@@ -43,6 +44,9 @@ export default function SeguirButton({
   const huella = objetivo.huella;
 
   const [seguido, setSeguido] = useState(false);
+  // La estampa cae solo cuando el lector acaba de seguir, nunca al cargar una
+  // pieza que ya seguía (docs/IDENTIDAD.md §Movimiento).
+  const [recien, setRecien] = useState(false);
   useEffect(() => {
     const sync = () => setSeguido(estaSeguido(tipo, id));
     sync();
@@ -50,14 +54,16 @@ export default function SeguirButton({
   }, [tipo, id]);
 
   const comun = {
-    onClick: () =>
+    onClick: () => {
+      setRecien(!seguido);
       toggleSeguido({
         tipo,
         id,
         titulo,
         href,
         ...(huella !== undefined ? { huella } : {}),
-      }),
+      });
+    },
     "aria-pressed": seguido,
     title: seguido
       ? "Quitar de tu seguimiento"
@@ -71,7 +77,7 @@ export default function SeguirButton({
         variant={seguido ? "default" : "secondary"}
         className="h-12 flex-1"
       >
-        <IconStar className="h-5 w-5" filled={seguido} />
+        <IconStar className={cn("h-5 w-5", recien && seguido && "estampa")} filled={seguido} />
         {seguido ? "Siguiendo" : "Seguir"}
       </Button>
     );
@@ -94,7 +100,7 @@ export default function SeguirButton({
           : undefined
       }
     >
-      <IconStar className="h-4 w-4" filled={seguido} />
+      <IconStar className={cn("h-4 w-4", recien && seguido && "estampa")} filled={seguido} />
       {seguido ? "Siguiendo" : "Seguir"}
     </Button>
   );

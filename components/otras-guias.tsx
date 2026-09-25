@@ -43,7 +43,7 @@ export function OtrasGuias({ actual }: { actual: string }) {
             <div className="min-w-0 flex-1">
               <Link
                 href={g.href}
-                className="font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:text-brand-700"
+                className="font-medium text-ink estira hover:text-brand-700"
               >
                 {g.titulo}
               </Link>

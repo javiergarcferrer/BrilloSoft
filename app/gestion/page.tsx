@@ -126,7 +126,7 @@ export default async function GestionPage({
                       {inst ? (
                         <Link
                           href={hrefInstitucion(inst)}
-                          className="block text-[15px] leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700"
+                          className="block text-[15px] leading-snug text-ink estira hover:text-brand-700"
                         >
                           {f.nombre}
                         </Link>

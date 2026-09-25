@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
-  Socrático.do — sistema de diseño «El Contrasello»
+  Socrático — sistema de diseño «El Contrasello»
   --------------------------------------------------------------------------
   La identidad sale del vernáculo del documento oficial dominicano y lo pone
   del lado del ciudadano: papel de oficio en vez de blanco de pantalla, tinta
@@ -14,7 +14,10 @@
     · IBM Plex Mono     — el registro (montos, códigos, expedientes).
 
   Regla única de la marca: **el punto es el sello**. El punto del «¿», el
-  «.do» del logotipo y las viñetas van siempre en rojo sello.
+  acento del logotipo y las viñetas van siempre en rojo.
+
+  Profundidad y movimiento son semánticos: plano se lee, relieve se pulsa,
+  hundido está puesto (docs/IDENTIDAD.md §Relieve, §Movimiento).
 
   Los tokens viven en @theme para que Tailwind genere las utilidades
   (bg-canvas, text-ink, font-display, shadow-card…).
@@ -106,6 +109,30 @@
   --color-v-finanzas: #7a2f52;
   --color-v-finanzas-tenue: #f7eaef;
 
+  /*
+    El canto del papel: el borde que se ve cuando una hoja descansa sobre
+    otra. Un tono más hondo que el filete. Solo lo lleva lo que se pulsa
+    (docs/IDENTIDAD.md §Relieve).
+  */
+  --color-canto: #cbbfa7;
+
+  /*
+    Movimiento (docs/IDENTIDAD.md §Movimiento). Cuatro curvas con oficio:
+      · firma   — un cambio en su sitio: color, relieve, estado.
+      · sello   — algo llega: frena al final, como el papel que se apoya.
+      · salida  — algo se va: acelera y desaparece, sin pedir atención.
+      · estampa — el único rebote de la casa: el sello que cae cuando el
+                  lector confirma algo suyo (seguir, votar). Nunca en otra cosa.
+    Tailwind genera `ease-firma`, `ease-sello`… y toda transición sin curva
+    ni duración propias hereda la firma y la duración breve.
+  */
+  --ease-firma: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-sello: cubic-bezier(0.2, 0, 0, 1);
+  --ease-salida: cubic-bezier(0.4, 0, 1, 1);
+  --ease-estampa: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+
   /* Sombras de papel: cortas y cálidas, no de vidrio */
   --shadow-soft: 0 1px 2px 0 rgb(23 29 46 / 0.05),
     0 1px 3px 0 rgb(23 29 46 / 0.05);
@@ -172,6 +199,31 @@
 @layer base {
   :root {
     color-scheme: light;
+
+    /*
+      Las cinco duraciones. Por debajo de 100 ms el lector percibe causa y
+      efecto como una sola cosa (el toque); por encima de 400 ms, espera. Nada
+      de la interfaz pasa de `--dur-hoja`; `--dur-trazo` es solo para dibujar
+      una barra de datos, que se lee cuando termina.
+    */
+    --dur-toque: 90ms;
+    --dur-breve: 150ms;
+    --dur-media: 220ms;
+    --dur-hoja: 280ms;
+    --dur-trazo: 700ms;
+
+    /*
+      La fibra del papel: ruido fractal teñido de tinta al 6 %, en una tesela
+      de 180 px que el navegador rasteriza una vez. Solo lo lleva lo que se
+      pulsa: al tacto, un mando es papel con cuerpo; lo que se lee es liso.
+    */
+    --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .09 0 0 0 0 .11 0 0 0 0 .18 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+
+    /*
+      Una altura `auto` se puede animar (Chrome 129+). Donde no, el pliegue
+      usa la altura que Radix mide; esto solo lo vuelve nativo.
+    */
+    interpolate-size: allow-keywords;
   }
 
   html {
@@ -281,6 +333,137 @@
   color: var(--color-sello-600);
 }
 
+/*
+  ------------------------------------------------------------------
+  Relieve — lo que se toca tiene canto; lo que se lee es plano
+  ------------------------------------------------------------------
+  La profundidad es semántica, no decoración (docs/IDENTIDAD.md §Relieve):
+  tres estratos y cada uno dice algo distinto.
+
+    · plano   — se lee. Papel y filete, sin sombra. Todo el contenido.
+    · relieve — se pulsa. Una hoja con fibra (`--grano`), luz en el borde de
+                arriba y **canto** abajo: 2 px de papel más hondo sin
+                difuminar. Al apuntar sube 1 px y el canto crece; al pulsar
+                baja 2 px y el canto desaparece: la hoja se asienta. El borde
+                inferior no se mueve nunca, así que nada de alrededor baila.
+    · capa    — se superpone. Menús y hojas modales: `shadow-pop`.
+
+  Una fila dentro de una lista no tiene canto —la lista ya es una hoja—:
+  responde con tinta al apuntar y se **hunde** al pulsar.
+
+  El relleno saturado (la firma, el sello) cambia de canto con `--canto` y
+  de luz con `--luz`; el resto hereda el canto del papel.
+*/
+@layer components {
+  .relieve,
+  a[data-slot="card"],
+  [data-slot="card"].relative:has(.estira):not(:has(.relative .estira)) {
+    background-image: var(--grano);
+    box-shadow:
+      inset 0 1px 0 0 var(--luz, rgb(253 251 245 / 0.9)),
+      0 1px 0 0 var(--canto, var(--color-canto)),
+      0 2px 0 0 var(--canto, var(--color-canto)),
+      0 3px 6px -3px rgb(23 29 46 / 0.16);
+    transition-property: transform, box-shadow, background-color, border-color, color, opacity;
+    transition-duration: var(--dur-breve);
+    transition-timing-function: var(--ease-firma);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .relieve:hover,
+    a[data-slot="card"]:hover,
+    [data-slot="card"].relative:has(.estira):not(:has(.relative .estira)):hover {
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 1px 0 0 var(--luz, rgb(253 251 245 / 0.9)),
+        0 1px 0 0 var(--canto, var(--color-canto)),
+        0 3px 0 0 var(--canto, var(--color-canto)),
+        0 7px 12px -7px rgb(23 29 46 / 0.24);
+    }
+  }
+  .relieve:active,
+  a[data-slot="card"]:active,
+  [data-slot="card"].relative:has(.estira):not(:has(.relative .estira)):not(:has(.z-10:active)):active {
+    transform: translateY(2px);
+    box-shadow:
+      inset 0 1px 2px 0 rgb(23 29 46 / 0.16),
+      0 0 0 0 var(--canto, var(--color-canto));
+    transition-duration: var(--dur-toque);
+  }
+  .relieve:disabled,
+  .relieve[aria-disabled="true"] {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /*
+    Lo que está puesto está hundido. Un filtro que es la página actual, un
+    «Seguir» ya activado, la opción elegida de un conmutador: se quedan
+    asentados, sin canto y con la sombra por dentro. Así el estado se lee con
+    el tacto del ojo, no solo con el color —que un daltónico o una pantalla al
+    sol pueden perder—.
+  */
+  .relieve[aria-current="page"],
+  .relieve[aria-pressed="true"],
+  .relieve[data-state="on"],
+  [data-slot="toggle-group-item"][data-state="on"] {
+    box-shadow:
+      inset 0 1px 3px 0 rgb(23 29 46 / 0.28),
+      0 0 0 0 var(--canto, var(--color-canto));
+  }
+  /* Asentado sobre su base: el borde inferior coincide con el de sus vecinos. */
+  .relieve[aria-current="page"],
+  .relieve[aria-pressed="true"],
+  .relieve[data-state="on"] {
+    transform: translateY(2px);
+  }
+  /* La bandeja del conmutador es un surco: el papel rebajado donde se eligen. */
+  [data-slot="toggle-group"] {
+    box-shadow: inset 0 1px 2px 0 rgb(23 29 46 / 0.07);
+  }
+
+  /* La fila de una lista: tinta al apuntar, se hunde al pulsar. */
+  .relative:has(.estira):not(:has(.relative .estira)):not([data-slot="card"]) {
+    transition-property: background-color, box-shadow;
+    transition-duration: var(--dur-breve);
+    transition-timing-function: var(--ease-firma);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .relative:has(.estira):not(:has(.relative .estira)):not([data-slot="card"]):hover {
+      background-color: color-mix(in oklab, var(--color-brand-50) 60%, transparent);
+    }
+  }
+  .relative:has(.estira):not(:has(.relative .estira)):not([data-slot="card"]):not(:has(.z-10:active)):active {
+    background-color: var(--color-brand-50);
+    box-shadow: inset 0 2px 3px -2px rgb(23 29 46 / 0.18);
+    transition-duration: var(--dur-toque);
+  }
+}
+
+/*
+  El enlace que se estira: toda la hoja o toda la fila es el objetivo de toque
+  (§8, «prefiere la fila entera»). El contenedor tiene que ser `relative`, y
+  con eso basta para que reciba el relieve o la respuesta de fila de arriba:
+  la semántica —«esto se pulsa»— sale del marcado, no de una clase que haya
+  que acordarse de poner. El foco dibuja el anillo alrededor de todo el
+  objetivo, no del renglón de texto.
+*/
+@utility estira {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  &:focus-visible {
+    outline: none;
+  }
+  &:focus-visible::after {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: -2px;
+    border-radius: var(--radius);
+  }
+}
+
 /* Trama de papel milimetrado para los paneles oscuros */
 .app-grid-dark {
   background-image: linear-gradient(
@@ -318,10 +501,10 @@
   }
 }
 .capa[data-state="open"] {
-  animation: lr-capa-entra 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: lr-capa-entra var(--dur-breve) var(--ease-sello);
 }
 .capa[data-state="closed"] {
-  animation: lr-capa-sale 110ms ease-in;
+  animation: lr-capa-sale var(--dur-toque) var(--ease-salida);
 }
 
 /* El velo que apaga el fondo bajo una hoja modal. */
@@ -336,10 +519,10 @@
   }
 }
 .velo[data-state="open"] {
-  animation: lr-velo-entra 160ms ease-out;
+  animation: lr-velo-entra var(--dur-media) var(--ease-firma);
 }
 .velo[data-state="closed"] {
-  animation: lr-velo-sale 140ms ease-in;
+  animation: lr-velo-sale var(--dur-breve) var(--ease-salida);
 }
 
 /*
@@ -367,16 +550,16 @@
   }
 }
 .hoja-abajo[data-state="open"] {
-  animation: lr-hoja-abajo-entra 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: lr-hoja-abajo-entra var(--dur-hoja) var(--ease-sello);
 }
 .hoja-abajo[data-state="closed"] {
-  animation: lr-hoja-abajo-sale 200ms ease-in;
+  animation: lr-hoja-abajo-sale var(--dur-media) var(--ease-salida);
 }
 .hoja-derecha[data-state="open"] {
-  animation: lr-hoja-derecha-entra 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: lr-hoja-derecha-entra var(--dur-hoja) var(--ease-sello);
 }
 .hoja-derecha[data-state="closed"] {
-  animation: lr-hoja-derecha-sale 200ms ease-in;
+  animation: lr-hoja-derecha-sale var(--dur-media) var(--ease-salida);
 }
 
 /* Skeleton shimmer */
@@ -418,7 +601,7 @@
   inset: 0;
   border-radius: 9999px;
   background: currentColor;
-  animation: lr-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation: lr-ping 1.8s var(--ease-sello) infinite;
 }
 
 /* Bars that grow in from the left on load */
@@ -432,7 +615,67 @@
 }
 .bar-grow {
   transform-origin: left;
-  animation: lr-bar 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: lr-bar var(--dur-trazo) var(--ease-sello) both;
+}
+
+/*
+  Donde el navegador sabe atar una animación al desplazamiento, la barra se
+  dibuja cuando entra en la pantalla y no al cargar: una barra que creció
+  fuera de la vista es movimiento gastado. La que ya está a la vista al
+  llegar se pinta entera, quieta.
+*/
+@supports (animation-timeline: view()) {
+  .bar-grow {
+    animation: lr-bar linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 80%;
+  }
+}
+
+/*
+  El pliegue: `Plegable` y todo `Collapsible` abren con la altura que Radix
+  mide, frenando al final, y cierran más rápido de lo que abren.
+*/
+@keyframes lr-pliegue-abre {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
+}
+@keyframes lr-pliegue-cierra {
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+[data-slot="collapsible-content"] {
+  overflow: hidden;
+}
+[data-slot="collapsible-content"][data-state="open"] {
+  animation: lr-pliegue-abre var(--dur-media) var(--ease-sello);
+}
+[data-slot="collapsible-content"][data-state="closed"] {
+  animation: lr-pliegue-cierra var(--dur-breve) var(--ease-salida);
+}
+
+/*
+  La estampa: el único rebote de la casa. Cae cuando el lector confirma algo
+  suyo —seguir una pieza—, nunca como adorno ni al cargar la página.
+*/
+@keyframes lr-estampa {
+  from {
+    transform: scale(1.45) rotate(-12deg);
+    opacity: 0.2;
+  }
+}
+.estampa {
+  animation: lr-estampa var(--dur-hoja) var(--ease-estampa);
 }
 
 /*
@@ -485,7 +728,19 @@
   .capa[data-state],
   .velo[data-state],
   .hoja-abajo[data-state],
-  .hoja-derecha[data-state] {
+  .hoja-derecha[data-state],
+  .estampa,
+  [data-slot="collapsible-content"][data-state] {
     animation: none;
+  }
+  /*
+    El relieve sigue diciendo «esto se pulsa» y «ya lo pulsaste»; solo deja
+    de desplazarse. El cambio de canto es instantáneo.
+  */
+  .relieve,
+  a[data-slot="card"],
+  [data-slot="card"] {
+    transform: none !important;
+    transition-duration: 0ms !important;
   }
 }

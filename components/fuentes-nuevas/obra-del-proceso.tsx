@@ -35,7 +35,7 @@ export async function ObraDelProceso({ codigo, snip }: { codigo: string; snip?: 
             </div>
             <Link
               href={`/obras/${o.snip}`}
-              className="mt-1.5 block text-[15px] leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700"
+              className="mt-1.5 block text-[15px] leading-snug text-ink estira hover:text-brand-700"
             >
               {tituloLegible(o.nombre)}
             </Link>

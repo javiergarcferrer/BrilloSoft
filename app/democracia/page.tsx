@@ -126,7 +126,7 @@ export default async function DemocraciaPage() {
       </section>
 
       {/* franja de seguridad */}
-      <Card asChild className="transition-colors hover:bg-canvas/60">
+      <Card asChild className="hover:bg-canvas/60">
         <Link
           href="/democracia/seguridad"
           className="flex items-center gap-4 px-5 py-4"

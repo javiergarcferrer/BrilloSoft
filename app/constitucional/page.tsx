@@ -193,7 +193,7 @@ export default async function ConstitucionalPage({
                     href={s.ficha}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-sm font-semibold text-ink after:absolute after:inset-0 hover:text-brand-700"
+                    className="font-mono text-sm font-semibold text-ink estira hover:text-brand-700"
                   >
                     {s.numero}
                     <span className="sr-only"> (abre la ficha en el sitio del Tribunal)</span>

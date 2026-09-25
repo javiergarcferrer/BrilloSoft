@@ -24,7 +24,7 @@ Techo 120 líneas / 12 KB, comprobado por el gate. Lo que crezca va a `docs/`.
 | Indicadores del panorama | tarjetas en `/`, `/luz` | MICM, BCRD (CDN), SB (SIMBAD), Aduanas, OC (luz), mantenimientos de Edenorte y Edesur, INDOMET (alertas), OPSEVI (vías), en vivo | `lib/combustibles.ts`, `lib/tasa.ts`, `lib/macro.ts`, `lib/bcrd.ts`, `lib/banca.ts`, `lib/aduanas.ts`, `lib/energia.ts`, `lib/alertas.ts`, `lib/siniestralidad.ts`, `lib/cortes.ts` |
 | Democracia | `/democracia` | Supabase, esquema `democracia` — **la excepción** | `lib/democracia.ts`, `lib/supabase.ts` |
 
-`lib/secciones.ts` es la fuente única de verticales y navegación. `/` es el panorama; `/fuentes` declara
+`lib/secciones.ts` es la fuente única de verticales; `lib/indice.ts` (de `lib/menu.ts`) la de destinos y su tarea. `/` es el panorama; `/fuentes` declara
 qué alimenta la plataforma, qué está bloqueado y con qué límites de cobertura — mantenerlo cierto es parte de tocar una fuente.
 
 ## La invariante

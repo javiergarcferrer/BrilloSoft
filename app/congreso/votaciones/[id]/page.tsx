@@ -143,7 +143,7 @@ export default async function VotacionPage({ params }: Props) {
                   <li key={ini.id} className="relative px-5 py-3">
                     <Link
                       href={`/congreso/${ini.id}`}
-                      className="font-mono text-xs font-semibold tabular-nums text-brand-700 after:absolute after:inset-0 hover:underline"
+                      className="font-mono text-xs font-semibold tabular-nums text-brand-700 estira hover:underline"
                     >
                       {ini.numero ?? `#${ini.id}`}
                     </Link>
@@ -246,7 +246,7 @@ export default async function VotacionPage({ params }: Props) {
                             <li key={voto.legisladorId} className="relative px-5 py-2">
                               <Link
                                 href={hrefLegislador(voto.legisladorId)}
-                                className="text-sm text-ink after:absolute after:inset-0 hover:text-brand-700"
+                                className="text-sm text-ink estira hover:text-brand-700"
                               >
                                 {voto.nombre}
                               </Link>

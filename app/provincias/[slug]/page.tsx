@@ -188,7 +188,7 @@ async function Proveedores({ provincia }: { provincia: Provincia }) {
             <div className="flex items-baseline justify-between gap-3">
               <Link
                 href={`/proveedores/${x.rpe}`}
-                className="min-w-0 text-[15px] leading-snug text-ink after:absolute after:inset-0 after:content-[''] hover:text-brand-700"
+                className="min-w-0 text-[15px] leading-snug text-ink estira hover:text-brand-700"
               >
                 {x.razonSocial}
               </Link>

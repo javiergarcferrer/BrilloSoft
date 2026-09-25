@@ -85,6 +85,16 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
   `socratico.vercel.app` como dirección de producción; el dueño pidió borrar
   `brillo-soft.vercel.app`.
 
+- **Relieve en lo pulsable, sistema de movimiento e índice por tarea**
+  (25-09-2026). El dueño pidió textura y profundidad en los componentes
+  pulsables, un sistema de movimiento y una semántica ergonómica que ordene la
+  plataforma entera. Se resolvió sin romper «el papel no flota»: la
+  profundidad pasa a ser **semántica** —lo que se lee es plano, lo que se pulsa
+  tiene canto y fibra, lo que está puesto está hundido, lo que se superpone
+  flota— y sigue sin haber sombra de vidrio ni degradado
+  (`docs/IDENTIDAD.md` §Relieve, §Movimiento, §Ergonomía 11–12). El índice
+  por tarea sustituye a `PAGINAS_PLATAFORMA` y lo vigila el gate.
+
 - **La palabra «socrático» solo sobre azul** (25-09-2026). El dueño aprobó la
   versión sobre el azul `marca` y rechazó la palabra entera sobre blanco. El
   sistema de diseño (artefacto «Socrático») y `docs/IDENTIDAD.md` lo fijan:

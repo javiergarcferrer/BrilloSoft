@@ -177,7 +177,7 @@ function FilaProyecto({ ini }: { ini: Iniciativa }) {
       <div className="flex flex-wrap items-center gap-2">
         <Link
           href={`/congreso/${ini.id}`}
-          className="font-mono text-xs font-semibold tabular-nums text-brand-700 after:absolute after:inset-0 hover:underline"
+          className="font-mono text-xs font-semibold tabular-nums text-brand-700 estira hover:underline"
         >
           {ini.numero?.completo ?? `#${ini.id}`}
         </Link>

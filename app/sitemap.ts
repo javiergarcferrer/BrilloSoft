@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { INSTITUCIONES, hrefInstitucion } from "@/lib/instituciones";
 import { CAPITULOS } from "@/lib/capitulos";
-import { PAGINAS_PLATAFORMA, SECCIONES } from "@/lib/secciones";
+import { SECCIONES } from "@/lib/secciones";
+import { INDICE } from "@/lib/indice";
 import { PROVINCIAS } from "@/lib/provincias";
 import { getObras } from "@/lib/obras";
 import { getDirectorioLegisladores } from "@/lib/congreso";
@@ -53,8 +54,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
   const obras = obrasInst?.proyectos ?? [];
   const vistas = SECCIONES.flatMap((s) => s.vistas.map((v) => v.href));
-  const plataforma = PAGINAS_PLATAFORMA.map((p) => p.href);
-  const rutas = [...new Set([...plataforma, ...vistas, "/fuentes", "/finanzas/guia/deuda"])].filter(
+  const indice = INDICE.map((d) => d.href);
+  const rutas = [...new Set([...indice, ...vistas])].filter(
     (r) => !FUERA_DEL_MAPA.has(r),
   );
   return [

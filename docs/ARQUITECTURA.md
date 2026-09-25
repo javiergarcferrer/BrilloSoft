@@ -419,7 +419,7 @@ sources impose:
   `/congreso/guia` (how a law is made), `/finanzas/guia` (reading the budget),
   `/finanzas/guia/deuda` (public debt). They live under their vertical so the
   section bar lights the right one; `/guia` keeps its old URL.
-- `/seguimiento` → platform page (not a vertical, `PAGINAS_PLATAFORMA`):
+- `/seguimiento` → platform page (not a vertical; «El Estado › La plataforma» in `lib/menu.ts`):
   everything followed, grouped by type, and «qué cambió desde tu última
   visita».
 - **Every purchasing unit links to its institution** (`/instituciones/[id]`,
@@ -470,6 +470,14 @@ sources impose:
   The trigger holding the current route gets a paper underline (`grupoActivo`).
   The phone's «Más» sheet renders the same `MENU`. No questions in the header
   (owner decision, DECISIONES): `pregunta` survives only as a palette keyword.
+- **The index** (`lib/indice.ts`, taxonomy in `lib/tareas.ts`): every
+  destination once, derived from `MENU`, where each link declares its `tarea`
+  (vigilar · buscar · comparar · leer · participar · entender). The palette
+  groups by task, `app/sitemap.ts` lists it, and `.claude/hooks/indice.py`
+  fails the gate on a static page that is neither in the menu nor in
+  `FUERA_DEL_INDICE` with its reason. It replaced `PAGINAS_PLATAFORMA`: three
+  lists of destinations had drifted apart (the palette did not know `/pais`
+  or `/luz`).
 - **Indexing:** `metadataBase` = `SITIO` (`lib/sitio.ts`, a constant — no env).
   Every page declares `alternates.canonical`: static pages their route, fichas
   their own path (`/instituciones/237` → `/instituciones/237-minerd`). Not
@@ -557,7 +565,7 @@ del archivo que las lleva:
 | `components/marca.tsx` | El contrasello: `Sello`, `SelloCompacto`, `Logotipo`. |
 | `components/plegable.tsx` | Revelación progresiva sobre `ui/collapsible`; el botón dice **cuántos hay**, nunca «ver más». |
 | `components/bottom-sheet.tsx` | La hoja de filtros del teléfono, sobre `ui/sheet`. |
-| `components/paleta.tsx` | «Buscar» en la cabecera de todas las páginas: «¿a dónde vas?», sobre `ui/dialog` + `ui/command` (⌘K, Ctrl K, «/»): todas las vistas de `lib/secciones` filtrables sin tildes, y lo tecleado ofrecido a **cada** búsqueda de `BUSQUEDAS` con su alcance debajo. No es un buscador global —no hay índice propio— y no lo finge. |
+| `components/paleta.tsx` | «Buscar» en la cabecera de todas las páginas: «¿a dónde vas?», sobre `ui/dialog` + `ui/command` (⌘K, Ctrl K, «/»): todo el índice de `lib/indice.ts` agrupado por tarea y filtrable sin tildes (también por verbo: «votar», «comparar»), y lo tecleado ofrecido a **cada** búsqueda de `BUSQUEDAS` con su alcance debajo. No es un buscador global —no hay índice propio— y no lo finge. |
 | `components/ruta.tsx` | La ruta de una ficha sobre `ui/breadcrumb`: la miga entera desde `sm`, solo la vuelta a 44 px en el teléfono. Si se vino de esa vista (`components/rastro.tsx`), volver es el «atrás» del navegador y conserva filtros y posición. |
 | `components/paginador.tsx` | Anterior · página · siguiente, con enlaces (`href`) o con estado (`onPage`). Mandos a 44 px en los bordes; el que no aplica se apaga, no desaparece. |
 | `components/antiguedad.tsx` | La fecha de una fila de listado: `<time>` real, relativa a la vista, exacta en el `title`. |

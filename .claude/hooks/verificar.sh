@@ -45,6 +45,22 @@ abrev="$(grep -rnE '\)\}?(MM|M|K)`' app components lib --include=*.ts --include=
          | grep -vE ':[0-9]+:[[:space:]]*(//|/?\*)' | head -5)"
 if [ -z "$abrev" ]; then ok "magnitudes: no MM/M/K abbreviations on amounts"; else mal "amount abbreviated as MM/M/K — use formatPesos/formatMagnitud"; printf '%s\n' "$abrev" | sed 's/^/       /'; fi
 
+# 2d. The index tells the truth (see indice.py): every static page is a
+# destination with its task in lib/menu.ts, or declared out of the index.
+if command -v python3 >/dev/null 2>&1; then
+  if huerf="$(python3 "$(dirname "$0")/indice.py" "$ROOT" 2>&1)" && [ -z "$huerf" ]; then
+    ok "index: every page is a destination with its task, or declared out"
+  else
+    mal "index drift"; printf '%s\n' "$huerf" | sed 's/^/       /'
+  fi
+fi
+
+# 2e. Motion goes through its tokens (IDENTIDAD §Movimiento): no curve
+# written by hand in a component, no bounce, nothing slower than a sheet.
+mov="$(grep -rnE 'cubic-bezier\(|animate-bounce|duration-\[|duration-(3[5-9][0-9]|[4-9][0-9]{2}|[0-9]{4})([^0-9]|$)' app components --include=*.tsx 2>/dev/null \
+       | grep -vE ':[0-9]+:[[:space:]]*(//|/?\*)' | head -5)"
+if [ -z "$mov" ]; then ok "motion: curves and durations come from the tokens"; else mal "hand-written motion — use ease-firma/sello/salida/estampa and the --dur-* tokens"; printf '%s\n' "$mov" | sed 's/^/       /'; fi
+
 # 3. Statelessness: env vars and Supabase confined to /democracia.
 fuera="$( { grep -rlE 'process\.env\.' app lib components --include=*.ts --include=*.tsx 2>/dev/null; \
             grep -rlE '@supabase/supabase-js|@/lib/supabase["'"'"']' app lib components --include=*.ts --include=*.tsx 2>/dev/null; } \

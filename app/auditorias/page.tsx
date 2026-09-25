@@ -202,7 +202,7 @@ export default async function AuditoriasPage({
                       href={i.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-[15px] leading-snug text-ink [overflow-wrap:anywhere] after:absolute after:inset-0 hover:text-brand-700"
+                      className="block text-[15px] leading-snug text-ink [overflow-wrap:anywhere] estira hover:text-brand-700"
                     >
                       {i.titulo}
                       <span className="sr-only">
@@ -408,7 +408,7 @@ function FilaIci({ titulo, fecha, url }: { titulo: string; fecha: string | null;
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block text-[15px] leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700"
+        className="block text-[15px] leading-snug text-ink estira hover:text-brand-700"
       >
         {titulo.replace(/^Resultados ICI\s*-\s*/i, "").replace(/^./, (c) => c.toUpperCase())}
         <span className="sr-only"> (abre el PDF en el sitio de la Contraloría)</span>
@@ -435,7 +435,7 @@ function FilaLista({ l }: { l: ListaDeclaracion }) {
         href={l.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block text-[15px] leading-snug text-ink [overflow-wrap:anywhere] after:absolute after:inset-0 hover:text-brand-700"
+        className="block text-[15px] leading-snug text-ink [overflow-wrap:anywhere] estira hover:text-brand-700"
       >
         {l.grupo ?? capitalizar(l.lista)}
         <span className="sr-only"> (abre la lista en el sitio de la Cámara de Cuentas)</span>

@@ -2,13 +2,9 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  BUSQUEDAS,
-  PAGINAS_PLATAFORMA,
-  SECCIONES,
-  seccionDe,
-  type DestinoBusqueda,
-} from "@/lib/secciones";
+import { BUSQUEDAS, SECCIONES, seccionDe, type DestinoBusqueda } from "@/lib/secciones";
+import { INDICE, porTarea, type Destino } from "@/lib/indice";
+import { TAREAS } from "@/lib/tareas";
 import { getBusquedas, onBusquedasCambio, type Busqueda } from "@/lib/busquedas";
 import { getRecientes } from "@/lib/recientes";
 import { cn } from "@/lib/cn";
@@ -41,6 +37,7 @@ import {
  * sostiene eso por el lector (docs/IDENTIDAD.md §3, reconocer y no recordar):
  * toda la arquitectura de `lib/secciones` en una lista que se filtra al
  * teclear, y el texto tecleado ofrecido a **cada** búsqueda de la plataforma.
+ * La lista es el índice de `lib/indice.ts`, agrupado por tarea.
  *
  * Lo que no hace es fingir un índice. La plataforma no tiene uno propio —no
  * tiene base de datos, y no la va a tener—, así que lo tecleado se ofrece a
@@ -123,14 +120,7 @@ export default function Paleta() {
   };
 
   const consulta = texto.trim();
-  const sinSeccion =
-    !!consulta &&
-    !SECCIONES.some((sec) =>
-      sec.vistas.some((v) =>
-        coincide(consulta, [sec.nombre, v.label, sec.pregunta, sec.descriptor]),
-      ),
-    ) &&
-    !PAGINAS_PLATAFORMA.some((p) => coincide(consulta, [p.label, p.descriptor]));
+  const sinSeccion = !!consulta && !INDICE.some((d) => coincide(consulta, claves(d)));
 
   // La búsqueda de la vertical en la que ya está el lector va primero: es la
   // que más probablemente quería.
@@ -236,53 +226,32 @@ export default function Paleta() {
               </>
             )}
 
-            <CommandGroup heading="Secciones">
-              {SECCIONES.flatMap((s) =>
-                s.vistas.map((v, i) => {
-                  const unica = s.vistas.length === 1;
-                  return (
-                    <CommandItem
-                      key={v.href}
-                      value={`ir:${v.href}`}
-                      keywords={[s.nombre, v.label, s.pregunta, s.descriptor]}
-                      onSelect={() => ir(v.href)}
-                    >
-                      <span
-                        aria-hidden
-                        className={cn("h-1.5 w-1.5 shrink-0 rounded-full", s.hue.punto)}
-                      />
-                      <span className="min-w-0 flex-1 truncate">
-                        <span className="font-medium">{s.nombre}</span>
-                        {!unica && <span className="text-ink-soft"> · {v.label}</span>}
-                      </span>
-                      {/* El descriptor de la vertical, una sola vez: en su primera vista. */}
-                      {i === 0 && (
-                        <span className="hidden shrink-0 text-xs text-ink-soft sm:inline">
-                          {s.descriptor}
-                        </span>
-                      )}
-                    </CommandItem>
-                  );
-                }),
-              )}
-            </CommandGroup>
-
-            <CommandGroup heading="Plataforma">
-              {PAGINAS_PLATAFORMA.map((p) => (
-                <CommandItem
-                  key={p.href}
-                  value={`ir:${p.href}`}
-                  keywords={[p.label, p.descriptor]}
-                  onSelect={() => ir(p.href)}
-                >
-                  <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
-                  <span className="min-w-0 flex-1 truncate font-medium">{p.label}</span>
-                  <span className="hidden shrink-0 truncate text-xs text-ink-soft sm:inline">
-                    {p.descriptor}
-                  </span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {/*
+              El índice entero, agrupado por lo que el lector viene a hacer
+              (`lib/tareas.ts`) y no por tema: el tema ya lo ordena el menú.
+              Seis grupos, cada destino con su línea de qué hay detrás.
+            */}
+            {porTarea().map(({ tarea, etiqueta, destinos }) => (
+              <CommandGroup key={tarea} heading={etiqueta}>
+                {destinos.map((d) => (
+                  <CommandItem
+                    key={d.href}
+                    value={`ir:${d.href}`}
+                    keywords={claves(d)}
+                    onSelect={() => ir(d.href)}
+                  >
+                    <span aria-hidden className={cn("h-1.5 w-1.5 shrink-0 rounded-full", d.punto)} />
+                    <span className="min-w-0 flex-1 truncate">
+                      <span className="font-medium">{d.label}</span>
+                      <span className="text-ink-soft"> · {d.tema}</span>
+                    </span>
+                    <span className="hidden max-w-[45%] shrink-0 truncate text-xs text-ink-soft sm:inline">
+                      {d.nota}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
 
             {consulta && sugeridas.length > 0 && (
               <CommandGroup heading="Instituciones">
@@ -378,6 +347,24 @@ function FilaBusqueda({
       <IconArrowRight className="mt-0.5 h-4 w-4 text-ink-soft" />
     </CommandItem>
   );
+}
+
+/**
+ * Las claves de un destino, en orden de peso: las dos primeras son su nombre
+ * (el filtro las pone delante); después la línea de qué hay, la pregunta de
+ * su vertical y las palabras de su tarea, para que «votar» o «comparar»
+ * encuentren aunque no sean el nombre de nada.
+ */
+function claves(d: Destino): string[] {
+  const seccion = SECCIONES.find((s) => s.id === d.seccion);
+  return [
+    d.label,
+    d.tema,
+    d.nota,
+    d.grupo,
+    ...(seccion ? [seccion.nombre, seccion.pregunta] : []),
+    ...TAREAS[d.tarea].claves,
+  ];
 }
 
 /** ¿Aparecen todas las palabras de lo tecleado, sin tildes ni mayúsculas? */

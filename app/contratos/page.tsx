@@ -161,7 +161,7 @@ export default async function ContratosPage() {
                 <Link
                   href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
                   title={c.descripcion || c.codigo_contrato}
-                  className="line-clamp-1 text-sm font-medium text-ink after:absolute after:inset-0 after:content-[''] hover:text-brand-700"
+                  className="line-clamp-1 text-sm font-medium text-ink estira hover:text-brand-700"
                 >
                   {tituloLegible(c.descripcion || c.codigo_contrato)}
                 </Link>

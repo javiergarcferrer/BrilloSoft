@@ -29,7 +29,7 @@ export function FilaObra({ obra: o }: { obra: Obra }) {
       <Link
         href={`/obras/${o.snip}`}
         title={o.nombre}
-        className="mt-1.5 block text-[15px] leading-snug text-ink after:absolute after:inset-0 hover:text-brand-700"
+        className="mt-1.5 block text-[15px] leading-snug text-ink estira hover:text-brand-700"
       >
         {tituloLegible(o.nombre)}
       </Link>

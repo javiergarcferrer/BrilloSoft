@@ -264,7 +264,7 @@ async function RankingPorMonto() {
               <Link
                 href={`/proveedores/${p.rpe}`}
                 title={p.razonSocial}
-                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
+                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 estira hover:underline"
               >
                 {p.razonSocial}
               </Link>
@@ -360,7 +360,7 @@ async function RankingPorContratos() {
               <Link
                 href={`/proveedores/${p.rpe}`}
                 title={p.razonSocial}
-                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
+                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 estira hover:underline"
               >
                 {p.razonSocial}
               </Link>
@@ -436,7 +436,7 @@ async function QuienesSon() {
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <Link
                   href={`/proveedores/${p.rpe}`}
-                  className="text-sm font-medium text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
+                  className="text-sm font-medium text-brand-700 estira hover:underline"
                 >
                   {f.razonSocial}
                 </Link>
@@ -678,7 +678,7 @@ function FilaCoincidencia({ p }: { p: ProveedorEnMercado }) {
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <Link
           href={`/proveedores/${p.rpe}`}
-          className="text-sm font-medium text-brand-700 after:absolute after:inset-0 after:content-[''] hover:underline"
+          className="text-sm font-medium text-brand-700 estira hover:underline"
         >
           {p.razonSocial}
         </Link>

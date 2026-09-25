@@ -70,7 +70,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
   return (
     <Card
       as="article"
-      className="cv-auto group relative flex flex-col p-4 transition-colors focus-within:border-brand-400 hover:border-brand-300"
+      className="cv-auto group relative flex flex-col p-4 focus-within:border-brand-400 hover:border-brand-300"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -121,7 +121,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
         <Link
           href={href}
           title={titulo}
-          className="line-clamp-2 transition-colors after:absolute after:inset-0 after:content-[''] hover:text-brand-700 focus-visible:outline-none"
+          className="line-clamp-2 transition-colors estira hover:text-brand-700 focus-visible:outline-none"
         >
           {tituloLegible(titulo)}
         </Link>

@@ -29,7 +29,7 @@ export async function DocumentosDeInstitucion({ uc }: { uc: number }) {
               href={d.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block text-sm leading-snug text-ink [overflow-wrap:anywhere] after:absolute after:inset-0 hover:text-brand-700"
+              className="block text-sm leading-snug text-ink [overflow-wrap:anywhere] estira hover:text-brand-700"
             >
               {d.titulo}
             </a>

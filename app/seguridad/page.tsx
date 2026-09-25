@@ -105,7 +105,7 @@ export default function SeguridadPlataformaPage() {
         `items-start` mantiene el sello arriba cuando el título se parte en dos
         líneas a 390 px, donde `items-center` lo dejaba a media altura.
       */}
-      <Card asChild className="mt-6 transition-colors hover:bg-canvas/60">
+      <Card asChild className="mt-6 hover:bg-canvas/60">
         <Link
           href="/democracia/seguridad"
           className="flex items-start gap-4 px-5 py-4 sm:items-center"
