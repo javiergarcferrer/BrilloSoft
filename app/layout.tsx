@@ -68,7 +68,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#171d2e",
+  themeColor: "#0b2d6b",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -102,7 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
 
         <header
-          className="sticky top-0 z-50 bg-ink text-canvas"
+          className="sticky top-0 z-50 bg-marca text-canvas"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           {/*
@@ -120,7 +120,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               href="/"
               className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-90"
             >
-              <SelloCompacto className="h-9 w-9" fondo="#f7f3ea" trazo="#171d2e" />
+              <SelloCompacto className="h-9 w-9" fondo="#f7f3ea" trazo="#171d2e" acento="#c8102e" />
               <Logotipo sobreTinta className="text-[19px] max-[340px]:hidden" />
             </Link>
 

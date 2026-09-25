@@ -28,6 +28,14 @@
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo,
     "Courier New", monospace;
 
+  /*
+    La marca (2026-09-24): el azul profundo de la cabecera y del ícono, y el
+    rojo claro del acento sobre él. Solo para la marca y la franja que la
+    lleva; el contenido sigue en tinta, firma y sello.
+  */
+  --color-marca: #0b2d6b;
+  --color-marca-acento: #ff5a5f;
+
   /* Papel, tinta y márgenes: la superficie del documento */
   --color-canvas: #f7f3ea;
   --color-surface: #fdfbf5;

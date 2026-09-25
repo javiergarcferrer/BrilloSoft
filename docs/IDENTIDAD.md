@@ -42,6 +42,8 @@ bien compuesto.
 
 | Token | Valor | Oficio |
 |---|---|---|
+| `marca` | `#0B2D6B` | El azul de la marca: la cabecera y el ícono. Nada más. |
+| `marca-acento` | `#FF5A5F` | El acento del logotipo sobre el azul de la marca. |
 | `canvas` | `#F7F3EA` | Papel de oficio. El fondo de todo. |
 | `surface` | `#FDFBF5` | La hoja sobre el papel: tarjetas y paneles. |
 | `ink` | `#171D2E` | Tinta de imprenta. Texto y bandas oscuras. |
@@ -83,11 +85,11 @@ sans en negrita, no serif: la serif a ese tamaño se lee floja.
 una sola palabra en minúscula, **sin «.do»**: el nombre es Socrático.
 
 - `Logotipo` — «socrático» en Instrument Serif; **el acento de la «á» es el
-  sello**, un trazo rojo inclinado (`bg-sello-600`; `bg-sello-300` sobre tinta).
-  Cabecera y pie.
-- `SelloCompacto` — la «s» con el mismo acento en una placa (SVG): cabecera
-  en teléfono, favicon (`app/icon.svg`), ícono de la app. Sobre tinta el acento
-  se aclara.
+  sello**, un trazo rojo inclinado (`bg-sello-600` sobre papel; `bg-marca-acento`
+  sobre la cabecera, que va en el azul `marca`). Cabecera y pie.
+- `SelloCompacto` — la «s» con el mismo acento en una placa (SVG): en la
+  cabecera, placa de papel sobre el azul; en el favicon (`app/icon.svg`) y el
+  ícono de la app, placa azul `marca` con el acento en `marca-acento`.
 - `Sello` — la circular con «¿» al centro y el aro «SOCRÁTICO · PREGÚNTALE AL
   ESTADO · REPÚBLICA DOMINICANA». Es el sello de firma (pie de página, tarjeta
   social), no el logotipo. Nunca por debajo de 72 px con aro.

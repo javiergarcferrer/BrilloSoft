@@ -24,6 +24,9 @@
 const PAPEL = "#f7f3ea";
 const TINTA = "#171d2e";
 const SELLO = "#a63a2a";
+/** El azul de la marca y el rojo claro del acento sobre él (`--color-marca*`). */
+const MARCA = "#0b2d6b";
+const ACENTO_CLARO = "#ff5a5f";
 
 /** La «¿»: el signo de cierre girado media vuelta. */
 function Interrogacion({ trazo, grosor = 13 }: { trazo: string; grosor?: number }) {
@@ -105,9 +108,9 @@ function Acento({ className = "left-[0.24em]", color = "bg-sello-600" }: { class
 
 export function SelloCompacto({
   className = "h-9 w-9",
-  fondo = TINTA,
+  fondo = MARCA,
   trazo = PAPEL,
-  acento = fondo === PAPEL ? SELLO : "#d0503c",
+  acento = fondo === PAPEL ? SELLO : ACENTO_CLARO,
 }: {
   className?: string;
   fondo?: string;
@@ -137,7 +140,7 @@ export function SelloCompacto({
 
 /**
  * El logotipo: «socrático», una palabra en minúscula. El acento de la «á» es el
- * sello: va en rojo, más claro sobre fondo tinta para no perderse.
+ * sello: va en rojo; sobre el azul de la marca, en su rojo claro.
  */
 export function Logotipo({
   className = "text-[19px]",
@@ -153,7 +156,7 @@ export function Logotipo({
         socr
         <span className="relative inline-block">
           a
-          <Acento color={sobreTinta ? "bg-sello-300" : "bg-sello-600"} />
+          <Acento color={sobreTinta ? "bg-marca-acento" : "bg-sello-600"} />
         </span>
         tico
       </span>
