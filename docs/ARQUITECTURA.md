@@ -100,6 +100,11 @@ some pages return a permanent 500. So the layer offers:
 - `buscarProveedores(q)` — resolves a query by RPE, by document or by name; the
   name path can only search the window, and `ResultadoProveedores` carries the
   base (`contratosEscaneados`, `desde`/`hasta`) so the UI must declare it.
+  `/proveedores` adds, for a name, `buscarEnTodo(q, { tipo: "proveedor" })`
+  (`lib/busqueda.ts`): the 32 mil suppliers with a contract since 2015, word
+  matches only, exact name first and then by contract count. Until 2026-09-26
+  the page had only the window, and a supplier with no award in the last month
+  (Plaza Lama, 865 contracts) never came up by name.
 - `listPacc({periodo})` — **`/pacc`**: each unit's annual purchasing plan, the
   earliest signal the State publishes. Its `periodo` filter is ignored
   upstream, so the year is filtered server-side.

@@ -123,8 +123,11 @@ export default async function FuentesPage() {
             registro completo
             {proveedores !== null && <> —{formatInt(proveedores)} inscritos—</>},
             mientras que{" "}
-            <strong>por nombre</strong> solo se puede buscar entre quienes
-            ganaron contratos en las últimas semanas.
+            <strong>por nombre</strong> se busca entre todos los que han
+            contratado desde 2015 (la instantánea de compras) y entre quienes
+            ganaron algo el último mes; un inscrito que nunca contrató solo se
+            encuentra por su número, porque el registro no admite búsqueda por
+            razón social.
           </p>
           <p className="mt-3 text-[13px] text-ink-soft sm:text-xs">
             Las búsquedas por texto escanean hasta 6 páginas de 1000 registros

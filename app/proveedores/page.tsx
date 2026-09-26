@@ -5,11 +5,13 @@ import {
   buscarProveedores,
   contarProveedoresRegistrados,
   muestrearProveedores,
+  normalize,
   registrosDeProveedores,
   type ProveedorEnMercado,
   type ProveedorRegistro,
   type ResultadoProveedores,
 } from "@/lib/dgcp";
+import { buscarEnTodo, type Hallazgos } from "@/lib/busqueda";
 import { titulizar } from "@/lib/capitulos";
 import { formatFecha, formatMonto, formatPesos, hace } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
@@ -30,6 +32,7 @@ import { Cargando, Esqueleto, EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconArrowRight } from "@/components/icons";
+import { Resaltado } from "@/components/resaltado";
 import BuscadorProveedores from "./buscador";
 import { Portada } from "@/components/portada";
 
@@ -56,8 +59,9 @@ const censo = cache(() => contarProveedoresRegistrados());
 
 const AYUDA =
   "Un número —RNC, cédula o RPE— busca en el registro completo de proveedores del Estado. " +
-  "Un nombre solo se puede buscar entre quienes ganaron contratos en las últimas semanas: " +
-  "el origen no permite consultar el registro por razón social.";
+  "Un nombre busca entre todos los que han contratado desde 2015 y entre quienes ganaron algo " +
+  "este último mes; un inscrito que nunca contrató solo se encuentra por su número, porque el " +
+  "origen no permite consultar el registro por razón social.";
 
 export default async function ProveedoresPage({
   searchParams,
@@ -189,7 +193,7 @@ async function Indicadores() {
         otra cosa y no se divide con ellas: en el Registro de Proveedores del
         Estado hay {inscritos === null ? "decenas de miles de" : formatInt(inscritos)}{" "}
         inscritos, y la inmensa mayoría no gana un contrato en un mes
-        cualquiera. Para uno en concreto, búscalo por su RNC o su número de RPE.
+        cualquiera. Para uno en concreto, búscalo por su nombre, su RNC o su número de RPE.
       </p>
     </div>
   );
@@ -501,13 +505,40 @@ async function QuienesSon() {
 async function Resultados({ q }: { q: string }) {
   // El barrido que la página ya está leyendo se pasa hecho: si no, se
   // recorrerían y agregarían seis mil contratos dos veces por render.
-  const r = await buscarProveedores(q, mercado());
+  //
+  // Por nombre hay dos lecturas, y se dicen por separado: la ventana de
+  // contratos recientes (en vivo, con monto y fecha) y el índice de todos los
+  // que han contratado desde 2015 (la instantánea de `/historico`, el mismo
+  // de `/buscar`). Hasta el 2026-09-26 solo existía la primera, y quien
+  // buscaba por nombre a un proveedor que no había ganado nada en el último
+  // mes —Plaza Lama, con 865 contratos— no lo encontraba nunca.
+  const [r, historico] = await Promise.all([
+    buscarProveedores(q, mercado()),
+    q.replace(/[^\p{L}]/gu, "").length >= 3 && /\p{L}/u.test(q)
+      ? // Todas las coincidencias (hasta el tope del índice) y no la primera
+        // página: el orden por contratos se hace aquí, sobre el conjunto.
+        buscarEnTodo(q, { tipo: "proveedor", porPagina: 1000 })
+      : Promise.resolve(null),
+  ]);
+  // Se listan por peso: primero quien se llama exactamente así, luego los que
+  // más contratos tienen. El orden por BM25 subía a la empresa de un contrato
+  // con el nombre más corto por delante de las que de verdad le venden al Estado.
+  const exacto = normalize(q).replace(/\s+/g, " ").trim();
+  const enHistorico = (historico?.resultados.filter((h) => h.via !== "tema" && h.href) ?? []).sort(
+    (a, b) =>
+      Number(normalize(b.titulo).startsWith(exacto)) - Number(normalize(a.titulo).startsWith(exacto)) ||
+      (b.contratos ?? 0) - (a.contratos ?? 0),
+  ).slice(0, MAX_HISTORICO);
 
-  const sinNada = !r.registro && r.coincidencias.length === 0;
+  const sinNada = !r.registro && r.coincidencias.length === 0 && enHistorico.length === 0;
 
   return (
     <div className="space-y-4">
       {r.registro && <FichaEncontrada r={r} registro={r.registro} />}
+
+      {enHistorico.length > 0 && historico && (
+        <CoincidenciasHistoricas consulta={r.consulta} filas={enHistorico} h={historico} />
+      )}
 
       {r.coincidencias.length > 0 && (
         <Card>
@@ -557,10 +588,11 @@ async function Resultados({ q }: { q: string }) {
               ({formatFecha(r.desde)} — {formatFecha(r.hasta)})
             </>
           )}
-          . El registro de la DGCP no admite búsqueda por razón social ni se
-          puede recorrer entero, así que un proveedor que no haya ganado nada
-          últimamente no aparece aquí: búscalo por su RNC o su número de RPE y
-          verás su ficha completa.
+          , y entre los que tienen algún contrato desde 2015 en la instantánea
+          de compras. El registro de la DGCP no admite búsqueda por razón social
+          ni se puede recorrer entero, así que un inscrito que nunca ha
+          contratado no aparece por nombre: búscalo por su RNC o su número de
+          RPE y verás su ficha completa.
         </p>
       )}
     </div>
@@ -669,6 +701,60 @@ function FichaEncontrada({
   );
 }
 
+/** Cuántos proveedores del histórico se listan por nombre como máximo. */
+const MAX_HISTORICO = 60;
+
+/**
+ * Los que se llaman así entre todos los que han contratado desde 2015
+ * (`lib/busqueda.ts`, tipo `proveedor`): el camino por nombre que no depende
+ * de haber ganado algo este mes. Solo coincidencias por palabra —un nombre de
+ * empresa no tiene «tema»—, con la fecha de la instantánea al lado.
+ */
+function CoincidenciasHistoricas({
+  consulta,
+  filas,
+  h,
+}: {
+  consulta: string;
+  filas: Hallazgos["resultados"];
+  h: Hallazgos;
+}) {
+  const total = h.porTipo.proveedor ?? filas.length;
+  const corte = h.instantaneas.proveedor;
+  return (
+    <Card>
+      <CardHeader>
+        <div className="min-w-0">
+          <p className="rotulo text-ink-soft">{`Coincidencias con «${consulta}»`}</p>
+          <CardTitle>Proveedores con contratos desde 2015</CardTitle>
+        </div>
+        <CardAction>
+          {total > filas.length ? `${filas.length} de ${formatInt(total)}` : formatInt(filas.length)}
+        </CardAction>
+      </CardHeader>
+      <ul className="divide-y divide-hairline">
+        {filas.map((p) => (
+          <li
+            key={p.href}
+            className="cv-auto relative px-5 py-3 transition-colors hover:bg-brand-50/40"
+            style={{ "--cv-alto": "4rem" } as React.CSSProperties}
+          >
+            <Link href={p.href!} className="text-sm font-medium text-brand-700 estira hover:underline">
+              <Resaltado texto={p.titulo} consulta={consulta} />
+            </Link>
+            {p.detalle && <p className="mt-0.5 text-xs text-ink-soft">{p.detalle}</p>}
+          </li>
+        ))}
+      </ul>
+      {corte && (
+        <p className="border-t border-hairline px-5 py-2.5 text-xs text-ink-soft">
+          De la instantánea de compras del {formatFecha(corte)}; la ficha de cada uno se lee en vivo.
+        </p>
+      )}
+    </Card>
+  );
+}
+
 function FilaCoincidencia({ p }: { p: ProveedorEnMercado }) {
   return (
     <li
@@ -717,9 +803,9 @@ function SinResultados({ r }: { r: ResultadoProveedores }) {
     <EstadoVacio titulo={`Nada encontrado para «${r.consulta}»`}>
       {r.via === "nombre" ? (
         <>
-          Ningún proveedor con contrato reciente se llama así. La búsqueda por
-          nombre solo alcanza la ventana de contratos escaneada: si sabes su RNC
-          o su número de RPE, ese sí consulta el registro entero.
+          Ningún proveedor que haya contratado con el Estado desde 2015 se llama
+          así. Un inscrito que nunca ha contratado no se puede buscar por nombre:
+          si sabes su RNC o su número de RPE, ese sí consulta el registro entero.
         </>
       ) : (
         <>

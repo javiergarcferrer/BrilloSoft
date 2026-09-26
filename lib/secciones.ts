@@ -301,7 +301,7 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
     etiqueta: "Proveedores",
     href: "/proveedores",
     alcance:
-      "Un RNC, cédula o RPE busca en el registro completo; un nombre, solo entre quienes ganaron contratos en las últimas semanas (en «Toda la plataforma», entre todos los que contrataron desde 2015).",
+      "Un RNC, cédula o RPE busca en el registro completo; un nombre, entre todos los que contrataron desde 2015 y los que ganaron algo este último mes.",
   },
   {
     seccion: "congreso",

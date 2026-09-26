@@ -109,6 +109,8 @@ export interface Resultado {
   /** Cargos: plazas y en cuántas instituciones. */
   plazas: number | null;
   instituciones: number | null;
+  /** Proveedores: contratos desde 2015 en la instantánea. */
+  contratos: number | null;
   via: Via;
 }
 
@@ -540,6 +542,7 @@ function aResultado(c: Corpus, d: Entrada, via: Via, formatos?: string[]): Resul
     valor: d.v ?? null,
     plazas: d.n ?? null,
     instituciones: d.m ?? null,
+    contratos: proveedor ? (d.k ?? null) : null,
     via,
   };
 }
