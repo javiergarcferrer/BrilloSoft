@@ -21,14 +21,14 @@ import {
 import { cn } from "@/lib/cn";
 import type { SeccionId } from "@/lib/secciones";
 import {
-  Sheet,
-  SheetBody,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 /**
  * Navegación inferior móvil (oculta en lg+, donde navega el nav del header).
@@ -191,8 +191,8 @@ export default function MobileTabBar() {
           </Link>
         ))}
 
-        <Sheet open={hojaAbierta} onOpenChange={setHojaAbierta}>
-          <SheetTrigger
+        <Drawer open={hojaAbierta} onOpenChange={setHojaAbierta}>
+          <DrawerTrigger
             // `aria-current` va también aquí: cuando el visitante está en una
             // página de la hoja, esta casilla **es** la que representa la
             // página actual en la navegación, y quien no ve el subrayado tiene
@@ -215,17 +215,17 @@ export default function MobileTabBar() {
             />
             <IconMenu className="h-6 w-6" />
             <span className="max-w-full truncate">Más</span>
-          </SheetTrigger>
+          </DrawerTrigger>
 
-          <SheetContent side="bottom">
-            <SheetHeader>
-              <SheetTitle>Toda la plataforma</SheetTitle>
-              <SheetDescription>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Toda la plataforma</DrawerTitle>
+              <DrawerDescription>
                 Lo mismo que el menú de escritorio: el dinero, las leyes y el
                 Estado, cada destino con una línea que dice qué hay.
-              </SheetDescription>
-            </SheetHeader>
-            <SheetBody className="px-2 py-2">
+              </DrawerDescription>
+            </DrawerHeader>
+            <DrawerBody className="px-2 py-2">
               {/*
                 Buscar encabeza la hoja: quien abre «Más» sin saber en qué
                 grupo vive lo que busca no tiene que recorrer veinte filas para
@@ -280,9 +280,9 @@ export default function MobileTabBar() {
                   </ul>
                 </section>
               ))}
-            </SheetBody>
-          </SheetContent>
-        </Sheet>
+            </DrawerBody>
+          </DrawerContent>
+        </Drawer>
       </div>
     </nav>
   );

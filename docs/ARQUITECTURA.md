@@ -392,8 +392,14 @@ sources impose:
 ## Pages — `app/`
 - `/` → panorama (server). `/licitaciones` → `app/buscador.tsx` (client) inside
   `<Suspense>`. Filters live entirely in
-  the **URL** (`useSearchParams`) so any search is shareable/bookmarkable; it
-  fetches `/api/procesos`. `MODALIDADES` is defined here and must match the
+  the **URL** so any search is shareable/bookmarkable: `nuqs` reads and writes
+  it through one parser map shared with the search field
+  (`components/licitaciones-url.ts`) — `q`, `etapa`, `modalidad`, `desde`,
+  `hasta`, `mipyme=1`, `orden`, `uc`, `page`; defaults are never written, a
+  filter change replaces the history entry and resets `page` in the same
+  update, a saved search is a real `router.push`, and a legacy `?estado=` is
+  rewritten to its `?etapa=` on read. `etapa=` is «todas» and `desde=` is
+  «todo el histórico». It fetches `/api/procesos`. `MODALIDADES` is defined here and must match the
   DGCP vocabulary. **State is filtered by *etapa*, not by `estado_proceso`**:
   `ETAPAS` in `lib/estados.ts` groups the source's seven states into five
   plain-language stages (`abiertos`, `cerrados`, `evaluacion`, `adjudicados`,
@@ -439,8 +445,9 @@ sources impose:
   keeps its state in the URL: `?q=` and `?inst=CODIGO` are a contract with the
   ⌘K palette and the institution ficha; `?cargo=` (normalized prefix match,
   `patronCargo` in `lib/nomina.ts`) and `?vista=resumen|tabla|comparar` are its
-  own. Written with `history.replaceState`, applied back when a link changes
-  the URL. The page resolves the code → ficha links on the server (the
+  own. Read and written with `nuqs` (replace, not push; `q` and `cargo`
+  debounced 250 ms in the URL while the field updates at once), so a link
+  that changes the URL on the same page is simply the new state. The page resolves the code → ficha links on the server (the
   institutions cross is 114 KB and never ships to the client) and lists the
   covered institutions with an ochre mark when a photo is older than three
   months (`estaAtrasada`); `revalidate` is a day so that mark stays true.
@@ -601,11 +608,24 @@ Tres desviaciones deliberadas respecto a shadcn, todas escritas en la cabecera
 del archivo que las lleva:
 - **`Card` no flota**: sin `shadow-sm` y con `rounded-lg`, porque el papel se
   separa con filete (§2 y §3 de la identidad). La sombra queda para lo que de
-  verdad se superpone: `dialog`, `sheet`, `popover`, `dropdown-menu`, `tooltip`.
+  verdad se superpone: `dialog`, `drawer`, `popover`, `dropdown-menu`, `tooltip`.
 - **`Progress` no usa Radix**: es un componente de servidor. Esta plataforma
   dibuja barras sobre todo en el servidor —veinte adjudicatarios, veintitantos
   capítulos— y lo único que Radix aportaba eran cuatro atributos ARIA.
 - **Los iconos salen de `components/icons.tsx`**, no de `lucide-react`.
+
+### Bibliotecas de cliente — el mecanismo, no el aspecto
+Tres mecanismos que estaban escritos a mano los resuelve hoy una biblioteca
+madura, sin clave ni servicio (`docs/PLAN-ACCESO.md` §6 bis, puntos 6-8):
+
+| Mecanismo | Biblioteca | Dónde |
+|---|---|---|
+| Estado ↔ URL | `nuqs` (`NuqsAdapter` en `app/layout.tsx`) | `app/buscador.tsx` y `components/campo-licitaciones.tsx` (un solo mapa: `components/licitaciones-url.ts`), `components/nomina/explorer.tsx`, `components/buscador-url.tsx` (push + `shallow: false`: filtra el servidor). |
+| Lista virtual | `@tanstack/react-virtual` | `components/nomina/data-table.tsx`. |
+| Hoja que se arrastra | `vaul` | `components/ui/drawer.tsx` (el `Drawer` de shadcn), bajo `components/bottom-sheet.tsx` y la hoja «Más» de `components/mobile-tab-bar.tsx`. Su movimiento propio (500 ms y su curva, en CSS inyectado y en línea) se reemplaza en `app/globals.css` por los tokens de la casa, y se apaga con movimiento reducido. |
+
+Un estado nuevo que deba sobrevivir a recargar o compartirse va por `nuqs`,
+no por `history.replaceState` ni por un efecto que reconcilie dos copias.
 
 ### La capa de arriba: lo que ninguna librería puede traer
 | Primitiva | Qué resuelve |
@@ -618,7 +638,7 @@ del archivo que las lleva:
 | `components/nav-filtros.tsx` | La fila de filtros que **son enlaces** (tipo, año, cuatrienio): cada uno es una página que se comparte. |
 | `components/marca.tsx` | El contrasello: `Sello`, `SelloCompacto`, `Logotipo`. |
 | `components/plegable.tsx` | Revelación progresiva sobre `ui/collapsible`; el botón dice **cuántos hay**, nunca «ver más». |
-| `components/bottom-sheet.tsx` | La hoja de filtros del teléfono, sobre `ui/sheet`. |
+| `components/bottom-sheet.tsx` | La hoja de filtros del teléfono, sobre `ui/drawer` (`vaul`, con el `Dialog` de Radix debajo): se cierra arrastrando la cabecera, con el aspa de 44 px o con Escape. |
 | `components/paleta.tsx` | «Buscar» en la cabecera de todas las páginas: «¿a dónde vas?», sobre `ui/dialog` + `ui/command` (⌘K, Ctrl K, «/»): todo el índice de `lib/indice.ts` agrupado por tarea y filtrable sin tildes (también por verbo: «votar», «comparar»), lo que el índice de `lib/busqueda.ts` encuentra («En la plataforma», vía `/api/buscar`, a lo sumo la mitad de un mismo tipo), y lo tecleado ofrecido a **cada** búsqueda de `BUSQUEDAS` con su alcance debajo. Lo que el índice no cubre —licitaciones, proveedores, las cámaras— no se finge. |
 | `components/ruta.tsx` | La ruta de una ficha sobre `ui/breadcrumb`: la miga entera desde `sm`, solo la vuelta a 44 px en el teléfono. Si se vino de esa vista (`components/rastro.tsx`), volver es el «atrás» del navegador y conserva filtros y posición. |
 | `components/paginador.tsx` | Anterior · página · siguiente, con enlaces (`href`) o con estado (`onPage`). Mandos a 44 px en los bordes; el que no aplica se apaga, no desaparece. |
@@ -650,8 +670,10 @@ The sources are slow and outside our control, so the contract is that the
   upstream request per datum. Anything the page can compute without the
   network (legislature dates, counts of a sample) stays outside the boundary.
 - **La rejilla de la nómina no es `ui/table`**, y su cabecera lo dice: son cien
-  mil plazas virtualizadas, la fila se mide en píxeles para poder saltarse las
-  que no se ven y en teléfono se pliega a dos líneas. `ui/table` manda donde hay
+  mil plazas virtualizadas con `@tanstack/react-virtual`, que **mide** cada
+  fila pintada (`measureElement`) en vez de fiarse de un alto fijo —en
+  teléfono la fila se pliega a dos líneas—; reordenar vuelve al principio de
+  la pista. `ui/table` manda donde hay
   un cuadro de datos normal (los artículos de un proceso); aquí manda el
   desplazamiento fluido.
 - **Client lists keep the previous results on screen** while the next page

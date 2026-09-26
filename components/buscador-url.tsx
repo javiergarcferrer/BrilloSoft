@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { parseAsString, useQueryStates } from "nuqs";
 import { useEffect, useState, useTransition } from "react";
 import { CampoBusqueda } from "@/components/campo-busqueda";
 
@@ -11,6 +11,12 @@ import { CampoBusqueda } from "@/components/campo-busqueda";
  * búsqueda se comparte, se marca y vuelve con «atrás», y los demás parámetros
  * de la URL (un año, un tipo) se conservan. Lo usan las superficies que filtran
  * en el servidor —instituciones, normativa, finanzas—.
+ *
+ * La URL la escribe `nuqs`: cada búsqueda enviada **apila** una entrada en el
+ * historial (`history: "push"`, para que «atrás» vuelva a la anterior) y va al
+ * servidor (`shallow: false`), porque es el servidor el que filtra. La
+ * transición es la nuestra, y por eso el campo sabe decir que está pendiente
+ * mientras llega la página nueva.
  */
 export function BuscadorUrl({
   etiqueta,
@@ -21,25 +27,21 @@ export function BuscadorUrl({
   placeholder?: string;
   ayuda?: string;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const inicial = params.get("q") ?? "";
-  const [valor, setValor] = useState(inicial);
   const [pendiente, iniciar] = useTransition();
+  const [url, setUrl] = useQueryStates(
+    { q: parseAsString, pagina: parseAsString },
+    { history: "push", shallow: false, startTransition: iniciar },
+  );
+  const inicial = url.q ?? "";
+  const [valor, setValor] = useState(inicial);
 
   useEffect(() => setValor(inicial), [inicial]);
 
   const ir = (texto: string) => {
-    const siguiente = new URLSearchParams(params.toString());
     const q = texto.trim();
-    if (q) siguiente.set("q", q);
-    else siguiente.delete("q");
     // Una búsqueda nueva es una lista nueva: empieza en su primera página, no
     // en la página por la que iba la anterior.
-    siguiente.delete("pagina");
-    const cadena = siguiente.toString();
-    iniciar(() => router.push(cadena ? `${pathname}?${cadena}` : pathname));
+    void setUrl({ q: q || null, pagina: null });
   };
 
   return (

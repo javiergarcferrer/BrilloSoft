@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/cn";
 import { Card } from "@/components/ui/card";
 import { IconChevronDown, IconChevronUpDown } from "@/components/icons";
@@ -16,26 +17,31 @@ export type SortKey = "institucion" | "area" | "cargo" | "sueldo";
 export type SortDir = "asc" | "desc";
 
 /**
- * Alto de fila. En teléfono la fila lleva dos líneas (cargo + área·institución)
- * porque las cinco columnas no caben en 326px de pista; la virtualización mide
- * en píxeles, así que el alto tiene que ser el mismo que pinta el CSS.
+ * Alto **estimado** de una fila: el de escritorio, una línea con su aire.
+ *
+ * Antes era el alto exacto y fijo de todas las filas, y la virtualización
+ * calculaba en píxeles a partir de él. En el teléfono la fila lleva dos
+ * líneas (cargo + área·institución) porque las cinco columnas no caben en
+ * 326 px de pista, y cualquier fila que creciera —un tamaño de letra mayor
+ * en el sistema, un cargo que no se deja truncar— descuadraba la cuenta: las
+ * filas se montaban unas sobre otras o dejaban huecos. Ahora
+ * `@tanstack/react-virtual` mide cada fila pintada (`measureElement`) y este
+ * número solo sirve para las que aún no se han visto.
  */
-const ROW_H = 52;
+const ROW_H_ESTIMADO = 52;
 const OVERSCAN = 12;
 
-/**
- * Alto de la pista que se desplaza.
- *
- * En escritorio son 600 px, la mitad larga de la ventana. En un teléfono de
- * 844 px, con 64 de cabecera y 72 de barra inferior, 600 px de pista dejaban
- * 108 px de página alrededor: el dedo casi nunca encontraba el margen y la
- * página parecía atascada dentro de la tabla. A 400 px queda pista de sobra
- * —ocho filas— y sigue habiendo página por arriba y por abajo para salir de
- * ella. No se cambia la mecánica (la pista sigue siendo el contenedor que
- * hace el recorte), solo su medida, y por eso la virtualización lee el alto
- * real del elemento en vez de fiarse de una constante.
- */
-const VIEWPORT_H_FALLBACK = 600;
+/*
+  Alto de la pista que se desplaza.
+
+  En escritorio son 600 px, la mitad larga de la ventana. En un teléfono de
+  844 px, con 64 de cabecera y 72 de barra inferior, 600 px de pista dejaban
+  108 px de página alrededor: el dedo casi nunca encontraba el margen y la
+  página parecía atascada dentro de la tabla. A 400 px queda pista de sobra
+  —ocho filas— y sigue habiendo página por arriba y por abajo para salir de
+  ella. Lo decide el CSS (`h-[400px] sm:h-[600px]`); el virtualizador observa
+  el elemento y lee su alto real, así que girar el teléfono no lo descuadra.
+*/
 
 const GRID =
   "grid grid-cols-[minmax(0,1fr)_7.5rem] gap-x-3 sm:grid-cols-[3.5rem_6rem_minmax(0,2.2fr)_minmax(0,2.6fr)_7.5rem]";
@@ -57,27 +63,31 @@ export function DataTable({
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
 }) {
-  const [scrollTop, setScrollTop] = useState(0);
-  const [viewportH, setViewportH] = useState(VIEWPORT_H_FALLBACK);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // El alto de la pista lo decide el CSS (400 px en teléfono, 600 desde `sm`);
-  // la ventana virtual lo lee del elemento para no tener que repetirlo aquí ni
-  // desincronizarse al girar el teléfono.
+  const virtual = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_H_ESTIMADO,
+    overscan: OVERSCAN,
+  });
+
+  /*
+    Reordenar vuelve al principio de la pista. Las filas son otras: quedarse
+    en la posición 40.000 de un orden nuevo es aterrizar en medio de nada, y
+    quien pulsa «Sueldo» quiere ver el primero. Solo al cambiar el orden —no
+    al filtrar, que ya encoge la lista por su cuenta—.
+  */
+  const ordenPrevio = useRef(`${sortKey}|${sortDir}`);
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const medir = () => setViewportH(el.clientHeight || VIEWPORT_H_FALLBACK);
-    medir();
-    const ro = new ResizeObserver(medir);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [rows.length === 0]);
+    const orden = `${sortKey}|${sortDir}`;
+    if (ordenPrevio.current === orden) return;
+    ordenPrevio.current = orden;
+    virtual.scrollToOffset(0);
+  }, [sortKey, sortDir, virtual]);
 
   const total = rows.length;
-  const start = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN);
-  const end = Math.min(total, Math.ceil((scrollTop + viewportH) / ROW_H) + OVERSCAN);
-  const visible = rows.slice(start, end);
+  const items = virtual.getVirtualItems();
 
   /*
     Esta rejilla **no** es la `Table` de `components/ui`: son cien mil plazas
@@ -116,26 +126,30 @@ export function DataTable({
           No hay plazas que coincidan con los filtros.
         </div>
       ) : (
-        <div
-          ref={scrollRef}
-          onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
-          className="h-[400px] overflow-auto sm:h-[600px]"
-        >
-          <div style={{ height: total * ROW_H, position: "relative" }}>
-            <div style={{ transform: `translateY(${start * ROW_H}px)` }}>
-              {visible.map((r, i) => {
-                const idx = start + i;
+        <div ref={scrollRef} className="h-[400px] overflow-auto sm:h-[600px]">
+          <div style={{ height: virtual.getTotalSize(), position: "relative" }}>
+            {/*
+              Las filas visibles van en flujo normal dentro de una caja que se
+              desplaza hasta la primera: así cada una mide lo que pinta, y el
+              virtualizador lee ese alto al montarla (`data-index` +
+              `measureElement`).
+            */}
+            <div style={{ transform: `translateY(${items[0]?.start ?? 0}px)` }}>
+              {items.map((v) => {
+                const idx = v.index;
+                const r = rows[idx];
                 const inst = instituciones[r[COL.INST]];
                 return (
                   <div
-                    key={idx}
+                    key={v.key}
+                    data-index={idx}
+                    ref={virtual.measureElement}
                     className={cn(
                       GRID,
-                      "items-center px-4 text-sm",
+                      "min-h-13 items-center px-4 py-1.5 text-sm",
                       idx % 2 ? "bg-surface" : "bg-canvas/50",
                       "hover:bg-brand-50",
                     )}
-                    style={{ height: ROW_H }}
                   >
                     <span className="hidden font-mono text-right tabular-nums text-xs text-ink-soft sm:inline">
                       {formatInt(idx + 1)}

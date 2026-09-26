@@ -7,7 +7,7 @@
  * lo mismo que entraron las demás: foco atrapado mientras está abierto, Escape,
  * y el foco de vuelta al disparador al cerrar.
  *
- * Mismas plantas que la hoja (`components/ui/sheet.tsx`): velo en `z-[70]` y
+ * Mismas plantas que la hoja (`components/ui/drawer.tsx`): velo en `z-[70]` y
  * capa en `z-[80]`, por encima del header pegajoso (`z-50`), que si no se
  * quedaría nítido y pulsable encima de una página bloqueada. Flota de verdad,
  * así que lleva sombra; la esquina es la de una superficie, `rounded-lg`.
