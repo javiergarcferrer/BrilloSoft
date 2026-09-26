@@ -82,6 +82,16 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
 
 ## Cerradas, para que nadie las reabra
 
+- **El buscador no va a una base de datos** (26-09-2026). Se propuso una
+  búsqueda híbrida en Postgres (texto por idioma + trigramas + `pgvector`,
+  fundidos por RRF, en Supabase). El dueño la descartó: la plataforma es un
+  arnés sobre datos que publica el Estado, y **guardarlos** en una base
+  propia rompe el principio de datos abiertos —cada cifra se lee de su
+  origen o de una instantánea versionada que cualquiera puede auditar—.
+  `/buscar` hace lo mismo en memoria, sobre archivos del repositorio
+  (`docs/ARQUITECTURA.md` §Búsqueda). No se re-propone por tamaño ni por
+  rendimiento: si el corpus crece, se poda o se particiona el índice.
+
 - **Nombre: socratico** (24-09-2026). El repositorio pasó a
   `javiergarcferrer/socratico` y el proyecto de Vercel a `socratico`, con
   `socratico.vercel.app` como dirección de producción; el dueño pidió borrar
