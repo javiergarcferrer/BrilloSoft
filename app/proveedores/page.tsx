@@ -19,7 +19,7 @@ import { Cifra, Rotulo, TiraDeCifras } from "@/components/papel";
 import Antiguedad from "@/components/antiguedad";
 import Plegable from "@/components/plegable";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { FilaBarra } from "@/components/graficos";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -253,49 +253,40 @@ async function RankingPorMonto() {
       </CardHeader>
       <RankingPlegado
         filas={top.map((p, i) => (
-          <li
+          /*
+            La fila entera lleva a la ficha del proveedor: el nombre solo son
+            diecisiete píxeles de alto dentro de una fila de ochenta, y en una
+            lista de veinte eso es fallar el toque una de cada tres.
+          */
+          <FilaBarra
             key={p.rpe}
-            /*
-              La fila entera lleva a la ficha del proveedor: el nombre solo son
-              diecisiete píxeles de alto dentro de una fila de ochenta, y en
-              una lista de veinte eso es fallar el toque una de cada tres.
-            */
-            className="cv-auto relative px-5 py-3 transition-colors hover:bg-brand-50/40"
-            style={{ "--cv-alto": "5rem" } as React.CSSProperties}
-          >
-            <div className="flex items-baseline gap-2.5">
-              <span className="w-5 shrink-0 font-mono text-xs tabular-nums text-ink-soft">
-                {i + 1}
-              </span>
-              <Link
-                href={enlace.proveedor(p.rpe)}
-                title={p.razonSocial}
-                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 estira hover:underline"
-              >
-                {p.razonSocial}
-              </Link>
-              <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-ink">
-                {formatMonto(p.monto, "DOP")}
-              </span>
-            </div>
-            <Progress
-              value={Math.max(2, (p.monto / max) * 100)}
-              aria-label={`${p.razonSocial}: ${formatMonto(p.monto, "DOP")}`}
-              className="ml-[1.875rem] mt-1 h-1.5"
-            />
-            <p className="ml-[1.875rem] mt-1 text-xs text-ink-soft">
-              {p.contratos} {p.contratos === 1 ? "contrato" : "contratos"}
-              <Sep />
-              {p.instituciones}{" "}
-              {p.instituciones === 1 ? "institución" : "instituciones"}
-              {p.ultima && (
+            filas
+            numerar
+            puesto={i + 1}
+            maximo={max}
+            barra={{
+              clave: p.rpe,
+              etiqueta: p.razonSocial,
+              titulo: p.razonSocial,
+              valor: p.monto,
+              cifra: formatMonto(p.monto, "DOP"),
+              href: enlace.proveedor(p.rpe),
+              detalle: (
                 <>
+                  {p.contratos} {p.contratos === 1 ? "contrato" : "contratos"}
                   <Sep />
-                  <Antiguedad iso={p.ultima} />
+                  {p.instituciones}{" "}
+                  {p.instituciones === 1 ? "institución" : "instituciones"}
+                  {p.ultima && (
+                    <>
+                      <Sep />
+                      <Antiguedad iso={p.ultima} />
+                    </>
+                  )}
                 </>
-              )}
-            </p>
-          </li>
+              ),
+            }}
+          />
         ))}
       />
     </Card>
@@ -349,46 +340,31 @@ async function RankingPorContratos() {
       </CardHeader>
       <RankingPlegado
         filas={top.map((p, i) => (
-          <li
+          <FilaBarra
             key={p.rpe}
-            /*
-              La fila entera lleva a la ficha del proveedor: el nombre solo son
-              diecisiete píxeles de alto dentro de una fila de ochenta, y en
-              una lista de veinte eso es fallar el toque una de cada tres.
-            */
-            className="cv-auto relative px-5 py-3 transition-colors hover:bg-brand-50/40"
-            style={{ "--cv-alto": "5rem" } as React.CSSProperties}
-          >
-            <div className="flex items-baseline gap-2.5">
-              <span className="w-5 shrink-0 font-mono text-xs tabular-nums text-ink-soft">
-                {i + 1}
-              </span>
-              <Link
-                href={enlace.proveedor(p.rpe)}
-                title={p.razonSocial}
-                className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 estira hover:underline"
-              >
-                {p.razonSocial}
-              </Link>
-              <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-ink">
-                {formatInt(p.contratos)}
-              </span>
-            </div>
-            <Progress
-              value={Math.max(2, (p.contratos / max) * 100)}
-              aria-label={`${p.razonSocial}: ${formatInt(p.contratos)} contratos`}
-              indicadorClassName="bg-brand-400"
-              className="ml-[1.875rem] mt-1 h-1.5"
-            />
-            <p className="ml-[1.875rem] mt-1 text-xs text-ink-soft">
-              {formatMonto(p.monto, "DOP")}
-              <Sep />
-              {p.instituciones}{" "}
-              {p.instituciones === 1 ? "institución" : "instituciones"}
-              <Sep />
-              {formatMonto(Math.round(p.monto / p.contratos), "DOP")} de promedio
-            </p>
-          </li>
+            filas
+            numerar
+            puesto={i + 1}
+            maximo={max}
+            barra={{
+              clave: p.rpe,
+              etiqueta: p.razonSocial,
+              titulo: p.razonSocial,
+              valor: p.contratos,
+              cifra: formatInt(p.contratos),
+              href: enlace.proveedor(p.rpe),
+              detalle: (
+                <>
+                  {formatMonto(p.monto, "DOP")}
+                  <Sep />
+                  {p.instituciones}{" "}
+                  {p.instituciones === 1 ? "institución" : "instituciones"}
+                  <Sep />
+                  {formatMonto(Math.round(p.monto / p.contratos), "DOP")} de promedio
+                </>
+              ),
+            }}
+          />
         ))}
       />
     </Card>

@@ -40,11 +40,10 @@ import {
   type NominaData,
   type Row,
 } from "@/lib/nomina";
-import { BarList, Histogram } from "./charts";
+import { BarrasHorizontales, Multiples, SerieTemporal, maximoComun } from "@/components/graficos";
 import { DataTable, type SortDir, type SortKey } from "./data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
 import {
   Card,
@@ -358,6 +357,9 @@ function ExplorerReady({ data, fichas }: { data: NominaData; fichas: FichasNomin
     [filtered],
   );
 
+  /** Escala común de los dos paneles de gasto (áreas y cargos). */
+  const escalaGasto = maximoComun([topAreas.map((g) => g.total), topCargos.map((g) => g.total)]);
+
   const histogram = useMemo(() => {
     const counts = new Array(SALARY_BUCKETS.length).fill(0);
     for (const r of filtered) counts[bucketOf(r[COL.SUELDO])]++;
@@ -647,53 +649,83 @@ function ExplorerReady({ data, fichas }: { data: NominaData; fichas: FichasNomin
               </ToggleGroup>
             }
           >
-            <BarList
-              items={topInsts.map((g) => {
+            <BarrasHorizontales
+              lineas={2}
+              etiqueta="Instituciones del ranking; tocar una filtra la nómina"
+              alElegir={(clave) => {
+                const id = Number(clave);
+                setInstId(id === instId ? null : id);
+              }}
+              elegida={instId == null ? null : String(instId)}
+              barras={topInsts.map((g) => {
                 const inst = data.instituciones[g.key];
+                const valor = metric === "total" ? g.total : metric === "count" ? g.count : g.avg;
                 return {
-                  id: g.key,
-                  label: inst.nombre,
-                  value: metric === "total" ? g.total : metric === "count" ? g.count : g.avg,
-                  sub: `${formatInt(g.count)} plazas · ${periodLabel(inst.anio, inst.mes)}${estaAtrasada(inst) ? ` · desactualizada (${textoAtraso(inst.anio, inst.mes)})` : ""}`,
+                  clave: String(g.key),
+                  etiqueta: inst.nombre,
+                  titulo: inst.nombre,
+                  valor,
+                  cifra: metricFormat(valor),
+                  detalle: `${formatInt(g.count)} plazas · ${periodLabel(inst.anio, inst.mes)}${estaAtrasada(inst) ? ` · desactualizada (${textoAtraso(inst.anio, inst.mes)})` : ""}`,
                 };
               })}
-              format={metricFormat}
-              onSelect={(id) => setInstId(id === instId ? null : id)}
-              selectedId={instId}
             />
           </Panel>
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          {/*
+            Paneles pequeños con la misma escala: las áreas y los cargos son
+            dos cortes del mismo gasto, y una barra llena significa lo mismo en
+            los dos (docs/IDENTIDAD.md §Gráficos, `Multiples`).
+          */}
+          <Multiples>
             <Panel title="Top áreas por gasto">
-              <BarList
-                items={topAreas.map((g) => ({
-                  id: g.key,
-                  label: data.areas[g.key],
-                  value: g.total,
-                  sub: `${formatInt(g.count)} plazas`,
+              <BarrasHorizontales
+                lineas={2}
+                maximo={escalaGasto}
+                etiqueta="Áreas con más gasto"
+                barras={topAreas.map((g) => ({
+                  clave: String(g.key),
+                  etiqueta: data.areas[g.key],
+                  titulo: data.areas[g.key],
+                  valor: g.total,
+                  cifra: formatCompactDOP(g.total),
+                  detalle: `${formatInt(g.count)} plazas`,
                 }))}
-                format={formatCompactDOP}
               />
             </Panel>
 
             <Panel title="Top cargos por gasto">
-              <BarList
-                items={topCargos.map((g) => ({
-                  id: g.key,
-                  label: data.cargos[g.key],
-                  value: g.total,
-                  sub: `${formatInt(g.count)} · ${formatDOP(g.avg)} prom.`,
+              <BarrasHorizontales
+                lineas={2}
+                maximo={escalaGasto}
+                etiqueta="Cargos con más gasto"
+                barras={topCargos.map((g) => ({
+                  clave: String(g.key),
+                  etiqueta: data.cargos[g.key],
+                  titulo: data.cargos[g.key],
+                  valor: g.total,
+                  cifra: formatCompactDOP(g.total),
+                  detalle: `${formatInt(g.count)} · ${formatDOP(g.avg)} prom.`,
                 }))}
-                format={formatCompactDOP}
               />
             </Panel>
-          </div>
+          </Multiples>
 
           <Panel
             title="Distribución salarial"
             subtitle={`Sueldo mediano ${formatDOP(kpis.median)} · promedio ${formatDOP(kpis.avg)}`}
           >
-            <Histogram bins={histogram} />
+            <SerieTemporal
+              className="mt-0"
+              rotular="todos"
+              etiqueta={`Plazas por tramo de sueldo bruto: ${histogram.map((b) => `${b.label}, ${formatInt(b.count)}`).join("; ")}`}
+              puntos={histogram.map((b) => ({
+                clave: b.label,
+                valor: b.count,
+                lectura: `${b.label}: ${formatInt(b.count)} plazas`,
+                marca: b.label,
+              }))}
+            />
           </Panel>
         </TabsContent>
 
@@ -755,34 +787,23 @@ function ExplorerReady({ data, fichas }: { data: NominaData; fichas: FichasNomin
               </EstadoVacio>
             ) : (
               <>
-                <ul className="mt-4 space-y-3">
-                  {comparacion.filas.map((f) => {
+                <BarrasHorizontales
+                  className="mt-4"
+                  lineas={2}
+                  minimo={1}
+                  maximo={comparacion.filas[0]?.mediana || 1}
+                  etiqueta={`Sueldo bruto mediano de «${cargo}» por institución`}
+                  barras={comparacion.filas.map((f) => {
                     const inst = data.instituciones[f.inst];
-                    const maxMediana = comparacion.filas[0].mediana || 1;
-                    return (
-                      <li key={f.inst}>
-                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                          {fichas[inst.codigo] ? (
-                            <Link
-                              href={fichas[inst.codigo]}
-                              className="min-w-0 text-sm font-medium text-ink hover:text-brand-700 hover:underline"
-                            >
-                              {inst.nombre}
-                            </Link>
-                          ) : (
-                            <span className="min-w-0 text-sm font-medium text-ink">{inst.nombre}</span>
-                          )}
-                          <span className="shrink-0 font-mono text-sm font-semibold tabular-nums">
-                            {formatDOP(f.mediana)}
-                          </span>
-                        </div>
-                        <Progress
-                          value={Math.max(1, (f.mediana / maxMediana) * 100)}
-                          aria-label={`${inst.nombre}: sueldo mediano ${formatDOP(f.mediana)}`}
-                          indicadorClassName="bg-brand-400"
-                          className="mt-1"
-                        />
-                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
+                    return {
+                      clave: String(f.inst),
+                      etiqueta: inst.nombre,
+                      titulo: `${inst.nombre}: sueldo mediano ${formatDOP(f.mediana)}`,
+                      valor: f.mediana,
+                      cifra: formatDOP(f.mediana),
+                      href: fichas[inst.codigo],
+                      detalle: (
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span>
                             {formatInt(f.plazas)} {f.plazas === 1 ? "plaza" : "plazas"}
                             {f.plazas > 1 && ` · de ${formatDOP(f.min)} a ${formatDOP(f.max)}`} ·{" "}
@@ -790,10 +811,10 @@ function ExplorerReady({ data, fichas }: { data: NominaData; fichas: FichasNomin
                           </span>
                           <MarcaAtraso anio={inst.anio} mes={inst.mes} />
                         </div>
-                      </li>
-                    );
+                      ),
+                    };
                   })}
-                </ul>
+                />
                 <p className="mt-4 text-xs leading-relaxed text-ink-soft">
                   {formatInt(comparacion.plazas)} plazas en{" "}
                   {comparacion.denominaciones.length === 1

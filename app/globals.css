@@ -117,6 +117,60 @@
   --color-canto: #cbbfa7;
 
   /*
+    Gráficos (docs/IDENTIDAD.md §Gráficos — el sistema). Cuatro paletas, cada
+    una con un solo oficio, **validadas** con el validador de la habilidad
+    `dataviz` contra el papel (`canvas`) y la hoja (`surface`). Sin modo
+    oscuro: la identidad es papel. Salvo tres pasos nuevos de la categórica
+    —la ciruela, el ocre y el verde azulado, que no existían con croma
+    suficiente—, todo apunta a un token que ya estaba: no hay segunda paleta.
+
+    · Categórica — identidad de serie, en este orden fijo y nunca ciclado.
+      Una sola serie lleva siempre la 1 (la firma). La sexta serie no existe:
+      se pliega en «Otros» (`grafico-otros`, grafito) o se parte en paneles.
+  */
+  --color-grafico-1: var(--color-brand-500);
+  --color-grafico-2: #a0446e; /* ciruela: v-finanzas subida a la banda */
+  --color-grafico-3: #b97f2b; /* ocre: el de alerta, un paso aparte del de estado */
+  --color-grafico-4: #018e7d; /* verde azulado: v-nomina con croma */
+  --color-grafico-5: #6f59a6; /* violeta: v-normativa subida a la banda */
+  --color-grafico-otros: var(--color-ink-soft);
+
+  /*
+    · Secuencial — magnitud, un solo tono (la firma), de claro a oscuro. El
+      paso 1 casi se funde con el papel a propósito: es «casi cero». Para una
+      escala ordinal (tramos) se usan del 3 al 6, que salen del papel.
+  */
+  --color-grafico-sec-1: var(--color-brand-100);
+  --color-grafico-sec-2: var(--color-brand-200);
+  --color-grafico-sec-3: var(--color-brand-300);
+  --color-grafico-sec-4: var(--color-brand-400);
+  --color-grafico-sec-5: var(--color-brand-500);
+  --color-grafico-sec-6: var(--color-brand-700);
+
+  /*
+    · Divergente — de qué lado de una línea cae algo: la firma contra el
+      sello, con el gris del papel en medio, que se lee «nada». Los polos
+      tienen la misma luz (firma 500 y sello 700, L 0.45) para que ninguno
+      pese más que el otro: dirección no es valencia.
+  */
+  --color-grafico-div-firma: var(--color-brand-500);
+  --color-grafico-div-firma-tenue: var(--color-brand-300);
+  --color-grafico-div-neutro: var(--color-canto);
+  --color-grafico-div-sello-tenue: var(--color-sello-300);
+  --color-grafico-div-sello: var(--color-sello-700);
+
+  /*
+    · Estado — no se define aquí: son los puntos de `lib/estados.ts`
+      (`TONOS[tono].dot`). Una segunda tabla de estados es justo el error que
+      ese archivo documenta.
+
+    El mobiliario del gráfico: la rejilla es el filete y la línea base el
+    canto. Recesivos, macizos, nunca discontinuos.
+  */
+  --color-grafico-rejilla: var(--color-hairline);
+  --color-grafico-base: var(--color-canto);
+
+  /*
     Movimiento (docs/IDENTIDAD.md §Movimiento). Cuatro curvas con oficio:
       · firma   — un cambio en su sitio: color, relieve, estado.
       · sello   — algo llega: frena al final, como el papel que se apoya.
@@ -437,6 +491,14 @@
     box-shadow: inset 0 2px 3px -2px rgb(23 29 46 / 0.18);
     transition-duration: var(--dur-toque);
   }
+  /*
+    La fila que es un filtro puesto (`aria-pressed`, la institución elegida en
+    el ranking de la nómina) se queda hundida: el estado sale del marcado.
+  */
+  .relative:has(.estira[aria-pressed="true"]):not(:has(.relative .estira)):not([data-slot="card"]) {
+    background-color: var(--color-brand-50);
+    box-shadow: inset 0 2px 3px -2px rgb(23 29 46 / 0.18);
+  }
 }
 
 /*
@@ -612,20 +674,36 @@
     transform: scaleX(1);
   }
 }
+@keyframes lr-columna {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
 .bar-grow {
   transform-origin: left;
-  animation: lr-bar var(--dur-trazo) var(--ease-sello) both;
+}
+.columna-grow {
+  transform-origin: bottom;
 }
 
 /*
-  Donde el navegador sabe atar una animación al desplazamiento, la barra se
-  dibuja cuando entra en la pantalla y no al cargar: una barra que creció
-  fuera de la vista es movimiento gastado. La que ya está a la vista al
-  llegar se pinta entera, quieta.
+  La barra se dibuja **solo** donde el navegador sabe atar la animación al
+  desplazamiento: se dibuja cuando entra en la pantalla, y la que ya está a la
+  vista al llegar se pinta entera, quieta. Donde no lo sabe, se pinta quieta y
+  ya está: antes caía a una animación de 700 ms al cargar, que es justo lo que
+  §Movimiento prohíbe («nada entra animado al cargar una página»).
 */
 @supports (animation-timeline: view()) {
   .bar-grow {
     animation: lr-bar linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 80%;
+  }
+  .columna-grow {
+    animation: lr-columna linear both;
     animation-timeline: view();
     animation-range: entry 0% entry 80%;
   }
@@ -724,6 +802,7 @@
   .shimmer::after,
   .live-dot::before,
   .bar-grow,
+  .columna-grow,
   .capa[data-state],
   .velo[data-state],
   .estampa,

@@ -9,7 +9,6 @@ import { variacion } from "@/lib/cifras";
 import { cn } from "@/lib/cn";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   Table,
   TableBody,
@@ -21,7 +20,7 @@ import {
 import { EstadoVacio } from "@/components/estado-vacio";
 import Plegable from "@/components/plegable";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
-import { Barras } from "@/components/barras";
+import { FilaBarra, SerieTemporal } from "@/components/graficos";
 import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
@@ -51,35 +50,35 @@ function pct(parte: number, total: number): string {
   return total > 0 ? `${((parte / total) * 100).toFixed(1)} %` : "—";
 }
 
-/** El nombre de una provincia, enlazado a su ficha cuando se reconoce. */
-function NombreProvincia({ nombre }: { nombre: string }) {
-  const p = provinciaDeTexto(nombre);
-  return p ? (
-    <Link href={enlace.provincia(p.slug)} className="text-ink hover:text-brand-700 hover:underline">
-      {p.nombre}
-    </Link>
-  ) : (
-    <span className="text-ink">{nombre}</span>
-  );
-}
-
-/** Una fila «nombre … cifra» con una barra de proporción debajo. */
-function Fila({ nombre, valor, detalle, max, actual }: {
-  nombre: ReactNode;
+/**
+ * Una fila «nombre … cifra» con su barra: la primitiva `FilaBarra`, en filas a
+ * sangre. Con `provincia`, el nombre se reconoce y la fila entera lleva a su
+ * ficha; si no se reconoce, se escribe tal cual y no enlaza.
+ */
+function Fila({ nombre, provincia, valor, detalle, max, actual }: {
+  nombre?: ReactNode;
+  provincia?: string;
   valor: string;
   detalle?: string;
   max: number;
   actual: number;
 }) {
+  const p = provincia ? provinciaDeTexto(provincia) : null;
   return (
-    <li className="px-5 py-2.5 sm:px-6">
-      <div className="flex items-baseline justify-between gap-3 text-sm">
-        <span className="min-w-0">{nombre}</span>
-        <span className="shrink-0 font-mono tabular-nums">{valor}</span>
-      </div>
-      {detalle && <p className="text-xs text-ink-soft">{detalle}</p>}
-      <Progress value={actual} max={Math.max(1, max)} className="mt-1 h-1" indicadorClassName="bg-ink-soft" aria-hidden />
-    </li>
+    <FilaBarra
+      filas
+      lineas={2}
+      puesto={0}
+      maximo={Math.max(1, max)}
+      barra={{
+        clave: provincia ?? "",
+        etiqueta: p ? p.nombre : (nombre ?? provincia),
+        valor: actual,
+        cifra: valor,
+        detalle,
+        href: p ? enlace.provincia(p.slug) : undefined,
+      }}
+    />
   );
 }
 
@@ -168,12 +167,14 @@ function SeccionRobos({ r, armas }: { r: Robos; armas: Sociedad["armas"] }) {
           La serie que viene desde {primero.anio} solo cubre {tiposLargos}: de{" "}
           {formatInt(primero.serieLarga)} denuncias en {primero.anio} a {formatInt(ult.serieLarga)} en {ult.anio}.
         </p>
-        <Barras
+        <SerieTemporal
+          forma="columnas"
+          formato="entero"
           etiqueta={`Denuncias de robo de ${tiposLargos} por año, de ${formatInt(primero.serieLarga)} en ${primero.anio} a ${formatInt(ult.serieLarga)} en ${ult.anio}`}
           puntos={r.porAnio.map((a, i) => ({
             clave: String(a.anio),
             valor: a.serieLarga,
-            titulo: `${a.anio}: ${formatInt(a.serieLarga)} denuncias`,
+            lectura: `${a.anio}: ${formatInt(a.serieLarga)} denuncias`,
             marca: i === 0 || i === r.porAnio.length - 1 || a.anio % 2 === 0 ? String(a.anio) : undefined,
           }))}
         />
@@ -260,7 +261,7 @@ function SeccionRobos({ r, armas }: { r: Robos; armas: Sociedad["armas"] }) {
             render={(p) => (
               <Fila
                 key={p.provincia}
-                nombre={<NombreProvincia nombre={p.provincia} />}
+                provincia={p.provincia}
                 valor={formatInt(p.denuncias)}
                 max={maxProv}
                 actual={p.denuncias}
@@ -285,13 +286,15 @@ function SeccionRobos({ r, armas }: { r: Robos; armas: Sociedad["armas"] }) {
                   {formatInt(ref.total)} en {ref.anio}.
                   {parcial && ` De ${parcial.anio} solo está publicado ${parcial.trimestres === 1 ? "el primer trimestre" : `hasta el trimestre ${parcial.trimestres}`} (${formatInt(parcial.total)}), fuera del gráfico.`}
                 </p>
-                <Barras
+                <SerieTemporal
+                  forma="columnas"
+                  formato="entero"
                   etiqueta={`Armas incautadas por año, ${completos[0]?.anio}–${completos[completos.length - 1]?.anio}`}
-                  alto={140}
+                  alto="bajo"
                   puntos={completos.map((a, i) => ({
                     clave: String(a.anio),
                     valor: a.total,
-                    titulo: `${a.anio}: ${formatInt(a.total)} armas`,
+                    lectura: `${a.anio}: ${formatInt(a.total)} armas`,
                     marca: i === 0 || i === completos.length - 1 ? String(a.anio) : undefined,
                   }))}
                 />
@@ -423,12 +426,14 @@ function SeccionMatricula({ m }: { m: Matricula }) {
           {prev ? `, ${cambio(ult.total, prev.total)} frente a ${prev.periodo}` : ""}; en {primero.periodo} eran{" "}
           {formatInt(primero.total)}.
         </p>
-        <Barras
+        <SerieTemporal
+          forma="linea"
+          formato="entero"
           etiqueta={`Estudiantes matriculados por año escolar, de ${formatInt(primero.total)} en ${primero.periodo} a ${formatInt(ult.total)} en ${ult.periodo}`}
           puntos={serie.map((p, i) => ({
             clave: p.periodo,
             valor: p.total,
-            titulo: `${p.periodo}: ${formatInt(p.total)} estudiantes`,
+            lectura: `${p.periodo}: ${formatInt(p.total)} estudiantes`,
             marca: i === 0 || i === serie.length - 1 || i === Math.floor(serie.length / 2) ? p.periodo : undefined,
           }))}
         />
@@ -561,12 +566,14 @@ function SeccionLicencias({ l }: { l: Licencias }) {
           {parcial &&
             ` De ${parcial.anio}, hasta ${HASTA_MES[parcial.meses]}, van ${formatInt(parcial.licencias)}.`}
         </p>
-        <Barras
+        <SerieTemporal
+          forma="columnas"
+          formato="entero"
           etiqueta={`Licencias de construcción emitidas por año, ${l.anios[0]}–${l.anios[1]}${parcial ? ` (${parcial.anio} hasta ${HASTA_MES[parcial.meses]})` : ""}`}
           puntos={l.porAnio.map((a) => ({
             clave: String(a.anio),
             valor: a.licencias,
-            titulo: `${a.anio}${a.completo ? "" : ` (enero–${HASTA_MES[a.meses]})`}: ${formatInt(a.licencias)} licencias`,
+            lectura: `${a.anio}${a.completo ? "" : ` (enero–${HASTA_MES[a.meses]})`}: ${formatInt(a.licencias)} licencias`,
             marca: a.completo ? String(a.anio) : `${a.anio}*`,
           }))}
         />
@@ -631,7 +638,7 @@ function SeccionLicencias({ l }: { l: Licencias }) {
             render={(p) => (
               <Fila
                 key={p.nombre}
-                nombre={<NombreProvincia nombre={p.nombre} />}
+                provincia={p.nombre}
                 valor={formatInt(p.licencias)}
                 detalle={`${formatInt(p.metros2)} m² · ${formatPesos(p.inversion)}`}
                 max={maxProv}

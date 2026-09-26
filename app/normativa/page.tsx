@@ -17,7 +17,7 @@ import {
 import { IconDownload, IconExternal, IconDoc } from "@/components/icons";
 import { BuscadorUrl } from "@/components/buscador-url";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { BarrasHorizontales } from "@/components/graficos";
 import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha, formatMes } from "@/lib/format";
 import { Esqueleto, EsqueletoFilas } from "@/components/esqueleto";
@@ -446,21 +446,18 @@ function Designaciones({
       </p>
 
       {actual.porCargo.length > 0 && (
-        <ul className="mt-4 space-y-2.5 text-sm">
-          {actual.porCargo.slice(0, 8).map((c) => (
-            <li key={c.cargo}>
-              <div className="flex items-baseline justify-between gap-2">
-                <span>{c.cargo}</span>
-                <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">{c.n}</span>
-              </div>
-              <Progress
-                value={Math.max(2, (c.n / max) * 100)}
-                aria-label={`${c.cargo}: ${c.n}`}
-                className="mt-1"
-              />
-            </li>
-          ))}
-        </ul>
+        <BarrasHorizontales
+          className="mt-4"
+          lineas={2}
+          maximo={max}
+          etiqueta={`Designaciones por cargo en ${nombreMes(actual.mes)}`}
+          barras={actual.porCargo.slice(0, 8).map((c) => ({
+            clave: c.cargo,
+            etiqueta: c.cargo,
+            valor: c.n,
+            cifra: c.n,
+          }))}
+        />
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -542,36 +539,19 @@ function Materias({
   const resto = materias.filter((m) => !visibles.includes(m));
 
   const lista = (ms: (Materia & { n: number })[]) => (
-    <ul className="space-y-1 text-sm">
-      {ms.map((m) => {
-        const elegida = m.slug === activa;
-        return (
-          <li key={m.slug} className="relative -mx-2 min-h-11 rounded-md px-2 py-2 hover:bg-canvas/60">
-            <div className="flex items-baseline justify-between gap-2">
-              <Link
-                href={hrefNormativa({ tipo: "3", anio, q, materia: m.slug })}
-                aria-current={elegida ? "page" : undefined}
-                className={
-                  elegida
-                    ? "font-semibold text-brand-700 estira"
-                    : "text-ink estira hover:text-brand-700"
-                }
-              >
-                {m.nombre}
-              </Link>
-              <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">
-                {m.n.toLocaleString("es-DO")}
-              </span>
-            </div>
-            <Progress
-              value={Math.max(2, (m.n / max) * 100)}
-              aria-label={`${m.nombre}: ${m.n}`}
-              className="mt-1"
-            />
-          </li>
-        );
-      })}
-    </ul>
+    <BarrasHorizontales
+      lineas={2}
+      maximo={max}
+      etiqueta="Decretos por materia"
+      barras={ms.map((m) => ({
+        clave: m.slug,
+        etiqueta: m.nombre,
+        valor: m.n,
+        cifra: m.n.toLocaleString("es-DO"),
+        href: hrefNormativa({ tipo: "3", anio, q, materia: m.slug }),
+        actual: m.slug === activa,
+      }))}
+    />
   );
 
   return (

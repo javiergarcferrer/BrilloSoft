@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { dgcpFetch, type Proceso } from "@/lib/dgcp";
 import { formatMonto, formatPesos } from "@/lib/format";
-import { estadoMeta } from "@/lib/estados";
+import { estadoMeta, etapaDe } from "@/lib/estados";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { BarraApilada, BarrasHorizontales, ORDEN_TONOS } from "@/components/graficos";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { IconArrowRight } from "@/components/icons";
@@ -214,80 +214,56 @@ export default async function EstadisticasPage() {
           colores salen de `lib/estados.ts` — un color, un significado, aquí
           también.
         */}
-        <div className="mt-6">
-          <div className="flex h-3 overflow-hidden rounded-sm ring-1 ring-canvas/10">
-            {porEstado.map(([e, a]) => (
-              <div
-                key={e}
-                className={estadoMeta(e).dot}
-                style={{ width: `${(a.n / totalN) * 100}%` }}
-                title={`${e}: ${a.n}`}
-              />
-            ))}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-            {porEstado.map(([e, a]) => (
-              <span
-                key={e}
-                className="inline-flex items-center gap-1.5 text-xs text-canvas/70"
-              >
-                <span className={`h-2 w-2 rounded-full ${estadoMeta(e).dot}`} />
-                {e}
-                <span className="font-semibold text-canvas">{a.n}</span>
-              </span>
-            ))}
-          </div>
-        </div>
+        <BarraApilada
+          className="mt-6"
+          sobre="tinta"
+          etiqueta="Procesos de la muestra por estado"
+          segmentos={[...porEstado]
+            .sort(
+              ([a], [b]) =>
+                ORDEN_TONOS.indexOf(etapaDe(a).tono) - ORDEN_TONOS.indexOf(etapaDe(b).tono),
+            )
+            .map(([e, a]) => ({
+              clave: e,
+              etiqueta: e,
+              valor: a.n,
+              clase: estadoMeta(e).dot,
+            }))}
+        />
       </Portada>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card as="section" className="p-6">
           <CardTitle>Por modalidad</CardTitle>
-          <ul className="mt-3 space-y-2.5 text-sm">
-            {porModalidad.map(([nombre, a]) => (
-              <li key={nombre}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-medium">{nombre}</span>
-                  <span className="shrink-0 text-xs text-ink-soft">
-                    {a.n} · {formatMonto(a.monto, "DOP")}
-                  </span>
-                </div>
-                <Progress
-                  value={Math.max(2, (a.monto / maxMod) * 100)}
-                  aria-label={`${nombre}: ${formatMonto(a.monto, "DOP")}`}
-                  className="mt-1"
-                />
-              </li>
-            ))}
-          </ul>
+          <BarrasHorizontales
+            className="mt-3"
+            maximo={maxMod}
+            etiqueta="Monto por modalidad"
+            barras={porModalidad.map(([nombre, a]) => ({
+              clave: nombre,
+              etiqueta: nombre,
+              titulo: `${nombre}: ${formatMonto(a.monto, "DOP")}`,
+              valor: a.monto,
+              cifra: `${a.n} · ${formatMonto(a.monto, "DOP")}`,
+            }))}
+          />
         </Card>
 
         <Card as="section" className="p-6">
           <CardTitle>Top 10 instituciones por monto</CardTitle>
-          <ul className="mt-3 space-y-2.5 text-sm">
-            {porInstitucion.map(({ k, nombre, a, href }) => (
-              <li key={k}>
-                <div className="flex items-baseline justify-between gap-2">
-                  {href ? (
-                    <Link href={href} className="line-clamp-1 font-medium text-brand-600 hover:underline">
-                      {nombre}
-                    </Link>
-                  ) : (
-                    <span className="line-clamp-1 font-medium">{nombre}</span>
-                  )}
-                  <span className="shrink-0 text-xs text-ink-soft">
-                    {a.n} · {formatMonto(a.monto, "DOP")}
-                  </span>
-                </div>
-                <Progress
-                  value={Math.max(2, (a.monto / maxInst) * 100)}
-                  aria-label={`${nombre}: ${formatMonto(a.monto, "DOP")}`}
-                  indicadorClassName="bg-brand-400"
-                  className="mt-1"
-                />
-              </li>
-            ))}
-          </ul>
+          <BarrasHorizontales
+            className="mt-3"
+            maximo={maxInst}
+            etiqueta="Las diez instituciones con más monto"
+            barras={porInstitucion.map(({ k, nombre, a, href }) => ({
+              clave: k,
+              etiqueta: nombre,
+              titulo: `${nombre}: ${formatMonto(a.monto, "DOP")}`,
+              valor: a.monto,
+              cifra: `${a.n} · ${formatMonto(a.monto, "DOP")}`,
+              href: href ?? undefined,
+            }))}
+          />
         </Card>
       </div>
 

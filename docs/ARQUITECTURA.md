@@ -193,8 +193,8 @@ Snapshots (build-time `scripts/build-*.py` → `public/data/`, read with
   `historico/resumen.json`, `historico/instituciones.json` and ten
   `historico/proveedores/{d}.json` shards by the RPE's last digit. Pages:
   `/historico`; blocks `HistoriaDeInstitucion` / `HistoriaDeProveedor`
-  (`components/fuentes-nuevas/historia-compras.tsx`) on both fichas. The bar
-  chart is `components/barras.tsx` (extracted from `/deuda`, now with `tono`).
+  (`components/fuentes-nuevas/historia-compras.tsx`) on both fichas. The year
+  chart is `SerieTemporal` (`components/graficos/`).
 - **`lib/biblioteca.ts`** — documents published by 22 institutions through
   WordPress' public `/wp-json/wp/v2/media` (§G.2). `scripts/build-documentos.py`
   checks robots per host, walks every page up to `X-WP-TotalPages` (empty pages
@@ -502,8 +502,8 @@ sources impose:
 - `/deuda` → SPNF debt over time (finanzas section): year-end since 2000 with
   % of GDP and quarter-ends since 2015 from `getSerieDeuda()` (`lib/deuda.ts`),
   which reads the series from `public/data/deuda.json` and appends the live
-  latest close when Crédito Público answers. Bars are a server SVG
-  (`app/deuda/barras.tsx`) with a table behind a `Plegable`.
+  latest close when Crédito Público answers. Both series are `SerieTemporal forma="linea"`
+  (a stock is read in its level) with a table behind a `Plegable`.
 - `/nomina` → the payroll explorer (client, `components/nomina/explorer.tsx`)
   keeps its state in the URL: `?q=` and `?inst=CODIGO` are a contract with the
   ⌘K palette and the institution ficha; `?cargo=` (normalized prefix match,
@@ -712,6 +712,30 @@ no por `history.replaceState` ni por un efecto que reconcilie dos copias.
 | `lib/cifras.ts` | Una cifra con su ancla y su alcance; prohíbe el `+∞ %`, la variación de un porcentaje en por ciento y el denominador sacado de una muestra. |
 | `lib/glosario.ts` + `components/termino.tsx` | La jerga traducida en el punto de uso, no en un glosario que nadie abre: `<Termino clave="devengado">` subraya con puntos y abre un `ui/popover` con la frase llana y, si la hay, su guía. Se abre al tocar (un dedo no tiene `hover`), con teclado, y su objetivo de toque mide 44 px sin mover la línea. Una clave nueva va en `glosario.ts` solo si el término aparece en la plataforma. |
 | `components/acciones-ficha.tsx` | Seguir, compartir y RSS de una ficha en una línea: la ficha pasa `tipo`, `id`, `titulo`, `href` y los datos crudos del estado (`situacion`). `components/compartir.tsx` escribe el texto según el tipo —nunca «Mira esta licitación» bajo un decreto—. |
+
+### Gráficos: `components/graficos/`
+El sistema de visualización (G3; la doctrina y las paletas validadas en
+`docs/IDENTIDAD.md` §Gráficos). Todo es de servidor salvo `LecturaSerie`; nada
+importa código de servidor, así que el explorador de la nómina (cliente) usa
+las mismas piezas. Cada dato acepta `href` y lleva a su entidad.
+
+| Primitiva | Para qué | Dónde se usa hoy |
+|---|---|---|
+| `BarrasHorizontales` / `FilaBarra` | Ranking con nombre, cifra escrita y base; fila entera enlazada (`estira`), `actual` para el filtro puesto, `alElegir` para filtrar en cliente, `parte` para un tramo interior. | `/proveedores`, `/contratos`, `/estadisticas`, `/provincias`, `/normativa`, `/finanzas`, `/finanzas/[capitulo]`, `/instituciones/[id]`, `/proveedores/[rpe]`, `/nomina`, `/nomina/general`, `/pais` |
+| `MarcaBarra` | La barra sola, para una fila compuesta que ya tiene su forma. | Tarjetas de capítulo en `/finanzas` |
+| `SerieTemporal` | Serie en el tiempo o sobre un eje ordenado: `columnas` (flujo) o `linea` (saldo, tasa); un solo eje, máximo rotulado, marcas en HTML. | `/deuda`, `/pais`, `/historico`, `/` (inflación), `/finanzas` (subsidio), fichas de proveedor e institución (historia de compras), `/nomina` (tramos de sueldo) |
+| `LecturaSerie` | La capa de cliente: guía vertical, ficha con el valor, flechas, enlace de 44 px al tocar. | Dentro de `SerieTemporal` |
+| `BarraApilada` | Reparto de un todo al 100 %, con 2 px de papel entre segmentos y leyenda con cifras. | `/estadisticas` (estados), votaciones del Congreso (divergente) |
+| `MatrizMensual` | Mes × año en la secuencial, con su escala. | `/` (llegadas por avión) |
+| `Multiples` + `maximoComun` | Paneles con escala común. | `/nomina` (áreas y cargos) |
+| `Leyenda`, `EscalaSecuencial` | Identidad sin color solo; texto en tinta, muestra al lado. | Capítulo de finanzas, barras apiladas, matriz |
+| `VerComoTabla` | La tabla equivalente, plegada, con el número de filas en el botón. | `/` (llegadas) |
+| `paleta.ts`, `formato.ts` | Clases literales de las paletas (`CATEGORICA`, `SECUENCIAL`, `DIVERGENTE`, `ORDEN_TONOS`) y `formatearValor` sobre `lib/format.ts`. | — |
+
+`components/barras.tsx` y `components/nomina/charts.tsx` ya no existen: eran las
+dos primeras versiones de esto. `Progress` sigue siendo el **medidor** —una
+proporción contra el 100 % o un límite: ejecución, avance de obra, SISMAP,
+reparto de un voto ciudadano—, no un ranking.
 
 ## Rendimiento percibido — streaming y respuesta
 The sources are slow and outside our control, so the contract is that the

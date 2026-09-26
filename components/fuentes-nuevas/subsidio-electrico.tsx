@@ -1,7 +1,7 @@
 import { getSubsidioElectrico } from "@/lib/subsidio";
 import { variacion } from "@/lib/cifras";
 import { formatFecha, formatPesos } from "@/lib/format";
-import { Barras } from "@/components/barras";
+import { SerieTemporal } from "@/components/graficos";
 import { Cifra, TiraDeCifras } from "@/components/papel";
 import Plegable from "@/components/plegable";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -65,12 +65,14 @@ export async function SubsidioElectrico() {
           {formatPesos(d.anios[0].devengado)}.
         </p>
       )}
-      <Barras
+      <SerieTemporal
+        forma="columnas"
+        formato="pesos"
         etiqueta={`Transferencias del Tesoro a las eléctricas por año, de ${formatPesos(d.anios[0].devengado)} en ${d.anios[0].anio} a ${formatPesos(d.anios.at(-1)!.devengado)} en ${d.anios.at(-1)!.anio}`}
         puntos={d.anios.map((a, i) => ({
           clave: String(a.anio),
           valor: a.devengado,
-          titulo: `${a.anio}${a.hastaMes < 12 ? ` (hasta ${MESES[a.hastaMes - 1]})` : ""}: ${formatPesos(a.devengado)}`,
+          lectura: `${a.anio}${a.hastaMes < 12 ? ` (hasta ${MESES[a.hastaMes - 1]})` : ""}: ${formatPesos(a.devengado)}`,
           marca: i === 0 || i === d.anios.length - 1 || a.anio % 2 === 0 ? String(a.anio) : undefined,
         }))}
       />

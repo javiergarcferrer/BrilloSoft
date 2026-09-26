@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { BarrasHorizontales } from "@/components/graficos";
 import { Cifra, Rotulo, TiraDeCifras } from "@/components/papel";
 import { notFound } from "next/navigation";
 import { getHistorialProveedor, getProveedorRegistro } from "@/lib/dgcp";
@@ -351,23 +351,19 @@ export default async function ProveedorPage({
       {historial.porAnio.length > 1 && (
         <Card as="section" className="p-6">
           <CardTitle className="text-[15px]">Contratos por año</CardTitle>
-          <ul className="mt-3 space-y-2.5 text-sm">
-            {historial.porAnio.map((a) => (
-              <li key={a.anio}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-mono font-medium tabular-nums">{a.anio}</span>
-                  <span className="shrink-0 text-xs text-ink-soft">
-                    {a.n} · {formatMonto(a.monto, "DOP")}
-                  </span>
-                </div>
-                <Progress
-                  value={Math.max(2, (a.monto / maxAnio) * 100)}
-                  aria-label={`${a.anio}: ${formatMonto(a.monto, "DOP")}`}
-                  className="mt-1"
-                />
-              </li>
-            ))}
-          </ul>
+          <BarrasHorizontales
+            className="mt-3"
+            forma="periodo"
+            maximo={maxAnio}
+            etiqueta="Monto contratado por año"
+            barras={historial.porAnio.map((a) => ({
+              clave: String(a.anio),
+              etiqueta: a.anio,
+              titulo: `${a.anio}: ${formatMonto(a.monto, "DOP")}`,
+              valor: a.monto,
+              cifra: `${a.n} · ${formatMonto(a.monto, "DOP")}`,
+            }))}
+          />
         </Card>
       )}
 

@@ -20,7 +20,7 @@ import Plegable from "@/components/plegable";
 import { Cifra, TiraDeCifras } from "@/components/papel";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { BarrasHorizontales } from "@/components/graficos";
 import { coincideConsulta, recortar } from "@/lib/raiz";
 import { siglasDe } from "@/lib/instituciones";
 
@@ -138,31 +138,27 @@ export default async function NominaGeneralPage({
               Ordenadas por plazas. Cada fila abre sus cargos.
             </p>
           </div>
-          <ol className="mt-3 divide-y divide-hairline border-t border-hairline">
-            {lista.map((i) => (
-              <li key={i.nombre} className="relative px-5 py-3 sm:px-6">
-                <div className="flex items-baseline justify-between gap-3">
-                  <Link
-                    href={`/nomina/general?inst=${claveInstitucion(i.nombre)}`}
-                    className="min-w-0 text-[15px] leading-snug text-ink estira hover:text-brand-700"
-                  >
-                    {i.nombre}
-                  </Link>
-                  <span className="shrink-0 text-right font-mono text-sm tabular-nums">
-                    {formatInt(i.plazas)}
-                    <span className="block text-xs text-ink-soft">{formatPesos(i.masa)} al mes</span>
-                  </span>
-                </div>
-                <p className="mt-0.5 text-xs text-ink-soft">Sueldo mediano {formatDOP(i.mediana)}</p>
-                <Progress
-                  value={(i.plazas / maxPlazas) * 100}
-                  aria-label={`${i.nombre}: ${formatInt(i.plazas)} plazas`}
-                  className="mt-2"
-                  indicadorClassName="bg-v-nomina"
-                />
-              </li>
-            ))}
-          </ol>
+          <BarrasHorizontales
+            className="mt-3 border-t border-hairline"
+            filas
+            lineas={2}
+            maximo={maxPlazas}
+            etiqueta="Plazas por institución"
+            barras={lista.map((i) => ({
+              clave: i.nombre,
+              etiqueta: i.nombre,
+              titulo: `${i.nombre}: ${formatInt(i.plazas)} plazas`,
+              valor: i.plazas,
+              href: `/nomina/general?inst=${claveInstitucion(i.nombre)}`,
+              cifra: (
+                <>
+                  {formatInt(i.plazas)}
+                  <span className="block text-right text-xs font-normal text-ink-soft">{formatPesos(i.masa)} al mes</span>
+                </>
+              ),
+              detalle: `Sueldo mediano ${formatDOP(i.mediana)}`,
+            }))}
+          />
         </Card>
       )}
 

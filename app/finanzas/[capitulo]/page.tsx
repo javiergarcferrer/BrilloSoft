@@ -6,7 +6,7 @@ import { hrefInstitucion, institucionesDelCapitulo } from "@/lib/instituciones";
 import Plegable from "@/components/plegable";
 
 import { Card, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { BarrasHorizontales, Leyenda } from "@/components/graficos";
 import { Ruta } from "@/components/ruta";
 import AccionesFicha from "@/components/acciones-ficha";
 import { Termino } from "@/components/termino";
@@ -144,44 +144,36 @@ export default async function InstitucionFiscalPage({
               Esta institución no registra ejecución mensual en {fiscal.anio}.
             </p>
           ) : (
-            <ul className="mt-4 space-y-2.5 text-sm">
-              {meses.map((m) => (
-                <li key={m.mes}>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="font-mono font-medium tabular-nums">
-                      {etiquetaCorte(m.mes, fiscal.anio).split(" de ")[0]}
-                    </span>
-                    <span className="shrink-0 text-xs text-ink-soft">
-                      {formatPesos(m.devengado)}
-                    </span>
-                  </div>
-                  {/*
-                    Dos medidas en una barra: el ancho es lo devengado sobre el
-                    mes mayor, y el tramo oscuro de dentro es cuánto de eso ya
-                    salió de caja. La etiqueta accesible dice las dos, porque el
-                    tramo interior no se puede leer con un lector de pantalla.
-                  */}
-                  <Progress
-                    value={Math.max(1, (m.devengado / maxMes) * 100)}
-                    aria-label={`${etiquetaCorte(m.mes, fiscal.anio)}: devengado ${formatPesos(m.devengado)}, pagado ${formatPesos(m.pagado)}`}
-                    className="mt-1 h-3 sm:h-2.5"
-                    indicadorClassName="relative bg-v-finanzas"
-                  >
-                    <span
-                      aria-hidden
-                      className="absolute inset-y-0 left-0 rounded-sm bg-ink/35"
-                      style={{
-                        width: `${
-                          m.devengado > 0
-                            ? Math.min(100, (m.pagado / Math.max(m.devengado, 1)) * 100)
-                            : 0
-                        }%`,
-                      }}
-                    />
-                  </Progress>
-                </li>
-              ))}
-            </ul>
+            <>
+              <Leyenda
+                className="mt-3"
+                entradas={[
+                  { clave: "devengado", etiqueta: "Devengado", clase: "bg-grafico-sec-3" },
+                  { clave: "pagado", etiqueta: "Ya pagado", clase: "bg-grafico-1" },
+                ]}
+              />
+              {/*
+                Dos medidas en una barra: el ancho es lo devengado sobre el mes
+                mayor, y el tramo de dentro es cuánto de eso ya salió de caja.
+                El `title` de cada mes dice las dos, porque el tramo interior no
+                se puede leer con un lector de pantalla.
+              */}
+              <BarrasHorizontales
+                className="mt-3"
+                forma="periodo"
+                minimo={1}
+                maximo={maxMes}
+                etiqueta={`Gasto devengado y pagado por mes, ${fiscal.anio}`}
+                barras={meses.map((m) => ({
+                  clave: String(m.mes),
+                  etiqueta: etiquetaCorte(m.mes, fiscal.anio).split(" de ")[0],
+                  titulo: `${etiquetaCorte(m.mes, fiscal.anio)}: devengado ${formatPesos(m.devengado)}, pagado ${formatPesos(m.pagado)}`,
+                  valor: m.devengado,
+                  parte: m.pagado,
+                  cifra: formatPesos(m.devengado),
+                }))}
+              />
+            </>
           )}
         </Card>
 
@@ -195,30 +187,25 @@ export default async function InstitucionFiscalPage({
               El registro no desglosa unidades ejecutoras para esta institución.
             </p>
           ) : (
-            <ul className="mt-4 space-y-2.5 text-sm">
-              {i.unidades.map((u) => (
-                <li key={u.nombre}>
-                  {/*
-                    Los nombres de unidad ejecutora vienen en mayúsculas y son
-                    largos: con una sola línea a 390 px todos quedaban en
-                    «INSTITUTO NACIONAL DE…» y la lista no distinguía una de
-                    otra. Dos líneas alcanzan para leerlos.
-                  */}
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="line-clamp-2 leading-snug">{u.nombre}</span>
-                    <span className="shrink-0 text-xs leading-5 text-ink-soft">
-                      {formatPesos(u.devengado)}
-                    </span>
-                  </div>
-                  <Progress
-                    value={Math.max(2, (u.devengado / maxUnidad) * 100)}
-                    aria-label={`${u.nombre}: ${formatPesos(u.devengado)}`}
-                    indicadorClassName="bg-v-finanzas"
-                    className="mt-1"
-                  />
-                </li>
-              ))}
-            </ul>
+            /*
+              Los nombres de unidad ejecutora vienen en mayúsculas y son
+              largos: con una sola línea a 390 px todos quedaban en
+              «INSTITUTO NACIONAL DE…» y la lista no distinguía una de otra.
+              Dos líneas alcanzan para leerlos.
+            */
+            <BarrasHorizontales
+              className="mt-4"
+              lineas={2}
+              maximo={maxUnidad}
+              etiqueta="Unidades ejecutoras por gasto devengado"
+              barras={i.unidades.map((u) => ({
+                clave: u.nombre,
+                etiqueta: u.nombre,
+                titulo: `${u.nombre}: ${formatPesos(u.devengado)}`,
+                valor: u.devengado,
+                cifra: formatPesos(u.devengado),
+              }))}
+            />
           )}
         </Card>
       </div>

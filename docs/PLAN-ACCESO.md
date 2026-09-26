@@ -349,7 +349,7 @@ legisladores proponentes ↔ votaciones; provincia ↔ obras ↔ instituciones.
 Solo aristas verificadas (un cruce adivinado es peor que ninguno, como en
 `institucionesNombradasEn`), cada una con su fuente y su cuenta.
 
-**G3. Sistema de visualización.** `components/graficos/`: barras
+**G3. Sistema de visualización.** ✅ (2026-09-26) `components/graficos/`: barras
 horizontales, serie en el tiempo, tira de cifras, barra apilada al 100 %,
 matriz por mes; paletas como tokens en `app/globals.css` —secuencial en la
 firma, divergente firma ↔ sello con neutro en el papel, estados de
@@ -361,6 +361,26 @@ etiqueta directa, nunca color solo. Cada marca es pulsable y lleva a su nodo
 (G1). Hecho cuando: los ~20 gráficos a mano (`components/barras.tsx`,
 `components/nomina/charts.tsx`, `components/fuentes-nuevas/*`) usan las
 primitivas y `docs/IDENTIDAD.md` tiene su sección.
+
+  Hecho: `BarrasHorizontales`/`FilaBarra`/`MarcaBarra`, `SerieTemporal`
+  (columnas para un flujo, línea para un saldo o una tasa; su única parte de
+  cliente es `LecturaSerie`), `BarraApilada`, `MatrizMensual`, `Multiples`,
+  `Leyenda`, `VerComoTabla`; la tira de cifras sigue siendo `TiraDeCifras`
+  (`components/papel.tsx`). Paletas `--color-grafico-*` con la salida del
+  validador en `docs/IDENTIDAD.md` §Gráficos (categórica de cinco, las tres
+  primeras válidas todos-contra-todos; tres pasos nuevos porque los tintes de
+  vertical no llegaban a la banda ni al croma). Migrados: las diez series de
+  `components/barras.tsx` (borrado), la nómina entera (`charts.tsx` borrado; su
+  serie de doble eje no la usaba nadie), dieciocho `Progress` que hacían de
+  ranking en once páginas, las seis listas con barra de `/pais`, la barra de estados de `/estadisticas` y el recuento de
+  cada votación (divergente). Nuevo: la matriz de llegadas por avión en `/`.
+  Cada primitiva acepta `href` por dato; hoy lo llevan los rankings que ya
+  enlazaban. Pendiente para G1: dar `href` a las columnas de las series (años
+  → `/historico?anio=`, meses → la lista filtrada) cuando existan esas vistas.
+  Se quedan como `Progress`, porque son medidores contra el 100 % o un límite
+  y no rankings: ejecución presupuestaria, avance de obra, SISMAP, tasa de
+  resolución judicial, perención, aprobadas de un legislador, el resultado de
+  `/democracia`.
 
 **G4. Índice semántico de pantallas y categorización ergonómica.** Cada
 destino de `lib/indice.ts` y cada tipo de ficha entra al corpus de

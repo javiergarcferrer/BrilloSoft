@@ -167,7 +167,9 @@ Reglas:
    falso durante medio segundo, y alguien le hace captura. Las barras sí se
    dibujan —su final es el dato— y, donde el navegador sabe atarlas al
    desplazamiento (`animation-timeline: view()`), se dibujan al entrar en
-   pantalla; la que ya está a la vista al llegar se pinta entera, quieta.
+   pantalla; la que ya está a la vista al llegar se pinta entera, quieta. Donde
+   el navegador no sabe, se pintan quietas: nada de caer a una animación al
+   cargar (`--dur-trazo` queda para un dibujo que el lector provoque).
 4. **Movimiento reducido apaga el desplazamiento, no el significado.** Con
    `prefers-reduced-motion` no hay traslación ni animación, pero el relieve
    sigue cambiando —al instante— entre en reposo, apuntado y hundido.
@@ -177,6 +179,125 @@ Reglas:
 Lo nativo antes que la librería: `interpolate-size` y `animation-timeline`
 donde el navegador los tiene, la altura que mide Radix para los pliegues, y
 ninguna dependencia de animación.
+
+## Gráficos — el sistema
+
+Desde el 2026-09-26 (G3 de `docs/PLAN-ACCESO.md` §6 ter) todo gráfico se compone
+con las primitivas de `components/graficos/`; ninguno se dibuja a mano en una
+página. El método es el de la habilidad `dataviz` (forma → color → validar →
+marcas → capa de lectura → accesibilidad → mirarlo), con los parámetros de esta
+casa. **No hay modo oscuro**: la identidad es papel, así que cada paleta se
+validó solo en claro, contra `canvas` (#F7F3EA) y `surface` (#FDFBF5).
+
+### Qué forma para qué pregunta
+
+| La pregunta del lector | La primitiva | Color |
+|---|---|---|
+| ¿Quién/qué tiene más? (ranking con nombre) | `BarrasHorizontales` (o `FilaBarra` en una lista que se pliega; `MarcaBarra` dentro de una fila compuesta) | una serie: la firma |
+| ¿Cómo cambió un **flujo** (lo contratado, lo emitido) año a año? | `SerieTemporal forma="columnas"` | la firma |
+| ¿Cómo cambió un **saldo o una tasa** (la deuda, la inflación, la matrícula)? | `SerieTemporal forma="linea"` | la firma, área al 10 % |
+| Pocos períodos, cada uno con su cifra escrita (los meses de un año) | `BarrasHorizontales forma="periodo"`, en orden de calendario | la firma |
+| ¿Cómo se reparte un todo? (estados, votos) | `BarraApilada` | estados de `lib/estados.ts` o la divergente |
+| ¿Cuándo pasa en el año? (temporada) | `MatrizMensual` | secuencial |
+| La misma medida partida por una faceta | `Multiples` + `maximoComun` | una serie por panel |
+| Una proporción contra un límite (ejecución, avance, puntuación) | **no es un gráfico**: `Progress`, el medidor | el oficio del dato |
+| Un solo número | **no es un gráfico**: `Cifra` con su ancla | — |
+
+### Las paletas y lo que dijo el validador
+
+Tokens en `app/globals.css` (`--color-grafico-*`); clases literales en
+`components/graficos/paleta.ts`. Salida de
+`node …/dataviz/scripts/validate_palette.js … --mode light --surface "#f7f3ea"`
+(idéntica contra `#fdfbf5`):
+
+- **Categórica** — orden fijo, nunca ciclado; una serie sola es la 1.
+  `#35519C` firma · `#A0446E` ciruela · `#B97F2B` ocre · `#018E7D` verde azulado ·
+  `#6F59A6` violeta. Los tres pasos nuevos salen de los matices de
+  `v-finanzas`, `alerta` y `v-nomina`/`v-normativa`, subidos a la banda: los
+  tintes de vertical tal cual **no pasaban** (`v-normativa` L 0.40 y C 0.08,
+  `v-nomina` C 0.07, `valido-500` C 0.08), y el ocre de estado (`alerta-500`)
+  se dejó fuera a propósito para que una serie no se haga pasar por un aviso.
+  El sello no entra: es escaso por definición.
+  ```
+  [PASS] Lightness band      all 5 inside L 0.43–0.77
+  [PASS] Chroma floor        all 5 >= 0.1
+  [PASS] CVD separation      worst adjacent #a0446e↔#35519c ΔE 8.7 (protan) · tritan 12.7
+  [PASS] Normal-vision floor worst adjacent #a0446e↔#35519c ΔE 19.0 (normal)
+  [PASS] Contrast vs surface all 5 >= 3:1
+  ```
+  Con `--pairs all` (paneles, dispersión) pasan **las tres primeras**
+  (ΔE 8.7 / 19.0). El orden salió de enumerar las 24 permutaciones: la de mejor
+  vecindad (firma, verde azulado, violeta, ocre, ciruela: 11.9 / 19.8) fallaba
+  el todos-contra-todos en sus tres primeras (firma ↔ violeta, ΔE 4.6), así que
+  se eligió la que pasa las dos pruebas. Una sexta serie se pliega en «Otros»
+  (`grafico-otros`, grafito) o se parte en paneles; nunca se genera un color.
+- **Secuencial** — la firma de claro a oscuro: `brand-100, 200, 300, 400, 500,
+  700`. Monótona y de un matiz (5°), saltos ≥ 0.06. El paso 1 no llega a 2:1
+  (1.18:1) **a propósito**: en una escala continua es «casi cero» y puede
+  fundirse con el papel. Como escala ordinal (tramos) se usan del 3 al 6, que
+  pasan: `--ordinal` → ALL CHECKS PASS, extremo claro 2.36:1.
+- **Divergente** — firma ↔ sello con el gris del papel (`canto`) en medio:
+  `brand-500 · brand-300 · canto · sello-300 · sello-700`. Los polos a la misma
+  luz (L 0.45 los dos: firma 500 y sello **700**, no 600) para que ninguno pese
+  más — dirección no es valencia. Polos: PASS en todo (ΔE CVD 19.3, normal
+  22.7). Cada brazo tenue → pleno: `--ordinal` PASS. El neutro falla banda y
+  croma y queda a 1.76:1 **por diseño** (tiene que leerse «nada»); por eso la
+  barra divergente lleva siempre sus cifras escritas al lado.
+- **Estado** — no hay paleta nueva: son los puntos de `lib/estados.ts`. Lo único
+  que añade el sistema es el orden en que se apilan, `ORDEN_TONOS` (contexto,
+  aviso, anulado, accionable, cumplido): vecinos a ΔE CVD 12.3 y normal 17.2.
+  En el orden del trámite la firma quedaba junto al grafito a ΔE 10.1, bajo el
+  suelo de 15. El validador marca FAIL de croma en `contexto` (grafito, C 0.03)
+  y `cumplido` (`valido-500`, C 0.08): el grafito es gris porque «no afirma
+  nada»; el verde de archivo es apagado por identidad. Se deja así y se
+  compensa como manda la habilidad para el estado: **nunca solo el color**, la
+  leyenda escribe cada estado con su cifra. Subir el croma de `valido-500`
+  cambiaría el verde de toda la plataforma y es decisión del dueño.
+
+### Las reglas
+
+1. **Un solo eje.** Dos medidas de escala distinta son dos gráficos o un índice
+   común; nunca una segunda escala. La nómina tenía una serie de plazas contra
+   gasto con dos escalas: se retiró.
+2. **El color sigue a la entidad, no a su puesto.** Una sola serie es la firma
+   en todas las barras; nunca más oscura la más grande. Los tintes de vertical
+   (`v-*`) ya no pintan barras: orientan, no colorean contenido.
+3. **La escala se escribe.** La serie rotula su máximo sobre su filete y su base
+   es cero; un ranking escribe cada cifra en su fila; la matriz lleva su escala.
+4. **Capa de lectura al apuntar o tocar**, con guía vertical que busca el punto
+   más cercano y recorrido con flechas (`LecturaSerie`, la única parte de
+   cliente). Enriquece, nunca esconde: todo valor está también escrito o en
+   la tabla.
+5. **Tabla equivalente o leyenda, nunca color solo.** `VerComoTabla` (el botón
+   dice cuántas filas) o la tabla plegable propia de la tarjeta; con dos series
+   o más, `Leyenda`, con el texto en tinta y la muestra al lado.
+6. **Cada marca lleva a su nodo.** `href` por dato en todas las primitivas: la
+   fila entera de un ranking (`estira`), la columna de una serie (clic; al
+   tocar, la lectura trae un enlace de 44 px), la celda de la matriz, la
+   entrada de la leyenda de una barra apilada.
+7. **Marcas finas**: barra de 8 px (columna ≤ 24 px) con 4 px de esquina en el
+   extremo del dato y cuadrada en la base, línea de 2 px, punto final de 8 px
+   con anillo de papel, 2 px de papel entre segmentos, rejilla y base en
+   filete macizo — nunca discontinuo.
+8. **Nada se anima al cargar.** Las barras y columnas se dibujan al entrar en
+   pantalla solo donde el navegador lo ata al desplazamiento; donde no, se
+   pintan quietas (antes caían a 700 ms al cargar). Las cifras no cuentan.
+9. **Cifras por `lib/format.ts`**: `formatPesos`, `formatMagnitud`,
+   `formatMonto`, `formatFecha`; el mobiliario usa `formatearValor` sobre
+   ellas. Nunca «MM» ni «K».
+
+### Lo que la habilidad prohíbe y aquí ya pasó
+
+- **Doble eje** — la serie de plazas contra gasto de `components/nomina/charts.tsx`
+  (retirada; nadie la importaba).
+- **Un medidor haciendo de ranking** — veinte `Progress` con carril al 100 %
+  midiendo «contra el mayor»: el carril mentía la escala. Ahora son
+  `BarrasHorizontales`; `Progress` queda para lo que es un medidor.
+- **Color por panel** — dos rankings gemelos en `brand-500` y `brand-400`
+  (`/contratos`), el tinte de cada vertical en las barras: el color no decía
+  nada que el título no dijera.
+- **Neutro invisible** — la abstención de una votación en `hairline` (1.3:1):
+  el neutro divergente es `canto`.
 
 ## La voz
 
@@ -379,7 +500,8 @@ Desde la pasada de **shadcn/ui**, en dos capas:
   `components/nav-filtros.tsx`, `components/marca.tsx`,
   `components/plegable.tsx`, `components/antiguedad.tsx`,
   `components/paleta.tsx`, `components/ruta.tsx`, `components/paginador.tsx`,
-  `components/esqueleto.tsx`, `lib/estados.ts`, `lib/cifras.ts`,
+  `components/esqueleto.tsx`, `components/graficos/*` (§Gráficos),
+  `lib/estados.ts`, `lib/cifras.ts`,
   `lib/glosario.ts` y `components/termino.tsx` —el término del Estado
   subrayado con puntos que, al tocarlo, abre su definición llana en un
   `Popover`; es la forma de cumplir «la jerga se traduce en el punto de uso»

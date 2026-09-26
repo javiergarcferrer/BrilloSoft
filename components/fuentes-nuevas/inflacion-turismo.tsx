@@ -8,7 +8,7 @@ import {
 } from "@/lib/bcrd";
 import { puntos, variacion } from "@/lib/cifras";
 import { formatFecha } from "@/lib/format";
-import { Barras } from "@/components/barras";
+import { MatrizMensual, SerieTemporal, VerComoTabla, type FilaMatriz } from "@/components/graficos";
 import { Cifra, TiraDeCifras } from "@/components/papel";
 import Plegable from "@/components/plegable";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -60,6 +60,17 @@ function marcaLlegadas(m: MesLlegadas) {
   if (m.preliminar) partes.push("sujeta a rectificación");
   partes.push("instantánea");
   return partes.join(" · ");
+}
+
+/** La serie de llegadas, doblada en filas de año con sus doce meses. */
+function filasLlegadas(serie: MesLlegadas[]): FilaMatriz[] {
+  const porAnio = new Map<number, (number | null)[]>();
+  for (const m of serie) {
+    const [anio, mes] = m.periodo.split("-").map(Number);
+    if (!porAnio.has(anio)) porAnio.set(anio, new Array(12).fill(null));
+    porAnio.get(anio)![mes - 1] = m.total;
+  }
+  return [...porAnio.entries()].sort(([a], [b]) => a - b).map(([anio, valores]) => ({ anio, valores }));
 }
 
 function TablaIpc({ serie }: { serie: MesIpc[] }) {
@@ -198,17 +209,43 @@ export async function InflacionTurismo() {
       </TiraDeCifras>
 
       <h3 className="rotulo mt-4 text-ink-soft">Inflación en 12 meses, mes a mes</h3>
-      <Barras
-        tono="fill-v-finanzas"
+      <SerieTemporal
+        forma="linea"
+        formato="porciento"
         etiqueta={`Inflación interanual de ${mesEnPalabras(ipc.serie[0][0])} a ${mesEnPalabras(pIpc)}: la más baja, ${porciento(minimo[2])} en ${mesEnPalabras(minimo[0])}; la más alta, ${porciento(maximo[2])} en ${mesEnPalabras(maximo[0])}`}
         puntos={ipc.serie.map(([p, , ia]) => ({
           clave: p,
           valor: ia,
-          titulo: `${mayuscula(mesEnPalabras(p))}: ${porciento(ia)} en 12 meses`,
+          lectura: `${mayuscula(mesEnPalabras(p))}: ${porciento(ia)} en 12 meses`,
           marca: marcas.has(p) ? mesCorto(p) : undefined,
         }))}
       />
       <TablaIpc serie={ipc.serie} />
+
+      {/*
+        Las llegadas tienen temporada: en 36 columnas seguidas el ojo ve una
+        sierra; en una matriz mes × año, diciembre y marzo se comparan con su
+        mismo mes del año anterior, que es la comparación honesta.
+      */}
+      <h3 className="rotulo mt-4 text-ink-soft">Llegadas por avión, mes a mes</h3>
+      <MatrizMensual
+        className="mt-3"
+        etiqueta={`Pasajeros llegados por avión cada mes, de ${mesEnPalabras(turismo.serie[0].periodo)} a ${mesEnPalabras(turismo.serie.at(-1)!.periodo)}`}
+        filas={filasLlegadas(turismo.serie)}
+      />
+      <VerComoTabla
+        className="-mx-5 sm:-mx-5"
+        nombre="meses"
+        columnas={[{ titulo: "Mes" }, { titulo: "Llegadas", numerica: true }, { titulo: "No residentes", numerica: true }]}
+        filas={[...turismo.serie].reverse().map((m) => ({
+          clave: m.periodo,
+          celdas: [
+            mesCorto(m.periodo),
+            entero(m.total),
+            m.noResidentes === null ? "—" : entero(m.noResidentes),
+          ],
+        }))}
+      />
 
       <p className="mt-auto pt-3 text-xs leading-relaxed text-ink-soft">
         Índice de Precios al Consumidor nacional del Banco Central (base {ipc.base}),
