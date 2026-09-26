@@ -272,17 +272,45 @@ the first `n` rows of any type, at most half from one type when no `tipo` is
 given.
 
 ## Búsqueda — `lib/busqueda.ts` + `public/data/busqueda/`
-El índice de toda la plataforma, sin base de datos ni clave: tres archivos
+El índice de toda la plataforma, sin base de datos ni clave: cuatro archivos
 versionados y dos bibliotecas abiertas.
 
-- **Corpus** (`corpus.json`, ~7.5 MB): 35,754 entradas de seis instantáneas
-  —instituciones, normativa, obras, documentos, datos abiertos y cargos de
-  nómina (las grafías de un mismo cargo se juntan)—, con título, texto
-  auxiliar, quién publica (tabla `origenes`), enlace y fecha. Lo escribe
-  `scripts/build-busqueda.py`, que se corre **después** de regenerar
-  cualquiera de ellas.
-- **Por palabra**: Orama (`@orama/orama`, Apache-2.0) construye en memoria,
-  una vez por instancia, un BM25 sobre título (×3), texto auxiliar y origen.
+- **Corpus** (`corpus.json`, ~10.9 MB): 67,906 entradas de siete instantáneas
+  —instituciones, normativa, obras, documentos, datos abiertos, cargos de
+  nómina (las grafías de un mismo cargo se juntan) y proveedores—, con
+  título, texto auxiliar, quién publica (tabla `origenes`), enlace y fecha.
+  Lo escribe `scripts/build-busqueda.py`, que se corre **después** de
+  regenerar cualquiera de ellas, y lleva una `huella` (sha256 de las
+  entradas) que ata a él el índice guardado.
+- **Proveedores** (32,152): los que tienen al menos un contrato desde 2015 en
+  `public/data/historico/proveedores/` —no los ~138 mil inscritos del RPE,
+  casi todos sin contrato ni ficha que enseñar—, con el RNC del cruce con la
+  DGII (`public/data/rnc/`) cuando existe; ni teléfono ni correo, que ninguna
+  instantánea guarda. Llevan RPE (`r`), RNC (`c`), contratos (`k`) y años
+  (`a`); enlace y detalle («RNC … · 865 contratos, 2015–2026») los deriva
+  `aResultado`. **Sin vector**: un nombre de empresa no dice de qué trata, y
+  32 mil filas serían ~4 MB para acercar razones sociales por su sonido. Van
+  al final del corpus; `vectorizados` (35,754) dice hasta dónde hay vector.
+- **Por palabra**: Orama (`@orama/orama`, Apache-2.0), un BM25 sobre título
+  (×3), texto auxiliar y origen. Esquema y tokenizador viven en
+  `lib/busqueda-esquema.ts`, sin alias `@/`, para que el servidor y
+  `scripts/build-indice-busqueda.mjs` (que `node` carga quitando tipos) usen
+  el mismo: si discreparan, las raíces guardadas no serían las de la
+  consulta. Sin índice de orden (`sort: { enabled: false }`): nadie ordena
+  por campo.
+- **Índice guardado** (`indice.json.br`, 2.8 MB): `save()` de Orama tras
+  construirlo en build, sin la copia de los documentos (el servidor solo usa
+  el id) y en JSON con brotli; el script comprueba que 14 consultas, con y sin
+  tipo y errata, den los mismos ids y puntuaciones que el índice recién
+  construido, y si no, falla. La primera línea es la etiqueta del corpus
+  (fecha | huella | entradas): si no coincide —se regeneró el corpus y no
+  esto—, o el archivo falta o no se lee, el servidor lo construye en memoria,
+  más lento y nunca distinto. `@orama/plugin-data-persistence` se midió y no
+  se usa: su `restore` crea una base con esquema de relleno y el tokenizador
+  por defecto (se perdería el lematizador español), `dpack` y `seqproto`
+  fallan a este tamaño (seqproto pasa de 16 MB), y su `binary` es msgpack en
+  hexadecimal (50.7 MB, y decodificar msgpack cargaba en ~2 s contra ~0.65 s
+  de `JSON.parse`).
   `lib/raiz.ts` le da el lematizador español (`@orama/stemmers`) **después
   de quitar tildes** —al revés, «Educación» daba `educ` y «educacion»
   `educacion`— y la lista de palabras vacías de `@orama/stopwords` **menos
@@ -310,8 +338,10 @@ versionados y dos bibliotecas abiertas.
   dos decretos «Que otorga exequátur» o dos obras homónimas con distinto
   SNIP son filas distintas. Cada resultado dice su vía: `palabra`, `tema` o `ambas`; la
   interfaz marca «Por tema» lo que no lleva todas las palabras.
-- **Coste**: ~2.4 s y ~350 MB en frío (Orama inserta 36 mil entradas en ~2
-  s); 15–120 ms por consulta en caliente. `/buscar` pone los resultados en un
+- **Coste**: primera consulta de una instancia ~1.2–1.5 s con el índice
+  guardado, contra ~4.5 s construyéndolo (68 mil entradas; con las 36 mil de
+  antes eran ~2.4 s), medido con `next start` el 2026-09-26; 15–150 ms por
+  consulta en caliente. `/buscar` pone los resultados en un
   `Suspense` para que la caja no espere; la paleta no muestra nada mientras
   tanto (y «Toda la plataforma» sigue ahí), y si `/api/buscar` falla lo dice
   en una línea: «no respondió» no es «no hay nada». `next.config.ts` declara los
@@ -319,7 +349,9 @@ versionados y dos bibliotecas abiertas.
 - ⚠️ **Límite del tema**: un embedding estático entiende vecindad de
   palabras («agua potable» ↔ «acueducto», «escuelas» ↔ «educación»), no
   frases: «corrupción» no llega a «Cámara de Cuentas». Por eso acompaña a la
-  palabra y nunca la sustituye.
+  palabra y nunca la sustituye. Un modelo de frases (`multilingual-e5-small`)
+  se evaluó y no se adoptó: mejor en 7 de 17 consultas, peor en 5, ~220 MB
+  más en la función y ~2 s más en frío (`docs/PLAN-ACCESO.md` §6 bis).
 
 ## Congreso data layer — `lib/congreso.ts`
 Same contract as `lib/dgcp.ts`. The SIL is the portal's **internal** API, not a

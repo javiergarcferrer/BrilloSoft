@@ -94,7 +94,7 @@ npx tsc --noEmit # solo typecheck
 
 # Instantáneas en public/data/: fiscal (SIGEF, ~5 min), nomina, deuda, normativa
 # (semanal), instituciones (el cruce; tras normativa), busqueda (el índice; al final). Una por script:
-python3 scripts/build-<nombre>.py
+python3 scripts/build-<nombre>.py  # tras busqueda: node scripts/build-indice-busqueda.mjs
 ```
 
 No hay suite de pruebas ni ESLint: `next build` es el gate real, envuelto por

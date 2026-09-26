@@ -282,7 +282,7 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
     etiqueta: "Toda la plataforma",
     href: "/buscar",
     alcance:
-      "Reconoce un RNC, una cita como «Ley 47-20» o un código de proceso y lleva directo; si no, ordena por palabra y por tema instituciones, normativa, obras, cargos de nómina, documentos publicados y datos abiertos, suma las iniciativas de Diputados y ofrece seguir en cada vertical.",
+      "Reconoce un RNC, una cita como «Ley 47-20» o un código de proceso y lleva directo; si no, ordena por palabra y por tema instituciones, normativa, obras, cargos de nómina, documentos publicados y datos abiertos —y por palabra los proveedores con contratos desde 2015—, suma las iniciativas de Diputados y ofrece seguir en cada vertical.",
   },
   {
     etiqueta: "Instituciones",
@@ -301,7 +301,7 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
     etiqueta: "Proveedores",
     href: "/proveedores",
     alcance:
-      "Un RNC, cédula o RPE busca en el registro completo; un nombre, solo entre quienes ganaron contratos en las últimas semanas.",
+      "Un RNC, cédula o RPE busca en el registro completo; un nombre, solo entre quienes ganaron contratos en las últimas semanas (en «Toda la plataforma», entre todos los que contrataron desde 2015).",
   },
   {
     seccion: "congreso",

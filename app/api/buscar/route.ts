@@ -8,7 +8,7 @@ const ETIQUETA = Object.fromEntries(TIPOS_RESULTADO.map((t) => [t.clave, t.etiqu
 
 /**
  * El índice de `lib/busqueda.ts` para la paleta ⌘K: las primeras filas de
- * lo tecleado, de cualquier tipo, ya ordenadas. El corpus (siete megas) y el
+ * lo tecleado, de cualquier tipo, ya ordenadas. El corpus (once megas) y el
  * modelo no viajan al navegador; aquí se busca y salen `n` filas.
  *
  * `?q=` (2 a 120 caracteres), `?n=` (1 a 20, por defecto 6) y `?tipo=`

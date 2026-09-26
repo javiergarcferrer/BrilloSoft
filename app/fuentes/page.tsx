@@ -697,15 +697,19 @@ export default async function FuentesPage() {
               El buscador
             </Link>{" "}
             no lee ninguna fuente nueva: junta en un índice las instantáneas de
-            instituciones, normativa, obras, documentos, datos abiertos y cargos de
-            nómina, y dice la fecha en que se armó. Busca por palabra —sin tildes,
-            con plurales y conjugaciones, y una errata perdonada en palabras
-            largas— y por tema, con un modelo abierto de vectores
-            (Model2Vec, licencia MIT) reducido al español y guardado junto a los
-            datos: no hay servicio externo ni clave. Lo que sale solo por tema se
-            marca así. Licitaciones, proveedores por nombre y el Senado no están
-            en el índice: se buscan en su vertical, y Diputados se consulta en
-            vivo.
+            instituciones, normativa, obras, documentos, datos abiertos, cargos de
+            nómina y proveedores, y dice la fecha en que se armó. Busca por
+            palabra —sin tildes, con plurales y conjugaciones, y una errata
+            perdonada en palabras largas— y por tema, con un modelo abierto de
+            vectores (Model2Vec, licencia MIT) reducido al español y guardado
+            junto a los datos: no hay servicio externo ni clave. Lo que sale solo
+            por tema se marca así. De los proveedores están los 32 mil que tienen
+            al menos un contrato desde 2015 en el registro de la DGCP, por nombre,
+            RNC o RPE, no los inscritos que nunca contrataron; se encuentran por
+            palabra y no por tema, porque el nombre de una empresa no dice de qué
+            trata. Del padrón de la DGII solo se usa el RNC: ni teléfonos ni
+            correos. Licitaciones y el Senado no están en el índice: se buscan en
+            su vertical, y Diputados se consulta en vivo.
           </p>
         </Fuente>
 

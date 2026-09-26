@@ -31,16 +31,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
   title: "Buscar en toda la plataforma",
   description:
-    "Una sola caja para instituciones, normativa, obras, documentos, datos abiertos, nómina y Congreso del Estado dominicano, por palabra y por tema.",
+    "Una sola caja para instituciones, proveedores, normativa, obras, documentos, datos abiertos, nómina y Congreso del Estado dominicano, por palabra y por tema.",
 };
 
 /**
  * Buscar en toda la plataforma. Si lo tecleado tiene forma inequívoca —un RNC,
  * «Ley 47-20», un código de proceso, unas siglas— lleva directo
  * (`lib/buscar.ts`). Si no, el índice de `lib/busqueda.ts` ordena en una sola
- * lista, por palabra y por tema, lo que traen seis instantáneas; Diputados se
- * lee en vivo aparte, y lo que exige barrer una API entera (licitaciones,
- * proveedores, Senado) se ofrece como enlace con su alcance, no se finge.
+ * lista, por palabra y por tema, lo que traen siete instantáneas —los
+ * proveedores, los que tienen contratos desde 2015—; Diputados se lee en
+ * vivo aparte, y lo que exige barrer una API entera (licitaciones, Senado) se
+ * ofrece como enlace con su alcance, no se finge.
  *
  * Dos vistas del mismo resultado: «Todo» junta los mejores de cada tipo, en
  * el orden de su mejor acierto —se ve de un vistazo en qué vertical vive lo
@@ -76,14 +77,14 @@ export default async function BuscarPage({
         <BuscadorUrl
           etiqueta="Buscar en toda la plataforma"
           placeholder="MINERD, Ley 47-20, agua potable, chofer, 101000000…"
-          ayuda="Instituciones, normativa, obras, documentos, datos abiertos y cargos de nómina, por palabra y por tema; Diputados, en vivo. Licitaciones, proveedores y Senado se abren en su vertical."
+          ayuda="Instituciones, proveedores con contratos desde 2015, normativa, obras, documentos, datos abiertos y cargos de nómina, por palabra y por tema; Diputados, en vivo. Licitaciones y Senado se abren en su vertical."
         />
       </Suspense>
 
       {q && (
         <>
           {/*
-            El índice se carga una vez por instancia (unos dos segundos en
+            El índice se carga una vez por instancia (más de un segundo en
             frío): la cabecera y la caja no lo esperan.
           */}
           <Suspense
@@ -147,6 +148,15 @@ function hrefBusqueda(q: string, tipo?: TipoResultado, pagina?: number): string 
 const NOTA_CARGOS =
   "Plazas contadas en la foto de nómina de las instituciones que la publican en formato procesable, no en todo el Estado.";
 
+/**
+ * Qué proveedores están y cuáles no: los inscritos que nunca contrataron no
+ * tienen ficha que enseñar, y un nombre de empresa no dice de qué trata.
+ */
+const NOTA_PROVEEDORES =
+  "Los que tienen al menos un contrato desde 2015 en el registro de la DGCP, por nombre, RNC o RPE; no los inscritos que nunca contrataron. Se encuentran por palabra, no por tema.";
+
+const NOTAS: Partial<Record<TipoResultado, string>> = { cargo: NOTA_CARGOS, proveedor: NOTA_PROVEEDORES };
+
 const PLURAL = Object.fromEntries(TIPOS_RESULTADO.map((t) => [t.clave, t.plural])) as Record<TipoResultado, string>;
 
 async function Resultados({ q, tipo, pagina }: { q: string; tipo?: TipoResultado; pagina: number }) {
@@ -176,8 +186,8 @@ async function Resultados({ q, tipo, pagina }: { q: string; tipo?: TipoResultado
   if (todos === 0) {
     return (
       <EstadoVacio titulo={<>Nada con «{q}» en el índice</>}>
-        Ni por palabra ni por tema en instituciones, normativa, obras,
-        documentos, datos abiertos o cargos de nómina (índice del {fechaIndice}).
+        Ni por palabra ni por tema en instituciones, proveedores, normativa,
+        obras, documentos, datos abiertos o cargos de nómina (índice del {fechaIndice}).
         Prueba con menos palabras, o sigue en una vertical.
       </EstadoVacio>
     );
@@ -219,7 +229,7 @@ async function Resultados({ q, tipo, pagina }: { q: string; tipo?: TipoResultado
         ) : (
           <Card as="section" className="p-5">
             <CardTitle>{PLURAL[tipo]}</CardTitle>
-            {tipo === "cargo" && <p className="mt-1 text-xs leading-relaxed text-ink-soft">{NOTA_CARGOS}</p>}
+            {NOTAS[tipo] && <p className="mt-1 text-xs leading-relaxed text-ink-soft">{NOTAS[tipo]}</p>}
             <ul className="mt-2 divide-y divide-hairline">
               {h.resultados.map((r) => (
                 <li key={`${r.tipo}-${r.href ?? r.titulo}`}>
@@ -244,7 +254,7 @@ async function Resultados({ q, tipo, pagina }: { q: string; tipo?: TipoResultado
             <Grupo
               key={g.tipo}
               titulo={PLURAL[g.tipo]}
-              nota={g.tipo === "cargo" ? NOTA_CARGOS : undefined}
+              nota={NOTAS[g.tipo]}
               mas={
                 g.total > g.resultados.length
                   ? { href: hrefBusqueda(q, g.tipo), texto: `Ver los ${formatInt(g.total)}` }
