@@ -7,7 +7,7 @@ import { getDeuda } from "@/lib/deuda";
 import { normalize } from "@/lib/dgcp";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { BarrasHorizontales, MarcaBarra } from "@/components/graficos";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { BuscadorUrl } from "@/components/buscador-url";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
@@ -210,26 +210,19 @@ export default async function FinanzasPage({
           <p className="mt-1 text-xs text-ink-soft">
             Todo el Estado, {fiscal.anio}. Cada barra es un mes cerrado.
           </p>
-          <ul className="mt-4 space-y-2.5 text-sm">
-            {mesesVisibles.map((m) => (
-              <li key={m.mes}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-mono font-medium tabular-nums">
-                    {etiquetaCorte(m.mes, fiscal.anio).split(" de ")[0]}
-                  </span>
-                  <span className="shrink-0 text-xs text-ink-soft">
-                    {formatPesos(m.devengado)}
-                  </span>
-                </div>
-                <Progress
-                  value={Math.max(2, (m.devengado / maxMes) * 100)}
-                  aria-label={`${etiquetaCorte(m.mes, fiscal.anio)}: ${formatPesos(m.devengado)}`}
-                  indicadorClassName="bg-v-finanzas"
-                  className="mt-1"
-                />
-              </li>
-            ))}
-          </ul>
+          <BarrasHorizontales
+            className="mt-4"
+            forma="periodo"
+            maximo={maxMes}
+            etiqueta={`Gasto devengado por mes, ${fiscal.anio}`}
+            barras={mesesVisibles.map((m) => ({
+              clave: String(m.mes),
+              etiqueta: etiquetaCorte(m.mes, fiscal.anio).split(" de ")[0],
+              titulo: `${etiquetaCorte(m.mes, fiscal.anio)}: ${formatPesos(m.devengado)}`,
+              valor: m.devengado,
+              cifra: formatPesos(m.devengado),
+            }))}
+          />
         </Card>
 
         <Card as="section" className="p-5 sm:p-6 lg:col-span-2">
@@ -411,10 +404,10 @@ export default async function FinanzasPage({
                       {formatPesos(i.devengado)}
                     </span>
                   </div>
-                  <Progress
-                    value={Math.max(1, (i.devengado / maxDevengado) * 100)}
-                    aria-label={`${i.nombreLegible}: ${formatPesos(i.devengado)}`}
-                    indicadorClassName="bg-v-finanzas"
+                  <MarcaBarra
+                    valor={i.devengado}
+                    maximo={maxDevengado}
+                    minimo={1}
                     className="mt-1.5"
                   />
                   {/*

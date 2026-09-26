@@ -15,7 +15,7 @@ import {
 import { EstadoVacio } from "@/components/estado-vacio";
 import Plegable from "@/components/plegable";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
-import { Barras } from "@/components/barras";
+import { SerieTemporal } from "@/components/graficos";
 import { SubastasDeuda } from "@/components/fuentes-nuevas/subastas-deuda";
 
 export const metadata: Metadata = {
@@ -137,12 +137,14 @@ export default async function DeudaPage() {
               </>
             )}
           </p>
-          <Barras
+          <SerieTemporal
+            forma="linea"
+            formato="usd-millones"
             etiqueta={`Deuda al cierre de cada año, de ${formatMagnitud(primerAnio.total)} en ${primerAnio.anio} a ${formatMagnitud(ultimoAnio.total)} en ${ultimoAnio.anio}`}
             puntos={anual.map((a, i) => ({
               clave: String(a.anio),
               valor: a.total,
-              titulo: `${a.anio}: ${formatMagnitud(a.total)}${a.pctPib != null ? ` · ${a.pctPib.toFixed(1)} % del PIB` : ""}`,
+              lectura: `${a.anio}: ${formatMagnitud(a.total)}${a.pctPib != null ? ` · ${a.pctPib.toFixed(1)} % del PIB` : ""}`,
               marca: i === 0 || i === anual.length - 1 || a.anio % 5 === 0 ? String(a.anio) : undefined,
             }))}
           />
@@ -191,12 +193,14 @@ export default async function DeudaPage() {
               origen conserva publicado: de los años cerrados solo quedan los
               trimestres.
             </p>
-            <Barras
+            <SerieTemporal
+              forma="linea"
+              formato="usd-millones"
               etiqueta={`Deuda al cierre de cada trimestre, de ${formatMagnitud(trimestral[0].total)} a ${formatMagnitud(trimestral[trimestral.length - 1].total)}`}
               puntos={trimestral.map((c, i) => ({
                 clave: c.fecha,
                 valor: c.total,
-                titulo: `${formatFecha(c.fecha)}: ${formatMagnitud(c.total)}`,
+                lectura: `${formatFecha(c.fecha)}: ${formatMagnitud(c.total)}`,
                 marca:
                   i === 0 ||
                   i === trimestral.length - 1 ||

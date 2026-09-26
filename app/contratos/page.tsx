@@ -5,7 +5,7 @@ import { formatMonto, formatFecha, formatMes, tituloLegible } from "@/lib/format
 import { formatCompactDOP, formatInt } from "@/lib/nomina";
 import Antiguedad from "@/components/antiguedad";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { BarrasHorizontales } from "@/components/graficos";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { Button } from "@/components/ui/button";
@@ -95,23 +95,19 @@ export default async function ContratosPage() {
             Dentro de la ventana escaneada; los meses de los extremos pueden estar
             incompletos.
           </p>
-          <ul className="mt-4 space-y-2.5 text-sm">
-            {r.porMes.map((m) => (
-              <li key={m.mes}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <time dateTime={m.mes} className="font-medium tabular-nums">{formatMes(m.mes)}</time>
-                  <span className="shrink-0 text-xs text-ink-soft">
-                    {formatInt(m.n)} · {formatMonto(m.monto, "DOP")}
-                  </span>
-                </div>
-                <Progress
-                  value={Math.max(2, (m.monto / maxMes) * 100)}
-                  aria-label={`${formatMes(m.mes)}: ${formatMonto(m.monto, "DOP")}`}
-                  className="mt-1"
-                />
-              </li>
-            ))}
-          </ul>
+          <BarrasHorizontales
+            className="mt-4"
+            forma="periodo"
+            maximo={maxMes}
+            etiqueta="Monto adjudicado por mes"
+            barras={r.porMes.map((m) => ({
+              clave: m.mes,
+              etiqueta: <time dateTime={m.mes}>{formatMes(m.mes)}</time>,
+              titulo: `${formatMes(m.mes)}: ${formatMonto(m.monto, "DOP")}`,
+              valor: m.monto,
+              cifra: `${formatInt(m.n)} · ${formatMonto(m.monto, "DOP")}`,
+            }))}
+          />
         </Card>
       )}
 
@@ -120,14 +116,12 @@ export default async function ContratosPage() {
           titulo="Mayores adjudicatarios"
           nota="Enlazan a su perfil"
           items={r.topAdjudicatarios}
-          color="bg-brand-500"
           hrefDe={(a) => (a.rpe ? `/proveedores/${a.rpe}` : undefined)}
         />
         <RankingContratos
           titulo="Instituciones que más adjudican"
           nota="Enlazan a su ficha"
           items={r.topInstituciones}
-          color="bg-brand-400"
           hrefDe={(a) => {
             const inst = a.codigo ? institucionPorId(a.codigo) : null;
             return inst ? hrefInstitucion(inst) : undefined;
@@ -244,13 +238,11 @@ function RankingContratos({
   titulo,
   nota,
   items,
-  color,
   hrefDe,
 }: {
   titulo: string;
   nota?: string;
   items: AgregadoContrato[];
-  color: string;
   hrefDe?: (a: AgregadoContrato) => string | undefined;
 }) {
   const max = Math.max(1, ...items.map((a) => a.monto));
@@ -260,34 +252,19 @@ function RankingContratos({
         <CardTitle>{titulo}</CardTitle>
         {nota && <span className="text-xs text-ink-soft">{nota}</span>}
       </div>
-      <ul className="mt-3 space-y-2.5 text-sm">
-        {items.map((a) => {
-          const href = hrefDe?.(a);
-          const nombre = href ? (
-            <Link href={href} className="font-medium text-brand-600 hover:underline">
-              {a.clave}
-            </Link>
-          ) : (
-            <span className="font-medium">{a.clave}</span>
-          );
-          return (
-            <li key={a.codigo ?? a.clave}>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="line-clamp-1">{nombre}</span>
-                <span className="shrink-0 text-xs text-ink-soft">
-                  {a.n} · {formatMonto(a.monto, "DOP")}
-                </span>
-              </div>
-              <Progress
-                value={Math.max(2, (a.monto / max) * 100)}
-                aria-label={`${a.clave}: ${formatMonto(a.monto, "DOP")}`}
-                indicadorClassName={color}
-                className="mt-1"
-              />
-            </li>
-          );
-        })}
-      </ul>
+      <BarrasHorizontales
+        className="mt-3"
+        maximo={max}
+        etiqueta={titulo}
+        barras={items.map((a) => ({
+          clave: a.codigo ?? a.clave,
+          etiqueta: a.clave,
+          titulo: `${a.clave}: ${formatMonto(a.monto, "DOP")}`,
+          valor: a.monto,
+          cifra: `${a.n} · ${formatMonto(a.monto, "DOP")}`,
+          href: hrefDe?.(a),
+        }))}
+      />
     </Card>
   );
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ETIQUETA_SENTIDO, type SentidoVoto, type Votacion } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { BarraApilada, DIVERGENTE } from "@/components/graficos";
 import { cn } from "@/lib/cn";
 
 /**
@@ -14,9 +14,9 @@ import { cn } from "@/lib/cn";
  * votó él**. Toda la fila lleva a la votación, donde está el voto nominal de
  * cada uno.
  *
- * El sentido del voto va en palabras y en grafito: ningún color de
- * `lib/estados.ts` significa «a favor» o «en contra», y pintar uno sería
- * inventarle una valencia a un voto.
+ * El sentido del voto de un legislador va en palabras y en grafito: ningún
+ * color de `lib/estados.ts` significa «a favor» o «en contra», y pintar uno
+ * sería inventarle una valencia a un voto.
  */
 export function FilaVotacion({
   votacion,
@@ -56,7 +56,16 @@ export function FilaVotacion({
   );
 }
 
-/** El recuento con su base, y la barra del reparto entre los votos emitidos. */
+/**
+ * El recuento con su base, y la barra del reparto entre los votos emitidos.
+ *
+ * La barra es **divergente** (docs/IDENTIDAD.md §Gráficos): a favor en la
+ * firma, en contra en el sello, la abstención en el gris del papel entre los
+ * dos. No es un color de estado —no dice que ganar sea bueno—: dice de qué
+ * lado cayó cada voto, con los dos polos a la misma luz para que ninguno pese
+ * más. Cada cifra lleva al lado la muestra de su color, así que el color nunca
+ * es la única forma de saber cuál es cuál.
+ */
 export function Recuento({
   votacion,
   emitidos,
@@ -66,11 +75,17 @@ export function Recuento({
   emitidos: number;
   className?: string;
 }) {
+  const muestra = (clase: string) => (
+    <span aria-hidden className={cn("mr-1 inline-block h-2 w-2 rounded-sm align-middle", clase)} />
+  );
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <p className="font-mono text-xs tabular-nums text-ink-soft">
+        {muestra(DIVERGENTE.firma)}
         <span className="font-semibold text-ink">{votacion.si}</span> a favor ·{" "}
+        {muestra(DIVERGENTE.sello)}
         <span className="font-semibold text-ink">{votacion.no}</span> en contra ·{" "}
+        {muestra(DIVERGENTE.neutro)}
         <span className="font-semibold text-ink">{votacion.abstencion}</span>{" "}
         {votacion.abstencion === 1 ? "abstención" : "abstenciones"}
         {votacion.presentes !== null && (
@@ -82,11 +97,21 @@ export function Recuento({
         )}
       </p>
       {emitidos > 0 && (
-        <Progress
-          value={votacion.si}
-          max={emitidos}
-          className="h-1.5 max-w-xs"
-          aria-label={`${votacion.si} de ${emitidos} votos emitidos a favor`}
+        <BarraApilada
+          className="max-w-xs"
+          grosor="fino"
+          leyenda={false}
+          etiqueta={`Reparto de los ${emitidos} votos emitidos`}
+          segmentos={[
+            { clave: "si", etiqueta: "A favor", valor: votacion.si, clase: DIVERGENTE.firma },
+            {
+              clave: "abstencion",
+              etiqueta: votacion.abstencion === 1 ? "Abstención" : "Abstenciones",
+              valor: votacion.abstencion,
+              clase: DIVERGENTE.neutro,
+            },
+            { clave: "no", etiqueta: "En contra", valor: votacion.no, clase: DIVERGENTE.sello },
+          ]}
         />
       )}
     </div>

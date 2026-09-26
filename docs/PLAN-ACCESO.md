@@ -321,6 +321,80 @@ Del buscador, lo siguiente (resuelto el 2026-09-26):
   destilado a Model2Vec que entienda frases, o si el uso muestra que el
   estático se queda corto.
 
+## 6 ter. Horizonte 5 — el grafo (pedido del dueño, 2026-09-26)
+
+La plataforma pasa de un conjunto de verticales a **un grafo**: todo lo que se
+ve es un nodo que se puede pulsar e investigar, cada ficha dice con qué está
+conectada, los números se dibujan con un solo sistema de visualización, y
+cada pantalla es encontrable por lo que significa. Cuatro frentes, en orden:
+
+**G1. Modelo de entidades y enlace universal.** `lib/grafo.ts`: los tipos de
+nodo (institución, proveedor, proceso, contrato, norma, iniciativa,
+legislador, votación, expediente del Senado, obra, provincia, capítulo,
+cargo, documento, sentencia TC/TSE), su clave, su `href` canónico y cómo se
+reconoce en un texto (RNC, «Ley 47-20», código de proceso, SNIP, nombre
+completo de institución). Una primitiva `<Entidad>` pinta cualquier mención
+como enlace; `enlazarTexto()` convierte las menciones de un párrafo (títulos
+de normas y proyectos, descripciones de procesos). Hecho cuando: ninguna
+ficha pinta un nombre, número o código de otra entidad sin enlace (un
+chequeo del gate lo vigila), y todo `href` de entidad sale de `lib/grafo.ts`.
+Hoy (medido): las normas y los proyectos no enlazan instituciones ni
+legisladores por su texto; las fichas de proceso, proveedor, institución y
+obra sí se enlazan entre ellas.
+
+**G2. Vecindario en cada ficha.** Un bloque «Conectado con» por ficha, con
+las aristas que las fuentes ya dan: institución ↔ proveedores ↔ procesos ↔
+obras ↔ normas que la nombran ↔ nómina ↔ capítulo; norma ↔ proyecto ↔
+legisladores proponentes ↔ votaciones; provincia ↔ obras ↔ instituciones.
+Solo aristas verificadas (un cruce adivinado es peor que ninguno, como en
+`institucionesNombradasEn`), cada una con su fuente y su cuenta.
+
+**G3. Sistema de visualización.** ✅ (2026-09-26) `components/graficos/`: barras
+horizontales, serie en el tiempo, tira de cifras, barra apilada al 100 %,
+matriz por mes; paletas como tokens en `app/globals.css` —secuencial en la
+firma, divergente firma ↔ sello con neutro en el papel, estados de
+`lib/estados.ts`, categórica fija—, **validadas** con el validador de la
+habilidad `dataviz` contra el papel (`canvas`); sin modo oscuro (la
+identidad es papel). Reglas de la habilidad: un solo eje, color por entidad y
+no por rango, capa de lectura al pasar o tocar, tabla equivalente, leyenda o
+etiqueta directa, nunca color solo. Cada marca es pulsable y lleva a su nodo
+(G1). Hecho cuando: los ~20 gráficos a mano (`components/barras.tsx`,
+`components/nomina/charts.tsx`, `components/fuentes-nuevas/*`) usan las
+primitivas y `docs/IDENTIDAD.md` tiene su sección.
+
+  Hecho: `BarrasHorizontales`/`FilaBarra`/`MarcaBarra`, `SerieTemporal`
+  (columnas para un flujo, línea para un saldo o una tasa; su única parte de
+  cliente es `LecturaSerie`), `BarraApilada`, `MatrizMensual`, `Multiples`,
+  `Leyenda`, `VerComoTabla`; la tira de cifras sigue siendo `TiraDeCifras`
+  (`components/papel.tsx`). Paletas `--color-grafico-*` con la salida del
+  validador en `docs/IDENTIDAD.md` §Gráficos (categórica de cinco, las tres
+  primeras válidas todos-contra-todos; tres pasos nuevos porque los tintes de
+  vertical no llegaban a la banda ni al croma). Migrados: las diez series de
+  `components/barras.tsx` (borrado), la nómina entera (`charts.tsx` borrado; su
+  serie de doble eje no la usaba nadie), dieciocho `Progress` que hacían de
+  ranking en once páginas, las seis listas con barra de `/pais`, la barra de estados de `/estadisticas` y el recuento de
+  cada votación (divergente). Nuevo: la matriz de llegadas por avión en `/`.
+  Cada primitiva acepta `href` por dato; hoy lo llevan los rankings que ya
+  enlazaban. Pendiente para G1: dar `href` a las columnas de las series (años
+  → `/historico?anio=`, meses → la lista filtrada) cuando existan esas vistas.
+  Se quedan como `Progress`, porque son medidores contra el 100 % o un límite
+  y no rankings: ejecución presupuestaria, avance de obra, SISMAP, tasa de
+  resolución judicial, perención, aprobadas de un legislador, el resultado de
+  `/democracia`.
+
+**G4. Índice semántico de pantallas y categorización ergonómica.** Cada
+destino de `lib/indice.ts` y cada tipo de ficha entra al corpus de
+`lib/busqueda.ts` con una descripción en llano y preguntas que responde
+(«¿cuánto debe el país?» → `/deuda`), para que `/buscar` y la paleta lleven
+a la pantalla por su significado. Se revisa la taxonomía tema × tarea con
+las consultas reales como prueba (qué se busca y dónde termina) y se
+reordena el menú donde no casan. Hecho cuando: una batería de 60 preguntas
+en llano llega a la pantalla correcta entre los tres primeros resultados.
+
+Orden: G1 → G4 (índice de pantallas, barato y visible) → G2 → G3. Nada de
+esto guarda datos: el grafo se deriva en cada lectura de las mismas fuentes e
+instantáneas (`docs/DECISIONES.md`, «El buscador no va a una base de datos»).
+
 ## 7. Guardarraíles para quien ejecute
 
 - Nada de esto introduce DB ni variables de entorno: los cruces son archivos

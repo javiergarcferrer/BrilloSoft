@@ -9,7 +9,7 @@ import {
 import { formatFecha, formatMonto } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { BarrasHorizontales } from "@/components/graficos";
 import { Cargando, EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
 
@@ -107,25 +107,20 @@ async function Reparto() {
         {formatInt(r.enVentana)} con contratos en esa ventana, según la provincia de
         su ficha en el Registro de Proveedores. No es el padrón de cada provincia.
       </p>
-      <ul className="mt-4 space-y-2.5 text-sm">
-        {filas.map(({ p, n, monto }) => (
-          <li key={p.slug}>
-            <div className="flex items-baseline justify-between gap-2">
-              <Link href={`/provincias/${p.slug}`} className="font-medium text-brand-700 hover:underline">
-                {p.nombre}
-              </Link>
-              <span className="shrink-0 text-xs text-ink-soft">
-                {formatInt(n)} {n === 1 ? "proveedor" : "proveedores"} · {formatMonto(monto, "DOP")}
-              </span>
-            </div>
-            <Progress
-              value={Math.max(2, (monto / max) * 100)}
-              aria-label={`${p.nombre}: ${formatMonto(monto, "DOP")}`}
-              className="mt-1"
-            />
-          </li>
-        ))}
-      </ul>
+      <BarrasHorizontales
+        className="mt-4"
+        maximo={max}
+        etiqueta="Monto adjudicado por provincia del proveedor"
+        barras={filas.map(({ p, n, monto }) => ({
+          clave: p.slug,
+          etiqueta: p.nombre,
+          titulo: `${p.nombre}: ${formatMonto(monto, "DOP")}`,
+          valor: monto,
+          cifra: formatMonto(monto, "DOP"),
+          detalle: `${formatInt(n)} ${n === 1 ? "proveedor" : "proveedores"}`,
+          href: `/provincias/${p.slug}`,
+        }))}
+      />
       {r.sinProvincia > 0 && (
         <p className="mt-4 text-xs text-ink-soft">
           {formatInt(r.sinProvincia)} de los consultados tienen la provincia vacía o

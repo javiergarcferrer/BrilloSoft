@@ -75,7 +75,13 @@ percentage deltas in points), `lib/glosario.ts` + `components/termino.tsx`
 (jargon translated at the point of use: `<Termino clave="…">` opens the plain
 definition on tap), `components/esqueleto.tsx` (the silhouette a page shows while
 a source answers: every `loading.tsx` and `Suspense` fallback composes it,
-same heights and grids as the content so nothing jumps). If a primitive is
+same heights and grids as the content so nothing jumps), `components/graficos/*`
+(every chart — docs/IDENTIDAD.md §Gráficos: `BarrasHorizontales`/`FilaBarra`/
+`MarcaBarra` for a ranking, `SerieTemporal` columns for a flow and line for a
+stock or rate, one axis only, `BarraApilada`, `MatrizMensual`, `Multiples`,
+`Leyenda`, `VerComoTabla`; colours only from the validated `--color-grafico-*`
+palettes, state from `lib/estados.ts`; every datum takes `href`; `Progress` is a
+meter against 100 %, never a ranking). If a primitive is
 missing, add it to the layer it belongs to; do not reimplement
 the idea in one page. Legal moves are three: use the primitive, add the
 token, or extract the sibling. Adding an exception or relaxing a matcher

@@ -10,7 +10,7 @@ import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha, formatPesos } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
-import { Barras } from "@/components/barras";
+import { SerieTemporal } from "@/components/graficos";
 import { Cifra, TiraDeCifras } from "@/components/papel";
 import Plegable from "@/components/plegable";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -116,13 +116,14 @@ export async function HistoriaDeProveedor({ rpe }: { rpe: string }) {
       <Atipicos a={h.atipicos} />
       {h.serie.length > 1 && (
         <>
-          <Barras
-            tono="fill-v-compras"
+          <SerieTemporal
+            forma="columnas"
+            formato="pesos"
             etiqueta={`Valor contratado por año; su mejor año fue ${mejor[0]}, con ${formatPesos(mejor[2])}`}
             puntos={h.serie.map(([anio, n, monto], i) => ({
               clave: String(anio),
               valor: monto,
-              titulo: `${anio}: ${formatPesos(monto)} en ${nContratos(n)}`,
+              lectura: `${anio}: ${formatPesos(monto)} en ${nContratos(n)}`,
               marca: i === 0 || i === h.serie.length - 1 ? String(anio) : undefined,
             }))}
           />
@@ -199,13 +200,14 @@ export async function HistoriaDeInstitucion({ uc, nombre }: { uc: number; nombre
       <Atipicos a={h.atipicos} />
       {h.serie.length > 1 && (
         <>
-          <Barras
-            tono="fill-v-compras"
+          <SerieTemporal
+            forma="columnas"
+            formato="pesos"
             etiqueta={`Valor contratado por año, ${primero}–${ultimo}`}
             puntos={h.serie.map(([anio, n, monto, procesos], i) => ({
               clave: String(anio),
               valor: monto,
-              titulo: `${anio}: ${formatPesos(monto)} en ${nContratos(n)}; ${formatInt(procesos)} procesos publicados`,
+              lectura: `${anio}: ${formatPesos(monto)} en ${nContratos(n)}; ${formatInt(procesos)} procesos publicados`,
               marca: i === 0 || i === h.serie.length - 1 ? String(anio) : undefined,
             }))}
           />

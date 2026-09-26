@@ -29,6 +29,7 @@ import { claveInstitucion, mesGeneral, nominaGeneralDeInstitucion } from "@/lib/
 import { DocumentosDeInstitucion } from "@/components/fuentes-nuevas/documentos-de-institucion";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { BarrasHorizontales } from "@/components/graficos";
 import { Button } from "@/components/ui/button";
 import { EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
@@ -497,30 +498,19 @@ async function Compras({ institucion: i }: { institucion: Institucion }) {
             />
           </TiraDeCifras>
           <h3 className="mt-5 text-sm font-semibold">A quién le compra</h3>
-          <ul className="mt-2 space-y-2.5 text-sm">
-            {compras.proveedores.map((p) => (
-              <li key={p.rpe || p.nombre}>
-                <div className="flex items-baseline justify-between gap-2">
-                  {p.rpe ? (
-                    <Link href={`/proveedores/${p.rpe}`} className="min-w-0 truncate hover:text-brand-700">
-                      {p.nombre}
-                    </Link>
-                  ) : (
-                    <span className="min-w-0 truncate">{p.nombre}</span>
-                  )}
-                  <span className="shrink-0 font-mono text-xs tabular-nums text-ink-soft">
-                    {formatPesos(p.monto)} · {formatInt(p.n)}
-                  </span>
-                </div>
-                <Progress
-                  value={Math.max(2, (p.monto / maxProv) * 100)}
-                  aria-label={`${p.nombre}: ${formatPesos(p.monto)} en ${p.n} contratos`}
-                  className="mt-1"
-                  indicadorClassName="bg-v-compras"
-                />
-              </li>
-            ))}
-          </ul>
+          <BarrasHorizontales
+            className="mt-2"
+            maximo={maxProv}
+            etiqueta="Proveedores por monto contratado"
+            barras={compras.proveedores.map((p) => ({
+              clave: p.rpe || p.nombre,
+              etiqueta: p.nombre,
+              titulo: `${p.nombre}: ${formatPesos(p.monto)} en ${p.n} contratos`,
+              valor: p.monto,
+              cifra: `${formatPesos(p.monto)} · ${formatInt(p.n)}`,
+              href: p.rpe ? `/proveedores/${p.rpe}` : undefined,
+            }))}
+          />
         </>
       )}
 

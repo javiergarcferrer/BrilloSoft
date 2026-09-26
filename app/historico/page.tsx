@@ -5,7 +5,7 @@ import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha, formatPesos } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
-import { Barras } from "@/components/barras";
+import { SerieTemporal } from "@/components/graficos";
 import { Card, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -119,13 +119,14 @@ export default async function HistoricoPage() {
           años es sobre todo cobertura, no gasto nuevo. {anioCorte} va hasta el{" "}
           {formatFecha(d.corte)}.
         </p>
-        <Barras
-          tono="fill-v-compras"
+        <SerieTemporal
+          forma="columnas"
+          formato="pesos"
           etiqueta={`Valor contratado por año, de ${formatPesos(primero.monto)} en ${primero.anio} a ${formatPesos(d.anios.at(-1)!.monto)} en ${d.anios.at(-1)!.anio}`}
           puntos={d.anios.map((a, i) => ({
             clave: String(a.anio),
             valor: a.monto,
-            titulo: `${a.anio}: ${formatPesos(a.monto)} en ${nContratos(a.contratos)}`,
+            lectura: `${a.anio}: ${formatPesos(a.monto)} en ${nContratos(a.contratos)}`,
             marca: i === 0 || i === d.anios.length - 1 || a.anio % 3 === 0 ? String(a.anio) : undefined,
           }))}
         />
