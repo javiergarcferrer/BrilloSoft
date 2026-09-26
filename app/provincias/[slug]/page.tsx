@@ -10,7 +10,8 @@ import {
   type Provincia,
 } from "@/lib/provincias";
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
-import { getObras, slugProvincia } from "@/lib/obras";
+import { filtrarObras, getObras, slugProvincia } from "@/lib/obras";
+import { ConectadoCon } from "@/components/conectado-con";
 import { FilaObra } from "@/components/fuentes-nuevas/fila-obra";
 import { formatFecha, formatMonto } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
@@ -60,6 +61,9 @@ export default async function ProvinciaPage({ params }: Props) {
     .filter((i): i is NonNullable<typeof i> => i !== null)
     .map((i) => ({ id: i.id, nombre: i.nombre, href: hrefInstitucion(i) }));
 
+  const obras = await getObras();
+  const nObras = obras ? filtrarObras(obras.proyectos, { provincia: p.slug }).length : 0;
+
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <Ruta raiz={{ href: "/provincias", label: "Provincias" }} actual={p.nombre} />
@@ -75,10 +79,27 @@ export default async function ProvinciaPage({ params }: Props) {
           Quién de aquí le vende al Estado, qué ayuntamientos compran y quién
           representa a {p.nombre} en el Congreso.
         </p>
-        <Button asChild variant="secondary" className="mt-4">
-          <Link href={hrefLegisladores(p)}>Sus diputados y senador</Link>
-        </Button>
       </Card>
+
+      <ConectadoCon
+        aristas={[
+          { etiqueta: "Sus diputados y su senador", href: hrefLegisladores(p), nombre: p.nombre, fuente: "SIL de la Cámara" },
+          ...ayuntamientos.slice(0, 2).map((a) => ({
+            etiqueta: "Ayuntamiento de la cabecera",
+            href: a.href,
+            nombre: desdeMayusculas(a.nombre),
+            fuente: `DGCP ${a.id}`,
+          })),
+          { etiqueta: "Obras públicas", href: `/obras?provincia=${p.slug}`, cuenta: nObras, fuente: "MapaInversiones" },
+          {
+            etiqueta: "Cortes de luz programados",
+            href: `/luz?q=${encodeURIComponent(p.nombre)}`,
+            nombre: "Edenorte y Edesur",
+            fuente: "Esta semana",
+          },
+          { etiqueta: "Sus cifras: robos, escuela y vivienda", href: "/pais", fuente: "MIP, MINERD y MIVHED" },
+        ]}
+      />
 
       <Suspense
         fallback={

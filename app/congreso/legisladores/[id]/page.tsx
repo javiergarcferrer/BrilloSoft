@@ -27,6 +27,9 @@ import {
 import type { Ancla } from "@/lib/cifras";
 import { hrefDirectorio } from "../href";
 import { enlace } from "@/lib/grafo";
+import { ConectadoCon } from "@/components/conectado-con";
+import { provinciaDeTexto } from "@/lib/provincias";
+import { filtrarObras, getObras } from "@/lib/obras";
 
 export const revalidate = 3600;
 
@@ -95,6 +98,9 @@ export default async function LegisladorPage({ params, searchParams }: Props) {
   if (l === "inexistente") notFound();
 
   const corte: Corte = ver && ver in CORTES ? (ver as Corte) : "todas";
+  const provincia = provinciaDeTexto(l.provincia);
+  const obras = provincia ? await getObras() : null;
+  const obrasProvincia = provincia && obras ? filtrarObras(obras.proyectos, { provincia: provincia.slug }).length : 0;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -121,23 +127,37 @@ export default async function LegisladorPage({ params, searchParams }: Props) {
             .filter(Boolean)
             .join(" · ")}
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {l.provincia && (
-            <Button asChild variant="secondary" size="sm" className="h-10 sm:h-9">
-              <Link href={hrefDirectorio({ provincia: l.provincia })}>
-                {`Quién más representa a ${l.provincia}`}
-              </Link>
-            </Button>
-          )}
-          {l.partidoSiglas && (
-            <Button asChild variant="secondary" size="sm" className="h-10 sm:h-9">
-              <Link href={hrefDirectorio({ partido: l.partidoSiglas })}>
-                {`Su bancada: ${l.partidoSiglas}`}
-              </Link>
-            </Button>
-          )}
-        </div>
       </header>
+
+      <ConectadoCon
+        className="mt-5"
+        aristas={[
+          provincia && {
+            etiqueta: "Su provincia",
+            href: enlace.provincia(provincia.slug),
+            nombre: provincia.nombre,
+            fuente: "SIL de la Cámara",
+          },
+          l.provincia && {
+            etiqueta: "Quién más representa a su provincia",
+            href: hrefDirectorio({ provincia: l.provincia }),
+            nombre: l.provincia,
+            fuente: "SIL de la Cámara",
+          },
+          l.partidoSiglas && {
+            etiqueta: "Su bancada",
+            href: hrefDirectorio({ partido: l.partidoSiglas }),
+            nombre: l.partidoNombre ?? l.partidoSiglas,
+            fuente: "SIL de la Cámara",
+          },
+          provincia && {
+            etiqueta: "Obras públicas en su provincia",
+            href: `/obras?provincia=${provincia.slug}`,
+            cuenta: obrasProvincia,
+            fuente: "MapaInversiones",
+          },
+        ]}
+      />
 
       <Suspense key={corte} fallback={<Esqueleto className="mt-6 h-96" />}>
         <Propuestas id={id} corte={corte} />

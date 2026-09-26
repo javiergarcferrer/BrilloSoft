@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { etiquetaCorte, getFiscal, getInstitucionFiscal } from "@/lib/fiscal";
 import { formatMonto, formatPesos } from "@/lib/format";
-import { hrefInstitucion, institucionesDelCapitulo } from "@/lib/instituciones";
+import { cabezaDelCapitulo, hrefInstitucion, institucionesDelCapitulo } from "@/lib/instituciones";
+import { ConectadoCon } from "@/components/conectado-con";
+import { desdeMayusculas } from "@/lib/congreso";
+import { getObras } from "@/lib/obras";
 import Plegable from "@/components/plegable";
 
 import { Card, CardTitle } from "@/components/ui/card";
@@ -53,6 +56,10 @@ export default async function InstitucionFiscalPage({
   const maxUnidad = Math.max(1, ...i.unidades.map((u) => u.devengado));
   const modificaciones = i.vigente - i.inicial;
   const pendientePago = i.devengado - i.pagado;
+  const unidades = institucionesDelCapitulo(i.codigo);
+  const cabeza = cabezaDelCapitulo(i.nombreLegible, unidades);
+  const obras = cabeza ? await getObras() : null;
+  const obrasCabeza = obras && cabeza ? obras.proyectos.filter((o) => o.uc === cabeza.id).length : 0;
 
   return (
     <div className="space-y-5">
@@ -125,6 +132,25 @@ export default async function InstitucionFiscalPage({
           )}
         </p>
       </Card>
+
+      <ConectadoCon
+        aristas={[
+          cabeza && {
+            etiqueta: "La institución que lo encabeza",
+            href: hrefInstitucion(cabeza),
+            nombre: desdeMayusculas(cabeza.nombre),
+            fuente: "DGCP ↔ SIGEF",
+          },
+          { etiqueta: "Unidades de compra que gastan este presupuesto", href: "#unidades", cuenta: unidades.length, fuente: "DGCP" },
+          cabeza && {
+            // La cuenta es la de la lista que abre: las de quien lo encabeza.
+            etiqueta: "Obras que ejecuta quien lo encabeza",
+            href: `/obras?uc=${cabeza.id}`,
+            cuenta: obrasCabeza,
+            fuente: "MapaInversiones",
+          },
+        ]}
+      />
 
       <div className="grid gap-5 lg:grid-cols-5">
         <Card as="section" className="p-5 sm:p-6 lg:col-span-3">
@@ -254,7 +280,7 @@ function UnidadesDeCompra({ capitulo }: { capitulo: string }) {
   );
 
   return (
-    <Card as="section" className="overflow-hidden">
+    <Card as="section" id="unidades" className="overflow-hidden">
       <div className="p-5 sm:p-6">
         <CardTitle>¿Quién compra con este presupuesto?</CardTitle>
         <p className="mt-1 text-xs leading-relaxed text-ink-soft">

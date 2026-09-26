@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { IconExternal } from "@/components/icons";
 import { enlace } from "@/lib/grafo";
+import { ConectadoCon } from "@/components/conectado-con";
+import { provinciaDeTexto } from "@/lib/provincias";
 
 export const revalidate = 86400;
 
@@ -101,6 +103,34 @@ export default async function ObraPage({ params }: Props) {
         </p>
         <p className="mt-1 font-mono text-sm text-ink-soft">SNIP {o.snip}</p>
       </Card>
+
+      <ConectadoCon
+        aristas={[
+          institucion && {
+            etiqueta: "Institución que la ejecuta",
+            href: hrefInstitucion(institucion),
+            nombre: o.entidad,
+            fuente: "MapaInversiones",
+          },
+          ...o.provincias
+            .map((nombre) => provinciaDeTexto(nombre))
+            .filter((p): p is NonNullable<typeof p> => p !== null)
+            .slice(0, 3)
+            .map((p) => ({ etiqueta: "Provincia", href: enlace.provincia(p.slug), nombre: p.nombre, fuente: "MapaInversiones" })),
+          ...[...new Map(contratos.filter((c) => c.rpe).map((c) => [c.rpe, c])).values()].slice(0, 3).map((c) => ({
+            etiqueta: "Contratista",
+            href: enlace.proveedor(c.rpe),
+            nombre: c.proveedor,
+            fuente: "MapaInversiones ↔ DGCP",
+          })),
+          ...procesos.slice(0, 3).map((pr) => ({
+            etiqueta: "Proceso de compra",
+            href: enlace.proceso(pr.codigo),
+            nombre: pr.codigo,
+            fuente: "MapaInversiones ↔ DGCP",
+          })),
+        ]}
+      />
 
       <Card as="section" className="p-5 sm:p-6">
         <CardTitle>¿Avanza?</CardTitle>

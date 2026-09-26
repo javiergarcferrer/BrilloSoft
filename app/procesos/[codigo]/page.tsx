@@ -32,6 +32,8 @@ import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import { Termino } from "@/components/termino";
 import { huellaDe } from "@/lib/seguimiento";
 import { ObraDelProceso } from "@/components/fuentes-nuevas/obra-del-proceso";
+import { ConectadoCon } from "@/components/conectado-con";
+import { obrasDeProceso } from "@/lib/obras";
 import { enlace } from "@/lib/grafo";
 import { TextoEnlazado } from "@/components/texto-enlazado";
 
@@ -81,6 +83,9 @@ export default async function ProcesoPage({
     await Promise.all([cargarProceso(decodificado), getCompetencia(decodificado)]);
   if (!p) notFound();
   const institucion = institucionPorId(p.codigo_unidad_compra);
+  // Solo las obras que el cruce verifica (por el SNIP de la DGCP o por el
+  // código del proceso en MapaInversiones), no el campo SNIP a secas.
+  const obrasLigadas = await obrasDeProceso(p.codigo_proceso, p.codigo_snip).catch(() => []);
 
   const subclasesUnicas = Array.from(
     new Map(
@@ -249,6 +254,41 @@ export default async function ProcesoPage({
       </Card>
 
       <ObraDelProceso codigo={p.codigo_proceso} snip={p.codigo_snip} />
+
+      <ConectadoCon
+        aristas={[
+          institucion && {
+            etiqueta: "Institución que compra",
+            href: hrefInstitucion(institucion),
+            nombre: p.unidad_compra,
+            fuente: "DGCP",
+          },
+          institucion?.capitulo && {
+            etiqueta: "Su capítulo del presupuesto",
+            href: enlace.capitulo(institucion.capitulo),
+            nombre: `Capítulo ${institucion.capitulo}`,
+            fuente: "SIGEF",
+          },
+          {
+            etiqueta: "Otros procesos de la misma unidad",
+            href: `/licitaciones?uc=${p.codigo_unidad_compra}`,
+            nombre: p.unidad_compra,
+            fuente: "DGCP",
+          },
+          ...[...new Map(contratos.filter((c) => c.rpe).map((c) => [c.rpe, c])).values()].slice(0, 4).map((c) => ({
+            etiqueta: "Proveedor adjudicado",
+            href: enlace.proveedor(c.rpe),
+            nombre: c.razon_social,
+            fuente: "DGCP",
+          })),
+          ...obrasLigadas.map(({ obra, segun }) => ({
+            etiqueta: "Obra que financia",
+            href: enlace.obra(obra.snip),
+            nombre: `SNIP ${obra.snip}`,
+            fuente: segun.join(" y "),
+          })),
+        ]}
+      />
 
       <Card as="section" className="p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

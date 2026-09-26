@@ -2,7 +2,9 @@ import Link from "next/link";
 import { Suspense, cache } from "react";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { queEsNorma, resolverNorma, tipoDeRuta } from "@/lib/normativa";
+import { esDesignacion, queEsNorma, resolverNorma, tipoDeRuta } from "@/lib/normativa";
+import { INSTITUCIONES, hrefInstitucion } from "@/lib/instituciones";
+import { ConectadoCon } from "@/components/conectado-con";
 import { pesoDocumento, urlDeLectura } from "@/lib/documentos";
 import { desdeMayusculas } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
@@ -68,6 +70,12 @@ export default async function NormaPage({ params }: Props) {
   if (!norma) return <NormaFueraDeAlcance tipo={tipo} numero={numero} />;
 
   const explicacion = queEsNorma(tipo);
+  // La institución que la Consultoría etiqueta, por la misma etiqueta con que
+  // el cruce de instituciones la liga. La de la Cámara de Cuentas en un
+  // nombramiento dice «declara patrimonio», no «trata de la Cámara».
+  const etiqueta = norma.institucion?.trim();
+  const etiquetadas =
+    etiqueta && !esDesignacion(norma) ? INSTITUCIONES.filter((i) => i.consultoria.includes(etiqueta)) : [];
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -90,6 +98,16 @@ export default async function NormaPage({ params }: Props) {
         </p>
       </header>
       <AccionesFicha className="mt-3" tipo="norma" id={`${slug}/${numero}`} titulo={`${tipo} ${norma.numero}: ${desdeMayusculas(norma.titulo)}`} href={enlace.norma(slug, numero) ?? "/normativa"} />
+
+      <ConectadoCon
+        className="mt-5"
+        aristas={etiquetadas.slice(0, 3).map((i) => ({
+          etiqueta: "Institución a la que se refiere",
+          href: `${hrefInstitucion(i)}#decretos`,
+          nombre: desdeMayusculas(i.nombre),
+          fuente: "Etiqueta de la Consultoría Jurídica",
+        }))}
+      />
 
       {explicacion && (
         <Card as="section" className="mt-5 p-5">

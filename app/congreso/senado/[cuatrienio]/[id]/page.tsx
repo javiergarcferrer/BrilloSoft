@@ -27,6 +27,9 @@ import { Termino } from "@/components/termino";
 import { EnDiputados } from "@/components/congreso/cruces";
 import { enlace } from "@/lib/grafo";
 import { TextoEnlazado } from "@/components/texto-enlazado";
+import { ConectadoCon } from "@/components/conectado-con";
+import { desdeMayusculas } from "@/lib/congreso";
+import { hrefInstitucion, institucionesNombradasEn } from "@/lib/instituciones";
 
 export const revalidate = 3600;
 
@@ -71,6 +74,11 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
   const ref = refIniciativa("senado", ficha.id, ficha.cuatrienio);
   const agregado = await getAgregado("senado", ref);
 
+  const numeroNorma = /\d{1,4}-\d{2,4}/.exec(ficha.numPromulgacion ?? "")?.[0] ?? null;
+  const normaSenado = numeroNorma
+    ? enlace.norma(/resoluci/i.test(ficha.tipo ?? "") ? "resolucion" : "ley", numeroNorma)
+    : null;
+
   return (
     <div className="mx-auto max-w-4xl">
       <Ruta seccion="congreso" padre={{ href: "/congreso/senado", label: "Senado" }} actual={`Expediente ${ficha.numero?.completo ?? ficha.id}`} />
@@ -103,6 +111,24 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         )}
         <AccionesFicha className="mt-3" tipo="expediente-senado" id={`${ficha.cuatrienio}/${ficha.id}`} titulo={ficha.titulo} href={enlace.expedienteSenado(ficha.cuatrienio, ficha.id)} situacion={{ condicion: ficha.condicion, estadoActual: ficha.estadoActual, promulgada: ficha.promulgada, perimida: ficha.perimida }} />
       </header>
+
+      <ConectadoCon
+        className="mt-5"
+        aristas={[
+          normaSenado && {
+            etiqueta: "La norma en que se convirtió",
+            href: normaSenado,
+            nombre: ficha.numPromulgacion,
+            fuente: "Consultante del Senado",
+          },
+          ...institucionesNombradasEn(`${ficha.titulo} ${ficha.tituloModificado ?? ""}`, 3).map((i) => ({
+            etiqueta: "Institución que nombra",
+            href: hrefInstitucion(i),
+            nombre: desdeMayusculas(i.nombre),
+            fuente: "Nombre completo en el enunciado",
+          })),
+        ]}
+      />
 
       {ficha.promulgada && (
         <section className="mt-5 rounded-lg border border-valido-500/25 bg-valido-50 px-4 py-3">

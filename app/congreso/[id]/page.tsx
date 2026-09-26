@@ -34,6 +34,8 @@ import { FilaVotacion } from "@/components/congreso/votaciones";
 import { EnElSenado } from "@/components/congreso/cruces";
 import { InstitucionesNombradas } from "@/components/congreso/instituciones-nombradas";
 import { enlace } from "@/lib/grafo";
+import { ConectadoCon } from "@/components/conectado-con";
+import { provinciaDeTexto } from "@/lib/provincias";
 import { TextoEnlazado } from "@/components/texto-enlazado";
 
 export const revalidate = 300;
@@ -107,6 +109,17 @@ export default async function IniciativaPage({ params }: Props) {
     null;
   const perencion = ini.viva ? evaluarPerencion(ini.legislatura) : null;
 
+  // El vecindario (G2): quien la propuso, de dónde, y la norma en que se
+  // convirtió. Solo diputados y senadores tienen ficha de legislador.
+  const principal = firmantes.find((f) => f.principal) ?? firmantes[0] ?? null;
+  const principalConFicha =
+    principal?.legisladorId && /diputad|senad/i.test(principal.funcion ?? "") ? principal : null;
+  const provinciaPrincipal = provinciaDeTexto(principal?.provincia);
+  const numeroNorma = /\d{1,4}-\d{2,4}/.exec(ini.numPromulgacion ?? "")?.[0] ?? null;
+  const normaResultante = numeroNorma
+    ? enlace.norma(/resoluci/i.test(ini.tipo ?? "") ? "resolucion" : "ley", numeroNorma)
+    : null;
+
   return (
     <div className="mx-auto max-w-4xl">
       <Ruta seccion="congreso" actual={`Iniciativa ${ini.numero?.completo ?? ini.id}`} />
@@ -174,6 +187,36 @@ export default async function IniciativaPage({ params }: Props) {
         ficha se lee mientras llega. Recibe el título **crudo**, en versales,
         porque de él se extraen las citas con expresiones regulares.
       */}
+      <ConectadoCon
+        className="mt-5"
+        aristas={[
+          normaResultante && {
+            etiqueta: "La norma en que se convirtió",
+            href: normaResultante,
+            nombre: ini.numPromulgacion,
+            fuente: "SIL de la Cámara",
+          },
+          principalConFicha && {
+            etiqueta: "Quien la propuso",
+            href: hrefLegislador(principalConFicha.legisladorId!),
+            nombre: principalConFicha.nombre,
+            fuente: "SIL de la Cámara",
+          },
+          provinciaPrincipal && {
+            etiqueta: "Provincia de quien la propuso",
+            href: enlace.provincia(provinciaPrincipal.slug),
+            nombre: provinciaPrincipal.nombre,
+            fuente: "SIL de la Cámara",
+          },
+          firmantes.length > 1 && {
+            etiqueta: "Proponentes",
+            href: "#proponentes",
+            cuenta: firmantes.length,
+            fuente: "SIL de la Cámara",
+          },
+        ]}
+      />
+
       <Suspense fallback={<Esqueleto className="mt-5 h-40" />}>
         <Dossier
           titulo={ini.titulo}
@@ -321,7 +364,7 @@ export default async function IniciativaPage({ params }: Props) {
           <InstitucionesNombradas texto={`${ini.titulo} ${ini.tituloModificado ?? ""}`} />
         </div>
 
-        <Panel titulo="Proponentes" nota={String(proponentes.total)}>
+        <Panel id="proponentes" titulo="Proponentes" nota={String(proponentes.total)}>
           {firmantes.length > 0 ? (
             <ListaPlegada
               total={firmantes.length}
@@ -529,16 +572,18 @@ function FilaDocumento({
 }
 
 function Panel({
+  id,
   titulo,
   nota,
   children,
 }: {
+  id?: string;
   titulo: string;
   nota?: string;
   children: React.ReactNode;
 }) {
   return (
-    <Card as="section">
+    <Card as="section" id={id}>
       <CardHeader>
         <CardTitle>{titulo}</CardTitle>
         {nota && <CardAction className="font-mono tabular-nums">{nota}</CardAction>}
