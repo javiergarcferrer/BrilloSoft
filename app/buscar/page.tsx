@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { rutaDirecta } from "@/lib/buscar";
 import {
   buscarEnTodo,
+  buscarPantallas,
   esTipoResultado,
   TIPOS_RESULTADO,
   type Resultado,
@@ -89,6 +90,17 @@ export default async function BuscarPage({
             El índice se carga una vez por instancia (más de un segundo en
             frío): la cabecera y la caja no lo esperan.
           */}
+          {/*
+            Primero, la pantalla que responde a la pregunta: «¿cuánto debe el
+            país?» es Deuda pública antes que cualquier documento que diga
+            «deuda». Solo en «Todo» y en la primera página.
+          */}
+          {!tipo && pagina === 1 && (
+            <Suspense fallback={null}>
+              <Pantallas q={q} />
+            </Suspense>
+          )}
+
           <Suspense
             key={`${q}|${tipo ?? ""}|${pagina}`}
             fallback={
@@ -326,6 +338,27 @@ function FilaResultado({ r, q }: { r: Resultado; q: string }) {
         ) : null
       }
     />
+  );
+}
+
+/** Las pantallas de la plataforma que contestan lo tecleado (G4). */
+async function Pantallas({ q }: { q: string }) {
+  const lista = await buscarPantallas(q, 3);
+  if (!lista?.length) return null;
+  return (
+    <Grupo titulo="Pantallas que lo responden" nota="Por lo que significa tu búsqueda, no solo por sus palabras.">
+      <ul className="divide-y divide-hairline">
+        {lista.map((p) => (
+          <li key={p.href}>
+            <Fila
+              href={p.href}
+              titulo={p.titulo}
+              detalle={p.pregunta ? `${p.nota} · «${p.pregunta}»` : `${p.nota} · ${p.tema}`}
+            />
+          </li>
+        ))}
+      </ul>
+    </Grupo>
   );
 }
 

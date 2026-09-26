@@ -53,6 +53,14 @@ import {
  * campo, que es la tecla que la web ya enseñó para buscar.
  */
 /** Una fila de `/api/buscar`. */
+/** Una pantalla que contesta lo tecleado por su significado (`/api/buscar`). */
+interface PantallaSugerida {
+  href: string;
+  titulo: string;
+  nota: string;
+  pregunta: string | null;
+}
+
 interface Sugerida {
   tipo: string;
   etiqueta: string;
@@ -113,23 +121,31 @@ export default function Paleta() {
   // anterior se dejan de ver en el acto. Antes seguían en pantalla bajo el
   // texto nuevo y un Intro rápido abría un resultado de «agua potable»
   // buscando «MINERD».
-  const [sugeridasDe, setSugeridasDe] = useState<{ q: string; lista: Sugerida[] }>({ q: "", lista: [] });
+  const [sugeridasDe, setSugeridasDe] = useState<{ q: string; lista: Sugerida[]; pantallas: PantallaSugerida[] }>({
+    q: "",
+    lista: [],
+    pantallas: [],
+  });
   // «No respondió» no es «no hay nada»: se dice, en una línea.
   const [fallo, setFallo] = useState(false);
   useEffect(() => {
     const q = texto.trim();
     setFallo(false);
     if (!abierta || q.length < 2) {
-      setSugeridasDe({ q: "", lista: [] });
+      setSugeridasDe({ q: "", lista: [], pantallas: [] });
       return;
     }
     const control = new AbortController();
     const t = setTimeout(() => {
       fetch(`/api/buscar?q=${encodeURIComponent(q)}&n=6`, { signal: control.signal })
         .then((r) => (r.ok ? r.json() : null))
-        .then((r: { resultados?: Sugerida[] } | null) => {
+        .then((r: { resultados?: Sugerida[]; pantallas?: PantallaSugerida[] } | null) => {
           setFallo(r === null);
-          setSugeridasDe({ q, lista: Array.isArray(r?.resultados) ? r.resultados.filter((s) => s.href) : [] });
+          setSugeridasDe({
+            q,
+            lista: Array.isArray(r?.resultados) ? r.resultados.filter((s) => s.href) : [],
+            pantallas: Array.isArray(r?.pantallas) ? r.pantallas : [],
+          });
         })
         .catch((err: unknown) => {
           // Abortar al seguir tecleando no es una caída.
@@ -156,6 +172,15 @@ export default function Paleta() {
 
   const consulta = texto.trim();
   const sugeridas = sugeridasDe.q === consulta ? sugeridasDe.lista : [];
+  // Las pantallas que el índice halló por significado, salvo las que ya
+  // salen arriba porque lo tecleado las nombra.
+  const pantallas =
+    sugeridasDe.q === consulta
+      ? sugeridasDe.pantallas.filter((p) => {
+          const d = INDICE.find((x) => x.href === p.href);
+          return !d || !coincide(consulta, claves(d));
+        })
+      : [];
   const sinSeccion = !!consulta && !INDICE.some((d) => coincide(consulta, claves(d)));
 
   // La búsqueda de la vertical en la que ya está el lector va primero: es la
@@ -295,6 +320,20 @@ export default function Paleta() {
               que salió por tema. Todo lo demás está a un Intro en «Toda la
               plataforma».
             */}
+            {consulta && pantallas.length > 0 && (
+              <CommandGroup heading="Pantallas que lo responden">
+                {pantallas.map((p) => (
+                  <CommandItem key={p.href} value={`buscar:pan:${p.href}`} onSelect={() => ir(p.href)}>
+                    <IconArrowRight className="h-3.5 w-3.5 shrink-0 text-ink-soft" />
+                    <span className="min-w-0 flex-1 truncate">
+                      <span className="font-medium">{p.titulo}</span>
+                      <span className="hidden text-ink-soft sm:inline"> · {p.pregunta ?? p.nota}</span>
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
             {consulta && sugeridas.length > 0 && (
               <CommandGroup heading="En la plataforma">
                 {sugeridas.map((s, n) => (

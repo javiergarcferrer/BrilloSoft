@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buscarEnTodo, esTipoResultado, TIPOS_RESULTADO } from "@/lib/busqueda";
+import { buscarEnTodo, buscarPantallas, esTipoResultado, TIPOS_RESULTADO } from "@/lib/busqueda";
 import { desdeMayusculas } from "@/lib/congreso";
 import { recortar } from "@/lib/raiz";
 
@@ -28,7 +28,10 @@ export async function GET(req: Request) {
     // Se piden de más para poder variar: seis cargos de «salud mental»
     // taparían la norma que crea el centro. Sin tipo elegido, a lo sumo la
     // mitad de las filas son de un mismo tipo, sin romper el orden.
-    const h = await buscarEnTodo(q, { tipo: tipo ?? undefined, porPagina: tipo ? n : n * 4 });
+    const [h, pantallas] = await Promise.all([
+      buscarEnTodo(q, { tipo: tipo ?? undefined, porPagina: tipo ? n : n * 4 }),
+      tipo ? Promise.resolve([]) : buscarPantallas(q, 3),
+    ]);
     if (!h) return NextResponse.json({ error: "El índice de búsqueda no cargó" }, { status: 502 });
     const tope = tipo ? n : Math.ceil(n / 2);
     const cuenta = new Map<string, number>();
@@ -63,6 +66,7 @@ export async function GET(req: Request) {
           externo: r.externo,
           via: r.via,
         })),
+        pantallas: (pantallas ?? []).map((p) => ({ href: p.href, titulo: p.titulo, nota: p.nota, pregunta: p.pregunta })),
         total: h.total,
         generado: h.generado,
       },

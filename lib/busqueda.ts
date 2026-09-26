@@ -36,7 +36,9 @@ import { brotliDecompressSync } from "node:zlib";
 import { insertMultiple, load, search, type AnyOrama } from "@orama/orama";
 import { Tokenizer } from "@huggingface/tokenizers";
 import { aDocumento, etiquetaCorpus, indiceVacio } from "@/lib/busqueda-esquema";
-import { sinTildes } from "@/lib/raiz";
+import { agujas, plano as planoConsulta, pruebas, sinTildes } from "@/lib/raiz";
+import { INDICE } from "@/lib/indice";
+import { PANTALLAS } from "@/lib/pantallas";
 import { enlace } from "@/lib/grafo";
 
 export type TipoResultado = "institucion" | "proveedor" | "norma" | "obra" | "documento" | "dato" | "cargo";
@@ -584,6 +586,108 @@ export async function buscarEnTodo(
     };
   } catch (err) {
     console.error(`[busqueda] ${String(err)}`);
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------ pantallas */
+
+/** Una pantalla de la plataforma que responde a la consulta (G4). */
+export interface PantallaHallada {
+  href: string;
+  titulo: string;
+  nota: string;
+  /** El tema del menú: «Compras públicas», «Congreso Nacional». */
+  tema: string;
+  /** La pregunta de la pantalla que más se parece a lo tecleado, si alguna. */
+  pregunta: string | null;
+}
+
+interface PantallaIndexada {
+  href: string;
+  titulo: string;
+  nota: string;
+  tema: string;
+  textoPlano: string;
+  frases: string[];
+  vectores: (Float32Array | null)[];
+}
+
+let memoPantallas: PantallaIndexada[] | null = null;
+
+/**
+ * Cada destino de `lib/indice.ts` con su nombre, su nota y las preguntas de
+ * `lib/pantallas.ts`, cada frase con su vector del mismo modelo que el
+ * corpus. Se calcula una vez por instancia: son ~40 pantallas y ~150 frases,
+ * unos milisegundos, y así no hay un archivo más que regenerar.
+ */
+function pantallasIndexadas(m: Motor): PantallaIndexada[] {
+  if (memoPantallas) return memoPantallas;
+  memoPantallas = INDICE.map((d) => {
+    const extra = PANTALLAS[d.href];
+    const frases = [`${d.label}. ${d.nota}`, ...(extra ? [extra.que, ...extra.preguntas] : [])];
+    return {
+      href: d.href,
+      titulo: d.label,
+      nota: d.nota,
+      tema: d.tema,
+      textoPlano: planoConsulta(`${d.label} ${d.tema} ${frases.join(" ")}`),
+      frases,
+      vectores: frases.map((f) => embeber(m, f)),
+    };
+  });
+  return memoPantallas;
+}
+
+/**
+ * Por debajo de este puntaje una pantalla no se ofrece. Medido con la
+ * batería: una consulta sin sentido («xyzqwe») llega a 0,36 con la pantalla
+ * más parecida, y las preguntas legítimas más flojas pasan de 0,5.
+ */
+const UMBRAL_PANTALLA = 0.5;
+
+/**
+ * Las pantallas que responden a la consulta, por lo que significan: «¿cuánto
+ * debe el país?» → Deuda pública, aunque no diga «deuda». El puntaje es el
+ * mayor parecido con alguna de sus frases (el nombre, lo que ofrece, sus
+ * preguntas) más la parte de las palabras de la consulta que aparecen en su
+ * texto. `null` si el modelo no cargó.
+ */
+export async function buscarPantallas(q: string, n = 3): Promise<PantallaHallada[] | null> {
+  try {
+    const consulta = q.trim().slice(0, 120);
+    // Una cita o un código busca su ficha, no una pantalla.
+    if (/\b\d{1,4}[-\s]\d{2,4}\b/.test(consulta) || !/\p{L}{3}/u.test(consulta)) return [];
+    const m = await motor();
+    const v = embeber(m, consulta);
+    const ps = pruebas(agujas(consulta));
+    return pantallasIndexadas(m)
+      .map((p) => {
+        let mejor = 0;
+        let cual = -1;
+        p.vectores.forEach((u, k) => {
+          if (!u || !v) return;
+          let s = 0;
+          for (let j = 0; j < m.dim; j++) s += v[j] * u[j];
+          if (s > mejor) [mejor, cual] = [s, k];
+        });
+        const palabras = ps.length ? ps.filter((f) => f(p.textoPlano)).length / ps.length : 0;
+        return { p, mejor, cual, palabras, puntos: mejor + 0.5 * palabras };
+      })
+      .filter((x) => x.puntos >= UMBRAL_PANTALLA)
+      .sort((a, b) => b.puntos - a.puntos)
+      .slice(0, n)
+      .map(({ p, cual }) => ({
+        href: p.href,
+        titulo: p.titulo,
+        nota: p.nota,
+        tema: p.tema,
+        // La primera frase es el nombre y la segunda lo que ofrece: solo una
+        // pregunta se enseña como pregunta.
+        pregunta: cual >= 2 ? p.frases[cual] : null,
+      }));
+  } catch (err) {
+    console.error(`[busqueda] pantallas: ${String(err)}`);
     return null;
   }
 }

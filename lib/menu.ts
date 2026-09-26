@@ -134,15 +134,27 @@ export const MENU: GrupoMenu[] = [
     label: "El Estado",
     resumen: "Cada institución, cada provincia y cómo se gestiona.",
     columnas: [
+      /*
+        Eran ocho enlaces en una columna «Quién es quién» que mezclaba a
+        quién se mira (instituciones, provincias, su gestión, sus auditorías)
+        con lo que el país produce (cifras, cortes de luz, documentos, datos).
+        Revisado con la batería de G4 (scripts/bateria-pantallas.json): nadie
+        busca los cortes de luz ni los datos abiertos como «quién es quién».
+      */
       {
         titulo: "Quién es quién",
         enlaces: [
           { href: "/instituciones", label: "Instituciones", nota: "Cada ministerio, dirección y ayuntamiento", tarea: "buscar" },
           { href: "/provincias", label: "Provincias", nota: "El Estado visto desde tu provincia", tarea: "buscar" },
-          { href: "/pais", label: "El país en cifras", nota: "Seguridad, escuela y vivienda, provincia por provincia", tarea: "comparar" },
-          { href: "/luz", label: "Cortes de luz programados", nota: "Los mantenimientos anunciados para esta semana", tarea: "vigilar" },
           { href: "/gestion", label: "Gestión pública", nota: "El ranking SISMAP de instituciones y municipios", tarea: "comparar" },
           { href: "/auditorias", label: "Auditorías y declaraciones", nota: "Quién audita a quién y quién rinde cuentas", tarea: "leer" },
+        ],
+      },
+      {
+        titulo: "El país y sus datos",
+        enlaces: [
+          { href: "/pais", label: "El país en cifras", nota: "Seguridad, escuela y vivienda, provincia por provincia", tarea: "comparar" },
+          { href: "/luz", label: "Cortes de luz programados", nota: "Los mantenimientos anunciados para esta semana", tarea: "vigilar" },
           { href: "/documentos", label: "Biblioteca del Estado", nota: "Informes, memorias y estadísticas que publica cada institución", tarea: "leer" },
           { href: "/datos", label: "Datos abiertos", nota: "Todo el catálogo de datos.gob.do en un buscador", tarea: "buscar" },
         ],
