@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useQueryStates } from "nuqs";
 import { useEffect, useRef, useState } from "react";
 import { getRecientes, pushReciente } from "@/lib/recientes";
 import {
@@ -11,6 +12,7 @@ import {
   type Busqueda,
 } from "@/lib/busquedas";
 import { BUSQUEDAS } from "@/lib/secciones";
+import { FILTROS_LICITACIONES } from "@/components/licitaciones-url";
 import { Input } from "@/components/ui/input";
 import {
   IconBookmark,
@@ -42,7 +44,9 @@ import {
  *
  * Sigue manejando el buscador solo a través de la URL, que es la fuente de
  * verdad de la página: teclear pone `?q=`, un filtro rápido pone o quita
- * parámetros, y una guardada navega a su querystring entero.
+ * parámetros, y una guardada navega a su querystring entero. Lee y escribe
+ * con `nuqs` y el mismo mapa de parámetros que el buscador
+ * (`components/licitaciones-url.ts`); solo se monta dentro de `/licitaciones`.
  */
 const BUSCADOR = "/licitaciones";
 
@@ -50,16 +54,14 @@ const ALCANCE = BUSQUEDAS.find((b) => b.href === BUSCADOR)?.alcance;
 
 export default function CampoLicitaciones() {
   const router = useRouter();
-  const pathname = usePathname();
-  const sp = useSearchParams();
+  const [url, setUrl] = useQueryStates(FILTROS_LICITACIONES);
   /*
-    Solo el `?q=` del buscador es suyo. Otras vistas de la vertical usan el
-    mismo nombre de parámetro para su propia búsqueda —`/proveedores?q=` busca
-    en el registro de proveedores—, y reflejarlo aquí pondría el término de una
-    búsqueda bajo la etiqueta de licitaciones: exactamente la trampa
-    cognitiva que este campo dice evitar. Fuera del buscador arranca vacío.
+    Este campo solo vive en el buscador, así que el `?q=` que refleja es
+    siempre el de licitaciones. Otras vistas de la vertical usan el mismo
+    nombre de parámetro para su propia búsqueda —`/proveedores?q=` busca en el
+    registro de proveedores—, y por eso el campo no se monta fuera de aquí.
   */
-  const spq = pathname === BUSCADOR ? (sp.get("q") ?? "") : "";
+  const spq = url.q;
 
   const [text, setText] = useState(spq);
   const [open, setOpen] = useState(false);
@@ -75,61 +77,57 @@ export default function CampoLicitaciones() {
     return onBusquedasCambio(sync);
   }, []);
 
-  // Reflect URL → input, except while the user is typing.
+  // La URL manda sobre el campo, salvo mientras se teclea en él.
   useEffect(() => {
     if (!focused.current) setText(spq);
   }, [spq]);
 
-  // Debounced search-as-you-type → URL.
+  /*
+    Buscar mientras se teclea, con 400 ms de espera: el texto es estado local
+    y solo pasa a `?q=` cuando el dedo se detiene. La espera vive aquí y no en
+    `nuqs` (que sabe retrasar la URL, pero no el estado que comparte con el
+    buscador): así el listado sigue sin enterarse de cada tecla.
+  */
   useEffect(() => {
     if (text === spq) return;
     const t = setTimeout(() => {
-      navWith((p) => {
-        const v = text.trim();
-        if (v) p.set("q", v);
-        else p.delete("q");
-      });
+      ponerTexto(text);
       if (text.trim().length >= 3) setRecientes(pushReciente(text.trim()));
     }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, spq]);
 
-  function navWith(mutate: (p: URLSearchParams) => void) {
-    const p = new URLSearchParams(
-      typeof window !== "undefined" ? window.location.search : ""
-    );
-    mutate(p);
-    const qs = p.toString();
-    const url = `${BUSCADOR}${qs ? `?${qs}` : ""}`;
-    if (pathname === BUSCADOR) router.replace(url);
-    else router.push(url);
+  /** Un texto nuevo es una búsqueda nueva: vuelve a la primera página. */
+  function ponerTexto(v: string) {
+    setUrl({ q: v.trim() || null, page: null });
   }
 
   /** El aspa del campo: borra el texto y solo el texto; los filtros se quedan. */
   function limpiarTexto() {
     setText("");
-    if (pathname === BUSCADOR) navWith((p) => p.delete("q"));
+    ponerTexto("");
   }
 
+  /** «Abiertas ahora»: la búsqueda con que abre la página, sin nada puesto. */
   function reset() {
     setText("");
-    if (pathname === BUSCADOR) router.replace(BUSCADOR);
-    else router.push(BUSCADOR);
+    setUrl(null);
   }
 
   function aplicarTermino(term: string) {
     setText(term);
-    navWith((p) => {
-      const v = term.trim();
-      if (v) p.set("q", v);
-      else p.delete("q");
-    });
+    ponerTexto(term);
     if (term.trim().length >= 3) setRecientes(pushReciente(term.trim()));
     setOpen(false);
     inputRef.current?.blur();
   }
 
+  /*
+    Una guardada sí es una navegación —se apila en el historial y «atrás»
+    vuelve a la búsqueda de antes—, y su querystring es crudo: puede traer el
+    `?estado=` de entonces, que el buscador traduce al leerlo.
+  */
   function aplicarGuardada(b: Busqueda) {
     router.push(`${BUSCADOR}${b.qs ? `?${b.qs}` : ""}`);
     setOpen(false);
@@ -151,22 +149,22 @@ export default function CampoLicitaciones() {
       // orden, no el filtro, y se arregla en `ordenar` (lib/dgcp.ts).
       label: "Cierran pronto",
       Icon: IconClock,
-      run: () => navWith((p) => { p.delete("etapa"); p.set("orden", "cierre"); }),
+      run: () => setUrl({ etapa: null, estado: null, orden: "cierre", page: null }),
     },
     {
       label: "Ya cerraron",
       Icon: IconCheck,
-      run: () => navWith((p) => { p.set("etapa", "cerrados"); p.delete("orden"); }),
+      run: () => setUrl({ etapa: "cerrados", estado: null, orden: null, page: null }),
     },
     {
       label: "Mayor monto",
       Icon: IconCoins,
-      run: () => navWith((p) => p.set("orden", "monto_desc")),
+      run: () => setUrl({ orden: "monto_desc", page: null }),
     },
     {
       label: "Para MIPYMES",
       Icon: IconSparkles,
-      run: () => navWith((p) => { p.delete("etapa"); p.set("mipyme", "1"); }),
+      run: () => setUrl({ etapa: null, estado: null, mipyme: true, page: null }),
     },
   ];
 

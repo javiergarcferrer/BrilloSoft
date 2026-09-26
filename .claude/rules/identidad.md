@@ -43,7 +43,7 @@ badge, a field or a layer that opens** — there is a primitive for each.
 `rounded-lg`), Button (`asChild` for links), Badge (`forma="sello"` versalitas /
 `forma="etiqueta"` for a state said in words), Input, Textarea, Label, Select
 (its `ayuda` prop carries the plain-Spanish line a native `<option>` cannot),
-Checkbox, Tabs, ToggleGroup, Sheet, Dialog, Command (cmdk), Breadcrumb,
+Checkbox, Tabs, ToggleGroup, Drawer (vaul), Dialog, Command (cmdk), Breadcrumb,
 Popover, Collapsible, Table, Progress (server-side, no Radix), Skeleton, Alert. Only the ones in use live there —
 copy the next one from ui.shadcn.com and dress it in our tokens. Icons come
 from `components/icons.tsx`, never `lucide-react`; colours come from the token

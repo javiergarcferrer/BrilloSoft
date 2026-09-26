@@ -243,13 +243,18 @@ Pendiente, por valor ÷ esfuerzo (archivo:línea verificados el 2026-09-26):
    nulos donde la capa ya los saltaba. Al validar `/democracia` contra la
    vista viva salió que `verificados` no existe hasta que se aplique la
    migración de Cuenta Única: el esquema lo da por cero, que es lo cierto.
-6. **URL ↔ estado, tres mecánicas** (`app/buscador.tsx:156-257`,
-   `components/nomina/explorer.tsx:176-210`,
-   `components/campo-licitaciones.tsx:78-107`). → `nuqs`.
-7. **Virtualización con alto fijo** (`components/nomina/data-table.tsx:60-125`):
-   la fila se pliega a dos líneas en el teléfono. → `@tanstack/react-virtual`.
-8. **Arrastre de la hoja** (`components/ui/sheet.tsx:80-125`). → `vaul`, que
-   es lo que usa el `Drawer` de shadcn.
+6. ✅ **URL ↔ estado, tres mecánicas** (`app/buscador.tsx`,
+   `components/nomina/explorer.tsx`, `components/campo-licitaciones.tsx`,
+   `components/buscador-url.tsx`). → `nuqs`. Hecho 2026-09-26: un mapa de
+   parámetros compartido (`components/licitaciones-url.ts`), mismos nombres y
+   valores en la URL; `desde=` vacío pasa a escribirse («todo el histórico»
+   no sobrevivía a recargar) y un enlace con `page=` ya no se reinicia al
+   abrir.
+7. ✅ **Virtualización con alto fijo** (`components/nomina/data-table.tsx`).
+   → `@tanstack/react-virtual` con filas medidas; reordenar vuelve arriba.
+8. ✅ **Arrastre de la hoja** (antes `components/ui/sheet.tsx`). → `vaul`:
+   `components/ui/drawer.tsx`, que usan la hoja de filtros y la de «Más»;
+   `ui/sheet` ya no se usa y salió del repositorio.
 9. ✅ **Meses** → `MESES`, `MESES_CORTOS` y `numeroMes` en `lib/format.ts`,
    de `Intl.DateTimeFormat` (sin dependencia). `numeroMes` exige que la
    palabra sea el mes o una abreviatura suya: «Mayor» o «Total» ya no son

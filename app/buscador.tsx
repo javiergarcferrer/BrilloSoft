@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { OrdenProceso, Proceso } from "@/lib/dgcp";
 /*
@@ -18,6 +18,7 @@ import {
 } from "@/lib/estados";
 import ProcesoCard from "@/components/proceso-card";
 import CampoLicitaciones from "@/components/campo-licitaciones";
+import { FILTROS_LICITACIONES } from "@/components/licitaciones-url";
 import { cn } from "@/lib/cn";
 import { BottomSheet } from "@/components/bottom-sheet";
 import {
@@ -135,7 +136,7 @@ function hoyMenosDias(dias: number): string {
 }
 
 /**
- * La etapa que pide un querystring.
+ * La etapa que pide la URL.
  *
  * `?etapa=` es lo que se escribe hoy. `?estado=` es lo que llevan los enlaces
  * compartidos y las búsquedas guardadas de antes —`lib/busquedas.ts` guarda el
@@ -143,33 +144,82 @@ function hoyMenosDias(dias: number): string {
  * etapa en vez de quedar ignorado. `?estado=` vacío era «todos los estados»:
  * se conserva.
  */
-function etapaDeParams(p: URLSearchParams): EtapaFiltro {
-  const clave = p.get("etapa");
-  if (clave !== null) return (etapaPorClave(clave)?.clave ?? "") as EtapaFiltro;
-  const estado = p.get("estado");
+function etapaDeUrl(etapa: string | null, estado: string | null): EtapaFiltro {
+  if (etapa !== null) return (etapaPorClave(etapa)?.clave ?? "") as EtapaFiltro;
   if (estado !== null) return estado ? etapaDe(estado).clave : "";
   return ETAPA_INICIAL;
 }
 
 export default function Buscador() {
-  const sp = useSearchParams();
-  const [q, setQ] = useState(() => sp.get("q") ?? "");
-  const [etapa, setEtapa] = useState<EtapaFiltro>(() => etapaDeParams(sp));
-  const [modalidad, setModalidad] = useState(() => sp.get("modalidad") ?? "");
-  const [startdate, setStartdate] = useState(
-    () => sp.get("desde") ?? hoyMenosDias(30)
-  );
-  const [enddate, setEnddate] = useState(() => sp.get("hasta") ?? "");
-  const [mipyme, setMipyme] = useState(() => sp.get("mipyme") === "1");
-  const [orden, setOrden] = useState<Orden>(
-    () => (sp.get("orden") as Orden) || "recientes"
-  );
-  const etapaSel = etapaPorClave(etapa);
-  const [page, setPage] = useState(() => Math.max(1, Number(sp.get("page")) || 1));
+  /*
+    Los filtros **son** la URL: `nuqs` la lee y la escribe, y el estado de la
+    página se deriva de ella. Antes había dos copias —estado de React y
+    querystring— y un efecto que las reconciliaba con `replaceState` y una
+    bandera de primer render; una navegación de fuera (una búsqueda guardada,
+    «atrás») tenía que re-aplicarse a mano. Ahora no hay nada que reconciliar.
 
+    Cada cambio de filtro **reemplaza** la entrada del historial, como antes:
+    tocar un filtro no es navegar, y «atrás» sale de la búsqueda en vez de
+    deshacer los filtros de uno en uno.
+  */
+  const [url, setUrl] = useQueryStates(FILTROS_LICITACIONES);
+  const q = url.q;
+  const modalidad = url.modalidad;
+  const enddate = url.hasta;
+  const mipyme = url.mipyme;
+  const orden: Orden = url.orden;
+  const page = Math.max(1, url.page);
+  const etapa = etapaDeUrl(url.etapa, url.estado);
+  // `desde=` vacío es «todo el histórico»; su ausencia, la ventana de 30 días.
+  const startdate = url.desde ?? hoyMenosDias(30);
+  const etapaSel = etapaPorClave(etapa);
+
+  /*
+    Un enlace viejo con `?estado=` se reescribe a su `?etapa=` en cuanto se
+    lee, igual que hacía la reconciliación de antes: la URL que queda en la
+    barra —la que se copia y se guarda— es la de hoy.
+  */
+  useEffect(() => {
+    if (url.estado === null) return;
+    const e = etapaDeUrl(url.etapa, url.estado);
+    setUrl({ estado: null, etapa: e === ETAPA_INICIAL ? null : e });
+  }, [url.estado, url.etapa, setUrl]);
+
+  /*
+    Cualquier cambio de filtro reinicia la paginación, y lo hace **el propio
+    cambio**: cada setter escribe su filtro y `page: null` en la misma
+    actualización de la URL. Antes lo hacía un efecto que comparaba la firma
+    de los filtros con la del render anterior, y ese efecto también saltaba
+    cuando los filtros llegaban de fuera —una búsqueda guardada con `page=3`
+    abría en la 1—. Leer la URL al montar o al volver ya no toca la página.
+  */
+  const setEtapa = useCallback(
+    (v: EtapaFiltro) =>
+      setUrl({ etapa: v === ETAPA_INICIAL ? null : v, estado: null, page: null }),
+    [setUrl],
+  );
+  const setModalidad = useCallback(
+    (v: string) => setUrl({ modalidad: v || null, page: null }),
+    [setUrl],
+  );
+  const setStartdate = useCallback(
+    (v: string) => setUrl({ desde: v === hoyMenosDias(30) ? null : v, page: null }),
+    [setUrl],
+  );
+  const setEnddate = useCallback((v: string) => setUrl({ hasta: v || null, page: null }), [setUrl]);
+  const setMipyme = useCallback((v: boolean) => setUrl({ mipyme: v, page: null }), [setUrl]);
+  const setOrden = useCallback((v: Orden) => setUrl({ orden: v, page: null }), [setUrl]);
+  const setPage = useCallback((p: number) => setUrl({ page: p }), [setUrl]);
+
+  /*
+    La institución se escribe con su nombre y viaja con su código. El texto
+    del campo es estado local —mientras se teclea no nombra ninguna—, y `?uc=`
+    se pone solo cuando el texto coincide con una de la lista. Al revés, si
+    `?uc=` cambia desde fuera (una búsqueda guardada, «atrás»), el campo pasa a
+    decir el nombre de esa institución.
+  */
   const [unidades, setUnidades] = useState<Unidad[]>([]);
-  const [unidadTexto, setUnidadTexto] = useState("");
-  const ucInicial = useRef(sp.get("uc"));
+  const [unidadTexto, setUnidadTextoLocal] = useState("");
 
   useEffect(() => {
     let cancel = false;
@@ -178,10 +228,6 @@ export default function Buscador() {
       .then((list: Unidad[]) => {
         if (cancel || !Array.isArray(list)) return;
         setUnidades(list);
-        if (ucInicial.current) {
-          const u = list.find((x) => String(x.codigo) === ucInicial.current);
-          if (u) setUnidadTexto(etiquetaUnidad(u));
-        }
       })
       .catch(() => {});
     return () => {
@@ -189,72 +235,37 @@ export default function Buscador() {
     };
   }, []);
 
-  const unidadSel = useMemo(
-    () => unidades.find((u) => etiquetaUnidad(u) === unidadTexto) ?? null,
-    [unidades, unidadTexto]
-  );
-
-  // Querystring que representa los filtros actuales (URL + guardar búsqueda).
-  const currentParams = useMemo(() => {
-    const params = new URLSearchParams();
-    if (q.trim()) params.set("q", q.trim());
-    if (etapa !== ETAPA_INICIAL) params.set("etapa", etapa);
-    if (modalidad) params.set("modalidad", modalidad);
-    if (startdate && startdate !== hoyMenosDias(30)) params.set("desde", startdate);
-    if (enddate) params.set("hasta", enddate);
-    if (mipyme) params.set("mipyme", "1");
-    if (orden !== "recientes") params.set("orden", orden);
-    if (unidadSel) params.set("uc", String(unidadSel.codigo));
-    // La página también: ahora que la búsqueda pagina de verdad, un enlace
-    // compartido desde la página 7 que abriera en la 1 no es el mismo enlace.
-    if (page > 1) params.set("page", String(page));
-    return params;
-  }, [q, etapa, modalidad, startdate, enddate, mipyme, orden, page, unidadSel]);
-
-  // Mantiene los filtros en la URL (compartible / guardable). La ruta se toma
-  // de la ubicación real: este componente vivió en `/` y hoy vive en
-  // `/licitaciones`; un literal aquí desorientaría todo el chrome (nav global,
-  // barra de sección) al reescribir el pathname.
-  useEffect(() => {
-    const qs = currentParams.toString();
-    const base = window.location.pathname;
-    const url = qs ? `${base}?${qs}` : base;
-    if (window.location.pathname + window.location.search !== url) {
-      window.history.replaceState(null, "", url);
-    }
-  }, [currentParams]);
-
-  // Aplica filtros desde un querystring (búsqueda guardada / enlace compartido).
-  const applyFromParams = useCallback(
-    (p: URLSearchParams) => {
-      setQ(p.get("q") ?? "");
-      setEtapa(etapaDeParams(p));
-      setModalidad(p.get("modalidad") ?? "");
-      setStartdate(p.get("desde") ?? hoyMenosDias(30));
-      setEnddate(p.get("hasta") ?? "");
-      setMipyme(p.get("mipyme") === "1");
-      setOrden((p.get("orden") as Orden) || "recientes");
-      const uc = p.get("uc");
-      const u = uc ? unidades.find((x) => String(x.codigo) === uc) : null;
-      setUnidadTexto(u ? etiquetaUnidad(u) : "");
-      setPage(Math.max(1, Number(p.get("page")) || 1));
+  const setUnidadTexto = useCallback(
+    (v: string) => {
+      setUnidadTextoLocal(v);
+      const uc = unidades.find((x) => etiquetaUnidad(x) === v)?.codigo ?? null;
+      // Teclear sin cambiar de institución no es cambiar de filtro.
+      if (uc !== url.uc) setUrl({ uc, page: null });
     },
-    [unidades]
+    [unidades, url.uc, setUrl],
   );
 
-  // Re-aplica cuando la URL cambia por una navegación real (menú de guardadas,
-  // enlace compartido) — `replaceState` propio no dispara esto.
-  const spString = sp.toString();
-  const applyRef = useRef(applyFromParams);
-  applyRef.current = applyFromParams;
-  const primerSync = useRef(true);
   useEffect(() => {
-    if (primerSync.current) {
-      primerSync.current = false;
-      return;
+    if (unidades.length === 0) return;
+    const u = url.uc !== null ? unidades.find((x) => x.codigo === url.uc) : undefined;
+    if (u) {
+      setUnidadTextoLocal(etiquetaUnidad(u));
+    } else if (url.uc !== null) {
+      // Un código que no está en la lista no filtra nada: se quita, como antes.
+      setUrl({ uc: null });
+    } else {
+      // Sin `?uc=`, el campo solo se vacía si decía una institución entera; un
+      // nombre a medio escribir es del usuario y se queda.
+      setUnidadTextoLocal((t) =>
+        unidades.some((x) => etiquetaUnidad(x) === t) ? "" : t,
+      );
     }
-    applyRef.current(new URLSearchParams(spString));
-  }, [spString]);
+  }, [url.uc, unidades, setUrl]);
+
+  const unidadSel = useMemo(
+    () => (url.uc !== null ? (unidades.find((u) => u.codigo === url.uc) ?? null) : null),
+    [unidades, url.uc]
+  );
 
   const [data, setData] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -298,21 +309,6 @@ export default function Buscador() {
     const t = setTimeout(fetchData, q ? 450 : 0);
     return () => clearTimeout(t);
   }, [fetchData, q]);
-
-  /*
-    Cualquier cambio de filtro reinicia la paginación — pero solo un cambio
-    de verdad. Este efecto también corre en el montaje, y hacerlo entonces
-    tiraba la página que acababa de leerse de la URL: un enlace compartido
-    desde la página 7 abría en la 1. Comparar la firma de los filtros contra
-    la del render anterior distingue «montó» de «cambió» sin banderas.
-  */
-  const firmaFiltros = `${q}|${etapa}|${modalidad}|${startdate}|${enddate}|${mipyme}|${orden}|${unidadSel?.codigo ?? ""}`;
-  const firmaPrevia = useRef(firmaFiltros);
-  useEffect(() => {
-    if (firmaPrevia.current === firmaFiltros) return;
-    firmaPrevia.current = firmaFiltros;
-    setPage(1);
-  }, [firmaFiltros]);
 
   /*
     La lista llega ya filtrada y ordenada, y paginada de verdad.
@@ -366,13 +362,18 @@ export default function Buscador() {
    * teléfono los chips quedaron fuera de pantalla.
    */
   const limpiarFiltros = useCallback(() => {
-    setEtapa(ETAPA_INICIAL);
-    setModalidad("");
-    setUnidadTexto("");
-    setMipyme(false);
-    setStartdate(hoyMenosDias(30));
-    setEnddate("");
-  }, []);
+    setUnidadTextoLocal("");
+    setUrl({
+      etapa: null,
+      estado: null,
+      modalidad: null,
+      uc: null,
+      mipyme: null,
+      desde: null,
+      hasta: null,
+      page: null,
+    });
+  }, [setUrl]);
 
   /*
     Todos los filtros puestos, incluidos los que vienen por defecto.

@@ -353,7 +353,7 @@ Desde la pasada de **shadcn/ui**, en dos capas:
 
 - **`components/ui/*`** — las piezas genéricas: `Card`, `Button`, `Badge`,
   `Input`, `Textarea`, `Label`, `Checkbox`, `Select`, `Tabs`, `ToggleGroup`,
-  `Sheet`, `Dialog`, `Command`, `Breadcrumb`, `Popover`, `Collapsible`,
+  `Drawer`, `Dialog`, `Command`, `Breadcrumb`, `Popover`, `Collapsible`,
   `Table`, `Progress`, `Skeleton` y `Alert`.
   Es código del repositorio —no una dependencia de componentes—, con Radix por
   debajo. **Entraron por el teclado y el foco, no por el aspecto**: foco

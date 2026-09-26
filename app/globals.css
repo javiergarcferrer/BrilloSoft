@@ -526,40 +526,39 @@
 }
 
 /*
-  La hoja lateral entra por su borde. En el teléfono entra por abajo —es donde
-  llega el pulgar— y por eso esa es la dirección que más se usa.
+  La hoja que sube del borde (`components/ui/drawer.tsx`) la mueve `vaul`, y
+  `vaul` trae su propio movimiento: medio segundo y una curva suya, escritos
+  en una hoja de estilo que inyecta al cargar —después de esta, así que a
+  igual especificidad gana ella— y, al soltar el dedo sin cerrar, en el
+  `style` del propio elemento. Aquí se le ponen los de la casa: entra con
+  `--dur-hoja` y `sello`, sale más rápido con `--dur-media` y `salida`, y el
+  velo acompaña. Los fotogramas siguen siendo los de `vaul` (la hoja se
+  traslada su propio alto), que son los mismos que tenía la hoja de antes.
+
+  Los selectores llevan un atributo más que los de `vaul` para ganarle sin
+  `!important`. Las transiciones sí lo llevan: es la única forma de ganarle a
+  un estilo en línea, y sin él la hoja volvía a su sitio en 500 ms.
 */
-@keyframes lr-hoja-abajo-entra {
-  from {
-    transform: translateY(100%);
-  }
+[data-vaul-drawer][data-vaul-drawer-direction][data-state="open"] {
+  animation-duration: var(--dur-hoja);
+  animation-timing-function: var(--ease-sello);
 }
-@keyframes lr-hoja-abajo-sale {
-  to {
-    transform: translateY(100%);
-  }
+[data-vaul-drawer][data-vaul-drawer-direction][data-state="closed"] {
+  animation-duration: var(--dur-media);
+  animation-timing-function: var(--ease-salida);
 }
-@keyframes lr-hoja-derecha-entra {
-  from {
-    transform: translateX(100%);
-  }
+[data-vaul-overlay][data-vaul-snap-points][data-state="open"] {
+  animation-duration: var(--dur-media);
+  animation-timing-function: var(--ease-firma);
 }
-@keyframes lr-hoja-derecha-sale {
-  to {
-    transform: translateX(100%);
-  }
+[data-vaul-overlay][data-vaul-snap-points][data-state="closed"] {
+  animation-duration: var(--dur-breve);
+  animation-timing-function: var(--ease-salida);
 }
-.hoja-abajo[data-state="open"] {
-  animation: lr-hoja-abajo-entra var(--dur-hoja) var(--ease-sello);
-}
-.hoja-abajo[data-state="closed"] {
-  animation: lr-hoja-abajo-sale var(--dur-media) var(--ease-salida);
-}
-.hoja-derecha[data-state="open"] {
-  animation: lr-hoja-derecha-entra var(--dur-hoja) var(--ease-sello);
-}
-.hoja-derecha[data-state="closed"] {
-  animation: lr-hoja-derecha-sale var(--dur-media) var(--ease-salida);
+[data-vaul-drawer],
+[data-vaul-overlay] {
+  transition-duration: var(--dur-media) !important;
+  transition-timing-function: var(--ease-sello) !important;
 }
 
 /* Skeleton shimmer */
@@ -727,11 +726,21 @@
   .bar-grow,
   .capa[data-state],
   .velo[data-state],
-  .hoja-abajo[data-state],
-  .hoja-derecha[data-state],
   .estampa,
   [data-slot="collapsible-content"][data-state] {
     animation: none;
+  }
+  /*
+    La hoja de `vaul` no se desliza: aparece y desaparece. El arrastre sigue
+    funcionando —la hoja va con el dedo, que es el lector quien la mueve—,
+    pero al soltar no hay recorrido animado. `!important` porque los nombres
+    de animación de `vaul` llevan cuatro atributos y sus transiciones van en
+    línea.
+  */
+  [data-vaul-drawer],
+  [data-vaul-overlay] {
+    animation: none !important;
+    transition: none !important;
   }
   /*
     El relieve sigue diciendo «esto se pulsa» y «ya lo pulsaste»; solo deja

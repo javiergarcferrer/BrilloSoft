@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Instrument_Serif, Public_Sans } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import MobileTabBar from "@/components/mobile-tab-bar";
 import InstallPrompt from "@/components/install-prompt";
 import ScrollTop from "@/components/scroll-top";
@@ -78,6 +79,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={`${publicSans.variable} ${instrumentSerif.variable} ${plexMono.variable}`}>
       <body className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))] antialiased lg:pb-0">
+        {/*
+          `NuqsAdapter` es el puente entre la URL y el estado de los
+          buscadores de cliente (`nuqs`): licitaciones, la nómina y el campo
+          `?q=` de las superficies que filtran en el servidor. Envuelve todo
+          el cuerpo porque el campo de búsqueda y los filtros viven en
+          componentes distintos y tienen que leer la misma URL.
+        */}
+        <NuqsAdapter>
         {/*
           Chrome de dos niveles:
           1) Header global — marca, búsqueda con alcance (solo donde aplica) y
@@ -296,6 +305,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
+        </NuqsAdapter>
       </body>
     </html>
   );

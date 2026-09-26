@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import {
+  createParser,
+  debounce,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryStates,
+} from "nuqs";
 import {
   IconBuilding,
   IconChartBar,
@@ -148,19 +154,52 @@ function indiceDe(data: NominaData, codigo: string | null): number | null {
   return i < 0 ? null : i;
 }
 
-function vistaDe(v: string | null): View {
-  return VISTAS.includes(v as View) ? (v as View) : "resumen";
-}
+/**
+ * Un texto libre en la URL: se escribe sin los espacios de los bordes, y un
+ * texto que solo tiene espacios cuenta como vacío (no deja `?q=+`). El valor
+ * del campo conserva lo que se tecleó —el espacio antes de la palabra
+ * siguiente no puede desaparecer bajo el dedo—; solo la URL se recorta.
+ */
+const parseAsTexto = createParser({
+  parse: (v) => v,
+  serialize: (v: string) => v.trim(),
+  eq: (a, b) => a.trim() === b.trim(),
+});
+
+/*
+  `q` y `cargo` se escriben mientras se teclea: el estado cambia al instante
+  —el campo lo muestra— y la URL espera 250 ms a que el dedo se detenga, la
+  misma espera con que el filtro barre las filas. Cada cambio **reemplaza** la
+  entrada del historial: una tecla no es una navegación.
+*/
+const URL_NOMINA = {
+  q: parseAsTexto.withDefault("").withOptions({ limitUrlUpdates: debounce(250) }),
+  inst: parseAsString,
+  cargo: parseAsTexto.withDefault("").withOptions({ limitUrlUpdates: debounce(250) }),
+  vista: parseAsStringLiteral(VISTAS).withDefault("resumen"),
+};
 
 function ExplorerReady({ data, fichas }: { data: NominaData; fichas: FichasNomina }) {
-  const params = useSearchParams();
-  const [view, setView] = useState<View>(() => vistaDe(params.get("vista")));
+  /*
+    El estado del explorador **es** la URL, a través de `nuqs`: lo que llega
+    de fuera —un enlace `/nomina?inst=JAC` pulsado en esta misma página,
+    «atrás»— se ve sin re-aplicarlo a mano. Antes había un eco que suprimir:
+    se recordaba la cadena escrita con `replaceState` para no confundirla con
+    una navegación ajena.
+  */
+  const [url, setUrl] = useQueryStates(URL_NOMINA);
+  const view: View = url.vista;
+  const setView = (v: View) => setUrl({ vista: v });
 
   // ---- filters
-  const [queryInput, setQueryInput] = useState(() => params.get("q") ?? "");
+  const queryInput = url.q;
+  const setQueryInput = (v: string) => setUrl({ q: v });
   const query = useDebounced(queryInput.trim(), 250);
-  const [instId, setInstId] = useState<number | null>(() => indiceDe(data, params.get("inst")));
-  const [cargoInput, setCargoInput] = useState(() => params.get("cargo") ?? "");
+  const instId = useMemo(() => indiceDe(data, url.inst), [data, url.inst]);
+  const setInstId = (id: number | null) =>
+    setUrl({ inst: id != null ? (data.instituciones[id]?.codigo ?? null) : null });
+  const cargoInput = url.cargo;
+  const setCargoInput = (v: string) => setUrl({ cargo: v });
   const cargo = useDebounced(cargoInput.trim(), 250);
   const [salMin, setSalMin] = useState<string>("");
   const [salMax, setSalMax] = useState<string>("");
@@ -171,41 +210,6 @@ function ExplorerReady({ data, fichas }: { data: NominaData; fichas: FichasNomin
 
   // ---- ranking metric for instituciones/áreas
   const [metric, setMetric] = useState<Metric>("total");
-
-  // ---- el estado, en la URL
-  /*
-    Se escribe con `history.replaceState`, no con `router.replace`: cada tecla
-    del buscador no es una navegación ni una entrada del historial, y Next ya
-    sincroniza `useSearchParams` con esa llamada. La cadena que escribimos se
-    recuerda para distinguir nuestros cambios de los que llegan de fuera —un
-    enlace `/nomina?inst=JAC` pulsado en esta misma página—, que sí se aplican.
-  */
-  const escrito = useRef<string | null>(null);
-  const instCodigo = instId != null ? data.instituciones[instId]?.codigo : null;
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    const poner = (k: string, v: string | null | undefined) => (v ? p.set(k, v) : p.delete(k));
-    poner("q", query);
-    poner("inst", instCodigo);
-    poner("cargo", cargo);
-    poner("vista", view === "resumen" ? null : view);
-    const s = p.toString();
-    escrito.current = s;
-    if (s !== window.location.search.replace(/^\?/, "")) {
-      window.history.replaceState(null, "", s ? `${window.location.pathname}?${s}` : window.location.pathname);
-    }
-  }, [query, instCodigo, cargo, view]);
-
-  const cadena = params.toString();
-  useEffect(() => {
-    if (escrito.current === null || cadena === escrito.current) return;
-    const p = new URLSearchParams(cadena);
-    escrito.current = cadena;
-    setQueryInput(p.get("q") ?? "");
-    setInstId(indiceDe(data, p.get("inst")));
-    setCargoInput(p.get("cargo") ?? "");
-    setView(vistaDe(p.get("vista")));
-  }, [cadena, data]);
 
   // ---- cargo → qué nombres de cargo del diccionario entran
   const cargoPatron = useMemo(() => patronCargo(cargo), [cargo]);
