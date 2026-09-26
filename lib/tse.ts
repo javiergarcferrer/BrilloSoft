@@ -52,6 +52,9 @@
  */
 
 import { unstable_cache } from "next/cache";
+import { arbol, textoDe } from "@/lib/html";
+import { pedirTextoOLanzar } from "@/lib/pedir";
+import { numeroMes } from "@/lib/format";
 
 const ORIGEN = "https://visorpdf.tse.do";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (justicia; herramienta independiente)";
@@ -111,107 +114,79 @@ export function urlListadoTSE(anio: number, pagina = 1): string {
   return pagina > 1 ? `${ORIGEN}/?pos=${pagina}&y=${anio}&s=` : `${ORIGEN}/?y=${anio}&s=`;
 }
 
-const NOMBRADAS: Record<string, string> = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  apos: "'",
-  nbsp: " ",
-};
-
-function decodificar(s: string): string {
-  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
-    if (e[0] === "#") {
-      const cp = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
-      return Number.isFinite(cp) && cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : m;
-    }
-    return NOMBRADAS[e.toLowerCase()] ?? m;
-  });
-}
-
-function celda(html: string): string {
-  return decodificar(html.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
-}
-
-const MESES: Record<string, number> = {
-  ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, sep: 9, set: 9, oct: 10, nov: 11, dic: 12,
-};
-
 /** «10 Ago 2026», «14 Mayo 2026», «15 Sept 2021» → `AAAA-MM-DD`. */
 function fechaISO(texto: string): string | null {
   const m = /^(\d{1,2})\s+([a-záéíóú]+)\.?\s+(\d{4})$/i.exec(texto);
   if (!m) return null;
-  const mes = MESES[m[2].slice(0, 3).toLowerCase()];
+  const mes = numeroMes(m[2]);
   const dia = Number(m[1]);
   if (!mes || dia < 1 || dia > 31) return null;
   return `${m[3]}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
 }
 
 /**
- * Lee una página del visor. Devuelve `null` si la tabla no está —la página
- * cambió de forma o llegó otra cosa con 200—.
+ * Lee una página del visor con `cheerio` (`lib/html.ts`): la tabla
+ * que lleva «Relativo a» en su cabecera. Devuelve `null` si no está —la
+ * página cambió de forma o llegó otra cosa con 200— o si trae filas y no se
+ * entendió ninguna.
  */
 export function parsearPaginaTSE(
   html: string,
 ): { sentencias: SentenciaTSE[]; escaneados: number; siguiente: boolean } | null {
-  const ini = html.indexOf("<tbody");
-  const fin = html.indexOf("</tbody>", ini);
-  // La cabecera propia de este listado: si falta, no es la tabla de sentencias.
-  if (ini < 0 || fin < 0 || !/Relativo a/.test(html.slice(Math.max(0, ini - 3000), ini))) return null;
-  const cuerpo = html.slice(ini, fin);
+  const $ = arbol(html);
+  const tabla = $("table")
+    .toArray()
+    .find((t) => /Relativo a/.test(textoDe($(t).find("thead, tr").first().toArray())));
+  if (!tabla) return null;
 
   const sentencias: SentenciaTSE[] = [];
   let escaneados = 0;
-  for (const tr of cuerpo.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)) {
+  for (const tr of $(tabla).find("tbody tr").toArray()) {
     escaneados++;
-    const celdas = [...tr[1].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/g)].map((m) => m[1]);
+    const celdas = $(tr).children("th, td").toArray();
     if (celdas.length < 4) continue;
-    const enlace = /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/.exec(celdas[0]);
-    if (!enlace) continue;
-    const numero = celda(enlace[2]).replace(/[.,;\s]+$/, "");
+    const enlace = $(celdas[0]).find("a[href]").first();
+    if (enlace.length === 0) continue;
+    const numero = textoDe(enlace.toArray()).replace(/[.,;\s]+$/, "");
     if (!/^TSE[-/ ]?\d+[-/]\d{4}$/i.test(numero)) continue;
     let ficha: string;
     try {
-      ficha = new URL(decodificar(enlace[1]), ORIGEN).toString();
+      ficha = new URL(enlace.attr("href") ?? "", ORIGEN).toString();
     } catch {
       continue;
     }
-    const expediente = celda(celdas[2]).replace(/[.,;\s]+$/, "");
+    const expediente = textoDe(celdas[2]).replace(/[.,;\s]+$/, "");
     sentencias.push({
       numero,
-      fecha: fechaISO(celda(celdas[1])),
+      fecha: fechaISO(textoDe(celdas[1])),
       expediente: expediente || null,
-      relativo: celda(celdas[3]),
+      relativo: textoDe(celdas[3]),
       ficha,
     });
   }
   // La tabla existe pero no se entendió ninguna fila con filas presentes: cambió de forma.
   if (escaneados > 0 && sentencias.length === 0) return null;
-  const siguiente = />\s*Siguiente\s*</i.test(html.slice(fin));
+  // El paginador del visor: hay otra página si ofrece «Siguiente».
+  const siguiente = $("a, span, li, button")
+    .toArray()
+    .some((el) => textoDe(el) === "Siguiente");
   return { sentencias, escaneados, siguiente };
 }
 
-async function leerPagina(url: string): Promise<NonNullable<ReturnType<typeof parsearPaginaTSE>>> {
-  let ultimo: unknown = null;
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT, Accept: "text/html" },
-        cache: "no-store",
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
-      if (!res.ok) throw new Error(`el visor respondió ${res.status}`);
-      const tipo = res.headers.get("content-type") ?? "";
-      if (!/text\/html/i.test(tipo)) throw new Error(`content-type inesperado: ${tipo || "(vacío)"}`);
-      const leido = parsearPaginaTSE(await res.text());
-      if (!leido) throw new Error("la página no trae la tabla de sentencias");
-      return leido;
-    } catch (err) {
-      ultimo = err;
-    }
-  }
-  throw ultimo instanceof Error ? ultimo : new Error(String(ultimo));
+function leerPagina(url: string): Promise<NonNullable<ReturnType<typeof parsearPaginaTSE>>> {
+  // Lanza en cualquier fallo: `unstable_cache` no guarda una excepción.
+  return pedirTextoOLanzar(url, {
+    fuente: "tse",
+    ua: USER_AGENT,
+    tipo: /text\/html/i,
+    cabeceras: { Accept: "text/html" },
+    cache: "no-store",
+    espera: TIMEOUT_MS,
+  }).then((html) => {
+    const leido = parsearPaginaTSE(html);
+    if (!leido) throw new Error("la página no trae la tabla de sentencias");
+    return leido;
+  });
 }
 
 function numeroDe(s: SentenciaTSE): number {

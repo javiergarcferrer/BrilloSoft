@@ -23,6 +23,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { unstable_cache } from "next/cache";
+import { z } from "zod";
+import { pedirJsonOLanzar } from "@/lib/pedir";
 
 const BASE = "https://www.consultoria.gov.do";
 
@@ -117,18 +119,50 @@ function aDocumento(f: FilaBuscador): Documento {
   };
 }
 
-/**
- * Motivo de un rechazo, legible en los logs: el estado y, si lo hay, el
- * veredicto de Cloudflare (`cf-mitigated: challenge` es un bloqueo del WAF,
- * no una caída) y el servidor que respondió.
- */
-function motivo(res: Response): string {
-  const cf = res.headers.get("cf-mitigated");
-  const servidor = res.headers.get("server");
-  return [String(res.status), cf && `cf-mitigated=${cf}`, servidor && `server=${servidor}`]
-    .filter(Boolean)
-    .join(" ");
-}
+/*
+  La forma de las dos respuestas, validada con `zod`: una lista de filas con
+  los campos que se leen (todos pueden faltar o venir nulos; `aDocumento` y
+  `gacetasDelAnio` ya lo toleran). Si la Consultoría devuelve otra cosa, la
+  lectura falla con su motivo y se cae a la instantánea.
+*/
+const FILAS_BUSCADOR = z.array(
+  z.looseObject({
+    DocId: z.number().nullish(),
+    Institucion: z.string().nullish(),
+    TipoDocumento: z.number().nullish(),
+    Tipo: z.string().nullish(),
+    Numero: z.string().nullish(),
+    Titulo: z.string().nullish(),
+    Gaceta: z.string().nullish(),
+    FechaPromulgacion: z.string().nullish(),
+  }),
+);
+const REPOSITORIO = z.array(
+  z.looseObject({
+    id: z.string().optional(),
+    title: z.string().nullish(),
+    fileUrl: z.string().nullish(),
+    year: z.number().nullish(),
+    month: z.string().nullish(),
+    status: z.string().nullish(),
+  }),
+);
+
+/*
+  El contrato de la casa (`lib/pedir.ts`) con **un solo intento**, como antes:
+  el rechazo típico aquí es el desafío de Cloudflare, y repetir la petición
+  no lo levanta (se gestiona: docs/AUDITORIA.md §4.1). El motivo del registro
+  lleva el veredicto `cf-mitigated`.
+*/
+const PEDIDO = {
+  fuente: "normativa",
+  ua: USER_AGENT,
+  tipo: /json/i,
+  cabeceras: { Accept: "application/json" },
+  cache: "no-store",
+  espera: TIMEOUT_MS,
+  intentos: 1,
+} as const;
 
 /** Consulta el buscador. Lanza si el origen no contesta con una lista. */
 async function consultar(filtro: {
@@ -136,14 +170,12 @@ async function consultar(filtro: {
   DocumentNumber?: string;
   PublicationYear?: string;
 }): Promise<Documento[]> {
-  const res = await fetch(`${BASE}/api/consultas/search`, {
-    method: "POST",
-    headers: {
-      "User-Agent": USER_AGENT,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
+  const filas = await pedirJsonOLanzar(`${BASE}/api/consultas/search`, {
+    ...PEDIDO,
+    metodo: "POST",
+    cabeceras: { ...PEDIDO.cabeceras, "Content-Type": "application/json" },
+    esquema: FILAS_BUSCADOR,
+    cuerpo: JSON.stringify({
       DocumentTypeCode: filtro.DocumentTypeCode,
       DocumentNumber: filtro.DocumentNumber ?? "",
       FullText: "",
@@ -159,13 +191,8 @@ async function consultar(filtro: {
       PensionType: 0,
       PublicationYear: filtro.PublicationYear ?? "",
     }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`la búsqueda respondió ${motivo(res)}`);
-  const datos: unknown = await res.json();
-  if (!Array.isArray(datos)) throw new Error("la búsqueda no devolvió una lista");
-  return (datos as FilaBuscador[]).map(aDocumento);
+  return filas.map(aDocumento);
 }
 
 /**
@@ -174,15 +201,11 @@ async function consultar(filtro: {
  * orden es por número de gaceta.
  */
 async function gacetas(anio: number): Promise<Documento[]> {
-  const res = await fetch(`${BASE}/api/documents?category=gacetas`, {
-    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
-    cache: "no-store",
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+  const entradas = await pedirJsonOLanzar(`${BASE}/api/documents?category=gacetas`, {
+    ...PEDIDO,
+    esquema: REPOSITORIO,
   });
-  if (!res.ok) throw new Error(`el repositorio respondió ${motivo(res)}`);
-  const datos: unknown = await res.json();
-  if (!Array.isArray(datos)) throw new Error("el repositorio no devolvió una lista");
-  return gacetasDelAnio(datos as EntradaRepositorio[], anio);
+  return gacetasDelAnio(entradas, anio);
 }
 
 function gacetasDelAnio(entradas: EntradaRepositorio[], anio: number): Documento[] {

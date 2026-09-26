@@ -24,12 +24,13 @@
  */
 
 import { provinciaDeTexto, type Provincia } from "./provincias";
+import { MESES } from "@/lib/format";
+import { z } from "zod";
+import { pedirJson } from "@/lib/pedir";
 
 const BASE = "https://opsevi.intrant.gob.do/api";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (muertes en las vias; herramienta independiente)";
 
-const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
-  "septiembre", "octubre", "noviembre", "diciembre"];
 
 export interface Siniestralidad {
   anio: number;
@@ -46,38 +47,43 @@ export interface Siniestralidad {
   fuente: string;
 }
 
-async function pedir<T>(ruta: string): Promise<T | null> {
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(`${BASE}${ruta}`, {
-        headers: { "User-Agent": USER_AGENT },
-        next: { revalidate: 86_400 },
-        signal: AbortSignal.timeout(25_000),
-      });
-      if (!res.ok) throw new Error(`respondió ${res.status}`);
-      if (!/application\/json/i.test(res.headers.get("content-type") ?? "")) return null;
-      return (await res.json()) as T;
-    } catch (err) {
-      if (intento === 2) {
-        console.error(`[siniestralidad] ${ruta}: ${String(err)}`);
-        return null;
-      }
-    }
-  }
-  return null;
+function pedir<T>(ruta: string, esquema: z.ZodType<T>): Promise<T | null> {
+  return pedirJson(`${BASE}${ruta}`, {
+    fuente: "siniestralidad",
+    ua: USER_AGENT,
+    tipo: /application\/json/i,
+    revalidate: 86_400,
+    esquema,
+  });
 }
 
-interface Nacional {
-  monthly?: { month: string; fatalities: number }[];
-  "vehicle-types"?: { vehicleType: string; fatalities: number }[];
-}
+/*
+  La forma de cada respuesta, validada: si OPSEVI renombra un campo, la
+  lectura falla con su motivo en el registro y la tarjeta se degrada, en vez
+  de pintar ceros. Los números pueden venir nulos: el cálculo ya los salta.
+*/
+const NACIONAL = z.looseObject({
+  monthly: z.array(z.looseObject({ month: z.string(), fatalities: z.number().nullable() })).optional(),
+  "vehicle-types": z
+    .array(z.looseObject({ vehicleType: z.string(), fatalities: z.number().nullable() }))
+    .optional(),
+});
+type Nacional = z.infer<typeof NACIONAL>;
+const PROVINCIAS = z.array(z.looseObject({ provinceName: z.string().nullable(), deaths: z.number().nullable() }));
+const RESUMEN = z.looseObject({
+  fatalities: z.number().nullish(),
+  injuries: z.number().nullish(),
+  population: z.number().nullish(),
+});
 
 function porMes(n: Nacional | null): Map<number, number> | null {
   if (!n?.monthly?.length) return null;
   const m = new Map<number, number>();
   for (const f of n.monthly) {
     const i = MESES.indexOf(f.month.trim().toLowerCase());
-    if (i >= 0 && Number.isFinite(f.fatalities)) m.set(i + 1, (m.get(i + 1) ?? 0) + f.fatalities);
+    if (i >= 0 && typeof f.fatalities === "number" && Number.isFinite(f.fatalities)) {
+      m.set(i + 1, (m.get(i + 1) ?? 0) + f.fatalities);
+    }
   }
   return m.size ? m : null;
 }
@@ -87,10 +93,10 @@ export async function getSiniestralidad(): Promise<Siniestralidad | null> {
     new Date().toLocaleString("en-CA", { timeZone: "America/Santo_Domingo", year: "numeric" }),
   );
   const [actual, anterior, provincias, resumen] = await Promise.all([
-    pedir<Nacional>(`/national?years=${anio}`),
-    pedir<Nacional>(`/national?years=${anio - 1}`),
-    pedir<{ provinceName: string; deaths: number }[]>(`/fatalities/provinces?year=${anio}`),
-    pedir<{ fatalities?: number; injuries?: number; population?: number }>(`/summary?years=${anio}`),
+    pedir(`/national?years=${anio}`, NACIONAL),
+    pedir(`/national?years=${anio - 1}`, NACIONAL),
+    pedir(`/fatalities/provinces?year=${anio}`, PROVINCIAS),
+    pedir(`/summary?years=${anio}`, RESUMEN),
   ]);
   const mesesActual = porMes(actual);
   if (!mesesActual) return null;
@@ -110,6 +116,7 @@ export async function getSiniestralidad(): Promise<Siniestralidad | null> {
       : null;
   const moto = actual?.["vehicle-types"]?.find((v) => /motocicleta/i.test(v.vehicleType));
   const totalVehiculos = actual?.["vehicle-types"]?.reduce((s, v) => s + (v.fatalities || 0), 0) ?? 0;
+  const muertesMoto = moto?.fatalities ?? 0;
   const poblacion = resumen?.population && resumen.population > 1_000_000 ? resumen.population : null;
 
   return {
@@ -120,11 +127,13 @@ export async function getSiniestralidad(): Promise<Siniestralidad | null> {
     heridos: typeof resumen?.injuries === "number" && resumen.injuries > 0 ? resumen.injuries : null,
     tasa: poblacion ? (muertes / poblacion) * 100_000 : null,
     motocicleta:
-      moto && totalVehiculos > 0 ? { muertes: moto.fatalities, pct: (moto.fatalities / totalVehiculos) * 100 } : null,
+      moto && totalVehiculos > 0 ? { muertes: muertesMoto, pct: (muertesMoto / totalVehiculos) * 100 } : null,
     provincias: (Array.isArray(provincias) ? provincias : [])
-      .filter((p) => p && typeof p.deaths === "number" && p.provinceName)
-      .sort((a, b) => b.deaths - a.deaths)
-      .map((p) => ({ nombre: p.provinceName, muertes: p.deaths, provincia: provinciaDeTexto(p.provinceName) })),
+      .flatMap((p) =>
+        typeof p.deaths === "number" && p.provinceName ? [{ nombre: p.provinceName, muertes: p.deaths }] : [],
+      )
+      .sort((a, b) => b.muertes - a.muertes)
+      .map((p) => ({ ...p, provincia: provinciaDeTexto(p.nombre) })),
     fuente: "https://opsevi.intrant.gob.do/",
   };
 }

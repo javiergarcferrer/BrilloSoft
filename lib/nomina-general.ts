@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { MESES } from "@/lib/format";
 
 /**
  * Nómina Pública General del Estado — la que publica el Ministerio de
@@ -65,8 +66,6 @@ export function getNominaGeneral(): Promise<NominaGeneral | null> {
   return memo;
 }
 
-const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
-  "septiembre", "octubre", "noviembre", "diciembre"];
 
 export function mesGeneral(anio: number, mes: number): string {
   return `${MESES[mes - 1]} de ${anio}`;

@@ -18,6 +18,30 @@ Next.js 15 **App Router** + React 19 + TypeScript + Tailwind CSS 4. Imports use
 the `@/*` alias resolving to the **repo root** (`app/`, `lib/`, `components/`) —
 this project does **not** use a `src/` directory.
 
+## Lectura de fuentes — `lib/pedir.ts`, `lib/html.ts`, `lib/xlsx.ts`
+Tres módulos compartidos que sostienen a las capas de `lib/`; ninguna los
+reimplementa (`docs/PLAN-ACCESO.md` §6 bis).
+
+- `lib/pedir.ts` — el contrato de `.claude/rules/fuentes.md` escrito una
+  vez: `pedirJson` / `pedirTexto` / `pedirBytes` devuelven `null` y dejan su
+  línea en el registro; `…OLanzar` lanzan `FalloLectura` para las capas que
+  guardan en `unstable_cache` (que no guarda excepciones). Reintenta una vez
+  red, plazo, no-2xx y cuerpo ilegible; no reintenta tipo equivocado, firma
+  «PK» que no casa ni esquema `zod` que falla (`definitivo`). El motivo de un
+  rechazo lleva `cf-mitigated` y `server`. Fuera: la sesión del Senado y las
+  HEAD de peso.
+- `lib/html.ts` — `desentidades` / `desentidadesXml` (`entities`) y
+  `arbol` / `textoDe` (`cheerio` sobre parse5). `textoDe` junta los trozos de
+  texto con un espacio, como hacían las regex al quitar etiquetas.
+- `lib/xlsx.ts` — `leerHoja(buf, n)` → fila → columna → texto, con `fflate`
+  (directorio central del ZIP) y `fast-xml-parser`; `filasDe`,
+  `indiceColumna`.
+- Los meses (`MESES`, `MESES_CORTOS`, `numeroMes`) viven en `lib/format.ts`,
+  de `Intl`.
+- `zod` valida la forma del JSON donde la capa la lee (DGCP, SIL paginado,
+  OPSEVI, OC, SIMBAD, Aduanas, Consultoría, `/democracia`); `zod/mini` en lo
+  que viaja al navegador (`lib/seguimiento.ts`).
+
 ## Data layer — `lib/dgcp.ts` (the heart of the app)
 Owns all DGCP types (`Proceso`, `Articulo`, `Documento`, `Contrato`,
 `ContratoArticulo`) and access functions:

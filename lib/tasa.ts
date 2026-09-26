@@ -13,11 +13,15 @@
  * responde 200, pero está congelado desde el 19-jul-2022; el vigente es el
  * `.xlsx`.
  *
- * Fuente viva, caché de 1 h (precio). Solo servidor: reutiliza el lector de
- * XLSX de `lib/deuda.ts` (`node:zlib`).
+ * Fuente viva, caché de 1 h (precio). Solo servidor: lee con `lib/xlsx.ts`.
+ * La hoja trae ~9,000 filas desde 1991 y leerla entera cuesta ~0,5 s, así que
+ * el resultado —no solo la descarga— se guarda una hora con `unstable_cache`.
  */
 
-import { leerZip } from "./deuda";
+import { unstable_cache } from "next/cache";
+import { pedirBytes } from "@/lib/pedir";
+import { filasDe, leerHoja } from "@/lib/xlsx";
+import { numeroMes } from "@/lib/format";
 
 export const URL_TASA =
   "https://cdn.bancentral.gov.do/documents/estadisticas/mercado-cambiario/documents/TASA_DOLAR_REFERENCIA_MC.xlsx";
@@ -37,67 +41,30 @@ export interface Tasa {
   fuente: string;
 }
 
-const MESES: Record<string, number> = {
-  ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, aug: 8, sep: 9, set: 9,
-  oct: 10, nov: 11, dic: 12, dec: 12, jan: 1, apr: 4,
-};
 
-async function bajar(): Promise<ArrayBuffer | null> {
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(URL_TASA, {
-        headers: { "User-Agent": USER_AGENT },
-        next: { revalidate: 3600 },
-        signal: AbortSignal.timeout(25_000),
-      });
-      // Un 5xx se reintenta una vez (el contrato de las capas); un tipo que no
-      // es una hoja no mejora reintentando.
-      if (!res.ok) throw new Error(`el CDN respondió ${res.status}`);
-      const tipo = res.headers.get("content-type") ?? "";
-      if (!/octet-stream|spreadsheetml|excel/i.test(tipo)) {
-        console.error(`[tasa] ${res.status} ${tipo}`);
-        return null;
-      }
-      const buf = await res.arrayBuffer();
-      // Un 200 puede ser una página de error: un XLSX empieza por «PK».
-      if (new Uint8Array(buf.slice(0, 2)).join() !== "80,75") return null;
-      return buf;
-    } catch (err) {
-      if (intento === 2) {
-        console.error(`[tasa] ${String(err)}`);
-        return null;
-      }
-    }
-  }
-  return null;
+function bajar(): Promise<ArrayBuffer | null> {
+  return pedirBytes(URL_TASA, {
+    fuente: "tasa",
+    ua: USER_AGENT,
+    tipo: /octet-stream|spreadsheetml|excel/i,
+    revalidate: 3600,
+    firma: "zip",
+  });
 }
 
-export async function getTasa(): Promise<Tasa | null> {
-  const buf = await bajar();
-  if (!buf) return null;
-  try {
-    const archivos = await leerZip(buf);
-    const hoja = archivos.find((a) => a.nombre === "xl/worksheets/sheet1.xml");
-    const compartidas = archivos.find((a) => a.nombre === "xl/sharedStrings.xml");
-    if (!hoja) return null;
-    const strs = compartidas
-      ? [...compartidas.datos.toString("utf8").matchAll(/<si>(.*?)<\/si>/gs)].map((m) =>
-          m[1].replace(/<[^>]+>/g, ""),
-        )
-      : [];
-    const xml = hoja.datos.toString("utf8");
-    // Solo la cola: las últimas ~60 filas bastan para el último día y el de
-    // hace un mes, y evitan recorrer 9,000 filas desde 1991.
-    const filas = [...xml.slice(-40_000).matchAll(/<row[^>]*>(.*?)<\/row>/gs)];
+/** Error que no se guarda en la caché: un fallo no se sirve una hora entera. */
+class SinTasa extends Error {}
+
+const leerTasa = unstable_cache(
+  async (): Promise<Tasa> => {
+    const buf = await bajar();
+    if (!buf) throw new SinTasa("el CDN no entregó la hoja");
+    const hoja = leerHoja(buf);
+    if (!hoja) throw new SinTasa("la hoja no se pudo leer");
     const puntos: PuntoTasa[] = [];
-    for (const f of filas) {
-      const celdas = new Map<string, string>();
-      for (const c of f[1].matchAll(/<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>(.*?)<\/c>)/gs)) {
-        const v = /<v>([^<]*)<\/v>/.exec(c[3] ?? "")?.[1] ?? "";
-        celdas.set(c[1], /t="s"/.test(c[2]) && v ? (strs[Number(v)] ?? "") : v);
-      }
+    for (const { celdas } of filasDe(hoja)) {
       const anio = Number(celdas.get("A"));
-      const mes = MESES[(celdas.get("B") ?? "").trim().slice(0, 3).toLowerCase()];
+      const mes = numeroMes(celdas.get("B") ?? "");
       const dia = Number(celdas.get("C"));
       const compra = Number(celdas.get("D"));
       const venta = Number(celdas.get("E"));
@@ -110,14 +77,22 @@ export async function getTasa(): Promise<Tasa | null> {
     }
     puntos.sort((a, b) => a.fecha.localeCompare(b.fecha));
     const ultimo = puntos.at(-1);
-    if (!ultimo) return null;
+    if (!ultimo) throw new SinTasa("la hoja no trae ningún día");
     const objetivo = new Date(`${ultimo.fecha}T12:00:00Z`);
     objetivo.setUTCDate(objetivo.getUTCDate() - 30);
     const iso = objetivo.toISOString().slice(0, 10);
     const haceUnMes = [...puntos].reverse().find((p) => p.fecha <= iso) ?? null;
     return { ultimo, haceUnMes, fuente: URL_TASA };
+  },
+  ["tasa-bcrd-v2"],
+  { revalidate: 3600 },
+);
+
+export async function getTasa(): Promise<Tasa | null> {
+  try {
+    return await leerTasa();
   } catch (err) {
-    console.error(`[tasa] parseo: ${String(err)}`);
+    console.error(`[tasa] ${String(err)}`);
     return null;
   }
 }

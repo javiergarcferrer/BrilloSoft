@@ -49,6 +49,8 @@
  */
 
 import { unstable_cache } from "next/cache";
+import { arbol, textoDe, type CheerioAPI, type Element } from "@/lib/html";
+import { pedirTextoOLanzar } from "@/lib/pedir";
 
 const ORIGEN = "https://tc.gob.do";
 const RUTA = "/consultas/secretar%C3%ADa/sentencias";
@@ -105,56 +107,43 @@ export function urlListadoTC(anio: number): string {
   return `${ORIGEN}${RUTA}?searchCriteria=&searchString=&size=999999&filtery=${anio}&criteriay=years&order=Date`;
 }
 
-const NOMBRADAS: Record<string, string> = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  apos: "'",
-  nbsp: " ",
-};
-
-function decodificar(s: string): string {
-  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
-    if (e[0] === "#") {
-      const cp = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
-      return Number.isFinite(cp) && cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : m;
-    }
-    return NOMBRADAS[e.toLowerCase()] ?? m;
-  });
-}
-
-/** Texto de una celda: sin etiquetas, entidades resueltas, espacios colapsados. */
-function celda(html: string): string {
-  return decodificar(html.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+/**
+ * La tabla del listado: la que lleva «Relativo a» en su cabecera. `null` si
+ * no está —la página cambió de forma o llegó otra cosa con 200—.
+ */
+function tablaDeSentencias($: CheerioAPI): Element | null {
+  return (
+    $("table")
+      .toArray()
+      .find((t) => /Relativo a/.test(textoDe($(t).find("thead, tr").first().toArray()))) ?? null
+  );
 }
 
 /**
- * Lee la tabla del listado. Devuelve `null` si la tabla no está —la página
- * cambió de forma o llegó otra cosa con 200—.
+ * Lee la tabla del listado con `cheerio` (`lib/html.ts`). Devuelve `null` si
+ * la tabla no está o si trae filas y no se entendió ninguna.
  */
 export function parsearListadoTC(html: string): { sentencias: SentenciaTC[]; escaneados: number } | null {
-  const ini = html.indexOf("<tbody");
-  const fin = html.indexOf("</tbody>", ini);
-  // La cabecera propia de este listado: si falta, no es la tabla de sentencias.
-  if (ini < 0 || fin < 0 || !/Relativo a/.test(html.slice(Math.max(0, ini - 4000), ini))) return null;
-  const cuerpo = html.slice(ini, fin);
+  const $ = arbol(html);
+  const tabla = tablaDeSentencias($);
+  if (!tabla) return null;
 
   const sentencias: SentenciaTC[] = [];
   let escaneados = 0;
-  for (const tr of cuerpo.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)) {
+  for (const tr of $(tabla).find("tbody tr").toArray()) {
     escaneados++;
-    const tds = [...tr[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1]);
+    const tds = $(tr).children("td").toArray();
     if (tds.length < 4) continue;
-    const enlace = /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/.exec(tds[0]);
-    if (!enlace) continue;
-    const numero = celda(enlace[2]);
-    const f = /^(\d{2})-(\d{2})-(\d{4})$/.exec(celda(tds[1]));
+    const enlace = $(tds[0]).find("a[href]").first();
+    if (enlace.length === 0) continue;
+    const numero = textoDe(enlace.toArray());
+    const f = /^(\d{2})-(\d{2})-(\d{4})$/.exec(textoDe(tds[1]));
     if (!/^TC\/\d{4}\/\d{2}$/.test(numero) || !f) continue;
-    const ref = celda(tds[2]);
+    const ref = textoDe(tds[2]);
     let ficha: string;
     try {
-      ficha = new URL(decodificar(enlace[1]), ORIGEN).toString();
+      // El analizador ya resolvió las entidades del atributo («secretar&#237;a»).
+      ficha = new URL(enlace.attr("href") ?? "", ORIGEN).toString();
     } catch {
       continue;
     }
@@ -162,7 +151,7 @@ export function parsearListadoTC(html: string): { sentencias: SentenciaTC[]; esc
       numero,
       fecha: `${f[3]}-${f[2]}-${f[1]}`,
       expediente: ref && !/^n\/?d$/i.test(ref) ? ref : null,
-      relativo: celda(tds[3]),
+      relativo: textoDe(tds[3]),
       ficha,
     });
   }
@@ -177,25 +166,18 @@ export function parsearListadoTC(html: string): { sentencias: SentenciaTC[]; esc
 
 async function leerAnio(anio: number): Promise<SentenciasTC> {
   const url = urlListadoTC(anio);
-  let ultimo: unknown = null;
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT, Accept: "text/html" },
-        cache: "no-store",
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
-      if (!res.ok) throw new Error(`el listado respondió ${res.status}`);
-      const tipo = res.headers.get("content-type") ?? "";
-      if (!/text\/html/i.test(tipo)) throw new Error(`content-type inesperado: ${tipo || "(vacío)"}`);
-      const leido = parsearListadoTC(await res.text());
-      if (!leido) throw new Error("la página no trae la tabla de sentencias");
-      return { anio, ...leido, fuente: url, consultado: new Date().toISOString() };
-    } catch (err) {
-      ultimo = err;
-    }
-  }
-  throw ultimo instanceof Error ? ultimo : new Error(String(ultimo));
+  // Lanza en cualquier fallo: `unstable_cache` no guarda una excepción.
+  const html = await pedirTextoOLanzar(url, {
+    fuente: "tc",
+    ua: USER_AGENT,
+    tipo: /text\/html/i,
+    cabeceras: { Accept: "text/html" },
+    cache: "no-store",
+    espera: TIMEOUT_MS,
+  });
+  const leido = parsearListadoTC(html);
+  if (!leido) throw new Error("la página no trae la tabla de sentencias");
+  return { anio, ...leido, fuente: url, consultado: new Date().toISOString() };
 }
 
 const anioEnCurso = unstable_cache(leerAnio, ["tc-sentencias-en-curso"], { revalidate: 21_600 });

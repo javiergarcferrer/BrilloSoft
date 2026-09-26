@@ -205,27 +205,44 @@ precedente). Ninguna de estas rompe la invariante.
 
 Pendiente, por valor ÷ esfuerzo (archivo:línea verificados el 2026-09-26):
 
-1. **ZIP/XLSX a mano** — `lib/deuda.ts:94-122` lee el tamaño de la cabecera
-   local del ZIP: un XLSX escrito en streaming (tamaño 0 + descriptor) deja
-   la fuente muda sin error; ZIP64 no se lee. Tres lectores de hoja por regex
-   (`deuda.ts:158-190`, `tasa.ts:79-100`, `aduanas.ts:222-260`) ignoran
-   `inlineStr` y texto enriquecido. → `fflate` (`unzipSync`, directorio
-   central) y `read-excel-file`.
-2. **Entidades HTML, nueve copias que discrepan** (`tc.ts:117`, `tse.ts:123`,
-   `cortes.ts:154`, `senado.ts:203`, `deuda.ts:374`, `aduanas.ts:211`,
-   `alertas.ts:79`, `combustibles.ts:43`, `macro.ts:133`): varias solo
-   conocen `&amp;` y dejan `&eacute;` sin decodificar. → `entities`.
-3. **HTML por regex** (`tc.ts:136-170`, `tse.ts:160-190`, `senado.ts:313,
-   416, 567-584`): un cambio de comillas en el portal reduce filas en
-   silencio. → `node-html-parser` (solo servidor).
-4. **fetch + timeout + un reintento, ~12 copias** (`dgcp.ts:128`,
-   `congreso.ts:109`, `siniestralidad.ts:49`, …): el contrato de
-   `.claude/rules/fuentes.md` escrito doce veces con diferencias. → `ky` o
-   un `lib/pedir.ts` propio.
-5. **JSON externo con `as T`** (`dgcp.ts:138`, `congreso.ts:134`,
-   `normativa.ts:168`, `banca.ts:80`, …): un campo renombrado llega como
-   `undefined` a la interfaz en vez de degradar a `null`. → `zod` (o
-   `valibot` para `lib/seguimiento.ts`, que viaja al navegador).
+1. ✅ **ZIP/XLSX** → `lib/xlsx.ts`: `fflate` lee el ZIP por su directorio
+   central (el tamaño cero de un Excel escrito en streaming y ZIP64 ya no
+   callan la fuente) y `fast-xml-parser` el XML, con texto enriquecido,
+   cadenas en línea y entidades. Deuda, tasa, macro y Aduanas comparten el
+   lector. Verificado: 0 celdas distintas del lector anterior en 8 archivos
+   reales (BCRD ×4, Crédito Público, Aduanas ×3; 131,000 celdas). La tasa
+   (9,000 filas, ~0,5 s de lectura) guarda su resultado una hora con
+   `unstable_cache`. No se usó `read-excel-file`: descarta filas vacías y
+   las capas razonan por número de fila.
+2. ✅ **Entidades HTML** → `entities` vía `lib/html.ts`
+   (`desentidades`, `desentidadesXml`): las nueve copias fuera.
+3. ✅ **HTML por árbol** → `cheerio` (parse5, el analizador WHATWG) vía
+   `lib/html.ts`, en TC, TSE y los tres lectores del Senado (listado, ficha,
+   documentos) y el formulario de su búsqueda. Se probó `node-html-parser`
+   y perdía la ficha del Senado entera: el FileMaster anida tablas dentro de
+   `<span>` y `<p>`. Verificado sobre páginas crudas: TC 2026 y 2019 (1,622
+   sentencias), TSE ×3 (146), Senado 2 listados, 6 fichas y 6 páginas de
+   documentos: salida idéntica, salvo un arreglo —«Reintroducida» y
+   «Perimida» son campos «Sí/No con fecha» y se leía la fecha: salían
+   siempre nulos; ahora se lee el Sí/No—.
+4. ✅ **Contrato de lectura** → `lib/pedir.ts` propio y no `ky`: el contrato
+   lleva la validación de `content-type`, la firma «PK» de un XLSX, el motivo
+   del WAF (`cf-mitigated`) en el registro y la caché de datos de Next, que
+   `ky` no conoce. Una política: se reintenta una vez la red, el plazo, un
+   no-2xx o un cuerpo ilegible; no se reintenta un tipo equivocado, una
+   firma que no casa ni un JSON con otra forma. Lo usan DGCP, SIL, OPSEVI,
+   OC, SIMBAD, Aduanas, MICM, INDOMET, Edenorte/Edesur, TC, TSE, Crédito
+   Público, BCRD (tasa y macro) y la Consultoría (un solo intento, como
+   antes: el rechazo típico es el desafío de Cloudflare). Fuera, a
+   propósito: la sesión del Senado (redirección manual, cookie, ViewState) y
+   las HEAD de peso de documento.
+5. ✅ **JSON validado** → `zod` en la envoltura de la DGCP, las páginas del
+   SIL (`?page=`), OPSEVI, OC, SIMBAD, el índice de Aduanas, la Consultoría y
+   las vistas públicas de `/democracia`; `zod/mini` en `lib/seguimiento.ts`
+   (viaja al navegador). Los esquemas validan lo que la capa lee y toleran
+   nulos donde la capa ya los saltaba. Al validar `/democracia` contra la
+   vista viva salió que `verificados` no existe hasta que se aplique la
+   migración de Cuenta Única: el esquema lo da por cero, que es lo cierto.
 6. **URL ↔ estado, tres mecánicas** (`app/buscador.tsx:156-257`,
    `components/nomina/explorer.tsx:176-210`,
    `components/campo-licitaciones.tsx:78-107`). → `nuqs`.
@@ -233,8 +250,16 @@ Pendiente, por valor ÷ esfuerzo (archivo:línea verificados el 2026-09-26):
    la fila se pliega a dos líneas en el teléfono. → `@tanstack/react-virtual`.
 8. **Arrastre de la hoja** (`components/ui/sheet.tsx:80-125`). → `vaul`, que
    es lo que usa el `Drawer` de shadcn.
-9. **Fechas**: nueve tablas de meses en español. → `Intl.DateTimeFormat`
-   (sin dependencia).
+9. ✅ **Meses** → `MESES`, `MESES_CORTOS` y `numeroMes` en `lib/format.ts`,
+   de `Intl.DateTimeFormat` (sin dependencia). `numeroMes` exige que la
+   palabra sea el mes o una abreviatura suya: «Mayor» o «Total» ya no son
+   mayo ni nada.
+
+Verificación del lote 1–5 y 9: una ruta de sonda llamó a los 24 lectores en
+vivo antes y después (caché vaciada): 22 salidas idénticas byte a byte; TC y
+TSE, idénticas salvo la hora de consulta. El XLSX vivo de Crédito Público
+(403 de Cloudflare al servidor en las dos corridas) se leyó fuera de línea y
+dio el saldo de la instantánea al centavo.
 
 Del buscador, lo siguiente:
 - **Índice de Orama persistido** (`@orama/plugin-data-persistence`): el

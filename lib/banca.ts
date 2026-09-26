@@ -35,6 +35,9 @@
  * Serie mensual, caché diaria.
  */
 
+import { z } from "zod";
+import { pedirJson } from "@/lib/pedir";
+
 const BASE = "https://simbad.sb.gob.do/api/v1/chart";
 export const URL_SIMBAD = "https://simbad.sb.gob.do/";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (banca y subastas; herramienta independiente)";
@@ -60,45 +63,39 @@ export interface Banca {
 
 type Punto = [periodo: string, valor: number];
 
+/**
+ * La respuesta de una tarjeta de Superset: `result[0]` con sus columnas y sus
+ * filas. Validada con `zod`; cada fila se lee después con sus propios tipos.
+ */
+const TARJETA = z.looseObject({
+  result: z
+    .array(z.looseObject({ colnames: z.array(z.string()), data: z.array(z.record(z.string(), z.unknown())) }))
+    .min(1),
+});
+
 /** Lee una tarjeta del tablero: solo `data`, validada. */
 async function serie(id: number): Promise<Punto[] | null> {
-  const url = `${BASE}/${id}/data/?format=json&type=results`;
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
-        next: { revalidate: 86400 },
-        signal: AbortSignal.timeout(25_000),
-      });
-      if (!res.ok) throw new Error(`SIMBAD respondió ${res.status}`);
-      const tipo = res.headers.get("content-type") ?? "";
-      // Un 200 puede ser la página de un WAF o la de error de Superset.
-      if (!/application\/json/i.test(tipo)) {
-        console.error(`[banca] tarjeta ${id}: ${res.status} ${tipo}`);
-        return null;
-      }
-      const cuerpo = (await res.json()) as { result?: { colnames?: unknown; data?: unknown }[] };
-      const r = cuerpo.result?.[0];
-      const cols = Array.isArray(r?.colnames) ? (r.colnames as string[]) : [];
-      const metrica = cols.find((c) => c !== "__timestamp");
-      if (!metrica || !Array.isArray(r?.data)) return null;
-      const puntos: Punto[] = [];
-      for (const fila of r.data as Record<string, unknown>[]) {
-        const ts = fila.__timestamp;
-        const v = fila[metrica];
-        if (typeof ts !== "number" || typeof v !== "number" || !Number.isFinite(v)) continue;
-        puntos.push([new Date(ts).toISOString().slice(0, 7), v]);
-      }
-      puntos.sort((a, b) => a[0].localeCompare(b[0]));
-      return puntos.length ? puntos : null;
-    } catch (err) {
-      if (intento === 2) {
-        console.error(`[banca] tarjeta ${id}: ${String(err)}`);
-        return null;
-      }
-    }
+  const cuerpo = await pedirJson(`${BASE}/${id}/data/?format=json&type=results`, {
+    fuente: "banca",
+    ua: USER_AGENT,
+    // Un 200 puede ser la página de un WAF o la de error de Superset.
+    tipo: /application\/json/i,
+    cabeceras: { Accept: "application/json" },
+    revalidate: 86400,
+    esquema: TARJETA,
+  });
+  const r = cuerpo?.result[0];
+  const metrica = r?.colnames.find((c) => c !== "__timestamp");
+  if (!r || !metrica) return null;
+  const puntos: Punto[] = [];
+  for (const fila of r.data) {
+    const ts = fila.__timestamp;
+    const v = fila[metrica];
+    if (typeof ts !== "number" || typeof v !== "number" || !Number.isFinite(v)) continue;
+    puntos.push([new Date(ts).toISOString().slice(0, 7), v]);
   }
-  return null;
+  puntos.sort((a, b) => a[0].localeCompare(b[0]));
+  return puntos.length ? puntos : null;
 }
 
 const mismoMesAnterior = (p: string) => `${Number(p.slice(0, 4)) - 1}${p.slice(4)}`;

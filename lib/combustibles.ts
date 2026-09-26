@@ -14,6 +14,9 @@
  * fuente no contestó, nunca un precio inventado.
  */
 
+import { desentidades } from "@/lib/html";
+import { pedirTexto } from "@/lib/pedir";
+
 const URL_MICM = "https://micm.gob.do/";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (precios de combustibles; herramienta independiente)";
 
@@ -39,46 +42,35 @@ export interface Combustibles {
 function limpiar(s: string): string {
   return s
     .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
+    .replace(/&[#a-z0-9]+;/gi, (e) => desentidades(e))
     .replace(/Petrole[oó]/g, "Petróleo")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 export async function getCombustibles(): Promise<Combustibles | null> {
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(URL_MICM, {
-        headers: { "User-Agent": USER_AGENT },
-        next: { revalidate: 3600 },
-        signal: AbortSignal.timeout(25_000),
-      });
-      // Un 5xx se reintenta una vez; un tipo que no es HTML, no.
-      if (!res.ok) throw new Error(`la portada respondió ${res.status}`);
-      if (!/text\/html/i.test(res.headers.get("content-type") ?? "")) return null;
-      const html = await res.text();
-
-      const vistos = new Map<string, PrecioCombustible>();
-      for (const m of html.matchAll(/\$\s*([\d,]+\.\d{2})\s*<br\s*\/?>\s*<p[^>]*>([^<]{3,80})</g)) {
-        const nombre = limpiar(m[2]);
-        if (vistos.has(nombre)) continue; // la portada repite el bloque para el teléfono
-        vistos.set(nombre, {
-          nombre,
-          precio: Number(m[1].replace(/,/g, "")),
-          unidad: /gasolina|gasoil/i.test(nombre) ? "galón" : null,
-        });
-      }
-      const precios = [...vistos.values()];
-      if (precios.length < 4) return null; // la portada cambió de forma
-      const semana = /semana del\s+([^.<]{6,80}?\d{4})/i.exec(html)?.[1]?.trim() ?? null;
-      return { semana, precios, fuente: URL_MICM };
-    } catch (err) {
-      if (intento === 2) {
-        console.error(`[combustibles] ${String(err)}`);
-        return null;
-      }
-    }
+  const html = await pedirTexto(URL_MICM, {
+    fuente: "combustibles",
+    ua: USER_AGENT,
+    tipo: /text\/html/i,
+    revalidate: 3600,
+  });
+  if (!html) return null;
+  const vistos = new Map<string, PrecioCombustible>();
+  for (const m of html.matchAll(/\$\s*([\d,]+\.\d{2})\s*<br\s*\/?>\s*<p[^>]*>([^<]{3,80})</g)) {
+    const nombre = limpiar(m[2]);
+    if (vistos.has(nombre)) continue; // la portada repite el bloque para el teléfono
+    vistos.set(nombre, {
+      nombre,
+      precio: Number(m[1].replace(/,/g, "")),
+      unidad: /gasolina|gasoil/i.test(nombre) ? "galón" : null,
+    });
   }
-  return null;
+  const precios = [...vistos.values()];
+  if (precios.length < 4) {
+    console.error("[combustibles] la portada cambió de forma: menos de cuatro precios");
+    return null;
+  }
+  const semana = /semana del\s+([^.<]{6,80}?\d{4})/i.exec(html)?.[1]?.trim() ?? null;
+  return { semana, precios, fuente: URL_MICM };
 }

@@ -9,7 +9,7 @@
  * publica en formato procesable: se declara, no se disimula.
  */
 
-import { formatPesos } from "@/lib/format";
+import { formatPesos, MESES_CORTOS, mayuscula } from "@/lib/format";
 
 /** Una fila es una tupla compacta de índices de diccionario + sueldo. */
 export type Row = readonly [inst: number, area: number, cargo: number, sueldo: number];
@@ -38,10 +38,7 @@ export type NominaData = {
   rows: Row[];
 };
 
-export const MONTH_ABBR = [
-  "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
-];
+export const MONTH_ABBR = MESES_CORTOS.map(mayuscula);
 
 /**
  * Fetch the encoded dataset from /public.

@@ -40,6 +40,7 @@ import {
   separarTitulo,
   type CondicionTono,
 } from "@/lib/congreso";
+import { arbol, desentidades, textoDe, type CheerioAPI, type Element } from "@/lib/html";
 
 const BASE = "https://sil.senadord.gob.do/wfilemaster";
 
@@ -146,10 +147,11 @@ async function senadoGet(sesion: Sesion, url: string): Promise<string> {
  * (ViewState incluido). Es la única petición no-GET de toda la capa.
  */
 async function senadoBuscarPost(sesion: Sesion, listaHtml: string, q: string): Promise<string> {
+  const formulario = arbol(listaHtml);
   const oculto = (nombre: string): string => {
-    const m = new RegExp(`name="${nombre}"[^>]*value="([^"]*)"`).exec(listaHtml);
-    if (!m) throw new Error(`el listado no trae ${nombre}; cambió el formulario`);
-    return m[1];
+    const v = formulario(`input[name="${nombre}"]`).attr("value");
+    if (v == null) throw new Error(`el listado no trae ${nombre}; cambió el formulario`);
+    return v;
   };
 
   const cuerpo = new URLSearchParams({
@@ -199,15 +201,7 @@ async function conReintento<T>(fn: () => Promise<T>): Promise<T> {
 
 /** El FileMaster mezcla texto plano con entidades numéricas y con nombre. */
 function desentificar(valor: string): string {
-  return valor
-    .replace(/&#x([0-9a-f]+);/gi, (_, n: string) => String.fromCodePoint(parseInt(n, 16)))
-    .replace(/&#(\d+);/g, (_, n: string) => String.fromCodePoint(Number(n)))
-    .replace(/&nbsp;/g, " ")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
+  return desentidades(valor);
 }
 
 function limpiar(valor: string | null | undefined): string {
@@ -309,30 +303,40 @@ export interface ListadoSenado {
   expedientes: ExpedienteSenado[];
 }
 
-const FILA_RE =
-  /<td><a href='Ficha\.aspx\?IdExpediente=(\d+)[^']*'>([^<]*)<\/a><\/td><td><a[^>]*>([^<]*)<\/a><\/td><td><a[^>]*>([^<]*)<\/a><\/td><td>([^<]*)<\/td><td>([^<]*)<\/td>/g;
-
-function parsearListado(html: string, cuatrienio: Cuatrienio): ListadoSenado {
-  const totalM = /id="txttotalexp"[^>]*>.*?>(\d+)</s.exec(html);
+/**
+ * La tabla `#DtgExpedientes` del listado, leída como árbol (`lib/html.ts`):
+ * número, tipo, descripción (las tres con el enlace a la ficha), fecha de
+ * creación y estado. Antes era una sola expresión regular con la forma exacta
+ * de la fila; un cambio de comillas o de espacios en el consultante dejaba la
+ * lista vacía sin error. Exportado para verificarlo contra páginas crudas.
+ */
+export function parsearListado(html: string, cuatrienio: Cuatrienio): ListadoSenado {
+  const $ = arbol(html);
   const expedientes: ExpedienteSenado[] = [];
 
-  for (const m of html.matchAll(FILA_RE)) {
-    const estado = limpiar(m[6]) || null;
+  for (const tr of $("#DtgExpedientes tr").toArray()) {
+    const tds = $(tr).children("td").toArray();
+    if (tds.length < 5) continue;
+    const href = $(tds[0]).find("a[href]").attr("href") ?? "";
+    const id = /Ficha\.aspx\?IdExpediente=(\d+)/.exec(href)?.[1];
+    if (!id) continue; // la cabecera
+    const estado = textoDe(tds[4]) || null;
     expedientes.push({
-      id: Number(m[1]),
-      numero: parseNumeroSenado(m[2]),
-      tipo: limpiar(m[3]) || null,
-      titulo: desdeMayusculas(limpiar(m[4])) || "(sin descripción)",
-      fechaCreacion: fechaIso(m[5]),
+      id: Number(id),
+      numero: parseNumeroSenado(textoDe(tds[0])),
+      tipo: textoDe(tds[1]) || null,
+      titulo: desdeMayusculas(textoDe(tds[2])) || "(sin descripción)",
+      fechaCreacion: fechaIso(textoDe(tds[3])),
       estado,
       tono: tonoDeEstadoSenado(estado),
       cuatrienio: cuatrienio.etiqueta,
     });
   }
 
+  const total = Number(textoDe($("#txttotalexp").toArray()));
   return {
     cuatrienio: cuatrienio.etiqueta,
-    total: totalM ? Number(totalM[1]) : expedientes.length,
+    total: Number.isInteger(total) && total > 0 ? total : expedientes.length,
     expedientes,
   };
 }
@@ -392,17 +396,25 @@ export interface FichaSenado {
 }
 
 /** Valor de una celda de la ficha: textarea, input o la opción seleccionada. */
-function valorDeCelda(celda: string): string {
-  const ta = /<textarea[^>]*>([\s\S]*?)<\/textarea>/.exec(celda);
-  if (ta) return limpiar(ta[1]);
-  const inp = /<input[^>]*value="([^"]*)"/.exec(celda);
-  if (inp) return limpiar(inp[1]);
-  const sel = /<option selected="selected"[^>]*>([^<]*)<\/option>/.exec(celda);
-  if (sel) {
-    const v = limpiar(sel[1]);
-    return v === "----------------" || v === "-1" ? "" : v;
-  }
-  return "";
+function valorDeCelda($: CheerioAPI, celda: Element): string {
+  // El analizador ya resolvió las entidades: aquí solo se colapsan espacios.
+  const ta = $(celda).find("textarea").first();
+  if (ta.length) return limpiarTexto(ta.text());
+  // Un campo de texto con valor manda: en los campos «Sí/No con fecha»
+  // (Despachada, Promulgada) es la fecha. El botón «Agregar» que acompaña a
+  // las listas también es un `<input>`, y no cuenta.
+  const inp = limpiarTexto(
+    $(celda).find("input[type='text'][value], input:not([type])[value]").first().attr("value"),
+  );
+  if (inp) return inp;
+  return opcionElegida($, celda) ?? "";
+}
+
+/** La opción elegida de la lista de una celda, o `null` si no hay lista o está en blanco. */
+function opcionElegida($: CheerioAPI, celda: Element): string | null {
+  if ($(celda).find("select").length === 0) return null;
+  const v = limpiarTexto($(celda).find("option[selected]").first().text());
+  return v === "----------------" || v === "-1" || !v ? null : v;
 }
 
 /**
@@ -410,13 +422,22 @@ function valorDeCelda(celda: string): string {
  * `etiqueta → control`. Se parsea por **etiqueta**, no por id de campo, porque
  * cada cuatrienio es una base distinta y los ids podrían divergir.
  */
-function parsearFicha(html: string, cuatrienio: Cuatrienio, id: number): FichaSenado | null {
+export function parsearFicha(html: string, cuatrienio: Cuatrienio, id: number): FichaSenado | null {
+  const $ = arbol(html);
   const campos = new Map<string, string>();
-  const FILA_FICHA_RE =
-    /<tr[^>]*>\s*<td[^>]*><font face="Verdana">([^<]{2,80})<\/font><\/td>\s*<td[^>]*><font face="Verdana">([\s\S]*?)<\/font><\/td>\s*<\/tr>/g;
-  for (const m of html.matchAll(FILA_FICHA_RE)) {
-    const etiqueta = limpiar(m[1]);
-    if (etiqueta && !campos.has(etiqueta)) campos.set(etiqueta, valorDeCelda(m[2]));
+  const opciones = new Map<string, string | null>();
+  // Filas de dos celdas, cada una con su `<font face="Verdana">`: la etiqueta y
+  // el control. Las tablas de maquetación que las envuelven no tienen esa forma.
+  for (const tr of $("tr").toArray()) {
+    const tds = $(tr).children("td").toArray();
+    if (tds.length !== 2) continue;
+    const [fEtiqueta, fValor] = tds.map((td) => $(td).children("font[face='Verdana']").toArray());
+    if (fEtiqueta.length !== 1 || fValor.length !== 1 || $(fEtiqueta[0]).children().length > 0) continue;
+    const etiqueta = textoDe(fEtiqueta[0]);
+    if (etiqueta.length < 2 || etiqueta.length > 80) continue;
+    if (campos.has(etiqueta)) continue;
+    campos.set(etiqueta, valorDeCelda($, fValor[0]));
+    opciones.set(etiqueta, opcionElegida($, fValor[0]));
   }
 
   const campo = (etiqueta: string): string | null => campos.get(etiqueta) || null;
@@ -424,10 +445,8 @@ function parsearFicha(html: string, cuatrienio: Cuatrienio, id: number): FichaSe
   const numero = parseNumeroSenado(campo("Número de Iniciativa"));
   if (!numero) return null; // sin número no hay expediente: id inexistente
 
-  const spanEstado = /id="lbEstadoActual"[^>]*>([\s\S]*?)<\/span>/.exec(html);
-  const estadoActual = spanEstado
-    ? limpiar(spanEstado[1].replace(/<[^>]+>/g, " ")) || null
-    : null;
+  const spanEstado = $("#lbEstadoActual").toArray();
+  const estadoActual = spanEstado.length ? textoDe(spanEstado) || null : null;
 
   const { titulo, tituloModificado } = separarTitulo(
     campo("Descripción del Proyecto") ?? "(sin descripción)",
@@ -436,8 +455,12 @@ function parsearFicha(html: string, cuatrienio: Cuatrienio, id: number): FichaSe
   const historialCrudo = campo("Historial");
   const historial = historialCrudo ? parsearHistorial(historialCrudo) : [];
 
-  const bool = (v: string | null): boolean | null =>
-    v === null ? null : /^s[ií]$/i.test(v) ? true : /^no$/i.test(v) ? false : null;
+  // Un campo «Sí/No con fecha» lleva la respuesta en su lista, no en la fecha:
+  // hasta el 2026-09-26 se leía la fecha y «Reintroducida» salía siempre nula.
+  const bool = (etiqueta: string): boolean | null => {
+    const v = opciones.get(etiqueta) ?? campo(etiqueta);
+    return v === null ? null : /^s[ií]$/i.test(v) ? true : /^no$/i.test(v) ? false : null;
+  };
 
   const fechaPromulgacion = fechaIso(campo("Promulgada"));
   const numPromulgacion = campo("Número de Promulgación");
@@ -461,8 +484,8 @@ function parsearFicha(html: string, cuatrienio: Cuatrienio, id: number): FichaSe
       .split(/;|,(?=\s[A-ZÁÉÍÓÚÑ])/)
       .map((p) => limpiarTexto(p))
       .filter(Boolean),
-    reintroducida: bool(campo("Reintroducida")),
-    perimida: bool(campo("Perimida")),
+    reintroducida: bool("Reintroducida"),
+    perimida: bool("Perimida"),
     anotaciones: campo("Anotaciones Especiales"),
     camaraInicial: campo("Cámara Inicial"),
     poderOrigen: campo("Poder de Origen"),
@@ -564,25 +587,26 @@ async function documentosUpstream(
   });
 }
 
-const FILA_DOC_RE = /<tr[^>]*>\s*((?:<td[^>]*>[\s\S]*?<\/td>\s*){3})<\/tr>/g;
-
-function parsearDocumentos(html: string): DocumentoSenado[] {
-  const tabla = /<table[^>]*id="ctl00_tblDocumentos"[\s\S]*?<\/table>/.exec(html);
-  if (!tabla) return [];
+/** La tabla `#ctl00_tblDocumentos`, como árbol. Exportado para verificarlo. */
+export function parsearDocumentos(html: string): DocumentoSenado[] {
+  const $ = arbol(html);
+  const tabla = $("#ctl00_tblDocumentos");
+  if (tabla.length === 0) return [];
 
   const vistos = new Set<number>();
   const docs: DocumentoSenado[] = [];
 
-  for (const fila of tabla[0].matchAll(FILA_DOC_RE)) {
-    const enlace = /documentoredirect\.aspx\?bd=(\d+)&item=(\d+)/.exec(fila[1]);
+  for (const tr of tabla.find("tr").toArray()) {
+    const tds = $(tr).children("td").toArray();
+    if (tds.length !== 3) continue;
+    const href = $(tr).find("a[href*='documentoredirect.aspx']").attr("href") ?? "";
+    const enlace = /documentoredirect\.aspx\?bd=(\d+)&item=(\d+)/.exec(href);
     if (!enlace) continue; // cabecera o fila de relleno
     const item = Number(enlace[2]);
     if (!Number.isFinite(item) || vistos.has(item)) continue;
     vistos.add(item);
 
-    const celdas = [...fila[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) =>
-      limpiar(c[1].replace(/<[^>]+>/g, " ")),
-    );
+    const celdas = tds.map((td) => textoDe(td));
     docs.push({
       item,
       bd: Number(enlace[1]),

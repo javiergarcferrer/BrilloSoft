@@ -19,6 +19,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { CAPITULOS, SECCIONES_INSTITUCIONALES, titulizar } from "./capitulos";
+import { MESES } from "@/lib/format";
 
 export interface MesEjecucion {
   /** 1–12. */
@@ -208,10 +209,7 @@ export async function getResumenFiscal(): Promise<ResumenFiscal | null> {
 }
 
 /** Nombre del mes en es-DO, para declarar el corte. */
-export const MESES_LARGOS = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
+export const MESES_LARGOS = MESES;
 
 export function etiquetaCorte(mes: number, anio: number): string {
   const nombre = MESES_LARGOS[mes - 1] ?? "";

@@ -14,7 +14,10 @@ verified mechanics per source live there; this is what every adapter obeys.
   `User-Agent` (`Socratico-Inteligencia/1.0 (…; herramienta independiente)`),
   25 s timeout, exactly **one retry**, **validate `content-type`** on every
   response (a 200 can be an SPA shell or a WAF page), degrade to `null`, never
-  throw into a page. The panorama composes indicators with a fault-tolerant
+  throw into a page. **Implemented once in `lib/pedir.ts`** (`pedirJson`/
+  `pedirTexto`/`pedirBytes`, `zod` schema optional): use it, never a new
+  fetch loop. HTML through `lib/html.ts` (`cheerio`, `entities`), XLSX
+  through `lib/xlsx.ts`. The panorama composes indicators with a fault-tolerant
   `Promise.all`; one source down never blanks the page.
 - **GET only**, except the exact postbacks a public form itself performs
   (Senate `consultante`, Consultoría `Search`). Never a login, admin, or

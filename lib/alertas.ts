@@ -21,6 +21,9 @@
  * buen tiempo.
  */
 
+import { desentidadesXml } from "@/lib/html";
+import { pedirTexto } from "@/lib/pedir";
+
 const URL_RSS = "https://cap-sources.s3.amazonaws.com/do-indomet-es/rss.xml";
 const PREFIJO = "https://cap-sources.s3.amazonaws.com/do-indomet-es/";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (alertas meteorologicas; herramienta independiente)";
@@ -50,36 +53,18 @@ export interface Alertas {
   fuente: string;
 }
 
-async function pedir(url: string, revalidate: number): Promise<string | null> {
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT },
-        next: { revalidate },
-        signal: AbortSignal.timeout(25_000),
-      });
-      if (!res.ok) throw new Error(`respondió ${res.status}`);
-      if (!/xml/i.test(res.headers.get("content-type") ?? "")) return null;
-      return await res.text();
-    } catch (err) {
-      if (intento === 2) {
-        console.error(`[alertas] ${url}: ${String(err)}`);
-        return null;
-      }
-    }
-  }
-  return null;
+function pedir(url: string, revalidate: number): Promise<string | null> {
+  return pedirTexto(url, { fuente: "alertas", ua: USER_AGENT, tipo: /xml/i, revalidate });
 }
 
 function campo(xml: string, nombre: string): string {
   const m = new RegExp(`<cap:${nombre}>([\\s\\S]*?)</cap:${nombre}>`).exec(xml);
   return m
     ? m[1]
-        .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
+        // Un CDATA es texto literal; fuera de él, las entidades de XML.
+        .split(/(<!\[CDATA\[[\s\S]*?\]\]>)/)
+        .map((t) => (t.startsWith("<![CDATA[") ? t.slice(9, -3) : desentidadesXml(t)))
+        .join("")
         .replace(/\s+/g, " ")
         .trim()
     : "";

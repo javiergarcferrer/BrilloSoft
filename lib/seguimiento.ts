@@ -22,6 +22,8 @@
  * servidor.
  */
 
+import * as z from "zod/mini";
+
 const KEY = "lrd:seguimiento";
 const EVENTO = "lrd:seguimiento-cambio";
 
@@ -115,8 +117,25 @@ export function huellaDe(s: Situacion): string {
     .join(" · ");
 }
 
-const esTipo = (t: unknown): t is TipoSeguido =>
-  typeof t === "string" && (TIPOS_SEGUIDO as readonly string[]).includes(t);
+/*
+  La forma de una entrada guardada, con `zod/mini` (el `zod` que viaja al
+  navegador: unos pocos KB). Tipo e id son obligatorios; lo demás, si viene
+  roto, se descarta campo a campo en vez de tirar la entrada entera —el
+  almacenamiento lo pudo escribir una versión anterior de la plataforma—.
+*/
+const TEXTO = z.catch(z.optional(z.string()), undefined);
+const ENTRADA = z.object({
+  tipo: z.enum(TIPOS_SEGUIDO),
+  id: z.string().check(z.minLength(1)),
+  titulo: z.catch(z.optional(z.string().check(z.minLength(1))), undefined),
+  href: TEXTO,
+  huella: TEXTO,
+  desde: TEXTO,
+  visto: TEXTO,
+});
+
+/** Solo una ruta de la propia plataforma: nunca `//otro-sitio` ni `https:`. */
+const esRutaPropia = (h: string | undefined): h is string => !!h && h.startsWith("/") && !h.startsWith("//");
 
 function hrefProceso(codigo: string): string {
   return `/procesos/${encodeURIComponent(codigo)}`;
@@ -132,28 +151,20 @@ function normalizar(raw: unknown): Seguido[] {
     if (typeof x === "string" && x) {
       // La forma antigua: un código de proceso suelto.
       item = { tipo: "proceso", id: x, titulo: x, href: hrefProceso(x) };
-    } else if (
-      x &&
-      typeof x === "object" &&
-      esTipo((x as Seguido).tipo) &&
-      typeof (x as Seguido).id === "string" &&
-      (x as Seguido).id
-    ) {
-      const s = x as Seguido;
-      item = {
-        tipo: s.tipo,
-        id: s.id,
-        titulo: typeof s.titulo === "string" && s.titulo ? s.titulo : s.id,
-        href:
-          typeof s.href === "string" && s.href.startsWith("/") && !s.href.startsWith("//")
-            ? s.href
-            : s.tipo === "proceso"
-              ? hrefProceso(s.id)
-              : "/seguimiento",
-        ...(typeof s.huella === "string" ? { huella: s.huella } : {}),
-        ...(typeof s.desde === "string" ? { desde: s.desde } : {}),
-        ...(typeof s.visto === "string" ? { visto: s.visto } : {}),
-      };
+    } else {
+      const r = ENTRADA.safeParse(x);
+      if (r.success) {
+        const s = r.data;
+        item = {
+          tipo: s.tipo,
+          id: s.id,
+          titulo: s.titulo ?? s.id,
+          href: esRutaPropia(s.href) ? s.href : s.tipo === "proceso" ? hrefProceso(s.id) : "/seguimiento",
+          ...(s.huella !== undefined ? { huella: s.huella } : {}),
+          ...(s.desde !== undefined ? { desde: s.desde } : {}),
+          ...(s.visto !== undefined ? { visto: s.visto } : {}),
+        };
+      }
     }
     if (!item) continue;
     const k = `${item.tipo}:${item.id}`;

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase-config";
 
 /**
@@ -11,7 +12,34 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase-config";
 
 const REST = `${SUPABASE_URL}/rest/v1`;
 
-async function rest<T>(path: string, revalidate: number): Promise<T | null> {
+/**
+ * Las filas se validan con `zod` antes de sumarlas: una columna renombrada en
+ * la vista deja la cifra en «no disponible» con su motivo en el registro, en
+ * vez de sumar `undefined` y publicar `NaN` votos.
+ */
+const AGREGADOS = z.array(
+  z.looseObject({
+    camara: z.enum(["diputados", "senado"]),
+    ref: z.string(),
+    a_favor: z.number(),
+    en_contra: z.number(),
+    total: z.number(),
+    // La columna llega con la migración de Cuenta Única (PLAN-DEMOCRACIA §9),
+    // que no está aplicada en producción: hasta entonces, cero verificados.
+    verificados: z.number().default(0),
+  }),
+);
+const INICIATIVAS = z.array(
+  z.looseObject({
+    camara: z.enum(["diputados", "senado"]),
+    ref: z.string(),
+    numero: z.string().nullable(),
+    titulo: z.string().nullable(),
+    grupo: z.string().nullable(),
+  }),
+);
+
+async function rest<T>(path: string, revalidate: number, esquema: z.ZodType<T>): Promise<T | null> {
   try {
     const res = await fetch(`${REST}/${path}`, {
       headers: {
@@ -23,7 +51,9 @@ async function rest<T>(path: string, revalidate: number): Promise<T | null> {
       signal: AbortSignal.timeout(12_000),
     });
     if (!res.ok) throw new Error(`Supabase respondió ${res.status}`);
-    return (await res.json()) as T;
+    const r = esquema.safeParse(await res.json());
+    if (!r.success) throw new Error(`la vista cambió de forma: ${r.error.issues[0]?.path.join(".")}`);
+    return r.data;
   } catch (err) {
     console.error(`[democracia] ${path}: ${String(err)}`);
     return null;
@@ -50,7 +80,7 @@ export function refIniciativa(camara: Camara, id: string | number, cuatrienio?: 
 /** Agregado de una sola iniciativa (para el widget de voto en la ficha). */
 export async function getAgregado(camara: Camara, ref: string): Promise<Agregado | null> {
   const filtro = `camara=eq.${camara}&ref=eq.${encodeURIComponent(ref)}`;
-  const rows = await rest<Agregado[]>(`agregados_publicos?${filtro}&select=*`, 30);
+  const rows = await rest(`agregados_publicos?${filtro}&select=*`, 30, AGREGADOS);
   return rows?.[0] ?? { camara, ref, a_favor: 0, en_contra: 0, total: 0, verificados: 0 };
 }
 
@@ -70,10 +100,8 @@ export interface RankingItem extends Agregado {
  */
 export async function getRanking(limite = 60): Promise<RankingItem[]> {
   const [agg, inis] = await Promise.all([
-    rest<Agregado[]>(`agregados_publicos?select=*&order=total.desc&limit=${limite}`, 60),
-    rest<
-      { camara: Camara; ref: string; numero: string | null; titulo: string | null; grupo: string | null }[]
-    >(`iniciativas?select=camara,ref,numero,titulo,grupo`, 60),
+    rest(`agregados_publicos?select=*&order=total.desc&limit=${limite}`, 60, AGREGADOS),
+    rest(`iniciativas?select=camara,ref,numero,titulo,grupo`, 60, INICIATIVAS),
   ]);
   if (!agg) return [];
 
@@ -98,7 +126,7 @@ export interface ResumenDemocracia {
 
 /** Cifras de cabecera para el panorama y la landing. */
 export async function getResumenDemocracia(): Promise<ResumenDemocracia | null> {
-  const agg = await rest<Agregado[]>(`agregados_publicos?select=total`, 60);
+  const agg = await rest(`agregados_publicos?select=total`, 60, z.array(z.looseObject({ total: z.number() })));
   if (!agg) return null;
   return {
     votos: agg.reduce((s, a) => s + a.total, 0),

@@ -38,10 +38,12 @@
  * otros dos. Nunca se fabrica una comparación que el archivo no trae.
  *
  * Serie mensual, caché diaria (tasas: 6 h, porque traen filas diarias). Solo
- * servidor: reutiliza el lector de XLSX de `lib/deuda.ts` (`node:zlib`).
+ * servidor: lee con `lib/xlsx.ts`.
  */
 
-import { leerZip, type ArchivoZip } from "./deuda";
+import { pedirBytes } from "@/lib/pedir";
+import { indiceColumna, leerHoja as leerXlsx, type Hoja } from "@/lib/xlsx";
+import { MESES, numeroMes } from "@/lib/format";
 
 const BASE = "https://cdn.bancentral.gov.do/documents/estadisticas";
 export const URL_REMESAS = `${BASE}/sector-externo/documents/Remesas_6.xlsx`;
@@ -70,90 +72,18 @@ export interface Macro {
   tasaActiva: Indicador | null;
 }
 
-const NOMBRES_MES = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
+const periodo = (anio: number, mes: number) => `${MESES[mes - 1]} ${anio}`;
 
-/** «*Septiembre 2/», «ENERO », «Setiembre» → 9; otra cosa → 0. */
-function numeroMes(texto: string): number {
-  const t = texto
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[*]/g, "")
-    .replace(/\d\/\s*$/, "")
-    .trim()
-    .split(/\s+/)[0];
-  if (t === "setiembre") return 9;
-  return NOMBRES_MES.indexOf(t) + 1;
+function bajar(url: string, revalidate: number): Promise<ArrayBuffer | null> {
+  return pedirBytes(url, {
+    fuente: "macro",
+    ua: USER_AGENT,
+    tipo: /octet-stream|spreadsheetml|excel/i,
+    revalidate,
+    firma: "zip",
+  });
 }
 
-const periodo = (anio: number, mes: number) => `${NOMBRES_MES[mes - 1]} ${anio}`;
-
-async function bajar(url: string, revalidate: number): Promise<ArrayBuffer | null> {
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT },
-        next: { revalidate },
-        signal: AbortSignal.timeout(25_000),
-      });
-      // Un 5xx se reintenta una vez (el contrato de las capas); un tipo que no
-      // es una hoja no mejora reintentando.
-      if (!res.ok) throw new Error(`el CDN respondió ${res.status}`);
-      const tipo = res.headers.get("content-type") ?? "";
-      if (!/octet-stream|spreadsheetml|excel/i.test(tipo)) {
-        console.error(`[macro] ${url} ${res.status} ${tipo}`);
-        return null;
-      }
-      const buf = await res.arrayBuffer();
-      // Un 200 puede ser una página de error: un XLSX empieza por «PK».
-      if (new Uint8Array(buf.slice(0, 2)).join() !== "80,75") return null;
-      return buf;
-    } catch (err) {
-      if (intento === 2) {
-        console.error(`[macro] ${url} ${String(err)}`);
-        return null;
-      }
-    }
-  }
-  return null;
-}
-
-/** Fila → columna → texto de la primera hoja de trabajo. */
-type Hoja = Map<number, Map<string, string>>;
-
-function leerHoja(archivos: ArchivoZip[]): Hoja | null {
-  const hoja = archivos.find((a) => a.nombre === "xl/worksheets/sheet1.xml");
-  if (!hoja) return null;
-  const compartidas = archivos.find((a) => a.nombre === "xl/sharedStrings.xml");
-  const strs = compartidas
-    ? [...compartidas.datos.toString("utf8").matchAll(/<si>(.*?)<\/si>/gs)].map((m) =>
-        m[1].replace(/<[^>]+>/g, "").replace(/&amp;/g, "&"),
-      )
-    : [];
-  const filas: Hoja = new Map();
-  const xml = hoja.datos.toString("utf8");
-  for (const c of xml.matchAll(/<c r="([A-Z]+)(\d+)"([^>]*?)(?:\/>|>(.*?)<\/c>)/gs)) {
-    const cuerpo = c[4] ?? "";
-    let v = /<v>([^<]*)<\/v>/.exec(cuerpo)?.[1];
-    if (v === undefined) v = /<t[^>]*>([^<]*)<\/t>/.exec(cuerpo)?.[1]; // inlineStr
-    if (v === undefined || v === "") continue;
-    if (/t="s"/.test(c[3])) v = strs[Number(v)] ?? "";
-    const fila = Number(c[2]);
-    if (!filas.has(fila)) filas.set(fila, new Map());
-    filas.get(fila)!.set(c[1], v);
-  }
-  return filas;
-}
-
-/** «CW» → 101: para ordenar columnas y recorrer un bloque. */
-function indiceColumna(col: string): number {
-  let n = 0;
-  for (const ch of col) n = n * 26 + (ch.charCodeAt(0) - 64);
-  return n;
-}
 
 const numero = (v: string | undefined) => {
   const n = Number(v);
@@ -213,9 +143,7 @@ const redondear = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d;
 
 // ── Remesas ─────────────────────────────────────────────────────────────────
 
-export function parsearRemesas(archivos: ArchivoZip[]): Indicador | null {
-  const h = leerHoja(archivos);
-  if (!h) return null;
+export function parsearRemesas(h: Hoja): Indicador | null {
   const cab = filaDeAnios(h, /^PERIODOS?$/i);
   if (!cab) return null;
   const meses = filasDeMes(h, cab.fila);
@@ -242,9 +170,7 @@ export function parsearRemesas(archivos: ArchivoZip[]): Indicador | null {
 
 // ── Reservas internacionales ────────────────────────────────────────────────
 
-export function parsearReservas(archivos: ArchivoZip[]): Indicador | null {
-  const h = leerHoja(archivos);
-  if (!h) return null;
+export function parsearReservas(h: Hoja): Indicador | null {
   const cab = filaDeAnios(h, /^A[ñn]o$/i);
   if (!cab) return null;
   // Las subetiquetas (BRUTAS / NETAS / BRUTOS) van en alguna de las dos filas siguientes.
@@ -281,9 +207,7 @@ export function parsearReservas(archivos: ArchivoZip[]): Indicador | null {
 
 // ── Tasa de interés activa, bancos múltiples ────────────────────────────────
 
-export function parsearTasaActiva(archivos: ArchivoZip[]): Indicador | null {
-  const h = leerHoja(archivos);
-  if (!h) return null;
+export function parsearTasaActiva(h: Hoja): Indicador | null {
   // La columna del promedio ponderado se busca por su etiqueta; I es la conocida.
   let col = "I";
   for (const celdas of [...h.values()].slice(0, 12)) {
@@ -355,12 +279,13 @@ export function parsearTasaActiva(archivos: ArchivoZip[]): Indicador | null {
 async function leer(
   url: string,
   revalidate: number,
-  parsear: (a: ArchivoZip[]) => Indicador | null,
+  parsear: (h: Hoja) => Indicador | null,
 ): Promise<Indicador | null> {
   const buf = await bajar(url, revalidate);
   if (!buf) return null;
   try {
-    return parsear(await leerZip(buf));
+    const hoja = leerXlsx(buf);
+    return hoja ? parsear(hoja) : null;
   } catch (err) {
     console.error(`[macro] parseo ${url}: ${String(err)}`);
     return null;

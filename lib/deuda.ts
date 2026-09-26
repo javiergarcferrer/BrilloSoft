@@ -4,24 +4,25 @@
  * Mismo contrato que las demás capas: sin base de datos, lectura en vivo con
  * caché. La Dirección General de Crédito Público publica la evolución de la
  * deuda del Sector Público No Financiero (SPNF) como XLSX mensuales; esta
- * capa localiza el más reciente en el listado y lee el saldo sin
- * dependencias: un XLSX es un ZIP de XML, y solo necesitamos tres celdas.
+ * capa localiza el más reciente en el listado y lee el saldo con el lector de
+ * hojas de la casa (`lib/xlsx.ts`): solo necesitamos tres celdas.
  * La serie en el tiempo (`getSerieDeuda`) sale de la instantánea que arma
  * `scripts/build-deuda.py` recorriendo el listado de cada año.
  *
  * Reconocimiento en docs/AUDITORIA.md §3.3 y docs/PLAN-DEMOCRACIA.md §1.
  */
 
-// Módulo SOLO de servidor (usa node:zlib y node:fs): no importarlo desde
-// componentes cliente — webpack en Next 15 lo rechaza (lección de lib/nomina).
-import { inflateRaw } from "node:zlib";
-import { promisify } from "node:util";
+// Módulo SOLO de servidor (usa node:fs): no importarlo desde componentes
+// cliente — webpack en Next 15 lo rechaza (lección de lib/nomina).
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { decodeHTML } from "entities";
+import { pedirBytes, pedirTexto } from "@/lib/pedir";
+import { filasDe, leerHoja, type Hoja } from "@/lib/xlsx";
+import { MESES_CORTOS, mayuscula, numeroMes } from "@/lib/format";
 
 const BASE = "https://www.creditopublico.gob.do";
 const PAGINA = `${BASE}/inicio/estadisticas`;
-const inflate = promisify(inflateRaw);
 
 const USER_AGENT =
   "Socratico-Inteligencia/1.0 (monitoreo de deuda pública; herramienta independiente)";
@@ -48,78 +49,10 @@ export interface Deuda {
   generadoEn?: string;
 }
 
-/**
- * GET con el contrato de la casa: User-Agent identificable, 25 s, un
- * reintento y el content-type validado. El origen devuelve **200 con una
+/** El contrato de la casa (`lib/pedir.ts`). El origen devuelve **200 con una
  * página HTML** para cualquier ruta que no existe, así que un XLSX que no es
- * XLSX se descarta aquí y no llega al lector.
- */
-async function fetchBuffer(
-  url: string,
-  revalidate: number,
-  tipo: RegExp,
-): Promise<ArrayBuffer | null> {
-  for (let intento = 0; intento < 2; intento++) {
-    try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT },
-        next: { revalidate },
-        signal: AbortSignal.timeout(25_000),
-      });
-      if (!res.ok) return null;
-      if (!tipo.test(res.headers.get("content-type") ?? "")) return null;
-      return await res.arrayBuffer();
-    } catch (err) {
-      if (intento === 1) console.error(`[deuda] fetch ${url}: ${String(err)}`);
-    }
-  }
-  return null;
-}
-
-const TIPO_HTML = /text\/html/i;
-const TIPO_XLSX = /spreadsheetml|application\/octet-stream/i;
-
-/* ----------------------------------------------------- mini-lector de XLSX */
-
-export interface ArchivoZip {
-  nombre: string;
-  datos: Buffer;
-}
-
-/**
- * Extrae los archivos de un XLSX (ZIP). Soporta almacenamiento sin comprimir
- * (método 0) e inflado deflate (método 8) — es todo lo que produce Excel.
- * Exportado para `lib/tasa.ts` (XLSX del BCRD): un solo lector en la casa.
- */
-export async function leerZip(buf: ArrayBuffer): Promise<ArchivoZip[]> {
-  const b = Buffer.from(buf);
-  const archivos: ArchivoZip[] = [];
-  // Recorremos las cabeceras de archivo local (firma PK\x03\x04).
-  let i = 0;
-  while (i + 4 <= b.length) {
-    if (b.readUInt32LE(i) !== 0x04034b50) {
-      i++;
-      continue;
-    }
-    const metodo = b.readUInt16LE(i + 8);
-    const compSize = b.readUInt32LE(i + 18);
-    const nameLen = b.readUInt16LE(i + 26);
-    const extraLen = b.readUInt16LE(i + 28);
-    const nombre = b.toString("utf8", i + 30, i + 30 + nameLen);
-    const inicio = i + 30 + nameLen + extraLen;
-    const comprimido = b.subarray(inicio, inicio + compSize);
-    if (compSize > 0 && (nombre.endsWith(".xml") || nombre.endsWith(".rels"))) {
-      try {
-        const datos = metodo === 0 ? comprimido : await inflate(comprimido);
-        archivos.push({ nombre, datos });
-      } catch {
-        /* archivo ilegible: se ignora */
-      }
-    }
-    i = inicio + compSize;
-  }
-  return archivos;
-}
+ * XLSX se descarta ahí por su tipo y su firma y no llega al lector. */
+const PEDIDO = { fuente: "deuda", ua: USER_AGENT, revalidate: 21_600 } as const;
 
 function texto(xml: string, re: RegExp): string[] {
   return [...xml.matchAll(re)].map((m) => m[1]);
@@ -134,15 +67,11 @@ function fechaExcel(v: string | undefined): string | null {
     .slice(0, 10);
 }
 
-const MESES_CORTOS = [
-  "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
-];
 
 /** «2026-07-31» → «Jul-26», la misma etiqueta que usa la hoja del origen. */
 export function periodoDeFecha(iso: string): string {
   const [a, m] = iso.split("-");
-  return `${MESES_CORTOS[Number(m) - 1] ?? ""}-${a.slice(2)}`;
+  return `${mayuscula(MESES_CORTOS[Number(m) - 1] ?? "")}-${a.slice(2)}`;
 }
 
 /**
@@ -157,32 +86,12 @@ export function periodoDeFecha(iso: string): string {
  * la C antes; y las celdas de fórmula compartida (`<f t="shared" …/>`) traen
  * su valor calculado igual que las demás.
  */
-function parsearSaldo(
-  archivos: ArchivoZip[],
+export function parsearSaldo(
+  hoja: Hoja,
 ): Omit<Deuda, "fuente" | "desdeInstantanea" | "generadoEn"> | null {
-  const sheet = archivos.find((a) => a.nombre === "xl/worksheets/sheet1.xml");
-  const shared = archivos.find((a) => a.nombre === "xl/sharedStrings.xml");
-  if (!sheet) return null;
-
-  const strs = shared
-    ? texto(shared.datos.toString("utf8"), /<si>(.*?)<\/si>/gs).map((si) =>
-        si.replace(/<[^>]+>/g, ""),
-      )
-    : [];
-  const sxml = sheet.datos.toString("utf8");
-
-  const filas = [...sxml.matchAll(/<row[^>]*r="(\d+)"[^>]*>(.*?)<\/row>/gs)].map((f) => {
-    const m = new Map<string, string>();
-    for (const c of f[2].matchAll(
-      /<c r="([A-Z]+)\d+"(?:[^>]* t="([a-z]+)")?[^>]*>(?:<f[^>]*\/>|<f[^>]*>[^<]*<\/f>)?(?:<v>([^<]*)<\/v>)?/g,
-    )) {
-      let v = c[3];
-      if (v == null) continue;
-      if (c[2] === "s") v = strs[Number(v)] ?? v;
-      m.set(c[1], v.trim());
-    }
-    return m;
-  });
+  const filas = filasDe(hoja).map(
+    ({ celdas }) => new Map([...celdas].map(([col, v]) => [col, v.trim()] as const)),
+  );
 
   // La cabecera con dos «Saldo» y, debajo, sus fechas.
   let col: string | null = null;
@@ -221,10 +130,6 @@ function parsearSaldo(
 
 /* ------------------------------------------------------------- localizador */
 
-const MESES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
 
 /**
  * Saldo de deuda con doble vía: primero la lectura **en vivo** del XLSX más
@@ -338,13 +243,12 @@ export async function getSerieDeuda(): Promise<SerieDeuda | null> {
  * mes más reciente. Si la página no responde, degradamos a `null`.
  */
 async function getDeudaEnVivo(): Promise<Deuda | null> {
-  const htmlBuf = await fetchBuffer(PAGINA, 21_600, TIPO_HTML);
-  if (!htmlBuf) return null;
-  const html = Buffer.from(htmlBuf).toString("utf8");
+  const html = await pedirTexto(PAGINA, { ...PEDIDO, tipo: /text\/html/i });
+  if (!html) return null;
 
   // Enlaces de "Saldo Evolución …", con entidades HTML decodificadas.
   const enlaces = texto(html, /href="(\/Content\/estadisticas\/[^"]+\.xlsx)"/g)
-    .map((h) => decodeHtml(h))
+    .map((h) => decodeHTML(h))
     .filter((h) => /Saldo\s+Evoluci/i.test(h));
   if (enlaces.length === 0) return null;
 
@@ -353,25 +257,22 @@ async function getDeudaEnVivo(): Promise<Deuda | null> {
     const m = /\/anual\/(\d{4})\/(\d{1,2})([A-Za-zÁÉÍÓÚáéíóú]+)\//.exec(ruta);
     if (!m) return 0;
     const anio = Number(m[1]);
-    const mes = MESES.findIndex((x) => x.toLowerCase() === m[3].toLowerCase()) + 1;
+    const mes = numeroMes(m[3]);
     return anio * 100 + (mes > 0 ? mes : 0);
   };
   enlaces.sort((a, b) => rango(b) - rango(a));
 
   for (const ruta of enlaces.slice(0, 3)) {
     const url = BASE + encodeURI(ruta);
-    const buf = await fetchBuffer(url, 21_600, TIPO_XLSX);
+    const buf = await pedirBytes(url, {
+      ...PEDIDO,
+      tipo: /spreadsheetml|application\/octet-stream/i,
+      firma: "zip",
+    });
     if (!buf) continue;
-    const archivos = await leerZip(buf);
-    const saldo = parsearSaldo(archivos);
+    const hoja = leerHoja(buf);
+    const saldo = hoja ? parsearSaldo(hoja) : null;
     if (saldo) return { ...saldo, fuente: url, desdeInstantanea: false };
   }
   return null;
-}
-
-function decodeHtml(s: string): string {
-  return s
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
-    .replace(/&amp;/g, "&");
 }

@@ -1,4 +1,6 @@
+import { z } from "zod";
 import { etapaPorClave } from "@/lib/estados";
+import { pedirJsonOLanzar } from "@/lib/pedir";
 
 const BASE = "https://datosabiertos.dgcp.gob.do/api-dgcp/v1";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (compras publicas; herramienta independiente)";
@@ -115,6 +117,22 @@ export interface DgcpResponse<T> {
 
 export type Params = Record<string, string | number | boolean | undefined | null>;
 
+/**
+ * La envoltura de toda respuesta de la API de la DGCP. El contenido de cada
+ * ruta tiene su propia forma (y sus propias lecturas defensivas); lo que no
+ * puede cambiar sin que la plataforma cuente mal es esto: `payload.content`
+ * como lista (o `null` cuando no hay resultados) y los totales.
+ */
+const ENVOLTURA = z.looseObject({
+  code: z.number().optional(),
+  hasError: z.boolean().optional(),
+  payload: z.looseObject({ content: z.array(z.unknown()).nullable().optional() }).nullable().optional(),
+  page: z.number().nullable().optional(),
+  limit: z.number().nullable().optional(),
+  totalResults: z.number().nullable().optional(),
+  pages: z.number().nullable().optional(),
+});
+
 export async function dgcpFetch<T>(
   path: string,
   params: Params = {},
@@ -124,28 +142,27 @@ export async function dgcpFetch<T>(
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v));
   }
-  // La API pública a veces tarda o falla de forma transitoria: un timeout
-  // de 25s por intento y un único reintento.
-  let ultimo: unknown;
-  for (let intento = 0; intento < 2; intento++) {
-    try {
-      const res = await fetch(url.toString(), {
-        headers: { Accept: "application/json", "User-Agent": USER_AGENT },
-        next: { revalidate },
-        signal: AbortSignal.timeout(25000),
-      });
-      if (!res.ok) throw new Error(`DGCP respondió ${res.status} para ${path}`);
-      const data = (await res.json()) as DgcpResponse<T>;
-      if (data.hasError) throw new Error(`DGCP devolvió un error para ${path}`);
-      // Cuando no hay resultados la API devuelve payload.content = null.
-      if (!data.payload) data.payload = { content: [] };
-      if (!Array.isArray(data.payload.content)) data.payload.content = [];
-      return data;
-    } catch (e) {
-      ultimo = e;
-    }
+  // La API pública a veces tarda o falla de forma transitoria: el contrato de
+  // la casa (25 s por intento y un único reintento) en `lib/pedir.ts`.
+  let crudo: z.infer<typeof ENVOLTURA>;
+  try {
+    crudo = await pedirJsonOLanzar(url.toString(), {
+      fuente: "dgcp",
+      ua: USER_AGENT,
+      tipo: /json/i,
+      cabeceras: { Accept: "application/json" },
+      revalidate,
+      esquema: ENVOLTURA,
+    });
+  } catch (err) {
+    throw new Error(`DGCP ${path}: ${err instanceof Error ? err.message : String(err)}`);
   }
-  throw ultimo instanceof Error ? ultimo : new Error(`DGCP no disponible para ${path}`);
+  if (crudo.hasError) throw new Error(`DGCP devolvió un error para ${path}`);
+  const data = crudo as unknown as DgcpResponse<T>;
+  // Cuando no hay resultados la API devuelve payload.content = null.
+  if (!data.payload) data.payload = { content: [] };
+  if (!Array.isArray(data.payload.content)) data.payload.content = [];
+  return data;
 }
 
 export function normalize(s: string): string {

@@ -17,6 +17,8 @@
  */
 
 import type { Tono } from "@/lib/estados";
+import { z } from "zod";
+import { pedirJsonOLanzar } from "@/lib/pedir";
 
 const BASE = "https://www.diputadosrd.gob.do/sil/api";
 
@@ -106,38 +108,38 @@ function emptyPage<T>(): SilPage<T> {
 }
 
 /**
- * Wrapper único de todas las llamadas al SIL: timeout, **un reintento** y la
- * validación de `content-type` que exige la regla 1.
+ * La envoltura de toda respuesta paginada del SIL. Si el SIL renombra
+ * `total` o `results`, la lectura falla con su motivo en vez de contar cero
+ * o reventar más abajo en un `.map` de `undefined`.
+ */
+const PAGINA_SIL = z.looseObject({
+  page: z.number(),
+  pageSize: z.number(),
+  total: z.number(),
+  results: z.array(z.unknown()),
+});
+
+/**
+ * Wrapper único de todas las llamadas al SIL, sobre el contrato de la casa
+ * (`lib/pedir.ts`): timeout, **un reintento** y la validación de
+ * `content-type` que exige la regla 1 —HTML con 200 es un fallo de ruta
+ * disfrazado de éxito—. Las rutas paginadas (`?page=`) validan además su
+ * envoltura.
  */
 async function silFetch<T>(path: string, revalidate = 600): Promise<T> {
-  let ultimoError: unknown;
-
-  for (let intento = 0; intento < 2; intento++) {
-    try {
-      const res = await fetch(`${BASE}/${path}`, {
-        method: "GET",
-        headers: { Accept: "application/json", "User-Agent": USER_AGENT },
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-        next: { revalidate },
-      });
-
-      if (!res.ok) throw new Error(`El SIL respondió ${res.status}`);
-
-      // Regla 1: HTML con estado 200 es un fallo de ruta disfrazado de éxito.
-      const tipo = res.headers.get("content-type") ?? "";
-      if (!tipo.includes("application/json")) {
-        throw new Error(
-          `Ruta inexistente: el SIL devolvió ${tipo || "sin content-type"} en vez de JSON`,
-        );
-      }
-
-      return (await res.json()) as T;
-    } catch (err) {
-      ultimoError = err;
-    }
+  try {
+    return (await pedirJsonOLanzar(`${BASE}/${path}`, {
+      fuente: "congreso",
+      ua: USER_AGENT,
+      tipo: /application\/json/i,
+      cabeceras: { Accept: "application/json" },
+      espera: TIMEOUT_MS,
+      revalidate,
+      esquema: /[?&]page=/.test(path) ? PAGINA_SIL : undefined,
+    })) as T;
+  } catch (err) {
+    throw new Error(`SIL ${path}: ${err instanceof Error ? err.message : String(err)}`);
   }
-
-  throw new Error(`SIL ${path}: ${String(ultimoError)}`);
 }
 
 /** Como `silFetch`, pero degrada a `null` en vez de tumbar la vista. */

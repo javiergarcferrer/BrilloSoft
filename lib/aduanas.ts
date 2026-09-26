@@ -48,10 +48,13 @@
  * 25 s, un reintento, `content-type` validado (JSON para el índice; hoja de
  * cálculo y firma «PK» para los archivos), cada cifra se degrada sola a
  * `null` y nada lanza hacia la página. Serie mensual: caché de 24 h.
- * Solo servidor: reutiliza `leerZip` de `lib/deuda.ts` (`node:zlib`).
+ * Solo servidor: lee con `lib/xlsx.ts`.
  */
 
-import { leerZip } from "./deuda";
+import { z } from "zod";
+import { numeroMes } from "@/lib/format";
+import { pedirBytes, pedirJson } from "@/lib/pedir";
+import { filasDe, indiceColumna, leerHoja } from "@/lib/xlsx";
 
 export const ORIGEN_ADUANAS = "https://www.aduanas.gob.do";
 export const URL_INDICE_ADUANAS = `${ORIGEN_ADUANAS}/umbraco/api/searcher/getpageofdocuments?id=3442`;
@@ -110,61 +113,22 @@ const RANGO_MENSUAL: Record<UnidadAduanas, [number, number]> = {
   DOP: [1e9, 1e12], // hoy: ~RD$ 20,000 millones al mes
 };
 
-const MESES: Record<string, number> = {
-  enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7,
-  agosto: 8, septiembre: 9, setiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
-};
+/** Un mes escrito entero («Agosto», «Setiembre»): la fila de meses de la DGA. */
+const mesEntero = (v: string) => (/^\s*[a-záéíóú]{4,}\s*$/i.test(v) ? numeroMes(v) : 0);
 
 /* ------------------------------------------------------------------ red */
 
-async function pedir(url: string, tipo: RegExp): Promise<Response | null> {
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT },
-        next: { revalidate: REVALIDAR },
-        signal: AbortSignal.timeout(25_000),
-      });
-      // Un 5xx se reintenta una vez; un tipo equivocado no mejora reintentando.
-      if (!res.ok) throw new Error(`Aduanas respondió ${res.status}`);
-      const ct = res.headers.get("content-type") ?? "";
-      if (!tipo.test(ct)) {
-        console.error(`[aduanas] ${res.status} ${ct} ${url}`);
-        return null;
-      }
-      return res;
-    } catch (err) {
-      if (intento === 2) {
-        console.error(`[aduanas] ${String(err)} ${url}`);
-        return null;
-      }
-    }
-  }
-  return null;
+const PEDIDO = { fuente: "aduanas", ua: USER_AGENT, revalidate: REVALIDAR } as const;
+
+/** El índice es una lista de categorías; lo de dentro lo valida `elegirDocumento`. */
+const INDICE = z.array(z.looseObject({ categoryName: z.unknown(), documents: z.unknown() }));
+
+function leerIndice(): Promise<CategoriaIndice[] | null> {
+  return pedirJson(URL_INDICE_ADUANAS, { ...PEDIDO, tipo: /application\/json/i, esquema: INDICE });
 }
 
-async function leerIndice(): Promise<CategoriaIndice[] | null> {
-  const res = await pedir(URL_INDICE_ADUANAS, /application\/json/i);
-  if (!res) return null;
-  try {
-    const datos: unknown = await res.json();
-    return Array.isArray(datos) ? (datos as CategoriaIndice[]) : null;
-  } catch {
-    return null;
-  }
-}
-
-async function bajarHoja(url: string): Promise<ArrayBuffer | null> {
-  const res = await pedir(url, /spreadsheetml|octet-stream|excel/i);
-  if (!res) return null;
-  try {
-    const buf = await res.arrayBuffer();
-    // Un 200 puede ser una página de error: un XLSX empieza por «PK».
-    if (new Uint8Array(buf.slice(0, 2)).join() !== "80,75") return null;
-    return buf;
-  } catch {
-    return null;
-  }
+function bajarHoja(url: string): Promise<ArrayBuffer | null> {
+  return pedirBytes(url, { ...PEDIDO, tipo: /spreadsheetml|octet-stream|excel/i, firma: "zip" });
 }
 
 /** Elige el documento XLSX de la categoría cuyo nombre casa, el más reciente. */
@@ -199,44 +163,7 @@ export function elegirDocumento(
 
 /* --------------------------------------------------------------- parseo */
 
-function columna(letras: string): number {
-  let n = 0;
-  for (const ch of letras) n = n * 26 + (ch.charCodeAt(0) - 64);
-  return n;
-}
-
-function textoCelda(s: string): string {
-  return s
-    .replace(/<[^>]+>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
-}
-
 type Fila = { n: number; celdas: Map<number, string> };
-
-function leerFilas(hojaXml: string, compartidas: string[]): Fila[] {
-  const filas: Fila[] = [];
-  // Una fila vacía llega como `<row …/>`: se reconoce aparte para que no se
-  // trague la siguiente.
-  for (const f of hojaXml.matchAll(/<row\b([^>]*?)(?:\/>|>(.*?)<\/row>)/gs)) {
-    const n = Number(/\br="(\d+)"/.exec(f[1])?.[1]);
-    const celdas = new Map<number, string>();
-    for (const c of (f[2] ?? "").matchAll(/<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>(.*?)<\/c>)/gs)) {
-      const cuerpo = c[3] ?? "";
-      const v = /<v>([^<]*)<\/v>/.exec(cuerpo)?.[1];
-      let valor: string;
-      if (/t="s"/.test(c[2])) valor = v ? (compartidas[Number(v)] ?? "") : "";
-      else if (/t="inlineStr"/.test(c[2])) valor = textoCelda(cuerpo);
-      else valor = v ?? "";
-      if (valor.trim()) celdas.set(columna(c[1]), valor);
-    }
-    filas.push({ n, celdas });
-  }
-  return filas;
-}
 
 const esAnio = (s: string | undefined) => !!s && /^\s*(20\d{2})(\.0+)?\s*$/.test(s);
 
@@ -249,18 +176,16 @@ export async function parsearHojaAduanas(
   buf: ArrayBuffer,
   unidad: UnidadAduanas,
 ): Promise<Omit<SerieAduanas, "archivo" | "documento" | "publicado"> | null> {
-  const archivos = await leerZip(buf);
-  const hoja = archivos.find((a) => a.nombre === "xl/worksheets/sheet1.xml");
+  const hoja = leerHoja(buf);
   if (!hoja) return null;
-  const xmlCompartidas = archivos.find((a) => a.nombre === "xl/sharedStrings.xml");
-  const compartidas = xmlCompartidas
-    ? [...xmlCompartidas.datos.toString("utf8").matchAll(/<si>(.*?)<\/si>/gs)].map((m) => textoCelda(m[1]))
-    : [];
-  const filas = leerFilas(hoja.datos.toString("utf8"), compartidas);
+  const filas: Fila[] = filasDe(hoja).map(({ n, celdas }) => ({
+    n,
+    celdas: new Map([...celdas].filter(([, v]) => v.trim()).map(([col, v]) => [indiceColumna(col), v] as const)),
+  }));
 
   // Fila de meses: la primera con al menos 12 nombres de mes.
   const iMeses = filas.findIndex(
-    (f) => [...f.celdas.values()].filter((v) => MESES[v.trim().toLowerCase()]).length >= 12,
+    (f) => [...f.celdas.values()].filter((v) => mesEntero(v)).length >= 12,
   );
   if (iMeses < 0) return null;
   // Fila de años: la más cercana por encima con varios años.
@@ -284,7 +209,7 @@ export async function parsearHojaAduanas(
   const valores = new Map<string, number>(); // «2026-8» → valor
   const ultimaColumna = new Map<number, number>(); // año → columna de su último mes con dato
   for (const [col, texto] of filas[iMeses].celdas) {
-    const mes = MESES[texto.trim().toLowerCase()];
+    const mes = mesEntero(texto);
     if (!mes) continue;
     const anio = inicioAnio.filter((a) => a.col <= col).at(-1)?.anio;
     const v = Number(total.get(col));

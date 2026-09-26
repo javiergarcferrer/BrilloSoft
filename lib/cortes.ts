@@ -56,6 +56,10 @@
  * degrada a `null` por su cuenta; esta función nunca lanza.
  */
 
+import { desentidades } from "@/lib/html";
+import { MESES, numeroMes } from "@/lib/format";
+import { pedirTexto } from "@/lib/pedir";
+
 const USER_AGENT = "Socratico-Inteligencia/1.0 (mantenimientos programados; herramienta independiente)";
 const REVALIDAR = 21_600; // 6 h: las empresas publican una vez por semana.
 const TOPE_ENTRADAS = 2;
@@ -118,47 +122,12 @@ export interface Cortes {
   hoy: string;
 }
 
-async function pedir(url: string, tipo: RegExp): Promise<string | null> {
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT },
-        next: { revalidate: REVALIDAR },
-        signal: AbortSignal.timeout(25_000),
-      });
-      if (!res.ok) throw new Error(`respondió ${res.status}`);
-      const ct = res.headers.get("content-type") ?? "";
-      if (!tipo.test(ct)) {
-        console.error(`[cortes] ${url}: content-type inesperado «${ct}»`);
-        return null;
-      }
-      return await res.text();
-    } catch (err) {
-      if (intento === 2) {
-        console.error(`[cortes] ${url}: ${String(err)}`);
-        return null;
-      }
-    }
-  }
-  return null;
+function pedir(url: string, tipo: RegExp): Promise<string | null> {
+  return pedirTexto(url, { fuente: "cortes", ua: USER_AGENT, tipo, revalidate: REVALIDAR });
 }
 
-const ENTIDADES: Record<string, string> = {
-  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
-  aacute: "á", eacute: "é", iacute: "í", oacute: "ó", uacute: "ú",
-  Aacute: "Á", Eacute: "É", Iacute: "Í", Oacute: "Ó", Uacute: "Ú",
-  ntilde: "ñ", Ntilde: "Ñ", uuml: "ü", Uuml: "Ü", ordm: "º", ordf: "ª",
-  ndash: "–", mdash: "—", hellip: "…", rsquo: "’", lsquo: "‘", ldquo: "“", rdquo: "”",
-};
-
 function decodificar(s: string): string {
-  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
-    if (e[0] === "#") {
-      const n = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
-      return Number.isFinite(n) && n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m;
-    }
-    return ENTIDADES[e] ?? m;
-  });
+  return desentidades(s);
 }
 
 /** Texto plano de un fragmento HTML: sin etiquetas, entidades resueltas, espacios colapsados. */
@@ -188,10 +157,6 @@ function ventana(s: string): { desde: string; hasta: string } {
   return { desde: s.trim(), hasta: "" };
 }
 
-const MESES = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
 
 function iso(a: number, m: number, d: number): string | null {
   if (!(a > 2000 && m >= 1 && m <= 12 && d >= 1 && d <= 31)) return null;
@@ -208,7 +173,7 @@ function fechaNumerica(s: string): string | null {
 function fechaEnLetras(s: string): string | null {
   const m = /(\d{1,2})\s+de\s+([a-záéíóú]+),?\s+(?:de\s+)?(\d{4})/i.exec(s);
   if (!m) return null;
-  const mes = MESES.indexOf(m[2].toLowerCase().replace("setiembre", "septiembre")) + 1;
+  const mes = numeroMes(m[2]);
   return mes ? iso(Number(m[3]), mes, Number(m[1])) : null;
 }
 

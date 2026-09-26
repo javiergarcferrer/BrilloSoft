@@ -22,6 +22,9 @@
  * horas de generación), `null`: no se pinta un día a medias como si fuera uno.
  */
 
+import { z } from "zod";
+import { pedirJson } from "@/lib/pedir";
+
 const BASE = "https://apps.oc.org.do/wsOCWebsiteChart/Service.asmx";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (generacion electrica del OC; herramienta independiente)";
 
@@ -38,26 +41,31 @@ export interface DiaElectrico {
   fuente: string;
 }
 
-async function pedir<T>(ruta: string): Promise<T | null> {
-  for (let intento = 1; intento <= 2; intento++) {
-    try {
-      const res = await fetch(`${BASE}/${ruta}`, {
-        headers: { "User-Agent": USER_AGENT },
-        next: { revalidate: 3600 },
-        signal: AbortSignal.timeout(25_000),
-      });
-      if (!res.ok) throw new Error(`respondió ${res.status}`);
-      if (!/application\/json/i.test(res.headers.get("content-type") ?? "")) return null;
-      return (await res.json()) as T;
-    } catch (err) {
-      if (intento === 2) {
-        console.error(`[energia] ${ruta}: ${String(err)}`);
-        return null;
-      }
-    }
-  }
-  return null;
+function pedir<T>(ruta: string, esquema: z.ZodType<T>): Promise<T | null> {
+  return pedirJson(`${BASE}/${ruta}`, {
+    fuente: "energia",
+    ua: USER_AGENT,
+    tipo: /application\/json/i,
+    revalidate: 3600,
+    esquema,
+  });
 }
+
+/*
+  La forma de las dos respuestas del OC, validada: un campo renombrado deja
+  la tarjeta en «no disponible» con su motivo en el registro. Una hora con un
+  número nulo no invalida el resto; la cuenta de 24 horas completas decide.
+*/
+const GENERACION = z.looseObject({
+  GetGeneracionReprogramada: z
+    .array(z.looseObject({ PERIODO: z.number(), PROGRAMADO: z.number().nullable(), GENERACION: z.number().nullable() }))
+    .optional(),
+});
+const MARGINAL = z.looseObject({
+  GetCentralMarginalPonderada: z
+    .array(z.looseObject({ PERIODO: z.number(), CENTRAL: z.string().nullable() }))
+    .optional(),
+});
 
 /** Ayer en Santo Domingo, como ISO y como `MM/DD/YYYY` para el servicio. */
 function ayer(): { iso: string; oc: string } {
@@ -73,15 +81,18 @@ export async function getDiaElectrico(): Promise<DiaElectrico | null> {
   const { iso, oc } = ayer();
   const fecha = encodeURIComponent(oc);
   const [gen, marg] = await Promise.all([
-    pedir<{ GetGeneracionReprogramada?: { PERIODO: number; PROGRAMADO: number; GENERACION: number }[] }>(
-      `GetGeneracionReprogramadaJSon?Fecha=${fecha}`,
-    ),
-    pedir<{ GetCentralMarginalPonderada?: { PERIODO: number; CENTRAL: string }[] }>(
-      `GetCentralMarginalPonderadaJSon?Fecha=${fecha}`,
-    ),
+    pedir(`GetGeneracionReprogramadaJSon?Fecha=${fecha}`, GENERACION),
+    pedir(`GetCentralMarginalPonderadaJSon?Fecha=${fecha}`, MARGINAL),
   ]);
-  const filas = (gen?.GetGeneracionReprogramada ?? []).filter(
-    (f) => Number.isFinite(f.GENERACION) && Number.isFinite(f.PROGRAMADO) && f.PERIODO >= 1 && f.PERIODO <= 24,
+  const filas = (gen?.GetGeneracionReprogramada ?? []).flatMap((f) =>
+    typeof f.GENERACION === "number" &&
+    Number.isFinite(f.GENERACION) &&
+    typeof f.PROGRAMADO === "number" &&
+    Number.isFinite(f.PROGRAMADO) &&
+    f.PERIODO >= 1 &&
+    f.PERIODO <= 24
+      ? [{ PERIODO: f.PERIODO, GENERACION: f.GENERACION, PROGRAMADO: f.PROGRAMADO }]
+      : [],
   );
   if (new Set(filas.map((f) => f.PERIODO)).size !== 24) return null;
   const pico = filas.reduce((a, b) => (b.GENERACION > a.GENERACION ? b : a));

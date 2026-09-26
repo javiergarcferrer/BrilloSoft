@@ -30,7 +30,40 @@ export function formatFecha(iso: string | undefined, conHora = false): string {
   }).format(d);
 }
 
-const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+/**
+ * Los nombres de los meses salen de `Intl` y no de tablas copiadas: había
+ * nueve en `lib/`. `MESES` es «enero»…«diciembre»; `MESES_CORTOS`, sus tres
+ * primeras letras («sep», no el «sept» de `Intl`, que es la forma que ya
+ * usaban las etiquetas y las hojas del BCRD).
+ */
+export const MESES: readonly string[] = Array.from({ length: 12 }, (_, i) =>
+  new Intl.DateTimeFormat("es-DO", { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2026, i, 15))),
+);
+export const MESES_CORTOS: readonly string[] = MESES.map((m) => m.slice(0, 3));
+
+/**
+ * El mes que nombra la **primera palabra** de un texto: «Ago», «AGOSTO 2/»,
+ * «*Setiembre», «Sept.» → el número; otra cosa → 0. La palabra tiene que ser
+ * el nombre o una abreviatura de él (tres letras o más): «Mayor» o «Total»
+ * no son meses. Las hojas del BCRD mezclan abreviaturas inglesas.
+ */
+export function numeroMes(texto: string): number {
+  const w =
+    texto
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .find(Boolean) ?? "";
+  if (w.length < 3) return 0;
+  if (w.startsWith("set") && "setiembre".startsWith(w)) return 9;
+  const i = MESES.findIndex((m) => m.startsWith(w));
+  if (i >= 0) return i + 1;
+  return ({ jan: 1, apr: 4, aug: 8, dec: 12 } as Record<string, number>)[w] ?? 0;
+}
+
+/** «ene» → «Ene». */
+export const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** «2026-08» → «ago 2026»: un mes se nombra, no se codifica. */
 export function formatMes(aaaamm: string): string {

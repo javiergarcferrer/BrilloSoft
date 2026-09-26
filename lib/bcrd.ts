@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { MESES, MESES_CORTOS } from "@/lib/format";
 
 /**
  * Inflación (IPC) y llegadas de pasajeros por vía aérea, del Banco Central.
@@ -76,11 +77,6 @@ export function getBcrd(): Promise<Bcrd | null> {
   return memo;
 }
 
-const MESES = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
-];
-const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
 /** «2026-08» → «agosto 2026». */
 export function mesEnPalabras(periodo: string): string {
