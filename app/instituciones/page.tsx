@@ -20,6 +20,7 @@ import Plegable from "@/components/plegable";
 import { IconChevronRight } from "@/components/icons";
 import { normalize } from "@/lib/dgcp";
 import { enlace } from "@/lib/grafo";
+import { recortar } from "@/lib/raiz";
 
 /**
  * Filas que se ven en cada capítulo antes de plegar. El Ministerio de Defensa
@@ -49,7 +50,7 @@ export default async function InstitucionesPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const q = ((await searchParams).q ?? "").trim().slice(0, 80);
+  const q = recortar((await searchParams).q, 80);
   const fiscal = await getFiscal();
   const porCapitulo = new Map<string, Institucion[]>();
   for (const i of INSTITUCIONES) {
@@ -75,7 +76,7 @@ export default async function InstitucionesPage({
   const conTarjeta = capitulos.filter((c) => !propios.some((p) => p.i.capitulo === c.codigo));
   const locales = INSTITUCIONES.filter((i) => i.tipo === "Gobierno local").length;
   const hospitales = INSTITUCIONES.filter((i) => i.tipo === "Hospital").length;
-  const resultados = q ? buscarInstituciones(q, 60) : [];
+  const resultados = q ? buscarInstituciones(q, INSTITUCIONES.length) : [];
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -93,7 +94,7 @@ export default async function InstitucionesPage({
         <BuscadorUrl
           etiqueta="Buscar una institución"
           placeholder="Nombre o siglas: MINERD…"
-          ayuda="Busca en el nombre y las siglas de las 739 unidades de compra activas de la DGCP, sin distinguir tildes."
+          ayuda={`Busca en el nombre y las siglas de las ${formatInt(INSTITUCIONES.length)} unidades de compra activas de la DGCP: todas las palabras, en cualquier orden y sin distinguir tildes.`}
         />
       </Suspense>
 
@@ -104,7 +105,11 @@ export default async function InstitucionesPage({
           </EstadoVacio>
         ) : (
           <Card as="section">
-            <ul className="divide-y divide-hairline">
+            <p className="px-5 pt-4 text-sm text-ink-soft" aria-live="polite">
+              <span className="font-mono tabular-nums">{formatInt(resultados.length)}</span>{" "}
+              {resultados.length === 1 ? "institución" : "instituciones"} para «{q}»
+            </p>
+            <ul className="mt-2 divide-y divide-hairline">
               {resultados.map((i) => (
                 <FilaInstitucion key={i.id} i={i} />
               ))}

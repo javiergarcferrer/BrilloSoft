@@ -1,5 +1,6 @@
 import { ORDENES, type FiltrosProcesos, type OrdenProceso } from "@/lib/dgcp";
 import { ETAPAS, etapaDe } from "@/lib/estados";
+import { recortar } from "@/lib/raiz";
 
 /* Enumeraciones cerradas: lo que no esté en la lista no llega a la capa. */
 const ETAPAS_VALIDAS = new Set(ETAPAS.map((e) => e.clave as string));
@@ -35,7 +36,7 @@ export function filtrosDeQuery(sp: URLSearchParams): FiltrosProcesos {
   // Booleanos de la DGCP: solo «true»/«false»; cualquier otra cosa no viaja.
   const si = (v: string | null) => (v === "true" || v === "false" ? v : undefined);
   return {
-    q: sp.get("q")?.slice(0, 200) || undefined,
+    q: recortar(sp.get("q"), 200) || undefined,
     proceso: sp.get("proceso")?.slice(0, 80) || undefined,
     etapa: etapaPedida(sp),
     orden: orden && ORDENES_VALIDOS.has(orden) ? (orden as OrdenProceso) : undefined,

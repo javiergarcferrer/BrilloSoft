@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { agujas, contieneTodas, plano } from "@/lib/raiz";
+import { institucionPorId } from "@/lib/instituciones";
 
 /**
  * Auditorías y declaraciones juradas — lo que publican los dos órganos de
@@ -139,10 +141,6 @@ export interface InformeAuditoria {
   replica: boolean;
 }
 
-function sinTildes(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
 /** Los informes de ambos órganos, del más reciente al más antiguo. */
 export function informesDe(d: Auditorias): InformeAuditoria[] {
   const cgr: InformeAuditoria[] = d.contraloria.informes.map((i) => ({
@@ -168,16 +166,24 @@ export function informesDe(d: Auditorias): InformeAuditoria[] {
   return [...cgr, ...ccrd].sort((a, b) => (b.fecha ?? "").localeCompare(a.fecha ?? ""));
 }
 
-/** Filtra por órgano y por todas las palabras en título, institución y período, sin tildes. */
+/**
+ * Filtra por órgano y por todas las palabras —en cualquier orden, por raíz—
+ * en título, institución, período y el nombre completo de la institución
+ * auditada: 31 de los 48 informes de la Contraloría traen solo las siglas, y
+ * «turismo» tiene que encontrar al MITUR.
+ */
 export function filtrarInformes(
   informes: InformeAuditoria[],
   { q, fuente }: { q?: string; fuente?: FuenteAuditoria },
 ): InformeAuditoria[] {
-  const palabras = sinTildes(q ?? "").split(/\s+/).filter(Boolean);
+  const aguja = q?.trim() ? agujas(q) : null;
   return informes.filter((i) => {
     if (fuente && i.fuente !== fuente) return false;
-    if (!palabras.length) return true;
-    const h = sinTildes(`${i.titulo} ${i.institucion ?? ""} ${i.periodo ?? ""}`);
-    return palabras.every((p) => h.includes(p));
+    if (!aguja) return true;
+    const completa = i.uc != null ? institucionPorId(i.uc) : null;
+    const h = plano(
+      `${i.titulo} ${i.institucion ?? ""} ${i.periodo ?? ""} ${completa ? `${completa.nombre} ${completa.acronimo}` : ""}`,
+    );
+    return contieneTodas(h, aguja);
   });
 }

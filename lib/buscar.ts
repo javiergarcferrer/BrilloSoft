@@ -9,9 +9,22 @@
  * (licitaciones, Senado) se ofrece como enlace con su alcance, no se finge.
  */
 
-import { INSTITUCIONES, hrefInstitucion } from "@/lib/instituciones";
-import { normalize } from "@/lib/dgcp";
+/*
+  Módulo ligero a propósito: lo corre el middleware (`middleware.ts`) para que
+  el atajo sea una redirección HTTP de verdad —un 307 con `Location`— y no la
+  del flujo que ya empezó a enviar `app/loading.tsx`, que curl, los buscadores
+  y el formulario sin JavaScript no seguían. Por eso lee el cruce de
+  instituciones del JSON y no de `lib/instituciones.ts`, que arrastra la capa
+  de la DGCP y la caché de Next.
+*/
+import datos from "@/public/data/instituciones.json";
 import { enlace } from "@/lib/grafo";
+
+const INSTITUCIONES = (datos as { instituciones: { id: number; nombre: string; acronimo: string }[] })
+  .instituciones;
+
+const normalize = (s: string) => (s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+const hrefInstitucion = (i: (typeof INSTITUCIONES)[number]) => enlace.institucion(i.id, i.acronimo || i.nombre);
 
 const RUTA_NORMA: Record<string, string> = {
   ley: "ley",
@@ -28,11 +41,12 @@ export function rutaDirecta(consulta: string): string | null {
   // RNC (9 dígitos) o cédula (11): el registro de proveedores busca por ambos.
   if (/^\d{9}$|^\d{11}$/.test(digitos)) return `/proveedores?q=${digitos}`;
 
-  // «Ley 47-20», «decreto núm. 606-26», «Resolución No. 12-2025».
-  const cita = /^(ley|decreto|reglamento|resoluci[oó]n)\s*(?:n[uú]m(?:ero)?\.?|no\.?|n\.?\s*[oº°]\.?)?\s*(\d{1,4}-\d{2,4})$/i.exec(
+  // «Ley 47-20», «decreto núm. 606-26», «Resolución No. 12-2025», y también
+  // «ley 47 20», como se teclea en el teléfono sin buscar el guion.
+  const cita = /^(ley|decreto|reglamento|resoluci[oó]n)\s*(?:n[uú]m(?:ero)?\.?|no\.?|n\.?\s*[oº°]\.?)?\s*(\d{1,4})\s*[-\s]\s*(\d{2,4})$/i.exec(
     q,
   );
-  if (cita) return enlace.norma(RUTA_NORMA[normalize(cita[1])], cita[2]);
+  if (cita) return enlace.norma(RUTA_NORMA[normalize(cita[1])], `${cita[2]}-${cita[3]}`);
 
   // Código de proceso de la DGCP: SIGLAS-XXX-MOD-AAAA-NNNN.
   if (/^[A-Z0-9]{2,15}(-[A-Z0-9]{1,10}){2,4}-\d{4}-\d{3,5}$/i.test(q)) {

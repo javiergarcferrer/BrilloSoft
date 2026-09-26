@@ -29,7 +29,8 @@ export function BuscadorUrl({
 }) {
   const [pendiente, iniciar] = useTransition();
   const [url, setUrl] = useQueryStates(
-    { q: parseAsString, pagina: parseAsString },
+    // Las superficies nombran su página de tres maneras; se limpian las tres.
+    { q: parseAsString, pagina: parseAsString, p: parseAsString, page: parseAsString },
     { history: "push", shallow: false, startTransition: iniciar },
   );
   const inicial = url.q ?? "";
@@ -41,7 +42,7 @@ export function BuscadorUrl({
     const q = texto.trim();
     // Una búsqueda nueva es una lista nueva: empieza en su primera página, no
     // en la página por la que iba la anterior.
-    void setUrl({ q: q || null, pagina: null });
+    void setUrl({ q: q || null, pagina: null, p: null, page: null });
   };
 
   return (

@@ -13,7 +13,8 @@ import SelectorTema from "./selector-tema";
 import { hrefCongreso, TIPO_INICIAL, type FiltrosCongreso } from "./filtros";
 import { Esqueleto, EsqueletoFilas } from "@/components/esqueleto";
 import {
-  buscarIniciativas,
+  buscarIniciativasTolerante,
+  fraseParaSil,
   getGrupos,
   limpiarTexto,
   listIniciativasFiltradas,
@@ -22,6 +23,9 @@ import {
   legislaturaVigente,
   diffDias,
   type TipoIniciativa,
+  type BusquedaIniciativas,
+  type SilIniciativa,
+  type SilPage,
 } from "@/lib/congreso";
 import { TONOS } from "@/lib/estados";
 import { cn } from "@/lib/cn";
@@ -385,11 +389,13 @@ async function ListaIniciativas({
   page: number;
 }) {
   const { q } = pedidos;
-  const leerFiltrada = (grupo: number) =>
+  // El listado por tema solo acepta una frase: va con las tildes que el SIL conoce.
+  const fraseTema = q && pedidos.tema !== null ? fraseParaSil(q) : Promise.resolve(q);
+  const leerFiltrada = async (grupo: number, pagina = page) =>
     listIniciativasFiltradas(
-      page,
+      pagina,
       { grupo, tipo: pedidos.tipo, perimidas: pedidos.perimidas },
-      q,
+      await fraseTema,
     );
 
   // Los temas y la página pedida van en paralelo: con el tema de la URL casi
@@ -406,12 +412,22 @@ async function ListaIniciativas({
     Congreso. Las dos lecturas devuelven `null` cuando el SIL no contesta, así
     que cada pantalla sabe cuál le toca sin una petición de más.
   */
-  const respuesta =
-    filtros.tema !== null
-      ? await (filtros.tema === pedidos.tema && adelantada
-          ? adelantada
-          : leerFiltrada(filtros.tema))
-      : await buscarIniciativas(q, page, 300);
+  let busqueda: BusquedaIniciativas | null = null;
+  let respuesta: SilPage<SilIniciativa> | null;
+  let pagina = page;
+  if (filtros.tema !== null) {
+    respuesta = await (filtros.tema === pedidos.tema && adelantada ? adelantada : leerFiltrada(filtros.tema));
+    // Una página más allá de la última («?page=999») sirve la última, no una vacía.
+    const ultima = Math.max(1, Math.ceil((respuesta?.total ?? 0) / SIL_PAGE_SIZE));
+    if (respuesta && page > ultima) {
+      pagina = ultima;
+      respuesta = await leerFiltrada(filtros.tema, ultima);
+    }
+  } else {
+    busqueda = await buscarIniciativasTolerante(q, page);
+    respuesta = busqueda?.pagina ?? null;
+    pagina = busqueda?.page ?? page;
+  }
   const silCaido = respuesta === null;
   const iniciativas = (respuesta?.results ?? []).map(normalizarIniciativa);
   const total = respuesta?.total ?? 0;
@@ -440,6 +456,10 @@ async function ListaIniciativas({
           </>
         ) : null}
         {!silCaido && ` · ${alcance}`}
+        {busqueda?.enviado ? ` · también como «${busqueda.enviado}»` : null}
+        {busqueda?.truncado
+          ? ` · entre las ${busqueda.leidas.toLocaleString("es-DO")} más recientes de la palabra menos común`
+          : null}
       </p>
 
       {iniciativas.length > 0 ? (
@@ -468,7 +488,7 @@ async function ListaIniciativas({
       ) : (
         <EstadoVacio titulo="Sin resultados" className="mt-3">
           {q
-            ? "La búsqueda del SIL hace match de subcadena sobre la descripción. Prueba con menos palabras."
+            ? "Ninguna iniciativa lleva todas esas palabras en su descripción. Prueba con menos, o con otra forma de decirlo."
             : filtros.tema !== null
               ? "El SIL no tiene iniciativas de este tema con ese tipo y ese estado. Prueba con el otro tipo o con las perimidas."
               : "El SIL no devolvió iniciativas para esta página."}
@@ -477,7 +497,7 @@ async function ListaIniciativas({
 
       {total > 0 && (
         <Paginador
-          pagina={page}
+          pagina={pagina}
           paginas={totalPaginas}
           href={(p) => hrefCongreso(filtros, p)}
           etiqueta="Paginación de iniciativas"

@@ -11,6 +11,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import Antiguedad from "@/components/antiguedad";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card";
+import { agujas, contieneTodas, plano, recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/luz" },
@@ -22,10 +23,6 @@ export const metadata: Metadata = {
 export const revalidate = 21600;
 
 const EMPRESAS: Empresa[] = ["edenorte", "edesur"];
-
-function sinTildes(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
 
 /** «2026-09-25» → «viernes 25 de septiembre»: el día se nombra, no se codifica. */
 function nombreDia(fecha: string): string {
@@ -77,16 +74,17 @@ export default async function LuzPage({
   const sp = await searchParams;
   const d = await getCortes();
   const empresa = EMPRESAS.find((e) => e === sp.empresa) ?? null;
-  const q = sinTildes((sp.q ?? "").trim().slice(0, 80));
+  const q = recortar(sp.q, 80);
+  const aguja = q ? agujas(q) : null;
 
   const vistas = (empresa ? [empresa] : EMPRESAS).filter((e) => d[e] !== null);
   const caidas = (empresa ? [empresa] : EMPRESAS).filter((e) => d[e] === null);
   const todas = vistas.flatMap((e) => d[e] ?? []).sort(
     (a, b) => a.fecha.localeCompare(b.fecha) || a.desde.localeCompare(b.desde),
   );
-  const filas = q
+  const filas = aguja
     ? todas.filter((c) =>
-        sinTildes([c.provincia, c.municipio, c.zonas, c.circuito].filter(Boolean).join(" ")).includes(q),
+        contieneTodas(plano([c.provincia, c.municipio, c.zonas, c.circuito].filter(Boolean).join(" ")), aguja),
       )
     : todas;
 
@@ -157,7 +155,7 @@ export default async function LuzPage({
         <BuscadorUrl
           etiqueta="Buscar tu sector"
           placeholder="Provincia, municipio, sector o circuito: Naco, Moca, Baní…"
-          ayuda={`Busca en la provincia, el municipio, los sectores y el circuito de los ${formatInt(todas.length)} cortes anunciados de hoy en adelante${empresa ? ` por ${NOMBRE_EMPRESA[empresa]}` : ""}, sin distinguir tildes.`}
+          ayuda={`Busca en la provincia, el municipio, los sectores y el circuito de los ${formatInt(todas.length)} cortes anunciados de hoy en adelante${empresa ? ` por ${NOMBRE_EMPRESA[empresa]}` : ""}, todas las palabras en cualquier orden y sin distinguir tildes.`}
         />
       </Suspense>
 

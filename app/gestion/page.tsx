@@ -11,6 +11,7 @@ import { BuscadorUrl } from "@/components/buscador-url";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { agujas, contieneTodas, plano, recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/gestion" },
@@ -20,10 +21,6 @@ export const metadata: Metadata = {
 };
 
 export const revalidate = 86400;
-
-function sinTildes(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
 
 /**
  * ¿Qué tan bien se gestiona? — el ranking del SISMAP en tres tablas.
@@ -61,8 +58,9 @@ export default async function GestionPage({
     : "instituciones";
   const actual = TABLAS_SISMAP.find((t) => t.clave === tabla)!;
   const todas = d[tabla];
-  const q = sinTildes((sp.q ?? "").trim().slice(0, 80));
-  const filas = q ? todas.filter((f) => sinTildes(f.nombre).includes(q)) : todas;
+  const q = recortar(sp.q, 80);
+  const aguja = q ? agujas(q) : null;
+  const filas = aguja ? todas.filter((f) => contieneTodas(plano(f.nombre), aguja)) : todas;
   const valores = todas.map((f) => f.valor).sort((a, b) => a - b);
   const mediana = valores.length ? valores[Math.floor(valores.length / 2)] : 0;
   const bajoLaMitad = todas.filter((f) => f.valor < 50).length;
@@ -93,7 +91,7 @@ export default async function GestionPage({
 
       <NavFiltros etiqueta="Qué ranking ver">
         {TABLAS_SISMAP.map((t) => (
-          <FiltroEnlace key={t.clave} href={`/gestion?tabla=${t.clave}`} activo={t.clave === tabla}>
+          <FiltroEnlace key={t.clave} href={`/gestion?${new URLSearchParams(q ? { tabla: t.clave, q } : { tabla: t.clave })}`} activo={t.clave === tabla}>
             {t.nombre} · {formatInt(d[t.clave].length)}
           </FiltroEnlace>
         ))}
@@ -103,7 +101,7 @@ export default async function GestionPage({
         <BuscadorUrl
           etiqueta={`Buscar en ${actual.nombre.toLowerCase()}`}
           placeholder="Nombre: Educación, Santiago, Canca la Reina…"
-          ayuda={`Busca en el nombre de las ${formatInt(todas.length)} filas de este ranking, sin distinguir tildes.`}
+          ayuda={`Busca todas las palabras en el nombre de las ${formatInt(todas.length)} filas de este ranking, en cualquier orden y sin distinguir tildes.`}
         />
       </Suspense>
 

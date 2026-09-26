@@ -17,6 +17,7 @@ import datos from "@/public/data/instituciones.json";
 import { unstable_cache } from "next/cache";
 import { dgcpFetch, normalize, type Contrato, type Proceso } from "@/lib/dgcp";
 import { enlace } from "@/lib/grafo";
+import { agujas, contieneTodas, plano } from "@/lib/raiz";
 
 export interface Institucion {
   /** Código de unidad de compra de la DGCP. */
@@ -119,21 +120,27 @@ export function institucionDeNomina(codigo: string): Institucion | null {
 }
 
 /**
- * Coincidencia por nombre o acrónimo, sin tildes. Los ministerios y las
- * instituciones centrales van antes que hospitales y ayuntamientos, que son
- * muchos y rara vez lo que se busca por un nombre corto.
+ * Coincidencia por nombre o acrónimo con la regla de `lib/raiz.ts`: todas las
+ * palabras, en cualquier orden, sin tildes y por raíz («ministerio salud»,
+ * «hospitales»). Los ministerios y las instituciones centrales van antes que
+ * hospitales y ayuntamientos, que son muchos y rara vez lo que se busca por
+ * un nombre corto.
  */
 export function buscarInstituciones(q: string, limite = 30): Institucion[] {
   const needle = normalize(q.trim());
   if (!needle) return [];
+  const a = agujas(q);
   const peso = (i: Institucion) =>
     (normalize(i.acronimo) === needle ? 0 : 10) +
     (i.tipo === "Institución" ? 0 : i.tipo === "Gobierno local" ? 2 : 1);
-  return INSTITUCIONES.filter(
-    (i) => normalize(i.nombre).includes(needle) || normalize(i.acronimo).includes(needle),
-  )
+  return INSTITUCIONES.filter((i) => contieneTodas(plano(`${i.nombre} ${i.acronimo}`), a))
     .sort((a, b) => peso(a) - peso(b) || a.nombre.localeCompare(b.nombre, "es"))
     .slice(0, limite);
+}
+
+/** Las siglas de quien ejecuta, para buscar por ellas donde la fuente solo trae el nombre. */
+export function siglasDe(id: number | null | undefined): string {
+  return id == null ? "" : (POR_ID.get(id)?.acronimo ?? "");
 }
 
 /**

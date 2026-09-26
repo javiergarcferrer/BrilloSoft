@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { agujas, contieneTodas, plano } from "@/lib/raiz";
+import { siglasDe } from "@/lib/instituciones";
 import type { Tono } from "./estados";
 
 /**
@@ -213,20 +215,22 @@ export interface FiltroObras {
   uc?: number;
 }
 
-function sinTildes(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
+/**
+ * Nombre, entidad —con sus siglas, que la fuente no trae: «MOPC» encuentra
+ * las 691 del Ministerio de Obras Públicas— y provincias, con la regla de
+ * `lib/raiz.ts`: todas las palabras, en cualquier orden, por raíz. Un SNIP
+ * tecleado entero va directo a su obra.
+ */
 export function filtrarObras(obras: Obra[], f: FiltroObras): Obra[] {
-  const q = f.q ? sinTildes(f.q.trim()) : "";
+  const q = f.q?.trim() ?? "";
+  const a = q ? agujas(q) : null;
   return obras.filter(
     (o) =>
       (!f.estado || o.estado === f.estado) &&
       (!f.provincia || o.provincias.some((p) => slugProvincia(p) === f.provincia)) &&
       (f.uc === undefined || o.uc === f.uc) &&
-      (!q ||
+      (!a ||
         o.snip === q ||
-        sinTildes(o.nombre).includes(q) ||
-        sinTildes(o.entidad).includes(q)),
+        contieneTodas(plano(`${o.nombre} ${o.entidad} ${siglasDe(o.uc)} ${o.provincias.join(" ")}`), a)),
   );
 }

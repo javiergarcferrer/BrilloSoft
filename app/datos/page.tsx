@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getCatalogo, hrefConjunto } from "@/lib/catalogo";
-import { sinTildes } from "@/lib/biblioteca";
+import { agujas, contieneTodas, plano, recortar } from "@/lib/raiz";
 import { formatFecha } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
@@ -66,16 +66,15 @@ export default async function DatosPage({
   const grupo = grupos.has(sp.grupo ?? "") ? sp.grupo! : null;
   const formato = formatos.has(sp.formato ?? "") ? sp.formato! : null;
   const org = (sp.org ?? "").slice(0, 160) || null;
-  const q = (sp.q ?? "").trim().slice(0, 120);
-  const palabras = sinTildes(q).split(/[^a-z0-9ñ]+/).filter((p) => p.length > 1);
+  const q = recortar(sp.q, 120);
+  const aguja = q ? agujas(q) : null;
 
   const filtrados = c.conjuntos.filter((x) => {
     if (grupo && !x.grupos.includes(grupo)) return false;
     if (formato && !x.formatos.includes(formato)) return false;
     if (org && x.org !== org) return false;
-    if (palabras.length) {
-      const k = sinTildes(`${x.titulo} ${x.org}`);
-      if (!palabras.every((p) => k.includes(p))) return false;
+    if (aguja) {
+      if (!contieneTodas(plano(`${x.titulo} ${x.org}`), aguja)) return false;
     }
     return true;
   });
@@ -116,7 +115,7 @@ export default async function DatosPage({
       <Suspense>
         <BuscadorUrl
           etiqueta="Buscar en el catálogo"
-          placeholder="Nómina, precios, dengue, matrícula, accidentes…"
+          placeholder="Nómina, precios, hospitales, matrícula, accidentes…"
           ayuda={`Busca todas las palabras en el título y la organización de los ${formatInt(c.total)} conjuntos, sin distinguir tildes.`}
         />
       </Suspense>

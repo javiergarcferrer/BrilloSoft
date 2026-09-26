@@ -21,6 +21,7 @@ import BuscadorLegisladores, {
 } from "./filtros-legisladores";
 import { BarraFiltros, type ChipFiltro } from "@/components/barra-filtros";
 import { hrefDirectorio, type FiltrosDirectorio } from "./href";
+import { agujas, contieneTodas, plano } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/congreso/legisladores" },
@@ -92,14 +93,6 @@ export default async function LegisladoresPage({ searchParams }: Props) {
       </Suspense>
     </div>
   );
-}
-
-/** Sin tildes ni mayúsculas: «Mélido» se encuentra escribiendo «melido». */
-function plano(texto: string): string {
-  return texto
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
 }
 
 function contar<T>(items: T[], clave: (t: T) => string | null): Map<string, number> {
@@ -194,10 +187,11 @@ async function Directorio({ filtros, pagina }: { filtros: FiltrosDirectorio; pag
     });
   }
 
-  const q = plano(filtros.q);
+  // Todas las palabras, en cualquier orden: «Pérez Juan» encuentra a «Juan Pérez».
+  const q = filtros.q.trim() ? agujas(filtros.q) : null;
   const filtrados = porProvincia
     .filter((l) => !filtros.partido || l.partidoSiglas === filtros.partido)
-    .filter((l) => !q || plano(l.nombre).includes(q));
+    .filter((l) => !q || contieneTodas(plano(l.nombre), q));
 
   const paginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
   const actual = Math.min(pagina, paginas);

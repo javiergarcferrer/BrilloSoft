@@ -109,14 +109,18 @@ export default function Paleta() {
   // Lo que el índice de la plataforma encuentra (`/api/buscar`), pedido al
   // servidor a medida que se teclea: el corpus y el modelo no viajan al
   // navegador.
-  const [sugeridas, setSugeridas] = useState<Sugerida[]>([]);
+  // Van con la consulta que las trajo: al seguir tecleando, las de la
+  // anterior se dejan de ver en el acto. Antes seguían en pantalla bajo el
+  // texto nuevo y un Intro rápido abría un resultado de «agua potable»
+  // buscando «MINERD».
+  const [sugeridasDe, setSugeridasDe] = useState<{ q: string; lista: Sugerida[] }>({ q: "", lista: [] });
   // «No respondió» no es «no hay nada»: se dice, en una línea.
   const [fallo, setFallo] = useState(false);
   useEffect(() => {
     const q = texto.trim();
     setFallo(false);
     if (!abierta || q.length < 2) {
-      setSugeridas([]);
+      setSugeridasDe({ q: "", lista: [] });
       return;
     }
     const control = new AbortController();
@@ -125,7 +129,7 @@ export default function Paleta() {
         .then((r) => (r.ok ? r.json() : null))
         .then((r: { resultados?: Sugerida[] } | null) => {
           setFallo(r === null);
-          setSugeridas(Array.isArray(r?.resultados) ? r.resultados.filter((s) => s.href) : []);
+          setSugeridasDe({ q, lista: Array.isArray(r?.resultados) ? r.resultados.filter((s) => s.href) : [] });
         })
         .catch((err: unknown) => {
           // Abortar al seguir tecleando no es una caída.
@@ -151,6 +155,7 @@ export default function Paleta() {
   };
 
   const consulta = texto.trim();
+  const sugeridas = sugeridasDe.q === consulta ? sugeridasDe.lista : [];
   const sinSeccion = !!consulta && !INDICE.some((d) => coincide(consulta, claves(d)));
 
   // La búsqueda de la vertical en la que ya está el lector va primero: es la

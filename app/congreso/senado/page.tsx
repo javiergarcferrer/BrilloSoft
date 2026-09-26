@@ -163,6 +163,7 @@ async function ListadoSenado({ q, etiqueta }: { q: string; etiqueta: string }) {
               ) : (
                 <> en la colección {cuatrienio.etiqueta}</>
               )}
+              {listado.enviado ? ` · buscado como «${listado.enviado}»` : null}
             </span>
           </div>
 
@@ -177,16 +178,22 @@ async function ListadoSenado({ q, etiqueta }: { q: string; etiqueta: string }) {
           ) : (
             <EstadoVacio titulo="Sin resultados" className="mt-3">
               {q
-                ? "El consultante busca la subcadena exacta, con tildes. Prueba con menos palabras o revisa los acentos."
+                ? "Ningún expediente lleva esas palabras en su descripción, ni tal cual ni con tildes. Prueba con menos palabras o con otra forma de decirlo."
                 : "El Senado no devolvió expedientes para esta colección."}
             </EstadoVacio>
           )}
 
-          {listado.total > listado.expedientes.length && (
+          {listado.parcial && (
+            <p className="mt-4 text-xs leading-relaxed text-ink-soft">
+              Filtrado entre los primeros {SENADO_PAGE_SIZE} expedientes de cada forma de la palabra: puede haber
+              más. Escribe las tildes para buscar directo en el Senado.
+            </p>
+          )}
+          {!listado.parcial && listado.total > listado.expedientes.length && (
             <p className="mt-4 text-xs leading-relaxed text-ink-soft">
               {q
-                ? `El origen muestra hasta ${SENADO_PAGE_SIZE} resultados por consulta; hay ${listado.total.toLocaleString("es-DO")} en total. Afiná la búsqueda para acotar.`
-                : `Se muestran los ${listado.expedientes.length} expedientes más recientes de ${listado.total.toLocaleString("es-DO")}; el consultante del Senado no pagina hacia atrás. Para llegar al resto, buscá por texto.`}
+                ? `El origen muestra hasta ${SENADO_PAGE_SIZE} resultados por consulta; hay ${listado.total.toLocaleString("es-DO")} en total. Añade palabras para acotar.`
+                : `Se muestran los ${listado.expedientes.length} expedientes más recientes de ${listado.total.toLocaleString("es-DO")}; el consultante del Senado no pagina hacia atrás. Para llegar al resto, busca por texto.`}
             </p>
           )}
         </>

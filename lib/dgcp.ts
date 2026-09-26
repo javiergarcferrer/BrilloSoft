@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { etapaPorClave } from "@/lib/estados";
 import { pedirJsonOLanzar } from "@/lib/pedir";
+import { agujas, contieneTodas, plano } from "@/lib/raiz";
 
 const BASE = "https://datosabiertos.dgcp.gob.do/api-dgcp/v1";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (compras publicas; herramienta independiente)";
@@ -291,6 +292,21 @@ export interface FiltrosProcesos {
   orden?: OrdenProceso;
 }
 
+/** Código de proceso de la DGCP: `SIGLAS-XXX-MOD-AAAA-NNNN`, en cualquier caja. */
+const FORMA_CODIGO = /^[A-Z0-9]{2,15}(?:-[A-Z0-9]{1,10}){2,4}-\d{4}-\d{3,5}$/i;
+
+/**
+ * Un texto con forma de código de proceso es una búsqueda exacta, no de
+ * texto: va al filtro `proceso` que la API honra sobre el registro entero y
+ * deja fuera la etapa y las fechas. Antes se buscaba como texto dentro de las
+ * seis mil filas del barrido y un proceso de hace un mes no aparecía nunca.
+ */
+export function filtrosEfectivos<T extends FiltrosProcesos>(opts: T): T {
+  const q = opts.q?.trim();
+  if (!q || opts.proceso || !FORMA_CODIGO.test(q)) return opts;
+  return { ...opts, q: undefined, proceso: q.toUpperCase(), etapa: undefined, startdate: undefined, enddate: undefined };
+}
+
 function paramsComunes(opts: FiltrosProcesos): Params {
   const etapa = etapaPorClave(opts.etapa);
   return {
@@ -357,11 +373,15 @@ async function barrerProcesos(opts: FiltrosProcesos): Promise<Barrido> {
     filtrados = filtrados.filter((p) => etapa.coincide(p.estado_proceso));
   }
   if (q) {
-    const needle = normalize(q);
+    // Todas las palabras, en cualquier orden y por raíz (`lib/raiz.ts`):
+    // «reparacion porton» encuentra «Reparación del Portón». Antes se buscaba
+    // la frase entera y dos espacios seguidos ya no encontraban nada.
+    const a = agujas(q);
     filtrados = filtrados.filter((p) =>
-      normalize(
-        `${p.titulo} ${p.descripcion} ${p.unidad_compra} ${p.codigo_proceso} ${p.area_requiriente}`,
-      ).includes(needle),
+      contieneTodas(
+        plano(`${p.titulo} ${p.descripcion} ${p.unidad_compra} ${p.codigo_proceso} ${p.area_requiriente}`),
+        a,
+      ),
     );
   }
 
@@ -395,7 +415,8 @@ export interface DescargaProcesos {
  * haya texto ni etapa), acotado a `MAX_FILAS_DESCARGA`, y devuelve
  * `scanned`/`truncated` para que el archivo diga su alcance.
  */
-export async function descargarProcesos(opts: FiltrosProcesos): Promise<DescargaProcesos> {
+export async function descargarProcesos(pedidos: FiltrosProcesos): Promise<DescargaProcesos> {
+  const opts = filtrosEfectivos(pedidos);
   const b = await barrerProcesos(opts);
   return { filas: b.filtrados, scanned: b.scanned, truncated: b.truncated, censo: b.censo };
 }
@@ -419,15 +440,18 @@ export async function descargarProcesos(opts: FiltrosProcesos): Promise<Descarga
  * O se ordena todo lo que se declaró leer, o no se ofrece el orden.
  */
 export async function listProcesos(
-  opts: FiltrosProcesos & { page?: number; limit?: number },
+  pedidos: FiltrosProcesos & { page?: number; limit?: number },
 ): Promise<SearchResult> {
+  const opts = filtrosEfectivos(pedidos);
   const etapa = etapaPorClave(opts.etapa);
   // Una etapa de un solo estado la filtra la API; las demás hay que barrerlas.
   const filtrarAqui = Boolean(etapa && !etapa.estadoUnico);
   const q = opts.q?.trim();
   const orden = opts.orden ?? "recientes";
-  const limit = Math.max(1, opts.limit ?? 24);
-  const page = Math.max(1, opts.page ?? 1);
+  // Un número que no es número («?page=abc») no llega a la DGCP como NaN.
+  const entero = (v: number | undefined, d: number) => (Number.isFinite(v) ? Math.trunc(v!) : d);
+  const limit = Math.min(1000, Math.max(1, entero(opts.limit, 24)));
+  const page = Math.max(1, entero(opts.page, 1));
 
   if (!q && !filtrarAqui && orden === "recientes") {
     const data = await dgcpFetch<Proceso>("/procesos", { ...paramsComunes(opts), page, limit });
@@ -1301,13 +1325,18 @@ export async function buscarProveedores(
   mercadoPendiente?: Promise<MercadoProveedores | null>,
 ): Promise<ResultadoProveedores> {
   const consulta = q.trim();
-  const soloDigitos = consulta.replace(/\D/g, "");
+  // «RNC 101-87008-7», «RPE: 1234», «#1234», «cédula 001-…»: la etiqueta no es
+  // parte del número.
+  const sinEtiqueta = consulta
+    .replace(/^(?:rnc|rpe|c[eé]dula|ced\.?|documento|n[uú]m(?:ero)?\.?|no\.?|#)\s*[:#.]?\s*/i, "")
+    .trim();
+  const soloDigitos = sinEtiqueta.replace(/\D/g, "");
   // «1-01-87008-7», «101 87008 7» y «101870087» son el mismo RNC. Un texto con
   // letras nunca es un número de documento, por mucho dígito que lleve.
   const esNumero =
     soloDigitos.length > 0 &&
     soloDigitos.length <= 11 &&
-    /^[\d\s.-]+$/.test(consulta);
+    /^[\d\s.-]+$/.test(sinEtiqueta);
 
   // Un RNC tiene 9 dígitos y una cédula 11: a esa longitud la consulta es antes
   // un documento que un RPE. Con menos dígitos, al revés. La corazonada decide

@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { agujas, contieneTodas, plano, recortar } from "@/lib/raiz";
 
 /**
  * Biblioteca del Estado — un índice de los documentos (PDF, hojas de cálculo,
@@ -72,10 +73,6 @@ export function getIndiceBiblioteca(): Promise<IndiceBiblioteca | null> {
   return memoIndice;
 }
 
-export function sinTildes(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
 function filas() {
   memoFilas ??= readFile(join(DIR, "filas.json"), "utf8")
     .then((t) => {
@@ -83,7 +80,7 @@ function filas() {
       // La clave de búsqueda se calcula una vez por instancia: título y nombre
       // del archivo, sin tildes, con guiones y rayas como espacios.
       const claves = f.filas.map(([titulo, , , url]) =>
-        sinTildes(`${titulo} ${decodeURIComponent(url.split("/").pop() ?? "")}`).replace(/[-_.]+/g, " "),
+        plano(`${titulo} ${decodeURIComponent(url.split("/").pop() ?? "")}`.replace(/[_.]+/g, " ")),
       );
       return { filas: f, claves };
     })
@@ -98,8 +95,9 @@ function filas() {
 export const POR_PAGINA = 40;
 
 /**
- * Busca en los títulos. Todas las palabras de `q` deben aparecer (en
- * cualquier orden, sin distinguir tildes). Sin `q`, lo más reciente.
+ * Busca en los títulos. Todas las palabras de `q` deben aparecer, en
+ * cualquier orden, sin distinguir tildes y por raíz («memorias» encuentra
+ * «Memoria»; `lib/raiz.ts`). Sin `q`, lo más reciente.
  */
 export async function buscarDocumentos(opts: {
   q?: string;
@@ -109,16 +107,13 @@ export async function buscarDocumentos(opts: {
 }): Promise<{ docs: Documento[]; total: number; pagina: number; paginas: number } | null> {
   const d = await filas();
   if (!d) return null;
-  const palabras = sinTildes(opts.q ?? "")
-    .split(/[^a-z0-9ñ]+/)
-    .filter((p) => p.length > 1)
-    .slice(0, 8);
+  const aguja = opts.q?.trim() ? agujas(recortar(opts.q, 120)) : null;
   const iHost = opts.host ? d.filas.hosts.indexOf(opts.host) : -1;
   const aciertos: number[] = [];
   d.filas.filas.forEach((f, i) => {
     if (iHost >= 0 && f[4] !== iHost) return;
     if (opts.tipo === "hojas" ? !(f[2] === "xlsx" || f[2] === "xls") : opts.tipo && f[2] !== opts.tipo) return;
-    if (palabras.length && !palabras.every((p) => d.claves[i].includes(p))) return;
+    if (aguja && !contieneTodas(d.claves[i], aguja)) return;
     aciertos.push(i);
   });
   const paginas = Math.max(1, Math.ceil(aciertos.length / POR_PAGINA));

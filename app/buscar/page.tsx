@@ -10,7 +10,7 @@ import {
   type Resultado,
   type TipoResultado,
 } from "@/lib/busqueda";
-import { buscarIniciativas, desdeMayusculas, marcaDeIniciativa, normalizarIniciativa } from "@/lib/congreso";
+import { buscarIniciativasTolerante, desdeMayusculas, marcaDeIniciativa, normalizarIniciativa } from "@/lib/congreso";
 import { formatFecha, formatPesos } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { BUSQUEDAS } from "@/lib/secciones";
@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import { IconArrowRight, IconExternal } from "@/components/icons";
 import { enlace } from "@/lib/grafo";
+import { recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/buscar" },
@@ -55,7 +56,7 @@ export default async function BuscarPage({
   searchParams: Promise<{ q?: string; tipo?: string; pagina?: string }>;
 }) {
   const sp = await searchParams;
-  const q = (sp.q ?? "").trim().slice(0, 120);
+  const q = recortar(sp.q, 120);
   const tipo = esTipoResultado(sp.tipo) ? sp.tipo : undefined;
   const pagina = Math.max(1, Number.parseInt(sp.pagina ?? "1", 10) || 1);
   if (q) {
@@ -329,7 +330,7 @@ function FilaResultado({ r, q }: { r: Resultado; q: string }) {
 }
 
 async function Diputados({ q }: { q: string }) {
-  const pagina = await buscarIniciativas(q, 1, 300);
+  const pagina = (await buscarIniciativasTolerante(q, 1))?.pagina ?? null;
   if (!pagina) {
     return (
       <Card as="section" className="p-5">
@@ -351,7 +352,7 @@ async function Diputados({ q }: { q: string }) {
       titulo="Diputados"
       nota={
         pagina.total > lista.length
-          ? `${formatInt(pagina.total)} iniciativas de la Cámara lo mencionan; estas son las primeras.`
+          ? `${formatInt(pagina.total)} iniciativas de la Cámara llevan esas palabras; estas son las primeras.`
           : "En la descripción de las iniciativas de la Cámara de Diputados."
       }
       mas={pagina.total > lista.length ? { href: `/congreso?q=${encodeURIComponent(q)}`, texto: "Ver todas" } : undefined}

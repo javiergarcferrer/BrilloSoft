@@ -216,24 +216,36 @@ export function cargoBase(cargo: string): string {
     .replace(/[^a-z0-9. ]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-  for (const [re, pleno] of ABREVIATURAS) s = s.replace(re, pleno);
+  // «ENC.SECC. DE COMPRAS»: la abreviatura se expande con su espacio, o
+  // quedaba «encargadosecc» y el cargo no aparecía buscando «encargado».
+  for (const [re, pleno] of ABREVIATURAS) s = s.replace(re, `${pleno} `);
   return s
     .replace(/\./g, " ")
+    // «Sub-Director», «Sub Director» y «Subdirector» son el mismo cargo.
+    .replace(/\b(sub|vice)\s+/g, "$1")
     .replace(/\s+(i|ii|iii|iv|v)$/, "")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+/** «choferes» → «chofer», «médicos» → «medico», «jefes» → «jefe». */
+function singular(w: string): string {
+  if (/[lrndzj]es$/.test(w) && w.length > 4) return w.slice(0, -2);
+  if (/[aeiou]s$/.test(w) && w.length > 3) return w.slice(0, -1);
+  return w;
+}
+
 /**
  * El patrón de un cargo escrito por el lector. Cada palabra admite su femenino
- * y su plural: «secretaria» encuentra «Secretario (A)», «director» encuentra
- * «Directora». `null` si no hay nada que buscar.
+ * y su plural, **también tecleada en plural**: «secretaria» encuentra
+ * «Secretario (A)», «director» encuentra «Directora», «choferes» encuentra
+ * «Chofer». `null` si no hay nada que buscar.
  */
 export function patronCargo(texto: string): RegExp | null {
   const palabras = cargoBase(texto).split(" ").filter(Boolean);
   if (palabras.length === 0) return null;
   const partes = palabras.map((p) => {
-    const w = p.replace(/[^a-z0-9]/g, "");
+    const w = singular(p.replace(/[^a-z0-9]/g, ""));
     if (/[oa]$/.test(w)) return `${w.slice(0, -1)}[oa]s?`;
     if (/[^aeiou]$/.test(w)) return `${w}(?:a|es|as)?`;
     return `${w}s?`;

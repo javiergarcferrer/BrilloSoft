@@ -20,6 +20,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import Plegable from "@/components/plegable";
 import { Card } from "@/components/ui/card";
 import { FilaObra } from "@/components/fuentes-nuevas/fila-obra";
+import { recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/obras" },
@@ -70,7 +71,7 @@ export default async function ObrasPage({ searchParams }: { searchParams: Promis
   const ucNum = /^\d{1,6}$/.test(sp.uc ?? "") ? Number(sp.uc) : undefined;
   const institucion = ucNum !== undefined ? institucionPorId(ucNum) : null;
   const filtro: FiltroObras = {
-    q: (sp.q ?? "").slice(0, 80) || undefined,
+    q: recortar(sp.q, 80) || undefined,
     estado,
     provincia: provincia?.slug,
     uc: institucion ? institucion.id : undefined,
@@ -125,7 +126,7 @@ export default async function ObrasPage({ searchParams }: { searchParams: Promis
         <BuscadorUrl
           etiqueta="Buscar una obra"
           placeholder="Liceo, acueducto, código SNIP…"
-          ayuda={`Busca en el nombre, la entidad ejecutora y el código SNIP de las ${formatInt(datos.proyectos.length)} obras de la instantánea, sin distinguir tildes.`}
+          ayuda={`Busca en el nombre, la entidad ejecutora (también por sus siglas), la provincia y el código SNIP de las ${formatInt(datos.proyectos.length)} obras de la instantánea, todas las palabras en cualquier orden y sin distinguir tildes.`}
         />
       </Suspense>
 

@@ -29,6 +29,8 @@ import { Termino } from "@/components/termino";
 import { Paginador } from "@/components/paginador";
 import Plegable from "@/components/plegable";
 import { enlace } from "@/lib/grafo";
+import { Alert } from "@/components/ui/alert";
+import { recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/normativa" },
@@ -41,6 +43,22 @@ export const revalidate = 3600;
 
 const ANIO_ACTUAL = 2026;
 const ANIOS = [ANIO_ACTUAL, ANIO_ACTUAL - 1, ANIO_ACTUAL - 2, ANIO_ACTUAL - 3];
+
+const NOMBRE_CITA: Record<string, string> = {
+  ley: "la Ley",
+  decreto: "el Decreto",
+  reglamento: "el Reglamento",
+  resolucion: "la Resolución",
+};
+const sinTildesMin = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+/** El tipo de la pestaña, para una cita tecleada sin él («606-26» en decretos). */
+const TIPO_DE_CITA: Partial<Record<TipoNormativa, string>> = {
+  "1": "ley",
+  "3": "decreto",
+  "4": "reglamento",
+  "7": "resolucion",
+};
 
 /**
  * Normas por página. Un año de decretos son cientos: la lista entera en una
@@ -87,7 +105,13 @@ export default async function NormativaPage({
   const params = await searchParams;
   const tipo = (params.tipo && params.tipo in TIPOS_NORMATIVA ? params.tipo : "3") as TipoNormativa;
   const anio = ANIOS.includes(Number(params.anio)) ? Number(params.anio) : ANIO_ACTUAL;
-  const q = (params.q ?? "").trim().slice(0, 80);
+  const q = recortar(params.q, 80);
+  // Un año que no leemos no se cambia en silencio por el actual: se dice.
+  const anioFuera = params.anio && !ANIOS.includes(Number(params.anio)) ? params.anio.slice(0, 8) : null;
+  // «Ley 47-25», «decreto núm. 606-26», «606-26»: una cita tiene ficha propia.
+  const cita = /^(ley|decreto|reglamento|resoluci[oó]n)?\s*(?:n[uú]m(?:ero)?\.?|nos?\.?)?\s*(\d{1,4}-\d{2,4})$/i.exec(q);
+  const tipoCita = cita?.[1] ?? TIPO_DE_CITA[tipo];
+  const fichaCita = cita && tipoCita ? enlace.norma(tipoCita, cita[2]) : null;
   // El mes solo filtra decretos, y solo uno del año elegido.
   const mesPedido = params.mes ?? "";
   const mes =
@@ -131,6 +155,21 @@ export default async function NormativaPage({
           }${mes ? `, solo en los nombramientos y ceses de ${nombreMes(mes)}` : ""}, sin distinguir tildes; todas las palabras tienen que aparecer. No busca dentro del texto de la norma.`}
         />
       </Suspense>
+
+      {anioFuera && (
+        <Alert variant="aviso" className="mt-3">
+          No leemos {anioFuera}: esta vista cubre de {ANIOS.at(-1)} a {ANIO_ACTUAL}. Mostramos {anio}.
+        </Alert>
+      )}
+      {fichaCita && (
+        <p className="mt-3 text-sm text-ink-soft">
+          ¿Buscas la norma misma?{" "}
+          <Link href={fichaCita} className="font-medium text-brand-700 hover:underline">
+            Abrir {NOMBRE_CITA[sinTildesMin(tipoCita ?? "")] ?? tipoCita} {cita?.[2]}
+          </Link>
+          , sea del año que sea.
+        </p>
+      )}
 
       {/*
         Filtros de tipo y de año. A 390 px las dos barras envuelven en líneas

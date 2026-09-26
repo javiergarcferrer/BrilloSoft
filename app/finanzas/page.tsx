@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { etiquetaCorte, getFiscal, type InstitucionFiscal } from "@/lib/fiscal";
 import { SECCIONES_INSTITUCIONALES } from "@/lib/capitulos";
 import { getDeuda } from "@/lib/deuda";
-import { normalize } from "@/lib/dgcp";
+import { institucionesDelCapitulo } from "@/lib/instituciones";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -18,6 +18,7 @@ import { Termino } from "@/components/termino";
 import { DescargarCsv } from "./descargar-csv";
 import { SubsidioElectrico } from "@/components/fuentes-nuevas/subsidio-electrico";
 import { enlace } from "@/lib/grafo";
+import { agujas, contieneTodas, plano, recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/finanzas" },
@@ -85,7 +86,7 @@ export default async function FinanzasPage({
     );
   }
 
-  const q = (sp.q ?? "").trim().slice(0, 80);
+  const q = recortar(sp.q, 80);
   const seccion = sp.seccion && SECCIONES_INSTITUCIONALES[sp.seccion] ? sp.seccion : null;
   const orden: Orden = sp.orden && sp.orden in ORDENES ? (sp.orden as Orden) : "devengado";
 
@@ -100,14 +101,19 @@ export default async function FinanzasPage({
     return s ? `/finanzas?${s}#instituciones` : "/finanzas#instituciones";
   };
 
-  const aguja = normalize(q);
+  // Todas las palabras, en cualquier orden, sobre el nombre (que el SIGEF trae
+  // con espacios dobles) y las siglas de las unidades del capítulo: «MOPC».
+  const aguja = q.trim() ? agujas(q) : null;
   const visibles = fiscal.instituciones
     .filter((i) => !seccion || i.seccion === seccion)
     .filter(
       (i) =>
         !aguja ||
-        normalize(i.nombre).includes(aguja) ||
-        i.codigo.includes(aguja),
+        i.codigo === q.trim() ||
+        contieneTodas(
+          plano(`${i.nombre} ${institucionesDelCapitulo(i.codigo).map((u) => u.acronimo).join(" ")}`),
+          aguja,
+        ),
     )
     .sort((a, b) => ORDENES[orden].valor(b) - ORDENES[orden].valor(a));
 
@@ -357,7 +363,7 @@ export default async function FinanzasPage({
             <BuscadorUrl
               etiqueta="Buscar una institución en el presupuesto"
               placeholder="Nombre o capítulo: Educación, Obras Públicas, 0206…"
-              ayuda={`Busca en el nombre y el código de capítulo de las ${fiscal.instituciones.length} instituciones del Presupuesto General del Estado, sin distinguir tildes.`}
+              ayuda={`Busca en el nombre, las siglas y el código de capítulo de las ${fiscal.instituciones.length} instituciones del Presupuesto General del Estado, todas las palabras en cualquier orden y sin distinguir tildes.`}
             />
           </Suspense>
           <NavFiltros etiqueta="Sección institucional">

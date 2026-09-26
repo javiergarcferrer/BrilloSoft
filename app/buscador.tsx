@@ -753,9 +753,12 @@ export default function Buscador() {
               publicarse dos meses antes. Decirlo aquí es la diferencia entre
               «la plataforma no los tiene» y «pídelos bien».
             */}
-            {etapaSel && etapaSel.clave !== "abiertos"
-              ? "El rango de fechas filtra por publicación, no por cierre: un proceso que acaba de cerrar pudo publicarse mucho antes. Amplía «Publicado desde» para alcanzarlo."
-              : "Prueba ampliar el rango de fechas o quitar el filtro de etapa."}
+            {!startdate && !etapaSel
+              ? // Ya es todo el histórico y todas las etapas: ampliar no queda.
+                "Ningún proceso de los leídos lleva todas esas palabras. Prueba con menos, o busca por el código exacto del proceso."
+              : etapaSel && etapaSel.clave !== "abiertos"
+                ? "El rango de fechas filtra por publicación, no por cierre: un proceso que acaba de cerrar pudo publicarse mucho antes. Amplía «Publicado desde» para alcanzarlo."
+                : "Prueba ampliar el rango de fechas o quitar el filtro de etapa."}
           </EstadoVacio>
         ) : (
           <div

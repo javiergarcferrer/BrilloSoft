@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import Plegable from "@/components/plegable";
 import Antiguedad from "@/components/antiguedad";
 import { TextoEnlazado } from "@/components/texto-enlazado";
+import { agujas, contieneTodas, plano, recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/constitucional" },
@@ -26,10 +27,6 @@ export const revalidate = 21600;
 const POR_PAGINA = 40;
 /** Años a la vista como chips; el resto, a un toque. */
 const ANIOS_VISIBLES = 5;
-
-function sinTildes(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
 
 /**
  * ¿Qué ha decidido el Tribunal Constitucional? — el listado anual de la
@@ -49,7 +46,7 @@ export default async function ConstitucionalPage({
   const actual = anioActualTC();
   const pedido = Number(sp.anio);
   const anio = anios.includes(pedido) ? pedido : actual;
-  const q = (sp.q ?? "").trim().slice(0, 120);
+  const q = recortar(sp.q, 120);
 
   const url = (cambios: { anio?: number; q?: string; pagina?: number }) => {
     const u = new URLSearchParams();
@@ -125,11 +122,11 @@ export default async function ConstitucionalPage({
   }
 
   const todas = d.sentencias;
-  const palabras = sinTildes(q).split(/\s+/).filter(Boolean);
-  const filas = palabras.length
+  const aguja = q.trim() ? agujas(q) : null;
+  const filas = aguja
     ? todas.filter((s) => {
-        const h = sinTildes(`${s.numero} ${s.expediente ?? ""} ${s.relativo}`);
-        return palabras.every((p) => h.includes(p));
+        const h = plano(`${s.numero} ${s.expediente ?? ""} ${s.relativo}`);
+        return contieneTodas(h, aguja);
       })
     : todas;
   const paginas = Math.max(1, Math.ceil(filas.length / POR_PAGINA));

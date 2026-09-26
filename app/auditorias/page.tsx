@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import Plegable from "@/components/plegable";
 import Antiguedad from "@/components/antiguedad";
+import { recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/auditorias" },
@@ -92,7 +93,7 @@ export default async function AuditoriasPage({
   }
 
   const fuente = FUENTES.find((f) => f.clave && f.clave === sp.fuente)?.clave || undefined;
-  const q = (sp.q ?? "").trim().slice(0, 120);
+  const q = recortar(sp.q, 120);
   const todos = informesDe(d);
   const filas = filtrarInformes(todos, { q, fuente: fuente as FuenteAuditoria | undefined });
   const paginas = Math.max(1, Math.ceil(filas.length / POR_PAGINA));
@@ -163,7 +164,7 @@ export default async function AuditoriasPage({
           <BuscadorUrl
             etiqueta="Buscar en los informes de auditoría"
             placeholder="MINERD, EDENORTE, ayuntamiento, 2020…"
-            ayuda={`Busca todas las palabras en el título, la institución y el período de ${formatInt(todos.length)} informes, sin distinguir tildes. No busca dentro del PDF.`}
+            ayuda={`Busca todas las palabras, en cualquier orden, en el título, la institución (por nombre o siglas) y el período de ${formatInt(todos.length)} informes, sin distinguir tildes. No busca dentro del PDF.`}
           />
         </Suspense>
 

@@ -64,6 +64,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { agujas, plano, pruebas } from "@/lib/raiz";
 
 const norm = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -219,24 +220,29 @@ function ExplorerReady({ data, fichas }: { data: NominaData; fichas: FichasNomin
     [cargoPatron, cargoBases],
   );
 
+  // El cargo va también con su base expandida: «ENC. COMPRAS» se encuentra
+  // buscando «encargado compras».
   const { areaNorm, cargoNorm, instNorm } = useMemo(
     () => ({
-      areaNorm: data.areas.map(norm),
-      cargoNorm: data.cargos.map(norm),
-      instNorm: data.instituciones.map((i) => norm(`${i.codigo} ${i.nombre}`)),
+      areaNorm: data.areas.map((a) => plano(a)),
+      cargoNorm: data.cargos.map((c) => plano(`${c} ${cargoBase(c)}`)),
+      instNorm: data.instituciones.map((i) => plano(`${i.codigo} ${i.nombre}`)),
     }),
     [data],
   );
 
-  // search → matching dictionary indices
-  const { areaMatch, cargoMatch, instMatch } = useMemo(() => {
-    if (!query) return { areaMatch: null, cargoMatch: null, instMatch: null };
-    const q = norm(query);
-    return {
-      areaMatch: areaNorm.map((s) => s.includes(q)),
-      cargoMatch: cargoNorm.map((s) => s.includes(q)),
-      instMatch: instNorm.map((s) => s.includes(q)),
-    };
+  // Cada palabra de la búsqueda, con sus aciertos en cada diccionario. Las
+  // palabras pueden repartirse entre campos: «médico salud» es un cargo y
+  // una institución (`lib/raiz.ts`).
+  const porPalabra = useMemo(() => {
+    if (!query) return null;
+    const ps = pruebas(agujas(query));
+    if (ps.length === 0) return null;
+    return ps.map((p) => ({
+      area: areaNorm.map(p),
+      cargo: cargoNorm.map(p),
+      inst: instNorm.map(p),
+    }));
   }, [query, areaNorm, cargoNorm, instNorm]);
 
   // Los controles responden al toque; el barrido de miles de filas va detrás,
@@ -257,15 +263,15 @@ function ExplorerReady({ data, fichas }: { data: NominaData; fichas: FichasNomin
       if (min != null && s < min) continue;
       if (max != null && s > max) continue;
       if (
-        areaMatch &&
-        !(areaMatch[r[COL.AREA]] || cargoMatch![r[COL.CARGO]] || instMatch![r[COL.INST]])
+        porPalabra &&
+        !porPalabra.every((w) => w.area[r[COL.AREA]] || w.cargo[r[COL.CARGO]] || w.inst[r[COL.INST]])
       ) {
         continue;
       }
       out.push(r);
     }
     return out;
-  }, [data.rows, instFiltro, cargoEntra, min, max, areaMatch, cargoMatch, instMatch]);
+  }, [data.rows, instFiltro, cargoEntra, min, max, porPalabra]);
 
   // ---- el mismo cargo en cada institución
   /*

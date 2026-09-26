@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { buscarEnTodo, esTipoResultado, TIPOS_RESULTADO } from "@/lib/busqueda";
 import { desdeMayusculas } from "@/lib/congreso";
+import { recortar } from "@/lib/raiz";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ const ETIQUETA = Object.fromEntries(TIPOS_RESULTADO.map((t) => [t.clave, t.etiqu
  */
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
-  const q = (params.get("q") ?? "").trim().slice(0, 120);
+  const q = recortar(params.get("q"), 120);
   if (q.length < 2) return NextResponse.json({ resultados: [], total: 0 });
   const n = Math.min(20, Math.max(1, Number.parseInt(params.get("n") ?? "6", 10) || 6));
   const tipo = params.get("tipo");
@@ -31,7 +32,14 @@ export async function GET(req: Request) {
     if (!h) return NextResponse.json({ error: "El índice de búsqueda no cargó" }, { status: 502 });
     const tope = tipo ? n : Math.ceil(n / 2);
     const cuenta = new Map<string, number>();
-    const numerados = h.resultados.map((r, rango) => ({ r, rango }));
+    // Los primeros de cada tipo (`grupos`) entran también al reparto: entre
+    // los 24 primeros de «chofer» solo hay cargos, y los choferes que son
+    // proveedores quedaban fuera aunque la regla los quisiera.
+    const vistos = new Set(h.resultados.map((r) => r.href));
+    const numerados = [
+      ...h.resultados,
+      ...(tipo ? [] : h.grupos.flatMap((g) => g.resultados).filter((r) => !vistos.has(r.href))),
+    ].map((r, rango) => ({ r, rango }));
     const elegidos = numerados.filter(({ r }) => {
       const c = cuenta.get(r.tipo) ?? 0;
       if (c >= tope) return false;

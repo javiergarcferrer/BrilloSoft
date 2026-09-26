@@ -25,6 +25,7 @@ import path from "node:path";
 import { unstable_cache } from "next/cache";
 import { z } from "zod";
 import { filas, pedirJsonOLanzar } from "@/lib/pedir";
+import { agujas, contieneTodas, plano as planoConsulta } from "@/lib/raiz";
 
 const BASE = "https://www.consultoria.gov.do";
 
@@ -365,19 +366,20 @@ export async function normasDeInstitucion(
 /* ------------------------------------------------ búsqueda sobre los títulos */
 
 /**
- * Filtra una lista por texto sobre el número y el título, sin tildes ni
- * mayúsculas. Todas las palabras tienen que aparecer, en cualquier orden:
- * «designa embajador» encuentra «QUE DESIGNA AL SEÑOR…, EMBAJADOR…». No es
- * búsqueda en el texto íntegro de la norma: el origen no lo sirve indexado.
+ * Filtra una lista por texto sobre el tipo, el número y el título, con la
+ * regla de `lib/raiz.ts`: todas las palabras, en cualquier orden, sin tildes
+ * y por raíz —«designa embajador» encuentra «QUE DESIGNA AL SEÑOR…,
+ * EMBAJADOR…», «leyes» encuentra «Ley»—. «núm.» y «No.» son relleno, y un
+ * número se exige entero: «1-26» no encuentra «11-26». El año del número vale
+ * en dos cifras o en cuatro («47-20» y «47-2020»). No es búsqueda en el texto
+ * íntegro de la norma: el origen no lo sirve indexado.
  */
 export function filtrarPorTexto(docs: Documento[], q: string): Documento[] {
-  const plano = (s: string) =>
-    s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-  const palabras = plano(q).split(/\s+/).filter(Boolean);
-  if (palabras.length === 0) return docs;
+  const a = agujas(q);
+  if (a.raices.length === 0 && a.numeros.length === 0) return docs;
   return docs.filter((d) => {
-    const hay = plano(`${d.tipo} ${d.numero} ${d.titulo}`);
-    return palabras.every((p) => hay.includes(p));
+    const largo = d.numero.replace(/^(\d{1,4})-(\d{2})$/, (_, n: string, y: string) => `${n}-${Number(y) > 60 ? 19 : 20}${y}`);
+    return contieneTodas(planoConsulta(`${d.tipo} ${d.numero} ${largo} ${d.titulo}`), a);
   });
 }
 

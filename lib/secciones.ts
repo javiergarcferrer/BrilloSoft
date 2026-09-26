@@ -307,7 +307,7 @@ export const BUSQUEDAS: DestinoBusqueda[] = [
     seccion: "congreso",
     etiqueta: "Diputados",
     href: "/congreso",
-    alcance: "Dentro de la descripción de las iniciativas de la Cámara, no solo en el título.",
+    alcance: "Todas las palabras, en cualquier orden y con o sin tildes, dentro de la descripción de las iniciativas de la Cámara.",
   },
   {
     etiqueta: "Obras públicas",

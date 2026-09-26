@@ -49,8 +49,8 @@ export default function BuscadorCongreso({
       placeholder="Buscar — p. ej. “medio ambiente”"
       ayuda={
         filtros.tema
-          ? "Busca dentro de la descripción, solo entre las iniciativas del tema, tipo y estado elegidos. El SIL compara subcadenas, así que una frase entera también vale."
-          : "Busca dentro de la descripción de la iniciativa, no solo en el título. El SIL compara subcadenas, así que una frase entera también vale."
+          ? "Busca la frase dentro de la descripción, solo entre las iniciativas del tema, tipo y estado elegidos. Con o sin tildes."
+          : "Busca todas las palabras dentro de la descripción de la iniciativa, en cualquier orden y con o sin tildes."
       }
       pendiente={pendiente}
     />

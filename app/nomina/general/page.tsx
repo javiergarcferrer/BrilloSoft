@@ -21,6 +21,8 @@ import { Cifra, TiraDeCifras } from "@/components/papel";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { coincideConsulta, recortar } from "@/lib/raiz";
+import { siglasDe } from "@/lib/instituciones";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/nomina/general" },
@@ -33,16 +35,9 @@ export const revalidate = 86400;
 
 const CARGOS_POR_PAGINA = 50;
 
-function sinTildes(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
+/** Todas las palabras, en cualquier orden y por raíz (`lib/raiz.ts`). */
 function coincide(q: string, texto: string): boolean {
-  const k = sinTildes(texto);
-  return sinTildes(q)
-    .split(/[^a-z0-9ñ]+/)
-    .filter((p) => p.length > 1)
-    .every((p) => k.includes(p));
+  return coincideConsulta(texto, q);
 }
 
 /**
@@ -76,14 +71,14 @@ export default async function NominaGeneralPage({
     );
   }
 
-  const q = (sp.q ?? "").trim().slice(0, 80);
+  const q = recortar(sp.q, 80);
   const inst = sp.inst ? d.instituciones.find((i) => claveInstitucion(i.nombre) === sp.inst) : undefined;
   const periodo = mesGeneral(d.anio, d.mes);
 
   if (inst) return <Detalle inst={inst} periodo={periodo} q={q} pagina={Number(sp.p) || 1} fuente={d.fuente} generado={d.generado} />;
 
   const cambio = d.anterior ? variacion(d.plazas, d.anterior.plazas) : null;
-  const lista = q ? d.instituciones.filter((i) => coincide(q, i.nombre)) : d.instituciones;
+  const lista = q ? d.instituciones.filter((i) => coincide(q, `${i.nombre} ${siglasDe(i.uc)}`)) : d.instituciones;
   const maxPlazas = d.instituciones[0]?.plazas ?? 1;
 
   return (
@@ -123,7 +118,7 @@ export default async function NominaGeneralPage({
         <BuscadorUrl
           etiqueta="Buscar una institución"
           placeholder="Educación, Salud, Procuraduría, INAIPI…"
-          ayuda={`Busca en el nombre de las ${formatInt(d.instituciones.length)} instituciones de la nómina general, sin distinguir tildes.`}
+          ayuda={`Busca en el nombre y las siglas de las ${formatInt(d.instituciones.length)} instituciones de la nómina general, todas las palabras en cualquier orden y sin distinguir tildes.`}
         />
       </Suspense>
 
@@ -291,7 +286,7 @@ function Detalle({
         <BuscadorUrl
           etiqueta="Buscar un cargo"
           placeholder="Maestro, chofer, director, enfermera…"
-          ayuda={`Busca en los ${formatInt(inst.cargos.length)} cargos de esta institución, sin distinguir tildes.`}
+          ayuda={`Busca en los ${formatInt(inst.cargos.length)} cargos de esta institución, todas las palabras en cualquier orden y sin distinguir tildes.`}
         />
       </Suspense>
 

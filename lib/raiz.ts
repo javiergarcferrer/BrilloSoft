@@ -36,10 +36,160 @@ const CONTENIDO = new Set([
 export const PALABRAS_VACIAS: string[] = stopwords.filter((w) => !CONTENIDO.has(w));
 
 export function sinTildes(s: string): string {
+  // También la ñ pasa a n: quien teclea «ninos» en el teléfono busca «niños»,
+  // y el índice de `lib/busqueda.ts` se construyó así.
   return s.normalize("NFD").replace(/\p{M}/gu, "");
 }
 
 /** Lematiza una palabra ya en minúsculas. */
 export function lematizar(palabra: string): string {
   return stemmer(sinTildes(palabra));
+}
+
+/* ---------------------------------------------------- todas las palabras */
+
+/**
+ * Una consulta preparada para buscar **todas sus palabras** en un texto, sin
+ * tildes, en cualquier orden y por raíz: «reparacion porton» encuentra
+ * «Reparación del Portón», «portones» encuentra «portón», «ley no. 95-24»
+ * encuentra «Ley 95-24». Es la regla de `/buscar` llevada a los buscadores de
+ * cada vertical, que antes buscaban la frase entera tal cual.
+ *
+ * - Las palabras vacías («de», «la», «no», «núm.») no se exigen; si la
+ *   consulta es solo eso, se exigen tal cual.
+ * - Un número o una cita («47-20», «1-26», un RNC) se exige **entero**:
+ *   «1-26» no encuentra «11-26».
+ * - El texto se compara con `plano()`: minúsculas, sin tildes, signos como
+ *   espacio.
+ */
+export interface Agujas {
+  raices: string[];
+  numeros: RegExp[];
+}
+
+/**
+ * Minúsculas, sin tildes, y todo signo que no sea letra, cifra o guion como
+ * espacio. El guion solo se queda entre cifras («47-20», «2024-0001»): entre
+ * letras separa palabras, y «sub-director» lleva «director».
+ */
+export function plano(s: string): string {
+  return ` ${sinTildes(s)
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, " ")
+    .replace(/-(?![0-9])|(?<![0-9])-/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()} `;
+}
+
+/** Palabras que en una cita o una razón social son relleno: «núm.», «No.», «SRL». */
+const RELLENO = new Set([
+  "num", "nums", "numero", "no", "nos", "nro", "art",
+  // La forma jurídica no es el nombre: «Plaza Lama SRL» es «Plaza Lama, SA».
+  "srl", "sa", "sas", "eirl", "cxa", "spa", "ltda", "inc",
+]);
+
+export function agujas(consulta: string): Agujas {
+  const fichas = plano(consulta).trim().split(" ").filter(Boolean);
+  const numeros: RegExp[] = [];
+  const raices: string[] = [];
+  const vacias = new Set(PALABRAS_VACIAS);
+  for (const f of fichas) {
+    if (/\d/.test(f)) {
+      const limpio = f.replace(/^-+|-+$/g, "");
+      if (limpio) numeros.push(new RegExp(`(?<![0-9a-z])${limpio.replace(/-/g, "\\-")}(?![0-9a-z])`));
+      continue;
+    }
+    if (vacias.has(f) || RELLENO.has(f)) continue;
+    const palabra = f.replace(/-/g, " ").trim();
+    for (const p of palabra.split(" ")) {
+      if (p.length < 2) continue;
+      // La raíz, nunca más corta que tres letras: «ley» no se vuelve «le».
+      const r = stemmer(p);
+      raices.push(r.length >= 3 || r.length === p.length ? r : p.slice(0, 3));
+    }
+  }
+  if (raices.length === 0 && numeros.length === 0) {
+    for (const f of fichas) if (f.length >= 2) raices.push(f);
+  }
+  return { raices, numeros };
+}
+
+/**
+ * ¿Están todas? Cada raíz tiene que **empezar** una palabra del texto
+ * («salud» no casa dentro de «desaludo»); cada número, estar entero.
+ * `textoPlano` es el texto ya pasado por `plano()` (guárdelo si se repite).
+ */
+export function contieneTodas(textoPlano: string, a: Agujas): boolean {
+  return a.raices.every((r) => textoPlano.includes(` ${r}`)) && a.numeros.every((n) => n.test(textoPlano));
+}
+
+/**
+ * Una prueba por palabra, para cuando las palabras pueden caer en campos
+ * distintos (el cargo en uno, la institución en otro): la fila vale si cada
+ * prueba la pasa **alguno** de sus campos.
+ */
+export function pruebas(a: Agujas): ((textoPlano: string) => boolean)[] {
+  return [
+    ...a.raices.map((r) => (t: string) => t.includes(` ${r}`)),
+    ...a.numeros.map((n) => (t: string) => n.test(t)),
+  ];
+}
+
+/** Atajo: ¿el texto contiene todas las palabras de la consulta? */
+export function coincideConsulta(texto: string, consulta: string): boolean {
+  return contieneTodas(plano(texto), agujas(consulta));
+}
+
+/**
+ * Las palabras que cuentan de una consulta, en su forma plana y en orden:
+ * sin vacías ni relleno. Los números y citas van tal cual. Si la consulta es
+ * solo relleno, sus palabras.
+ */
+export function palabrasDeContenido(consulta: string): string[] {
+  const fichas = plano(consulta).trim().split(" ").filter(Boolean);
+  const vacias = new Set(PALABRAS_VACIAS);
+  const utiles = fichas.filter((f) => /\d/.test(f) || (f.length >= 2 && !vacias.has(f) && !RELLENO.has(f)));
+  return utiles.length ? utiles : fichas.filter((f) => f.length >= 2);
+}
+
+const AGUDA: Record<string, string> = { a: "á", e: "é", i: "í", o: "ó", u: "ú" };
+
+/**
+ * Las formas con tilde que una palabra tecleada sin ella puede tener en un
+ * origen que compara letra por letra (el SIL de la Cámara, el consultante del
+ * Senado): «educacion» → «educación», «publico» → «público», «ninos» →
+ * «niños». En español la tilde cae en una de las tres últimas sílabas, así que
+ * se prueba una tilde en cada una de las tres últimas vocales, y la ñ en cada
+ * «n» seguida de vocal. La palabra tal cual va primero. Si ya trae una tilde o
+ * una ñ, o es un número, se queda como vino.
+ */
+export function variantesAcento(palabra: string): string[] {
+  const p = palabra.toLowerCase();
+  if (/\d/.test(p) || /[^a-z-]/.test(p)) return [p];
+  const conTilde = (w: string) => {
+    const vocales = [...w.matchAll(/[aeiou]/g)].map((m) => m.index ?? 0);
+    return vocales.slice(-3).map((i) => w.slice(0, i) + AGUDA[w[i]] + w.slice(i + 1));
+  };
+  // «companias» → «compañías»: la ñ y la tilde a la vez.
+  const bases = [p];
+  for (const m of p.matchAll(/n(?=[aeiou])/g)) {
+    const i = m.index ?? 0;
+    if (i > 0) bases.push(p.slice(0, i) + "ñ" + p.slice(i + 1));
+  }
+  const salida = new Set<string>();
+  for (const b of bases) {
+    salida.add(b);
+    for (const v of conTilde(b)) salida.add(v);
+  }
+  return [...salida];
+}
+
+/**
+ * Lo tecleado, sin espacios en los bordes y cortado a `n` caracteres **sin
+ * partir un emoji**: `slice` corta unidades UTF-16, y medio emoji al final
+ * hacía que `encodeURIComponent` lanzara y la página cayera en el error.
+ */
+export function recortar(texto: string | null | undefined, n: number): string {
+  const t = (texto ?? "").trim();
+  return t.length <= n ? t : t.slice(0, n).replace(/[\uD800-\uDBFF]$/, "").trim();
 }

@@ -36,6 +36,7 @@ import { Resaltado } from "@/components/resaltado";
 import BuscadorProveedores from "./buscador";
 import { Portada } from "@/components/portada";
 import { enlace } from "@/lib/grafo";
+import { recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/proveedores" },
@@ -70,7 +71,7 @@ export default async function ProveedoresPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const params = await searchParams;
-  const consulta = (params.q ?? "").slice(0, 120).trim();
+  const consulta = recortar(params.q, 120);
 
   return (
     <div className="space-y-5">

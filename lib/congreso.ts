@@ -20,6 +20,7 @@ import type { Tono } from "@/lib/estados";
 import { z } from "zod";
 import { pedirJsonOLanzar } from "@/lib/pedir";
 import { enlace } from "@/lib/grafo";
+import { agujas, contieneTodas, palabrasDeContenido, plano, variantesAcento } from "@/lib/raiz";
 
 const BASE = "https://www.diputadosrd.gob.do/sil/api";
 
@@ -247,6 +248,149 @@ export async function buscarIniciativas(
 ): Promise<SilPage<SilIniciativa> | null> {
   const q = `iniciativa/getIniciativas?page=${page}&keyword=${encodeURIComponent(keyword)}`;
   return silFetchSafe<SilPage<SilIniciativa>>(q, revalidate);
+}
+
+/** Lo que el buscador de la Cámara hizo con la consulta, para decirlo en pantalla. */
+export interface BusquedaIniciativas {
+  pagina: SilPage<SilIniciativa>;
+  /** La página que se sirve, ya acotada al total. */
+  page: number;
+  /** Lo que se pidió al SIL, si difiere de lo tecleado («educación» por «educacion»). */
+  enviado: string | null;
+  /** `true`: se leyeron solo las primeras `leidas` iniciativas de la palabra más rara. */
+  truncado: boolean;
+  leidas: number;
+}
+
+/** Cuántas iniciativas de una palabra se leen para filtrar en casa: 30 páginas del SIL. */
+const LIMITE_LECTURA = 300;
+
+/** Las formas de una palabra que el SIL conoce, con cuántas iniciativas trae cada una. */
+async function formasEnSil(palabra: string, revalidate: number) {
+  const formas = await Promise.all(
+    variantesAcento(palabra).map(async (forma) => ({ forma, primera: await buscarIniciativas(forma, 1, revalidate) })),
+  );
+  if (formas.every((f) => f.primera === null)) return null;
+  const vivas = formas.filter((f) => (f.primera?.total ?? 0) > 0) as { forma: string; primera: SilPage<SilIniciativa> }[];
+  const total = vivas.reduce((n, f) => n + f.primera.total, 0);
+  const mejor = [...vivas].sort((a, b) => b.primera.total - a.primera.total)[0]?.forma ?? palabra;
+  return { palabra, vivas, total, mejor };
+}
+
+/** Todas las páginas de una forma, hasta `limite` filas, reusando la primera. */
+async function leerForma(forma: string, primera: SilPage<SilIniciativa>, limite: number, revalidate: number) {
+  const paginas = Math.min(Math.ceil(primera.total / SIL_PAGE_SIZE), Math.ceil(limite / SIL_PAGE_SIZE));
+  const filas = [...primera.results];
+  const resto = Array.from({ length: Math.max(0, paginas - 1) }, (_, i) => i + 2);
+  for (let i = 0; i < resto.length; i += CONCURRENCIA) {
+    const lote = await Promise.all(resto.slice(i, i + CONCURRENCIA).map((p) => buscarIniciativas(forma, p, revalidate)));
+    for (const r of lote) filas.push(...(r?.results ?? []));
+  }
+  return filas;
+}
+
+const recientes = (a: SilIniciativa, b: SilIniciativa) =>
+  (b.fechaDeposito ?? "").localeCompare(a.fechaDeposito ?? "") || b.id - a.id;
+
+/**
+ * El buscador de la Cámara, tolerante. El SIL compara la descripción letra por
+ * letra: ignora mayúsculas pero no tildes ni orden —verificado el 2026-09-26:
+ * «educación» trae 254, «educacion» 0; «medio ambiente» 69, «ambiente
+ * medio» 0—. Aquí se busca como en `/buscar`, **todas las palabras, en
+ * cualquier orden, con o sin tilde**:
+ *
+ *  1. Cada palabra se prueba con sus formas con tilde (`variantesAcento`) y se
+ *     queda con las que el SIL conoce.
+ *  2. Una sola palabra en una sola forma: la paginación es la del SIL.
+ *  3. Si no, se leen todas las iniciativas de la palabra más rara (hasta
+ *     `LIMITE_LECTURA`), se filtran aquí por todas las palabras y se paginan
+ *     aquí, las más recientes primero. Si la palabra más rara pasa del límite,
+ *     se prueba antes la frase tal cual; si tampoco, la lectura se declara
+ *     truncada.
+ *
+ * `null` si el SIL no contestó.
+ */
+export async function buscarIniciativasTolerante(
+  consulta: string,
+  page: number,
+  revalidate = 300,
+): Promise<BusquedaIniciativas | null> {
+  const palabras = palabrasDeContenido(consulta).slice(0, 4);
+  if (palabras.length === 0) {
+    const r = await buscarIniciativas("", page, revalidate);
+    return r && { pagina: r, page, enviado: null, truncado: false, leidas: 0 };
+  }
+  const formas = await Promise.all(palabras.map((w) => formasEnSil(w, revalidate)));
+  if (formas.some((f) => f === null)) return null;
+  const conocidas = formas as NonNullable<(typeof formas)[number]>[];
+  const vacia = (): BusquedaIniciativas => ({
+    pagina: { page: 1, pageSize: SIL_PAGE_SIZE, total: 0, results: [] },
+    page: 1,
+    enviado: null,
+    truncado: false,
+    leidas: 0,
+  });
+  // Una palabra que el SIL no conoce en ninguna forma: no hay ninguna con todas.
+  if (conocidas.some((f) => f.total === 0)) return vacia();
+
+  const sirvePorSil = async (clave: string, total: number): Promise<BusquedaIniciativas | null> => {
+    const ultima = Math.max(1, Math.ceil(total / SIL_PAGE_SIZE));
+    const p = Math.min(page, ultima);
+    const r = await buscarIniciativas(clave, p, revalidate);
+    const tecleado = plano(consulta).trim();
+    return r && { pagina: r, page: p, enviado: clave === tecleado ? null : clave, truncado: false, leidas: 0 };
+  };
+
+  if (conocidas.length === 1 && conocidas[0].vivas.length === 1) {
+    const [f] = conocidas;
+    return sirvePorSil(f.vivas[0].forma, f.total);
+  }
+
+  const rara = [...conocidas].sort((a, b) => a.total - b.total)[0];
+  if (rara.total > LIMITE_LECTURA && conocidas.length > 1) {
+    const frase = conocidas.map((f) => f.mejor).join(" ");
+    const r = await buscarIniciativas(frase, 1, revalidate);
+    if (r === null) return null;
+    if (r.total > 0) return sirvePorSil(frase, r.total);
+  }
+
+  const a = agujas(consulta);
+  const vistas = new Map<number, SilIniciativa>();
+  let leidas = 0;
+  let truncado = false;
+  for (const v of rara.vivas) {
+    const filas = await leerForma(v.forma, v.primera, LIMITE_LECTURA, revalidate);
+    leidas += filas.length;
+    if (v.primera.total > filas.length) truncado = true;
+    for (const f of filas) if (contieneTodas(plano(f.descripcion ?? ""), a)) vistas.set(f.id, f);
+  }
+  const todas = [...vistas.values()].sort(recientes);
+  const ultima = Math.max(1, Math.ceil(todas.length / SIL_PAGE_SIZE));
+  const p = Math.min(page, ultima);
+  const variante = conocidas.map((f) => f.mejor).join(" ");
+  return {
+    pagina: {
+      page: p,
+      pageSize: SIL_PAGE_SIZE,
+      total: todas.length,
+      results: todas.slice((p - 1) * SIL_PAGE_SIZE, p * SIL_PAGE_SIZE),
+    },
+    page: p,
+    enviado: variante === palabras.join(" ") ? null : variante,
+    truncado,
+    leidas,
+  };
+}
+
+/**
+ * La consulta con cada palabra en la forma que el SIL conoce, para los
+ * listados filtrados por tema, que solo aceptan una frase.
+ */
+export async function fraseParaSil(consulta: string, revalidate = 300): Promise<string> {
+  const palabras = palabrasDeContenido(consulta).slice(0, 4);
+  if (palabras.length === 0) return consulta;
+  const formas = await Promise.all(palabras.map((w) => formasEnSil(w, revalidate)));
+  return formas.map((f, i) => f?.mejor ?? palabras[i]).join(" ");
 }
 
 export async function getIniciativa(id: number): Promise<SilIniciativa | null> {

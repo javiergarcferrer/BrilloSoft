@@ -8,6 +8,7 @@ import {
   type TipoNormativa,
 } from "@/lib/normativa";
 import { aCsv, respuestaCsv, type ColumnaCsv } from "@/lib/csv";
+import { recortar } from "@/lib/raiz";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
   if (anio < anioActual - 3 || anio > anioActual) {
     return NextResponse.json({ error: "Año fuera de la ventana de la vertical" }, { status: 400 });
   }
-  const q = (sp.get("q") ?? "").trim().slice(0, 80) || undefined;
+  const q = recortar(sp.get("q"), 80) || undefined;
   const mesPedido = sp.get("mes") ?? "";
   const mes =
     tipo === "3" && /^\d{4}-(0[1-9]|1[0-2])$/.test(mesPedido) && mesPedido.startsWith(String(anio))

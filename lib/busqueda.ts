@@ -275,12 +275,14 @@ function porTema(m: Motor, v: Float32Array | null, tipo?: TipoResultado): { i: n
 }
 
 /** Tope de coincidencias por palabra que entran a la fusión. */
-const TOPE_PALABRA = 1000;
+const TOPE_PALABRA = 20_000;
 
 interface PorPalabra {
   ids: number[];
   total: number;
   tolerancia: number;
+  /** Todos los que llevan todas las palabras, más allá del tope de `ids`. */
+  todos: Set<number>;
 }
 
 /** ¿Se puede perdonar una errata? Ver `porPalabra`. */
@@ -291,6 +293,41 @@ function admiteErrata(q: string): boolean {
 
 /** Sin tope práctico: el corpus entero cabe. */
 const TODOS = 50_000;
+
+interface Arbol {
+  node: { find(p: { term: string; exact?: boolean; tolerance?: number }): Record<string, number[]> };
+}
+
+/**
+ * Los documentos que llevan **esa palabra**, leídos del árbol del índice.
+ *
+ * `search` de Orama busca cada raíz como **prefijo**: «agua» es `agu`, y
+ * `agu` empieza `aguj`, `agustin` y `aguilar`, así que «agua» traía a
+ * «Zaglul Aguirreurreta» y a la Industria Nacional de la Aguja; «100», los
+ * RPE que empiezan por 100. Aquí la raíz tiene que ser la del documento. El
+ * prefijo solo se admite en la **última** palabra, si el lematizador no la
+ * tocó y no es un número: es la que se está escribiendo («minis» →
+ * ministerio). Con tolerancia, la distancia de edición de Orama.
+ */
+function documentosCon(m: Motor, palabra: string, tolerancia: number, ultima: boolean): Set<string> {
+  const db = m.db as unknown as {
+    data: { index: { indexes: Record<string, Arbol> } };
+    internalDocumentIDStore: { internalIdToId: string[] };
+  };
+  const externo = db.internalDocumentIDStore.internalIdToId;
+  const salida = new Set<string>();
+  const w = palabra.toLowerCase();
+  for (const raiz of m.db.tokenizer.tokenize(palabra, "spanish")) {
+    const prefijo = ultima && tolerancia === 0 && raiz === sinTildes(w) && !/\d/.test(raiz) && raiz.length >= 3;
+    for (const prop of ["ti", "x", "o"]) {
+      const arbol = db.data.index.indexes[prop];
+      if (!arbol) continue;
+      const hallado = arbol.node.find({ term: raiz, exact: !prefijo && tolerancia === 0, tolerance: tolerancia });
+      for (const ids of Object.values(hallado)) for (const id of ids) salida.add(externo[id - 1]);
+    }
+  }
+  return salida;
+}
 
 async function porPalabra(m: Motor, q: string, tipo?: TipoResultado, tolerancia?: number): Promise<PorPalabra> {
   const donde = tipo ? { where: { t: { eq: tipo } } } : {};
@@ -317,20 +354,16 @@ async function porPalabra(m: Motor, q: string, tipo?: TipoResultado, tolerancia?
     const palabras = q
       .split(/[^\p{L}\p{N}]+/u)
       .filter((w) => w && m.db.tokenizer.tokenize(w, "spanish").length > 0);
-    if (palabras.length <= 1) {
-      const r = await buscarCon(q, t, TOPE_PALABRA, 0);
-      return { ids: r.hits.map((h) => Number(h.id)), total: r.count, tolerancia: t };
-    }
-    let todas = new Set<string>();
-    for (const [n, w] of palabras.entries()) {
-      const r = await buscarCon(w, t, TODOS, 1);
-      const ids = new Set(r.hits.map((h) => h.id));
-      todas = n === 0 ? ids : new Set([...todas].filter((id) => ids.has(id)));
-      if (todas.size === 0) return { ids: [], total: 0, tolerancia: t };
-    }
+    // Solo palabras vacías o signos («de la», «¿?»): no hay nada que buscar
+    // por palabra, y el tema de «de la» es ruido.
+    if (palabras.length === 0) return { ids: [], total: 0, tolerancia: t, todos: new Set() };
+    const conjuntos = palabras.map((w, n) => documentosCon(m, w, t, n === palabras.length - 1));
+    const todas = new Set([...conjuntos[0]].filter((id) => conjuntos.every((c) => c.has(id))));
+    if (todas.size === 0) return { ids: [], total: 0, tolerancia: t, todos: new Set() };
+    // El orden es el BM25 de la consulta entera, entre los que llevan todas.
     const r = await buscarCon(q, t, TODOS, 1);
     const ids = r.hits.filter((h) => todas.has(h.id)).map((h) => Number(h.id));
-    return { ids: ids.slice(0, TOPE_PALABRA), total: ids.length, tolerancia: t };
+    return { ids: ids.slice(0, TOPE_PALABRA), total: ids.length, tolerancia: t, todos: new Set(ids) };
   };
 
   if (tolerancia !== undefined) return conPalabras(tolerancia);
@@ -356,6 +389,14 @@ const POR_GRUPO = 4;
 
 function plano(s: string): string {
   return sinTildes(s).toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/** «Decreto 38 25», «decreto núm. 38-25» y «Decreto 38-25» son la misma cita. */
+function sinGuiones(s: string): string {
+  return plano(s)
+    .replace(/\b(n[uú]m(ero)?|no)\b\.?/g, " ")
+    .replace(/[-.\s]+/g, " ")
+    .trim();
 }
 
 export interface Grupo {
@@ -397,9 +438,21 @@ interface Fusion {
   formatos: Map<number, string[]>;
 }
 
-/** El archivo sin su extensión: `…/Informe-2026.pdf` y `…/Informe-2026.xlsx`. */
+/**
+ * El archivo sin su extensión ni su copia: `…/Informe-2026.pdf`,
+ * `…/Informe-2026.xlsx` y el `…/2026/03/Informe-2026-1.pdf` que WordPress
+ * crea al subir otra vez lo mismo son un documento. La clave es el sitio, el
+ * nombre del archivo y el título: «Tomo-1» y «Tomo-2» se titulan distinto y
+ * no se juntan.
+ */
 function mismoArchivo(d: Entrada): string | null {
-  return d.t === "documento" && d.h ? d.h.replace(/\.[a-z0-9]{2,5}$/i, "").toLowerCase() : null;
+  if (d.t !== "documento" || !d.h) return null;
+  const sitio = /^https?:\/\/([^/]+)/i.exec(d.h)?.[1] ?? "";
+  const nombre = (d.h.split("/").pop() ?? "")
+    .replace(/\.[a-z0-9]{2,5}$/i, "")
+    .replace(/-\d{1,2}$/, "")
+    .toLowerCase();
+  return `${sitio}|${nombre}|${plano(d.ti)}`;
 }
 
 function fundir(m: Motor, consulta: string, palabra: PorPalabra, tema: { i: number }[]): Fusion {
@@ -412,13 +465,18 @@ function fundir(m: Motor, consulta: string, palabra: PorPalabra, tema: { i: numb
   });
   tema.forEach(({ i }, rango) => {
     puntos.set(i, (puntos.get(i) ?? 0) + PESO_TEMA / (K_RRF + rango));
-    via.set(i, via.has(i) ? "ambas" : "tema");
+    // Lleva todas las palabras aunque quedara fuera del tope: no es «por tema».
+    via.set(i, via.has(i) || palabra.todos.has(i) ? "ambas" : "tema");
   });
   const exacta = plano(consulta);
   for (const [i, p] of puntos) {
     const d = docs[i];
-    // Lo tecleado es el nombre o las siglas exactas: eso va primero.
-    const nombrado = plano(d.ti) === exacta || (d.t === "institucion" && plano(d.x ?? "") === exacta);
+    // Lo tecleado es el nombre, las siglas o la cita exactas («Ley 80-25»):
+    // eso va primero.
+    const nombrado =
+      plano(d.ti) === exacta ||
+      (d.t === "institucion" && plano(d.x ?? "") === exacta) ||
+      (d.t === "norma" && sinGuiones(d.x ?? "") === sinGuiones(consulta));
     // Un ministerio antes que un hospital que se llama parecido.
     puntos.set(i, (nombrado ? p + 1 : p) / (1 + 0.15 * (d.p ?? 0)));
   }
@@ -462,11 +520,18 @@ export async function buscarEnTodo(
     const m = await motor();
     const docs = m.corpus.docs;
     const consulta = q.trim().slice(0, 120);
-    const vector = embeber(m, consulta);
+    // Sin una palabra con contenido («de la», «¿?», «--») no hay tema: el
+    // vector de las palabras vacías se parece a todo y traía 146 filas.
+    const conContenido = m.db.tokenizer.tokenize(consulta, "spanish").length > 0;
+    // Una cita («Ley 80-25», «decreto 38 25») busca una norma, no un tema: el
+    // vector de «ley» y un número se parece a cualquier otra ley.
+    const esCita = /\b\d{1,4}[-\s]\d{2,4}\b/.test(consulta);
+    const vector = conContenido && !esCita ? embeber(m, consulta) : null;
 
     // Todo, sin filtro: las cuentas de los filtros y la vista «Todo».
     const palabra = await porPalabra(m, consulta);
-    const todo = fundir(m, consulta, palabra, porTema(m, vector));
+    const tema = porTema(m, vector);
+    const todo = fundir(m, consulta, palabra, tema);
     const porTipo = Object.fromEntries(TIPOS_RESULTADO.map((t) => [t.clave, 0])) as Record<TipoResultado, number>;
     for (const i of todo.orden) porTipo[docs[i].t] += 1;
     let truncado = palabra.total > palabra.ids.length;
@@ -480,11 +545,13 @@ export async function buscarEnTodo(
     }
 
     // Un tipo elegido se busca dentro de ese tipo, con la misma tolerancia.
+    // Los vecinos por tema son los mismos que contaron los filtros, para que
+    // «Normativa 93» abra una lista de 93 y no de 150.
     let lista = todo;
     if (opts.tipo) {
       const soloTipo = await porPalabra(m, consulta, opts.tipo, palabra.tolerancia);
       truncado = soloTipo.total > soloTipo.ids.length;
-      lista = fundir(m, consulta, soloTipo, porTema(m, vector, opts.tipo));
+      lista = fundir(m, consulta, soloTipo, tema.filter(({ i }) => docs[i].t === opts.tipo));
     }
 
     const resultado = (i: number) => aResultado(m.corpus, docs[i], lista.via.get(i)!, lista.formatos.get(i));

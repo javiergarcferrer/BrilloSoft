@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import Plegable from "@/components/plegable";
 import Antiguedad from "@/components/antiguedad";
+import { recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/documentos" },
@@ -78,7 +79,7 @@ export default async function DocumentosPage({
   const conDocs = indice.fuentes.filter((f) => f.documentos > 0);
   const fuente = conDocs.find((f) => f.host === sp.inst) ?? null;
   const tipo = TIPOS.find((t) => t.clave && t.clave === sp.tipo)?.clave || undefined;
-  const q = (sp.q ?? "").trim().slice(0, 120);
+  const q = recortar(sp.q, 120);
   const r = await buscarDocumentos({
     q,
     host: fuente?.host,
