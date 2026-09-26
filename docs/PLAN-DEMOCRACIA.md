@@ -462,7 +462,17 @@ Pasos del dueño, en orden (ninguno lo hace una sesión):
 1. Solicitar el cliente a la OGTIC (§9.4) con `redirect_uris`
    `https://socratico.vercel.app/democracia/cuenta-unica/callback` y
    `https://socratico.do/democracia/cuenta-unica/callback`.
-2. Aplicar la migración `20260902120000` al proyecto `Transac`.
+2. ✅ Aplicar la migración `20260902120000` al proyecto `Transac` — hecho el
+   2026-09-26 a pedido del dueño (`apply_migration`, contenido idéntico al
+   archivo). Antes: 3 votos, 1 votante, `hash_cedula` ejecutable por `anon`
+   y `authenticated` —el oráculo del pepper estaba abierto por REST—, sin USAGE
+   del rol de servicio. Después: los mismos 3 votos y 1 votante (`origen` =
+   `declarada`), la vista con `verificados` = 0 y los totales intactos,
+   `hash_cedula`, `hash_sujeto` y `vincular_identidad` negados a `anon` y
+   `authenticated` (REST responde 401 `permission denied`),
+   `vincular_identidad` solo para `service_role`, y USAGE del esquema para
+   `service_role`. Los avisos de seguridad del proyecto no suman nada nuevo en
+   `democracia` (sigue el `search_path` mutable de `cedula_valida`, previo).
 3. Desplegar la función: `supabase functions deploy vincular-cuenta-unica`
    (con `supabase link` hecho; `config.toml` ya desactiva la verificación de
    JWT en la puerta de enlace porque la sesión se verifica dentro).

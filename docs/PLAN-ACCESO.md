@@ -241,8 +241,9 @@ Pendiente, por valor ÷ esfuerzo (archivo:línea verificados el 2026-09-26):
    las vistas públicas de `/democracia`; `zod/mini` en `lib/seguimiento.ts`
    (viaja al navegador). Los esquemas validan lo que la capa lee y toleran
    nulos donde la capa ya los saltaba. Al validar `/democracia` contra la
-   vista viva salió que `verificados` no existe hasta que se aplique la
-   migración de Cuenta Única: el esquema lo da por cero, que es lo cierto.
+   vista viva salió que `verificados` no existía: la migración de Cuenta
+   Única se aplicó el 2026-09-26 (PLAN-DEMOCRACIA §9.5) y el esquema lo sigue
+   dando por cero si falta.
 6. ✅ **URL ↔ estado, tres mecánicas** (`app/buscador.tsx`,
    `components/nomina/explorer.tsx`, `components/campo-licitaciones.tsx`,
    `components/buscador-url.tsx`). → `nuqs`. Hecho 2026-09-26: un mapa de

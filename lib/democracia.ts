@@ -24,8 +24,9 @@ const AGREGADOS = z.array(
     a_favor: z.number(),
     en_contra: z.number(),
     total: z.number(),
-    // La columna llega con la migración de Cuenta Única (PLAN-DEMOCRACIA §9),
-    // que no está aplicada en producción: hasta entonces, cero verificados.
+    // La columna llegó con la migración de Cuenta Única (PLAN-DEMOCRACIA §9,
+    // aplicada el 2026-09-26). Si una vista anterior no la trae, cero: nadie
+    // ha verificado su identidad mientras no exista el cliente de la OGTIC.
     verificados: z.number().default(0),
   }),
 );

@@ -30,9 +30,11 @@ arranque; aquí puede crecer y leerse cuando se toca el área.
   identity v2 for `/democracia` is **built and inert** (public PKCE client,
   verification inside the Edge Function `vincular-cuenta-unica`, subject
   hashed with the pepper). Cuenta Única has no dynamic client registration:
-  the owner requests the `client_id` from OGTIC, applies migration
-  `20260902120000`, deploys the function, and sets the id in Vercel and as a
-  function secret (PLAN §9.5). Until then the UI does not offer the path.
+  the owner requests the `client_id` from OGTIC, deploys the function, and
+  sets the id in Vercel and as a function secret (PLAN §9.5). Until then the
+  UI does not offer the path. Migration `20260902120000` was **applied on
+  2026-09-26 at the owner's request** (PLAN §9.5, step 2): it also closed the
+  `hash_cedula` oracle, which was executable by `anon` over REST until then.
 - **Secret-scan scope** (`.claude/hooks/lib.sh`): the session that built
   Cuenta Única scoped the scan so key *values* are forbidden everywhere and
   the service-role *name* only on app surfaces, because the migration's GRANT
