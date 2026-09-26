@@ -579,6 +579,15 @@ se toca.
   `Crawl-delay: 120` que el WP exige para agentes genéricos, aunque aquí no
   aplique. La solicitud OAI (Ley 200-04) deja de ser prerequisito del MVP y
   queda como vía para el volcado completo.
+- ✅ (2026-09-26) La búsqueda tolerante a tildes (`conOtrasFormas`,
+  `lib/senado.ts`) respeta esta postura: solo si lo tecleado no trajo nada,
+  a lo sumo **tres** formas con tilde de la palabra más larga, **en serie**,
+  parando en la primera con resultados, y todas con la caché de una hora de
+  `buscarCached`. En el SIL de la Cámara (`buscarIniciativasTolerante`,
+  `lib/congreso.ts`) el tope es de tres palabras, doce sondeos de primera
+  página y 300 filas leídas por consulta, de cuatro en cuatro; medido: 5
+  peticiones para «educacion», 15 para «ambiente medio», 1 para una palabra
+  de 200 letras.
 
 ### 12.2 Mecánica verificada
 

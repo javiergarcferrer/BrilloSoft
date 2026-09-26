@@ -12,6 +12,8 @@ import {
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import { filtrarObras, getObras, slugProvincia } from "@/lib/obras";
 import { ConectadoCon } from "@/components/conectado-con";
+import { getCortes } from "@/lib/cortes";
+import { agujas, contieneTodas, plano } from "@/lib/raiz";
 import { FilaObra } from "@/components/fuentes-nuevas/fila-obra";
 import { formatFecha, formatMonto } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
@@ -63,6 +65,11 @@ export default async function ProvinciaPage({ params }: Props) {
 
   const obras = await getObras();
   const nObras = obras ? filtrarObras(obras.proyectos, { provincia: p.slug }).length : 0;
+  const cortes = await getCortes().catch(() => null);
+  const agujaProvincia = agujas(p.nombre);
+  const nCortes = (cortes?.edesur ?? []).filter((c) =>
+    contieneTodas(plano([c.provincia, c.municipio, c.zonas, c.circuito].filter(Boolean).join(" ")), agujaProvincia),
+  ).length;
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -92,10 +99,13 @@ export default async function ProvinciaPage({ params }: Props) {
           })),
           { etiqueta: "Obras públicas", href: `/obras?provincia=${p.slug}`, cuenta: nObras, fuente: "MapaInversiones" },
           {
-            etiqueta: "Cortes de luz programados",
-            href: `/luz?q=${encodeURIComponent(p.nombre)}`,
-            nombre: "Edenorte y Edesur",
-            fuente: "Esta semana",
+            // Solo Edesur dice la provincia de cada corte (Edenorte da el
+            // municipio, y Edeeste no se lee): la arista es la de Edesur, con
+            // el mismo filtro que la lista que abre, o no se pinta.
+            etiqueta: "Cortes de luz programados por Edesur",
+            href: `/luz?empresa=edesur&q=${encodeURIComponent(p.nombre)}`,
+            cuenta: nCortes,
+            fuente: "Mantenimientos anunciados por Edesur",
           },
           { etiqueta: "Sus cifras: robos, escuela y vivienda", href: "/pais", fuente: "MIP, MINERD y MIVHED" },
         ]}

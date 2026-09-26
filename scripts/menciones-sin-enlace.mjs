@@ -49,7 +49,11 @@ const FORMAS = [
  */
 function textoSinEnlaces($) {
   const raiz = $("body");
-  raiz.find("a, script, style, noscript, template, button, title, meta").remove();
+  // El pie y la cabecera son de la plataforma, no de la ficha: el criterio
+  // es lo que la ficha pinta. (El pie cita las leyes 172-13 y 200-04, que la
+  // Consultoría no nos entrega: enlazarlas llevaría a «no tenemos el texto».)
+  raiz.find("header").first().remove();
+  raiz.find("a, script, style, noscript, template, button, title, meta, footer").remove();
   const partes = [];
   const recorrer = (nodos) => {
     for (const n of nodos) {

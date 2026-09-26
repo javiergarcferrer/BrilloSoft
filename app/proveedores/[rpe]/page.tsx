@@ -185,7 +185,12 @@ export default async function ProveedorPage({
             nombre: titulizar(principal.nombre),
             fuente: `${principal.n.toLocaleString("es-DO")} contratos · DGCP`,
           },
-          { etiqueta: "Instituciones que le compran", href: "#clientes", cuenta: porInstitucion.size, fuente: "DGCP" },
+          {
+            etiqueta: "Instituciones que le compran",
+            href: "#clientes",
+            cuenta: porInstitucion.size,
+            fuente: `DGCP · abajo, las ${Math.min(topInstituciones.length, porInstitucion.size)} que más compran`,
+          },
           provincia && {
             etiqueta: "Provincia de su domicilio",
             href: enlace.provincia(provincia.slug),
@@ -370,6 +375,11 @@ export default async function ProveedorPage({
       <div className="grid gap-5 lg:grid-cols-5">
         <Card as="section" id="clientes" className="p-6 lg:col-span-2">
           <CardTitle className="text-[15px]">Sus principales clientes</CardTitle>
+          {porInstitucion.size > topInstituciones.length && (
+            <p className="mt-1 text-xs text-ink-soft">
+              Los {topInstituciones.length} que más le compraron, de {porInstitucion.size.toLocaleString("es-DO")} instituciones.
+            </p>
+          )}
           <ul className="mt-3 space-y-2 text-sm">
             {topInstituciones.map(([inst, a]) => (
               <li

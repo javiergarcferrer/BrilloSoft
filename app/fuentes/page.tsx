@@ -461,7 +461,9 @@ export default async function FuentesPage() {
             Los textos que publica son escaneos: PDF de imágenes, sin capa de
             texto, así que se pueden leer y descargar pero no buscar por
             palabra. Su búsqueda es literal y distingue tildes, muestra 50 filas por consulta y cada
-            colección exige su propia sesión. Se lee con caché larga y volumen
+            colección exige su propia sesión. Si una búsqueda tecleada sin tildes
+            no trae nada, se prueban a lo sumo tres formas con tilde de su palabra
+            más larga, una detrás de otra, y se para en la primera que traiga algo. Se lee con caché larga y volumen
             mínimo: el <code className="rounded bg-canvas px-1 py-0.5 font-mono">robots.txt</code>{" "}
             de la web del Senado sigue vetando rastreadores de IA y limitando el
             ritmo del resto, así que esta plataforma no rastrea esa web: lee el
@@ -919,7 +921,18 @@ export default async function FuentesPage() {
             El consultante del <strong>Senado</strong> no pagina hacia atrás por
             URL: el listado enseña los 50 expedientes más recientes de cada
             colección y el resto se alcanza buscando por texto. La búsqueda es
-            subcadena literal, sensible a tildes.
+            subcadena literal, sensible a tildes: lo que se filtra aquí después
+            de probar las formas con tilde sale de las 50 filas de esa forma, y
+            la vista lo dice.
+          </li>
+          <li>
+            La búsqueda del <strong>SIL</strong> también es literal: distingue
+            tildes y orden («ambiente medio» no encuentra «medio ambiente»).
+            Aquí se buscan todas las palabras en cualquier orden con un tope por
+            consulta: tres palabras, doce sondeos de primera página entre sus
+            formas con tilde y 300 iniciativas leídas para filtrar, de cuatro en
+            cuatro. Si la palabra menos común tiene más, se sirve la frase exacta
+            o se dice que el filtro recorrió solo las más recientes.
           </li>
           <li>
             Los conteos por condición del panorama salen de una muestra de las

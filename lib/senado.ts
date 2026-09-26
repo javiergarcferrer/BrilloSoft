@@ -734,7 +734,7 @@ export async function buscarExpedientesSenado(
   // `<`, `>` y `&` los rechaza la validación de ASP.NET del consultante (y el
   // error se leía como «el Senado no respondió»); `%` rompe su decodificación.
   // Ninguno aparece en una descripción que alguien busque.
-  const consulta = limpiarTexto(q.replace(/[<>&%\\]/g, " "));
+  const consulta = limpiarTexto(q.replace(/[<>&%\\]/g, " ")).slice(0, 120).trim();
   if (!consulta) return listarRecientesSenado(etiqueta);
   try {
     const directa = await buscarCached(etiqueta, consulta);
@@ -746,40 +746,40 @@ export async function buscarExpedientesSenado(
   }
 }
 
+/** Cuántas formas con tilde se prueban como mucho: el Senado pide ritmo muy bajo (RECON §12.1). */
+const MAX_FORMAS_SENADO = 3;
+
 /**
  * El consultante compara letra por letra: «educacion» no encuentra
  * «educación». Si lo tecleado sin tildes no trajo nada, se prueba la palabra
- * más larga con sus formas con tilde (`variantesAcento`) y se filtra aquí por
- * todas las palabras. Cada consulta trae hasta 50 filas: si alguna forma tiene
- * más, el resultado es `parcial` y se dice. `null` si ninguna forma trajo nada.
+ * más larga con sus formas con tilde (`variantesAcento`), **una detrás de
+ * otra** y a lo sumo `MAX_FORMAS_SENADO`, parando en la primera que traiga
+ * algo; después se filtra aquí por todas las palabras. Cada consulta trae
+ * hasta 50 filas: si la forma tiene más y hubo que filtrar, el resultado es
+ * `parcial` y se dice. `null` si ninguna forma trajo nada; si una no
+ * contestó, lanza: «no hay» y «no pudimos mirar» son pantallas distintas.
  */
 async function conOtrasFormas(etiqueta: string, consulta: string): Promise<ListadoSenado | null> {
   const larga = palabrasDeContenido(consulta)
     .filter((w) => !/\d/.test(w))
     .sort((a, b) => b.length - a.length)[0];
   if (!larga) return null;
-  const formas = variantesAcento(larga).slice(1);
-  if (formas.length === 0) return null;
-  const lecturas = await Promise.all(formas.map((f) => buscarCached(etiqueta, f).catch(() => null)));
-  const vivas = formas.flatMap((forma, i) => {
-    const l = lecturas[i];
-    return l && l.total > 0 ? [{ forma, l }] : [];
-  });
-  if (vivas.length === 0) return null;
-  const a = agujas(consulta);
-  const vistos = new Map<number, ExpedienteSenado>();
-  for (const { l } of vivas) for (const e of l.expedientes) if (contieneTodas(plano(e.titulo), a)) vistos.set(e.id, e);
-  const expedientes = [...vistos.values()].sort((x, y) => y.id - x.id);
-  const unaPalabra = palabrasDeContenido(consulta).length === 1;
-  const parcial = vivas.some(({ l }) => l.total > l.expedientes.length);
-  return {
-    cuatrienio: vivas[0].l.cuatrienio,
-    // Con una palabra, el censo de cada forma es exacto; con más, solo se sabe lo filtrado.
-    total: unaPalabra ? vivas.reduce((n, { l }) => n + l.total, 0) : expedientes.length,
-    expedientes,
-    enviado: vivas.map((v) => v.forma).join(", "),
-    parcial: !unaPalabra && parcial,
-  };
+  for (const forma of variantesAcento(larga).slice(1, 1 + MAX_FORMAS_SENADO)) {
+    const l = await buscarCached(etiqueta, forma);
+    if (l.total === 0) continue;
+    const a = agujas(consulta);
+    const unaPalabra = palabrasDeContenido(consulta).length === 1;
+    const expedientes = unaPalabra ? l.expedientes : l.expedientes.filter((e) => contieneTodas(plano(e.titulo), a));
+    return {
+      cuatrienio: l.cuatrienio,
+      // Con una palabra, el censo de la forma es exacto; con más, solo se sabe lo filtrado.
+      total: unaPalabra ? l.total : expedientes.length,
+      expedientes,
+      enviado: forma,
+      parcial: !unaPalabra && l.total > l.expedientes.length,
+    };
+  }
+  return null;
 }
 
 /** Ficha completa de un expediente. `null` si no existe o el origen no responde. */

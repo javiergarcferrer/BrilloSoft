@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Instrument_Serif, Public_Sans } from "next/font/google";
 import Link from "next/link";
-import { enlace } from "@/lib/grafo";
 import "./globals.css";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import MobileTabBar from "@/components/mobile-tab-bar";
@@ -251,9 +250,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="mt-4 grid gap-x-8 divide-y divide-hairline text-xs leading-relaxed sm:grid-cols-3 sm:gap-y-4 sm:divide-y-0 [&>*]:pt-4 sm:[&>*]:pt-0 [&>*:first-child]:pt-0">
                 <div>
                   <p className="font-mono text-xs font-semibold text-ink">
-                    <Link href={enlace.norma("ley", "172-13") ?? "/normativa"} className="hover:text-brand-700 hover:underline">
-                      Ley 172-13
-                    </Link>
+                    Ley 172-13
                   </p>
                   <p className="mt-1 font-semibold text-ink">Protección de datos personales</p>
                   <p className="mt-0.5">
@@ -264,9 +261,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
                 <div>
                   <p className="font-mono text-xs font-semibold text-ink">
-                    <Link href={enlace.norma("ley", "200-04") ?? "/normativa"} className="hover:text-brand-700 hover:underline">
-                      Ley 200-04
-                    </Link>
+                    Ley 200-04
                   </p>
                   <p className="mt-1 font-semibold text-ink">Acceso a la información pública</p>
                   <p className="mt-0.5">

@@ -31,6 +31,7 @@ import { TONOS } from "@/lib/estados";
 import { cn } from "@/lib/cn";
 import { IconArrowRight, IconClock } from "@/components/icons";
 import { Termino } from "@/components/termino";
+import { recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/congreso" },
@@ -105,7 +106,7 @@ export default async function CongresoPage({
   const temaPedido = Number(params.tema);
   const grupoViejo = params.grupo?.trim() ?? "";
   const filtros: FiltrosCongreso = {
-    q: params.q?.trim() ?? "",
+    q: recortar(params.q, 120),
     tema: Number.isInteger(temaPedido) && temaPedido > 0 ? temaPedido : null,
     tipo: params.tipo === "resolucion" ? "resolucion" : TIPO_INICIAL,
     perimidas: params.estado === "perimidas",
@@ -439,7 +440,11 @@ async function ListaIniciativas({
       ? `${NOMBRE_TIPO[filtros.tipo]} de ${nombreTema}, ${
           filtros.perimidas ? "solo las perimidas" : "sin las perimidas"
         }`
-      : "todo el registro de la Cámara";
+      : busqueda?.frase
+        ? "la frase exacta en todo el registro de la Cámara"
+        : busqueda?.truncado
+          ? `entre las ${busqueda.leidas.toLocaleString("es-DO")} más recientes de la palabra menos común`
+          : "todo el registro de la Cámara";
 
   return (
     <>
@@ -457,9 +462,6 @@ async function ListaIniciativas({
         ) : null}
         {!silCaido && ` · ${alcance}`}
         {busqueda?.enviado ? ` · también como «${busqueda.enviado}»` : null}
-        {busqueda?.truncado
-          ? ` · entre las ${busqueda.leidas.toLocaleString("es-DO")} más recientes de la palabra menos común`
-          : null}
       </p>
 
       {iniciativas.length > 0 ? (

@@ -353,8 +353,10 @@ obra sí se enlazan entre ellas.
   `scripts/menciones-sin-enlace.mjs`, contra un servidor en marcha: recorre
   una ficha de cada tipo y falla si una cita de norma, un código de proceso
   o un SNIP aparece fuera de un enlace y su destino no está enlazado en la
-  página (no es parte de `verificar.sh` porque necesita el servidor). Su
-  primera pasada encontró las dos leyes del pie de página, ya enlazadas.
+  página (no es parte de `verificar.sh` porque necesita el servidor). El
+  pie y la cabecera quedan fuera: son de la plataforma, y las dos leyes que
+  cita el pie (172-13 y 200-04) no están en lo que la Consultoría nos
+  entrega, así que enlazarlas llevaría a «no tenemos el texto».
   Los contratos y los documentos no tienen ficha propia: enlazan a su
   proceso y a su archivo.
 

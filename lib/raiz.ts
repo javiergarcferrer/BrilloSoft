@@ -155,20 +155,42 @@ export function palabrasDeContenido(consulta: string): string[] {
 const AGUDA: Record<string, string> = { a: "á", e: "é", i: "í", o: "ó", u: "ú" };
 
 /**
+ * Las palabras que cuentan de una consulta **como se teclearon** (en
+ * minúsculas, con sus tildes y su ñ), en orden: sin vacías ni relleno. Para
+ * los orígenes que comparan letra por letra, donde «educación» tecleado ya es
+ * la forma buena y no hay que adivinarla.
+ */
+export function palabrasTecleadas(consulta: string): string[] {
+  const utiles = new Set(palabrasDeContenido(consulta));
+  return consulta
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}-]+/u)
+    .filter((w) => w && utiles.has(plano(w).trim()));
+}
+
+/** Cuántas formas se prueban por palabra, la tecleada incluida. */
+export const MAX_VARIANTES = 6;
+
+/**
  * Las formas con tilde que una palabra tecleada sin ella puede tener en un
  * origen que compara letra por letra (el SIL de la Cámara, el consultante del
  * Senado): «educacion» → «educación», «publico» → «público», «ninos» →
- * «niños». En español la tilde cae en una de las tres últimas sílabas, así que
- * se prueba una tilde en cada una de las tres últimas vocales, y la ñ en cada
- * «n» seguida de vocal. La palabra tal cual va primero. Si ya trae una tilde o
- * una ñ, o es un número, se queda como vino.
+ * «niños». En español la tilde cae en una de las tres últimas sílabas: se
+ * prueba primero en la última vocal, después en la penúltima y la
+ * antepenúltima, y la ñ en cada «n» seguida de vocal. La palabra tal cual va
+ * primero, y nunca salen más de `MAX_VARIANTES`: cada forma es una petición a
+ * una fuente del Estado. Si ya trae una tilde o una ñ, es un número o pasa de
+ * veinte letras (no es una palabra), se queda como vino.
  */
 export function variantesAcento(palabra: string): string[] {
   const p = palabra.toLowerCase();
-  if (/\d/.test(p) || /[^a-z-]/.test(p)) return [p];
+  if (/\d/.test(p) || /[^a-z-]/.test(p) || p.length > 20) return [p];
   const conTilde = (w: string) => {
     const vocales = [...w.matchAll(/[aeiou]/g)].map((m) => m.index ?? 0);
-    return vocales.slice(-3).map((i) => w.slice(0, i) + AGUDA[w[i]] + w.slice(i + 1));
+    return vocales
+      .slice(-3)
+      .reverse()
+      .map((i) => w.slice(0, i) + AGUDA[w[i]] + w.slice(i + 1));
   };
   // «companias» → «compañías»: la ñ y la tilde a la vez.
   const bases = [p];
@@ -176,12 +198,13 @@ export function variantesAcento(palabra: string): string[] {
     const i = m.index ?? 0;
     if (i > 0) bases.push(p.slice(0, i) + "ñ" + p.slice(i + 1));
   }
-  const salida = new Set<string>();
-  for (const b of bases) {
+  const salida = new Set<string>([p]);
+  for (const v of conTilde(p)) salida.add(v);
+  for (const b of bases.slice(1)) {
     salida.add(b);
     for (const v of conTilde(b)) salida.add(v);
   }
-  return [...salida];
+  return [...salida].slice(0, MAX_VARIANTES);
 }
 
 /**

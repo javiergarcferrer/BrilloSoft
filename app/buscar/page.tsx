@@ -6,6 +6,7 @@ import { rutaDirecta } from "@/lib/buscar";
 import {
   buscarEnTodo,
   buscarPantallas,
+  type PantallaHallada,
   esTipoResultado,
   TIPOS_RESULTADO,
   type Resultado,
@@ -90,17 +91,6 @@ export default async function BuscarPage({
             El índice se carga una vez por instancia (más de un segundo en
             frío): la cabecera y la caja no lo esperan.
           */}
-          {/*
-            Primero, la pantalla que responde a la pregunta: «¿cuánto debe el
-            país?» es Deuda pública antes que cualquier documento que diga
-            «deuda». Solo en «Todo» y en la primera página.
-          */}
-          {!tipo && pagina === 1 && (
-            <Suspense fallback={null}>
-              <Pantallas q={q} />
-            </Suspense>
-          )}
-
           <Suspense
             key={`${q}|${tipo ?? ""}|${pagina}`}
             fallback={
@@ -174,7 +164,15 @@ const NOTAS: Partial<Record<TipoResultado, string>> = { cargo: NOTA_CARGOS, prov
 const PLURAL = Object.fromEntries(TIPOS_RESULTADO.map((t) => [t.clave, t.plural])) as Record<TipoResultado, string>;
 
 async function Resultados({ q, tipo, pagina }: { q: string; tipo?: TipoResultado; pagina: number }) {
-  const h = await buscarEnTodo(q, { tipo, pagina });
+  // Primero, la pantalla que responde a la pregunta: «¿cuánto debe el
+  // país?» es Deuda pública antes que cualquier documento que diga «deuda».
+  // Solo en «Todo» y en la primera página, y en el mismo `Suspense` que los
+  // resultados: llegando aparte, empujaba la lista hacia abajo.
+  const [h, pantallas] = await Promise.all([
+    buscarEnTodo(q, { tipo, pagina }),
+    !tipo && pagina === 1 ? buscarPantallas(q, 3) : Promise.resolve(null),
+  ]);
+  const bloquePantallas = pantallas?.length ? <Pantallas lista={pantallas} /> : null;
   if (!h) {
     return (
       <EstadoVacio
@@ -199,16 +197,20 @@ async function Resultados({ q, tipo, pagina }: { q: string; tipo?: TipoResultado
 
   if (todos === 0) {
     return (
-      <EstadoVacio titulo={<>Nada con «{q}» en el índice</>}>
+      <>
+        {bloquePantallas}
+        <EstadoVacio titulo={<>Nada con «{q}» en el índice</>}>
         Ni por palabra ni por tema en instituciones, proveedores, normativa,
         obras, documentos, datos abiertos o cargos de nómina (índice del {fechaIndice}).
         Prueba con menos palabras, o sigue en una vertical.
-      </EstadoVacio>
+        </EstadoVacio>
+      </>
     );
   }
 
   return (
     <>
+      {bloquePantallas}
       {/*
         Los filtros dicen cuánto hay detrás antes del toque: un filtro que
         promete y devuelve cero es un control sin efecto. Los tipos vacíos no
@@ -230,7 +232,7 @@ async function Resultados({ q, tipo, pagina }: { q: string; tipo?: TipoResultado
         Por palabra —sin tildes, con plurales y conjugaciones— y por tema, en el
         índice del {fechaIndice}.
         {h.soloTema > 0 && <> Lo marcado «por tema» no lleva todas tus palabras: trata de algo parecido.</>}
-        {h.truncado && <> Hay más coincidencias de las que se ordenan: la lista recorre las mil más pertinentes.</>}
+        {h.truncado && <> Hay más coincidencias de las que se ordenan: la lista recorre las veinte mil más pertinentes.</>}
       </p>
 
       {tipo ? (
@@ -342,9 +344,7 @@ function FilaResultado({ r, q }: { r: Resultado; q: string }) {
 }
 
 /** Las pantallas de la plataforma que contestan lo tecleado (G4). */
-async function Pantallas({ q }: { q: string }) {
-  const lista = await buscarPantallas(q, 3);
-  if (!lista?.length) return null;
+function Pantallas({ lista }: { lista: PantallaHallada[] }) {
   return (
     <Grupo titulo="Pantallas que lo responden" nota="Por lo que significa tu búsqueda, no solo por sus palabras.">
       <ul className="divide-y divide-hairline">
@@ -363,7 +363,8 @@ async function Pantallas({ q }: { q: string }) {
 }
 
 async function Diputados({ q }: { q: string }) {
-  const pagina = (await buscarIniciativasTolerante(q, 1))?.pagina ?? null;
+  const busqueda = await buscarIniciativasTolerante(q, 1);
+  const pagina = busqueda?.pagina ?? null;
   if (!pagina) {
     return (
       <Card as="section" className="p-5">
@@ -385,7 +386,11 @@ async function Diputados({ q }: { q: string }) {
       titulo="Diputados"
       nota={
         pagina.total > lista.length
-          ? `${formatInt(pagina.total)} iniciativas de la Cámara llevan esas palabras; estas son las primeras.`
+          ? busqueda?.truncado
+            ? `${formatInt(pagina.total)} entre las ${formatInt(busqueda.leidas)} iniciativas más recientes de la palabra menos común; estas son las primeras.`
+            : busqueda?.frase
+              ? `${formatInt(pagina.total)} iniciativas de la Cámara con esa frase exacta; estas son las primeras.`
+              : `${formatInt(pagina.total)} iniciativas de la Cámara llevan esas palabras; estas son las primeras.`
           : "En la descripción de las iniciativas de la Cámara de Diputados."
       }
       mas={pagina.total > lista.length ? { href: `/congreso?q=${encodeURIComponent(q)}`, texto: "Ver todas" } : undefined}

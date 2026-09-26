@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 import { enlace } from "@/lib/grafo";
+import { recortar } from "@/lib/raiz";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/congreso/senado" },
@@ -37,7 +38,7 @@ export default async function SenadoPage({
   searchParams: Promise<{ q?: string; c?: string }>;
 }) {
   const params = await searchParams;
-  const q = params.q?.trim() ?? "";
+  const q = recortar(params.q, 120);
   const cuatrienio = cuatrienioPorEtiqueta(params.c) ?? CUATRIENIO_VIGENTE;
 
   return (

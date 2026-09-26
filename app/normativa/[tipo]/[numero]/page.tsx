@@ -190,7 +190,7 @@ function NormaFueraDeAlcance({ tipo, numero }: { tipo: string; numero: string })
       >
         La cita lleva aquí, pero la Consultoría Jurídica no nos la entrega: la
         lectura alcanza las normas de los últimos años y, cuando el portal está
-        tras su desafío, solo la instantánea. No es que no exista. Muchas
+        tras su desafío, solo la instantánea. Puede que exista y no la tengamos. Muchas
         instituciones publican en su sitio las leyes que las rigen.
       </EstadoVacio>
       <Suspense fallback={null}>
