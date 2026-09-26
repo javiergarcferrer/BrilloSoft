@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MarcaEstado } from "@/components/marca-estado";
 import { etapaDe } from "@/lib/estados";
+import { enlace } from "@/lib/grafo";
 
 export default function ProcesoCard({ p }: { p: Proceso }) {
   const [seguido, setSeguido] = useState(false);
@@ -48,7 +49,7 @@ export default function ProcesoCard({ p }: { p: Proceso }) {
     contradiciéndose, y ahí la fecha no se afirma.
   */
   const cerroHace = !abierto && dias !== null && dias < 0;
-  const href = `/procesos/${encodeURIComponent(p.codigo_proceso)}`;
+  const href = enlace.proceso(p.codigo_proceso);
 
   const titulo = p.titulo || p.descripcion || p.codigo_proceso;
 

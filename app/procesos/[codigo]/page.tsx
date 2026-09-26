@@ -32,6 +32,8 @@ import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
 import { Termino } from "@/components/termino";
 import { huellaDe } from "@/lib/seguimiento";
 import { ObraDelProceso } from "@/components/fuentes-nuevas/obra-del-proceso";
+import { enlace } from "@/lib/grafo";
+import { TextoEnlazado } from "@/components/texto-enlazado";
 
 const DOC_CLAVE =
   /pliego|ficha tecnica|especificacion|termino de referencia|tdr|condiciones/;
@@ -58,7 +60,7 @@ export async function generateMetadata({
     if (p) {
       return {
         title: p.titulo ? tituloLegible(p.titulo) : limpio,
-        alternates: { canonical: `/procesos/${encodeURIComponent(limpio)}` },
+        alternates: { canonical: enlace.proceso(limpio) },
         description: `${p.unidad_compra} · ${p.modalidad} · ${p.estado_proceso} · cierre de ofertas ${p.fecha_fin_recepcion_ofertas?.slice(0, 10) ?? "n/d"}`,
       };
     }
@@ -241,7 +243,7 @@ export default async function ProcesoPage({
 
         {p.descripcion && p.descripcion.trim() !== p.titulo.trim() && (
           <p className="mt-4 whitespace-pre-line text-sm text-ink">
-            {p.descripcion}
+            <TextoEnlazado texto={p.descripcion} excluir={enlace.proceso(p.codigo_proceso)} />
           </p>
         )}
       </Card>
@@ -564,7 +566,7 @@ export default async function ProcesoPage({
                 <div className="min-w-0">
                   {o.rpe ? (
                     <Link
-                      href={`/proveedores/${encodeURIComponent(o.rpe)}`}
+                      href={enlace.proveedor(o.rpe)}
                       className="font-semibold hover:text-brand-600 hover:underline"
                     >
                       {o.razonSocial}
@@ -612,7 +614,7 @@ export default async function ProcesoPage({
               >
                 <div className="min-w-0">
                   <Link
-                    href={`/proveedores/${encodeURIComponent(c.rpe)}`}
+                    href={enlace.proveedor(c.rpe)}
                     className="font-semibold hover:text-brand-600 hover:underline"
                   >
                     {c.razon_social}
@@ -621,7 +623,7 @@ export default async function ProcesoPage({
                     RPE {c.rpe} · adjudicado {formatFecha(c.fecha_adjudicacion)} ·{" "}
                     {c.estado_contrato} ·{" "}
                     <Link
-                      href={`/proveedores/${encodeURIComponent(c.rpe)}`}
+                      href={enlace.proveedor(c.rpe)}
                       className="text-brand-600 hover:underline"
                     >
                       historial del proveedor →

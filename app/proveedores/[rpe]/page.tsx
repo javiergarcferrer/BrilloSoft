@@ -16,6 +16,7 @@ import { Termino } from "@/components/termino";
 import { FichaRnc } from "@/components/fuentes-nuevas/ficha-rnc";
 import { HistoriaDeProveedor } from "@/components/fuentes-nuevas/historia-compras";
 import { diasEntre, getRegistroTributario } from "@/lib/rnc";
+import { enlace } from "@/lib/grafo";
 
 /** Días o años, en llano. */
 function plazoDias(dias: number): string {
@@ -39,7 +40,7 @@ export async function generateMetadata({
     description: nombre
       ? `Contratos de ${nombre} con el Estado dominicano: a quién le vende, cuánto y desde cuándo, con su ficha del Registro de Proveedores (RPE ${rpe}).`
       : `Contratos del proveedor RPE ${rpe} con el Estado dominicano.`,
-    alternates: { canonical: `/proveedores/${rpe}` },
+    alternates: { canonical: enlace.proveedor(rpe) },
   };
 }
 
@@ -135,7 +136,7 @@ export default async function ProveedorPage({
       <Card as="section" className="p-6">
         <Rotulo>Proveedor del Estado · <Termino clave="rpe" /> {rpe}</Rotulo>
         <h1 className="mt-2 font-display text-3xl leading-tight text-ink">{nombre}</h1>
-        <AccionesFicha className="mt-3" tipo="proveedor" id={rpe} titulo={nombre ?? `RPE ${rpe}`} href={`/proveedores/${rpe}`} />
+        <AccionesFicha className="mt-3" tipo="proveedor" id={rpe} titulo={nombre ?? `RPE ${rpe}`} href={enlace.proveedor(rpe)} />
         {/*
           Las tres cifras de la ficha pasan a la tira de casillas de la casa.
           Estaban dibujadas a mano —tres cajas, una de ellas de tinta con el
@@ -390,7 +391,7 @@ export default async function ProveedorPage({
                 className="transition-colors hover:border-brand-300 hover:bg-brand-50/40"
               >
                 <Link
-                  href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
+                  href={enlace.proceso(c.codigo_proceso)}
                   className="block px-3 py-2.5"
                 >
                   <span className="flex items-baseline justify-between gap-2">

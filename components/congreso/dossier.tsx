@@ -15,6 +15,7 @@ import { desdeMayusculas } from "@/lib/congreso";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { enlace } from "@/lib/grafo";
 
 interface Props {
   /** Título tal como lo publica la cámara; de aquí salen las citas. */
@@ -121,7 +122,7 @@ export default async function Dossier({
               bloque en el teléfono, con los 44 px de un mando.
             */}
             <Button asChild className="mt-3 w-full sm:mt-2 sm:w-auto">
-              <Link href={`/normativa/ley/${ley.numero}`}>
+              <Link href={enlace.norma("ley", ley.numero) ?? "/normativa"}>
                 Leer el texto de la ley →
               </Link>
             </Button>
@@ -220,7 +221,7 @@ export default async function Dossier({
                             size="sm"
                             className="mt-1 h-auto min-h-11 justify-start whitespace-normal px-0 text-left text-xs font-medium sm:min-h-0"
                           >
-                            <Link href={`/normativa/${RUTA_POR_TIPO[ref.tipo]}/${ref.numero}`}>
+                            <Link href={enlace.norma(ref.tipo, ref.numero) ?? "/normativa"}>
                               Leer el texto de esta norma →
                             </Link>
                           </Button>

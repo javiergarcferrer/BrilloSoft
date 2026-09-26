@@ -19,6 +19,7 @@
 import type { Tono } from "@/lib/estados";
 import { z } from "zod";
 import { pedirJsonOLanzar } from "@/lib/pedir";
+import { enlace } from "@/lib/grafo";
 
 const BASE = "https://www.diputadosrd.gob.do/sil/api";
 
@@ -904,7 +905,7 @@ export function claveProvincia(nombre: string | null | undefined): string {
 
 /** Enlace a la ficha de un legislador. */
 export function hrefLegislador(id: number): string {
-  return `/congreso/legisladores/${id}`;
+  return enlace.legislador(id);
 }
 
 export interface Directorio {

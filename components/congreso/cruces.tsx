@@ -5,6 +5,7 @@ import { CondicionBadge, MarcaIniciativa } from "@/components/iniciativa-card";
 import { desdeMayusculas, iniciativaPorNumero, type Iniciativa } from "@/lib/congreso";
 import { gemeloEnSenado } from "@/lib/senado";
 import { fraseDeBusqueda, numeroDeNorma, proyectosDeNorma } from "@/lib/legislacion";
+import { enlace } from "@/lib/grafo";
 
 /*
   Los puentes entre fichas: Diputados ↔ Senado para la misma pieza, y de una
@@ -47,7 +48,7 @@ export async function EnElSenado({
           Ahí están su trámite en la otra cámara y, a veces, el texto escaneado.
         </p>
         <Button asChild variant="secondary" className="mt-3 w-full sm:w-auto">
-          <Link href={`/congreso/senado/${gemelo.cuatrienio}/${gemelo.id}`}>
+          <Link href={enlace.expedienteSenado(gemelo.cuatrienio, gemelo.id)}>
             Ver el expediente del Senado →
           </Link>
         </Button>
@@ -104,7 +105,7 @@ export async function EnDiputados({
               </p>
             )}
             <Button asChild variant="secondary" className="mt-3 w-full sm:w-auto">
-              <Link href={`/congreso/${ini.id}`}>Ver la ficha en Diputados →</Link>
+              <Link href={enlace.iniciativa(ini.id)}>Ver la ficha en Diputados →</Link>
             </Button>
           </>
         ) : (
@@ -176,7 +177,7 @@ function FilaProyecto({ ini }: { ini: Iniciativa }) {
     <li className="relative">
       <div className="flex flex-wrap items-center gap-2">
         <Link
-          href={`/congreso/${ini.id}`}
+          href={enlace.iniciativa(ini.id)}
           className="font-mono text-xs font-semibold tabular-nums text-brand-700 estira hover:underline"
         >
           {ini.numero?.completo ?? `#${ini.id}`}

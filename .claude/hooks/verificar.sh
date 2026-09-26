@@ -61,6 +61,12 @@ mov="$(grep -rnE 'cubic-bezier\(|animate-bounce|duration-\[|duration-(3[5-9][0-9
        | grep -vE ':[0-9]+:[[:space:]]*(//|/?\*)' | head -5)"
 if [ -z "$mov" ]; then ok "motion: curves and durations come from the tokens"; else mal "hand-written motion — use ease-firma/sello/salida/estampa and the --dur-* tokens"; printf '%s\n' "$mov" | sed 's/^/       /'; fi
 
+# 2f. The graph (docs/PLAN-ACCESO.md §6 ter, G1): every entity address comes
+# from lib/grafo.ts (`enlace.*`), so a link cannot be built by hand and drift.
+grafo="$(grep -rnE '[`"]/(instituciones|proveedores|procesos|normativa|congreso|obras|provincias|finanzas)/(\$\{|[a-z0-9-]+/\$\{|"[[:space:]]*\+)' app components lib --include=*.ts --include=*.tsx 2>/dev/null \
+         | grep -vE '^lib/grafo' | grep -vE ':[0-9]+:[[:space:]]*(//|/?\*)' | head -5)"
+if [ -z "$grafo" ]; then ok "graph: every entity href comes from lib/grafo.ts"; else mal "entity href built by hand — use enlace.* from lib/grafo.ts"; printf '%s\n' "$grafo" | sed 's/^/       /'; fi
+
 # 3. Statelessness: env vars and Supabase confined to /democracia.
 fuera="$( { grep -rlE 'process\.env\.' app lib components --include=*.ts --include=*.tsx 2>/dev/null; \
             grep -rlE '@supabase/supabase-js|@/lib/supabase["'"'"']' app lib components --include=*.ts --include=*.tsx 2>/dev/null; } \

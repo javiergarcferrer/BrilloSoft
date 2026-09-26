@@ -33,6 +33,8 @@ import { Termino } from "@/components/termino";
 import { FilaVotacion } from "@/components/congreso/votaciones";
 import { EnElSenado } from "@/components/congreso/cruces";
 import { InstitucionesNombradas } from "@/components/congreso/instituciones-nombradas";
+import { enlace } from "@/lib/grafo";
+import { TextoEnlazado } from "@/components/texto-enlazado";
 
 export const revalidate = 300;
 
@@ -63,7 +65,7 @@ export async function generateMetadata({ params }: Props) {
   return {
     title: ini.numero?.completo ?? `Iniciativa ${ini.id}`,
     description: ini.titulo.slice(0, 160),
-    alternates: { canonical: `/congreso/${ini.id}` },
+    alternates: { canonical: enlace.iniciativa(ini.id) },
   };
 }
 
@@ -123,7 +125,7 @@ export default async function IniciativaPage({ params }: Props) {
         </div>
 
         <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
-          {titulo}
+          <TextoEnlazado texto={titulo} />
         </h1>
 
         {ini.tituloModificado && (
@@ -132,7 +134,7 @@ export default async function IniciativaPage({ params }: Props) {
               Título modificado durante el trámite
             </p>
             <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-              {desdeMayusculas(ini.tituloModificado)}
+              <TextoEnlazado texto={desdeMayusculas(ini.tituloModificado)} />
             </p>
           </div>
         )}
@@ -191,7 +193,7 @@ export default async function IniciativaPage({ params }: Props) {
         nadie sigue una iniciativa antes de saber qué es y en qué punto está
         (docs/IDENTIDAD.md §4, el orden de los bloques).
       */}
-      <AccionesFicha className="mt-4" tipo="proyecto" id={String(ini.id)} titulo={titulo} href={`/congreso/${ini.id}`} situacion={ini} feed={`/api/feed/congreso/${ini.id}`} />
+      <AccionesFicha className="mt-4" tipo="proyecto" id={String(ini.id)} titulo={titulo} href={enlace.iniciativa(ini.id)} situacion={ini} feed={`/api/feed/congreso/${ini.id}`} />
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-5">

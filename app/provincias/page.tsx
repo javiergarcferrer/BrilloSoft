@@ -12,6 +12,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Cargando, EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/provincias" },
@@ -50,7 +51,7 @@ export default function ProvinciasPage() {
           {PROVINCIAS.map((p) => (
             <li key={p.slug}>
               <Link
-                href={`/provincias/${p.slug}`}
+                href={enlace.provincia(p.slug)}
                 className="flex min-h-11 items-center text-brand-700 hover:underline sm:min-h-9"
               >
                 {p.nombre}
@@ -111,7 +112,7 @@ async function Reparto() {
         {filas.map(({ p, n, monto }) => (
           <li key={p.slug}>
             <div className="flex items-baseline justify-between gap-2">
-              <Link href={`/provincias/${p.slug}`} className="font-medium text-brand-700 hover:underline">
+              <Link href={enlace.provincia(p.slug)} className="font-medium text-brand-700 hover:underline">
                 {p.nombre}
               </Link>
               <span className="shrink-0 text-xs text-ink-soft">

@@ -19,6 +19,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import Plegable from "@/components/plegable";
 import { IconChevronRight } from "@/components/icons";
 import { normalize } from "@/lib/dgcp";
+import { enlace } from "@/lib/grafo";
 
 /**
  * Filas que se ven en cada capítulo antes de plegar. El Ministerio de Defensa
@@ -212,7 +213,7 @@ function TarjetaCapitulo({
           )}
         </CardTitle>
         <Link
-          href={`/finanzas/${codigo}`}
+          href={enlace.capitulo(codigo)}
           className="inline-flex min-h-11 items-center font-mono text-xs tabular-nums text-ink-soft hover:text-brand-700 hover:underline sm:min-h-0"
         >
           {formatPesos(devengado)} devengado · ver en Finanzas

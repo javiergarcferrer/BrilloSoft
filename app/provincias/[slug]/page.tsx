@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Cargando, EsqueletoFilas } from "@/components/esqueleto";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { enlace } from "@/lib/grafo";
 
 /*
   Dinámica: la agrupación cara ya se cachea un día en `lib/provincias.ts` y un
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!p) return { title: "Provincia no encontrada" };
   return {
     title: p.nombre,
-    alternates: { canonical: `/provincias/${p.slug}` },
+    alternates: { canonical: enlace.provincia(p.slug) },
     description: `${p.nombre} y el Estado: proveedores del Estado inscritos en la provincia, sus ayuntamientos y sus legisladores.`,
   };
 }
@@ -187,7 +188,7 @@ async function Proveedores({ provincia }: { provincia: Provincia }) {
           <li key={x.rpe} className="relative py-3">
             <div className="flex items-baseline justify-between gap-3">
               <Link
-                href={`/proveedores/${x.rpe}`}
+                href={enlace.proveedor(x.rpe)}
                 className="min-w-0 text-[15px] leading-snug text-ink estira hover:text-brand-700"
               >
                 {x.razonSocial}

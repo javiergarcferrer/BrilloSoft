@@ -10,6 +10,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { SITIO } from "@/lib/sitio";
+import { enlace } from "@/lib/grafo";
 
 // Se rehace una vez al día: los legisladores y las normas nuevas entran solos.
 export const revalidate = 86400;
@@ -30,7 +31,8 @@ async function rutasDeNormas(): Promise<string[]> {
       for (const f of filas) {
         const tipo = RUTA_NORMA[f.TipoDocumento ?? 0];
         const numero = (f.Numero ?? "").trim();
-        if (tipo && /^\d{1,4}-\d{2,4}$/.test(numero)) rutas.add(`/normativa/${tipo}/${numero}`);
+        const ruta = tipo ? enlace.norma(tipo, numero) : null;
+        if (ruta) rutas.add(ruta);
       }
     }
     return [...rutas];

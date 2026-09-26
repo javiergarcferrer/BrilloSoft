@@ -18,6 +18,7 @@ import {
 import { EstadoVacio } from "@/components/estado-vacio";
 import Plegable from "@/components/plegable";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/historico" },
@@ -177,7 +178,7 @@ export default async function HistoricoPage() {
           filas={d.proveedores.map((p) => ({
             clave: p.rpe,
             nombre: p.nombre,
-            href: `/proveedores/${p.rpe}`,
+            href: enlace.proveedor(p.rpe),
             monto: p.monto,
             detalle: `${nContratos(p.contratos)} · ${p.desde.slice(0, 4)}–${p.hasta.slice(0, 4)}`,
           }))}
@@ -292,7 +293,7 @@ function Atipicos({ d, suma }: { d: ResumenHistorico; suma: number }) {
               <span className="min-w-0">
                 <span className="block text-sm leading-snug text-ink">
                   {a.rpe ? (
-                    <Link href={`/proveedores/${a.rpe}`} className="hover:text-brand-700 hover:underline">
+                    <Link href={enlace.proveedor(a.rpe)} className="hover:text-brand-700 hover:underline">
                       {a.proveedor}
                     </Link>
                   ) : (

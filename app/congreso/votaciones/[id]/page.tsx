@@ -21,6 +21,7 @@ import {
   type VotoNominal,
 } from "@/lib/congreso";
 import { formatFecha } from "@/lib/format";
+import { enlace } from "@/lib/grafo";
 
 // Una votación cerrada no cambia: el SIL se consulta como mucho una vez al día.
 // Dinámica: el voto nominal ya se cachea un día por `fetch` en
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (d === "inexistente") return { title: "Votación no encontrada" };
   return {
     title: d.votacion.titulo,
-    alternates: { canonical: `/congreso/votaciones/${id}` },
+    alternates: { canonical: enlace.votacion(id) },
     description: `${d.votacion.si} a favor, ${d.votacion.no} en contra: cómo votó cada diputado.`,
   };
 }
@@ -115,7 +116,7 @@ export default async function VotacionPage({ params }: Props) {
         <p className="mt-2 text-sm text-ink-soft">
           {v.fecha && <>{formatFecha(v.fecha)} · </>}
           <a
-            href={`/congreso/votaciones/${v.id}/csv`}
+            href={`${enlace.votacion(v.id)}/csv`}
             download
             className="font-medium text-brand-700 hover:underline"
           >
@@ -142,7 +143,7 @@ export default async function VotacionPage({ params }: Props) {
                 {iniciativas.slice(desde, hasta).map((ini) => (
                   <li key={ini.id} className="relative px-5 py-3">
                     <Link
-                      href={`/congreso/${ini.id}`}
+                      href={enlace.iniciativa(ini.id)}
                       className="font-mono text-xs font-semibold tabular-nums text-brand-700 estira hover:underline"
                     >
                       {ini.numero ?? `#${ini.id}`}

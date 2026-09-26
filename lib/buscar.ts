@@ -11,6 +11,7 @@
 
 import { INSTITUCIONES, hrefInstitucion } from "@/lib/instituciones";
 import { normalize } from "@/lib/dgcp";
+import { enlace } from "@/lib/grafo";
 
 const RUTA_NORMA: Record<string, string> = {
   ley: "ley",
@@ -31,11 +32,11 @@ export function rutaDirecta(consulta: string): string | null {
   const cita = /^(ley|decreto|reglamento|resoluci[oó]n)\s*(?:n[uú]m(?:ero)?\.?|no\.?|n\.?\s*[oº°]\.?)?\s*(\d{1,4}-\d{2,4})$/i.exec(
     q,
   );
-  if (cita) return `/normativa/${RUTA_NORMA[normalize(cita[1])]}/${cita[2]}`;
+  if (cita) return enlace.norma(RUTA_NORMA[normalize(cita[1])], cita[2]);
 
   // Código de proceso de la DGCP: SIGLAS-XXX-MOD-AAAA-NNNN.
   if (/^[A-Z0-9]{2,15}(-[A-Z0-9]{1,10}){2,4}-\d{4}-\d{3,5}$/i.test(q)) {
-    return `/procesos/${q.toUpperCase()}`;
+    return enlace.proceso(q.toUpperCase());
   }
 
   // Siglas exactas de una sola institución, solo si son siglas de verdad.

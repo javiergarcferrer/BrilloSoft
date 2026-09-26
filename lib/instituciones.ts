@@ -16,6 +16,7 @@
 import datos from "@/public/data/instituciones.json";
 import { unstable_cache } from "next/cache";
 import { dgcpFetch, normalize, type Contrato, type Proceso } from "@/lib/dgcp";
+import { enlace } from "@/lib/grafo";
 
 export interface Institucion {
   /** Código de unidad de compra de la DGCP. */
@@ -48,7 +49,7 @@ export function slugInstitucion(i: Institucion): string {
 }
 
 export function hrefInstitucion(i: Institucion): string {
-  return `/instituciones/${slugInstitucion(i)}`;
+  return enlace.institucion(i.id, i.acronimo || i.nombre);
 }
 
 /** La institución de un tramo de URL (`5-mopc` o `5`), o `null`. */

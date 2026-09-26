@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Cifra, TiraDeCifras } from "@/components/papel";
 import { IconMapPin } from "@/components/icons";
+import { enlace } from "@/lib/grafo";
 
 /**
  * ¿Cuántos mueren en las vías? — el año en curso contra los mismos meses del
@@ -58,7 +59,7 @@ export async function SiniestralidadVial() {
                 <span key={p.nombre}>
                   {i > 0 && ", "}
                   {p.provincia ? (
-                    <Link href={`/provincias/${p.provincia.slug}`} className="text-ink hover:text-brand-700 hover:underline">
+                    <Link href={enlace.provincia(p.provincia.slug)} className="text-ink hover:text-brand-700 hover:underline">
                       {p.nombre}
                     </Link>
                   ) : (

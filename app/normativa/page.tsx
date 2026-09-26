@@ -28,6 +28,7 @@ import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 import { Termino } from "@/components/termino";
 import { Paginador } from "@/components/paginador";
 import Plegable from "@/components/plegable";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/normativa" },
@@ -616,7 +617,7 @@ function FilaDoc({ doc }: { doc: Documento }) {
   const materia = materiaDe(doc);
   const ruta =
     RUTA_POR_TIPO[doc.tipo] && /^\d{1,4}-\d{2,4}$/.test(doc.numero.trim())
-      ? `/normativa/${RUTA_POR_TIPO[doc.tipo]}/${doc.numero.trim()}`
+      ? enlace.norma(doc.tipo, doc.numero)
       : null;
 
   const cuerpo = (

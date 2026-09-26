@@ -3,6 +3,7 @@ import { finVencido, tonoDeObra, type Obra } from "@/lib/obras";
 import { formatPesos, tituloLegible } from "@/lib/format";
 import { MarcaEstado } from "@/components/marca-estado";
 import { Progress } from "@/components/ui/progress";
+import { enlace } from "@/lib/grafo";
 
 /**
  * Una obra en un listado: qué es, quién la ejecuta, dónde, en qué estado y
@@ -27,7 +28,7 @@ export function FilaObra({ obra: o }: { obra: Obra }) {
         )}
       </div>
       <Link
-        href={`/obras/${o.snip}`}
+        href={enlace.obra(o.snip)}
         title={o.nombre}
         className="mt-1.5 block text-[15px] leading-snug text-ink estira hover:text-brand-700"
       >

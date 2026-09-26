@@ -26,6 +26,7 @@ import {
 } from "@/lib/congreso";
 import type { Ancla } from "@/lib/cifras";
 import { hrefDirectorio } from "../href";
+import { enlace } from "@/lib/grafo";
 
 export const revalidate = 3600;
 
@@ -58,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (l === "inexistente") return { title: "Legislador no encontrado" };
   return {
     title: l.nombre,
-    alternates: { canonical: `/congreso/legisladores/${id}` },
+    alternates: { canonical: enlace.legislador(id) },
     description: `${[l.funcion, l.provincia, l.partidoSiglas].filter(Boolean).join(" · ")}: qué propuso, cuánto prosperó y cómo votó.`,
   };
 }
@@ -268,7 +269,7 @@ async function Propuestas({ id, corte }: { id: number; corte: Corte }) {
             {(Object.keys(CORTES) as Corte[]).map((c) => (
               <FiltroEnlace
                 key={c}
-                href={`/congreso/legisladores/${id}${c === "todas" ? "" : `?ver=${c}`}`}
+                href={`${enlace.legislador(id)}${c === "todas" ? "" : `?ver=${c}`}`}
                 activo={corte === c}
               >
                 {`${CORTES[c].label} (${conteo[c]})`}

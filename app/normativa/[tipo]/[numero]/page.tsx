@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense, cache } from "react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { queEsNorma, resolverNorma, tipoDeRuta } from "@/lib/normativa";
 import { pesoDocumento, urlDeLectura } from "@/lib/documentos";
 import { desdeMayusculas } from "@/lib/congreso";
@@ -12,6 +12,10 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ruta } from "@/components/ruta";
 import AccionesFicha from "@/components/acciones-ficha";
 import { ProyectosDeLaNorma } from "@/components/congreso/cruces";
+import { EstadoVacio } from "@/components/estado-vacio";
+import { Button } from "@/components/ui/button";
+import { enlace, numeroCanonico } from "@/lib/grafo";
+import { TextoEnlazado } from "@/components/texto-enlazado";
 
 export const revalidate = 86400;
 
@@ -31,7 +35,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const norma = await cargarNorma(tipo, numero);
   return {
     title: `${tipo} ${numero}`,
-    alternates: { canonical: `/normativa/${slug}/${numero}` },
+    alternates: { canonical: enlace.norma(slug, numero) ?? undefined },
+    // Sin el texto, la página es un camino, no contenido: se sigue, no se indexa.
+    ...(norma ? {} : { robots: { index: false, follow: true } }),
     description: norma?.titulo
       ? `${tipo} ${numero}: ${desdeMayusculas(norma.titulo).slice(0, 150)}`
       : `Texto oficial de la ${tipo} ${numero}.`,
@@ -50,9 +56,16 @@ export default async function NormaPage({ params }: Props) {
   const { tipo: slug, numero } = await params;
   const tipo = tipoDeRuta(slug);
   if (!tipo || !/^\d{1,4}-\d{2,4}$/.test(numero)) notFound();
+  // «Ley 47-2025» es la Ley 47-25: una sola dirección por norma.
+  const canonico = numeroCanonico(slug, numero);
+  if (canonico !== numero) permanentRedirect(enlace.norma(slug, canonico) ?? "/normativa");
 
   const norma = await cargarNorma(tipo, numero);
-  if (!norma) notFound();
+  // Una cita a una norma que no podemos leer —más vieja que lo que alcanza la
+  // lectura, o con el origen tras su desafío de Cloudflare— no es un 404: el
+  // enlace que llevó aquí salió de un texto oficial que la cita. Se dice qué
+  // pasa y dónde seguir, y se muestran los proyectos que la citan.
+  if (!norma) return <NormaFueraDeAlcance tipo={tipo} numero={numero} />;
 
   const explicacion = queEsNorma(tipo);
 
@@ -65,7 +78,7 @@ export default async function NormaPage({ params }: Props) {
           {tipo} {norma.numero}
         </p>
         <h1 className="mt-1.5 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
-          {desdeMayusculas(norma.titulo)}
+          <TextoEnlazado texto={desdeMayusculas(norma.titulo)} excluir={enlace.norma(slug, numero) ?? undefined} />
         </h1>
         <p className="mt-2 text-sm text-ink-soft">
           {[
@@ -76,7 +89,7 @@ export default async function NormaPage({ params }: Props) {
             .join(" · ")}
         </p>
       </header>
-      <AccionesFicha className="mt-3" tipo="norma" id={`${slug}/${numero}`} titulo={`${tipo} ${norma.numero}: ${desdeMayusculas(norma.titulo)}`} href={`/normativa/${slug}/${numero}`} />
+      <AccionesFicha className="mt-3" tipo="norma" id={`${slug}/${numero}`} titulo={`${tipo} ${norma.numero}: ${desdeMayusculas(norma.titulo)}`} href={enlace.norma(slug, numero) ?? "/normativa"} />
 
       {explicacion && (
         <Card as="section" className="mt-5 p-5">
@@ -135,5 +148,36 @@ async function TextoNorma({ url, nombre }: { url: string; nombre: string }) {
       bytes={peso?.bytes ?? null}
       origen="la Consultoría Jurídica"
     />
+  );
+}
+
+function NormaFueraDeAlcance({ tipo, numero }: { tipo: string; numero: string }) {
+  const cita = `${tipo} ${numero}`;
+  return (
+    <div className="mx-auto max-w-4xl space-y-5">
+      <Ruta seccion="normativa" actual={cita} />
+      <EstadoVacio
+        como="h1"
+        titulo={`No tenemos el texto de la ${cita}`}
+        accion={
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button asChild variant="secondary" size="sm">
+              <Link href={`/documentos?q=${encodeURIComponent(numero)}`}>Buscarla entre los documentos</Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
+              <Link href={`/buscar?q=${encodeURIComponent(numero)}`}>Buscar «{numero}» en todo</Link>
+            </Button>
+          </div>
+        }
+      >
+        La cita lleva aquí, pero la Consultoría Jurídica no nos la entrega: la
+        lectura alcanza las normas de los últimos años y, cuando el portal está
+        tras su desafío, solo la instantánea. No es que no exista. Muchas
+        instituciones publican en su sitio las leyes que las rigen.
+      </EstadoVacio>
+      <Suspense fallback={null}>
+        <ProyectosDeLaNorma tipo={tipo} numero={numero} titulo={null} />
+      </Suspense>
+    </div>
   );
 }

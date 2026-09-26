@@ -19,6 +19,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { IconExternal } from "@/components/icons";
+import { enlace } from "@/lib/grafo";
 
 export const revalidate = 86400;
 
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!d) return { title: "Obra no encontrada" };
   return {
     title: tituloLegible(d.obra.nombre),
-    alternates: { canonical: `/obras/${snip}` },
+    alternates: { canonical: enlace.obra(snip) },
     description: `Estado, valor, avance declarado y contratos de la obra SNIP ${snip}, ejecutada por ${d.obra.entidad}.`,
   };
 }
@@ -176,14 +177,14 @@ export default async function ObraPage({ params }: Props) {
                 <ul className="mt-2 divide-y divide-hairline">
                   {contratos.map((c) => (
                     <li key={`${c.codigo}-${c.proceso}`} className="py-2.5 text-sm">
-                      <Link href={`/procesos/${encodeURIComponent(c.proceso)}`} className="group block">
+                      <Link href={enlace.proceso(c.proceso)} className="group block">
                         <span className="line-clamp-2 leading-snug group-hover:text-brand-700">
                           {c.descripcion || c.proceso}
                         </span>
                       </Link>
                       <span className="mt-0.5 block text-xs text-ink-soft">
                         {c.rpe ? (
-                          <Link href={`/proveedores/${c.rpe}`} className="text-brand-700 hover:underline">
+                          <Link href={enlace.proveedor(c.rpe)} className="text-brand-700 hover:underline">
                             {c.proveedor}
                           </Link>
                         ) : (
@@ -208,7 +209,7 @@ export default async function ObraPage({ params }: Props) {
                 <ul className="mt-2 divide-y divide-hairline">
                   {procesos.map((p) => (
                     <li key={p.codigo} className="py-2.5 text-sm">
-                      <Link href={`/procesos/${encodeURIComponent(p.codigo)}`} className="group block">
+                      <Link href={enlace.proceso(p.codigo)} className="group block">
                         <span className="line-clamp-2 leading-snug group-hover:text-brand-700">
                           {p.descripcion || p.codigo}
                         </span>

@@ -11,6 +11,7 @@ import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { Button } from "@/components/ui/button";
 import { IconDownload } from "@/components/icons";
 import { hrefInstitucion, institucionPorId } from "@/lib/instituciones";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/contratos" },
@@ -121,7 +122,7 @@ export default async function ContratosPage() {
           nota="Enlazan a su perfil"
           items={r.topAdjudicatarios}
           color="bg-brand-500"
-          hrefDe={(a) => (a.rpe ? `/proveedores/${a.rpe}` : undefined)}
+          hrefDe={(a) => (a.rpe ? enlace.proveedor(a.rpe) : undefined)}
         />
         <RankingContratos
           titulo="Instituciones que más adjudican"
@@ -159,7 +160,7 @@ export default async function ContratosPage() {
             >
               <div className="flex items-baseline justify-between gap-3">
                 <Link
-                  href={`/procesos/${encodeURIComponent(c.codigo_proceso)}`}
+                  href={enlace.proceso(c.codigo_proceso)}
                   title={c.descripcion || c.codigo_contrato}
                   className="line-clamp-1 text-sm font-medium text-ink estira hover:text-brand-700"
                 >
@@ -172,7 +173,7 @@ export default async function ContratosPage() {
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-soft">
                 {c.rpe ? (
                   <Link
-                    href={`/proveedores/${c.rpe}`}
+                    href={enlace.proveedor(c.rpe)}
                     className="relative z-10 inline-block py-1 font-medium text-brand-600 hover:underline"
                   >
                     {c.razon_social}

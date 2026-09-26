@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/democracia" },
@@ -182,8 +183,8 @@ function FilaRanking({ item }: { item: RankingItem }) {
   const pct = Math.round(item.apoyo * 100);
   const href =
     item.camara === "senado"
-      ? `/congreso/senado/${item.ref.replace(":", "/")}`
-      : `/congreso/${item.ref}`;
+      ? enlace.expedienteSenado(item.ref.split(":")[0], item.ref.split(":")[1] ?? "")
+      : enlace.iniciativa(item.ref);
   return (
     <li className="border-b border-hairline last:border-0">
       <Link href={href} className="block px-4 py-3.5 transition-colors hover:bg-canvas/60 sm:px-5">

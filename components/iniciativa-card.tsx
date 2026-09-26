@@ -9,6 +9,7 @@ import {
 import Antiguedad from "@/components/antiguedad";
 import { MarcaEstado } from "@/components/marca-estado";
 import { cn } from "@/lib/cn";
+import { enlace } from "@/lib/grafo";
 
 /**
  * La marca de estado de una pieza legislativa.
@@ -67,7 +68,7 @@ export default function IniciativaCard({ iniciativa }: { iniciativa: Iniciativa 
   return (
     <li className="cv-auto group border-b border-hairline last:border-0">
       <Link
-        href={`/congreso/${iniciativa.id}`}
+        href={enlace.iniciativa(iniciativa.id)}
         className="block px-4 py-3.5 transition-colors hover:bg-canvas/60 sm:px-5"
       >
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">

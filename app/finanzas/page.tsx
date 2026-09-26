@@ -17,6 +17,7 @@ import { formatInt } from "@/lib/nomina";
 import { Termino } from "@/components/termino";
 import { DescargarCsv } from "./descargar-csv";
 import { SubsidioElectrico } from "@/components/fuentes-nuevas/subsidio-electrico";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/finanzas" },
@@ -402,7 +403,7 @@ export default async function FinanzasPage({
               */
               <li key={i.codigo} className="cv-auto [--cv-alto:7.5rem] sm:[--cv-alto:5.5rem]">
                 <Link
-                  href={`/finanzas/${i.codigo}`}
+                  href={enlace.capitulo(i.codigo)}
                   className="block rounded-lg border border-hairline px-4 py-3 transition hover:border-v-finanzas"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -517,7 +518,7 @@ function FilasRanking({
       {filas.map(({ i, cifra }) => (
         <li key={i.codigo}>
           <Link
-            href={`/finanzas/${i.codigo}`}
+            href={enlace.capitulo(i.codigo)}
             className="flex min-h-11 items-center justify-between gap-3 py-2 transition-colors hover:text-brand-700"
           >
             <span className="min-w-0 leading-snug">{i.nombreLegible}</span>

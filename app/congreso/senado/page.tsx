@@ -20,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/congreso/senado" },
@@ -227,7 +228,7 @@ function ExpedienteRow({ exp }: { exp: ExpedienteSenado }) {
   return (
     <li className="cv-auto group border-b border-hairline last:border-0">
       <Link
-        href={`/congreso/senado/${exp.cuatrienio}/${exp.id}`}
+        href={enlace.expedienteSenado(exp.cuatrienio, exp.id)}
         className="block px-4 py-3.5 transition-colors hover:bg-canvas/60 sm:px-5"
       >
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">

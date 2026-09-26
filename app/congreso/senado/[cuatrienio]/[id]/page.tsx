@@ -25,6 +25,8 @@ import { Ruta } from "@/components/ruta";
 import AccionesFicha from "@/components/acciones-ficha";
 import { Termino } from "@/components/termino";
 import { EnDiputados } from "@/components/congreso/cruces";
+import { enlace } from "@/lib/grafo";
+import { TextoEnlazado } from "@/components/texto-enlazado";
 
 export const revalidate = 3600;
 
@@ -56,7 +58,7 @@ export async function generateMetadata({ params }: Props) {
   if (!ficha) return { title: "Expediente no encontrado" };
   const { cuatrienio, id } = await params;
   return {
-    alternates: { canonical: `/congreso/senado/${cuatrienio}/${id}` },
+    alternates: { canonical: enlace.expedienteSenado(cuatrienio, id) },
     title: ficha.numero?.completo ?? `Expediente ${ficha.id}`,
     description: ficha.titulo.slice(0, 160),
   };
@@ -86,7 +88,7 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         </div>
 
         <h1 className="mt-2 text-xl font-semibold leading-snug tracking-tight text-ink sm:text-2xl">
-          {ficha.titulo}
+          <TextoEnlazado texto={ficha.titulo} />
         </h1>
 
         {ficha.tituloModificado && (
@@ -95,11 +97,11 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
               Título modificado durante el trámite
             </p>
             <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-              {ficha.tituloModificado}
+              <TextoEnlazado texto={ficha.tituloModificado} />
             </p>
           </div>
         )}
-        <AccionesFicha className="mt-3" tipo="expediente-senado" id={`${ficha.cuatrienio}/${ficha.id}`} titulo={ficha.titulo} href={`/congreso/senado/${ficha.cuatrienio}/${ficha.id}`} situacion={{ condicion: ficha.condicion, estadoActual: ficha.estadoActual, promulgada: ficha.promulgada, perimida: ficha.perimida }} />
+        <AccionesFicha className="mt-3" tipo="expediente-senado" id={`${ficha.cuatrienio}/${ficha.id}`} titulo={ficha.titulo} href={enlace.expedienteSenado(ficha.cuatrienio, ficha.id)} situacion={{ condicion: ficha.condicion, estadoActual: ficha.estadoActual, promulgada: ficha.promulgada, perimida: ficha.perimida }} />
       </header>
 
       {ficha.promulgada && (

@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Ruta } from "@/components/ruta";
 import AccionesFicha from "@/components/acciones-ficha";
 import { Termino } from "@/components/termino";
+import { enlace } from "@/lib/grafo";
 
 export async function generateStaticParams() {
   const fiscal = await getFiscal();
@@ -26,7 +27,7 @@ export async function generateMetadata({
   if (!datos) return { title: `Capítulo ${capitulo}` };
   return {
     title: `${datos.institucion.nombreLegible} — ejecución presupuestaria`,
-    alternates: { canonical: `/finanzas/${capitulo}` },
+    alternates: { canonical: enlace.capitulo(capitulo) },
     description: `Presupuesto vigente, comprometido, devengado y pagado de ${datos.institucion.nombreLegible} en ${datos.fiscal.anio}.`,
   };
 }
@@ -67,7 +68,7 @@ export default async function InstitucionFiscalPage({
         <p className="mt-1.5 text-sm text-ink-soft">
           Ejecución de {fiscal.anio}, con corte a {etiquetaCorte(fiscal.mesCorte, fiscal.anio)}.
         </p>
-        <AccionesFicha className="mt-3" tipo="capitulo" id={i.codigo} titulo={i.nombreLegible} href={`/finanzas/${i.codigo}`} />
+        <AccionesFicha className="mt-3" tipo="capitulo" id={i.codigo} titulo={i.nombreLegible} href={enlace.capitulo(i.codigo)} />
 
         {/*
           «RD$ 330.0 mil millones» no cabe en una casilla de media pantalla: a

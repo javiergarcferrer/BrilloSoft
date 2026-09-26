@@ -10,6 +10,7 @@ import {
 import { IconStar } from "./icons";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { enlace } from "@/lib/grafo";
 
 /**
  * Seguir o dejar de seguir cualquier cosa de la plataforma: un proceso, un
@@ -40,7 +41,7 @@ export default function SeguirButton({
   const titulo = objetivo.titulo || id;
   const href = objetivo.tipo
     ? objetivo.href
-    : `/procesos/${encodeURIComponent(objetivo.codigo)}`;
+    : enlace.proceso(objetivo.codigo);
   const huella = objetivo.huella;
 
   const [seguido, setSeguido] = useState(false);

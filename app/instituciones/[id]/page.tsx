@@ -37,6 +37,7 @@ import { Cifra, TiraDeCifras } from "@/components/papel";
 import Plegable from "@/components/plegable";
 import AccionesFicha from "@/components/acciones-ficha";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
+import { enlace } from "@/lib/grafo";
 
 /** Normas a la vista en «Lo que decreta el Ejecutivo»; el resto, plegado. */
 const NORMAS_A_LA_VISTA = 2;
@@ -342,7 +343,7 @@ function ListaNormas({ docs }: { docs: Norma[] }) {
 
 function FilaNorma({ d }: { d: Norma }) {
   const ruta = RUTA_POR_TIPO[d.tipo];
-  const href = ruta ? `/normativa/${ruta}/${d.numero}` : d.url;
+  const href = (ruta && enlace.norma(ruta, d.numero)) || d.url;
   const cuerpo = (
     <>
       <span className="font-mono text-xs font-semibold tabular-nums text-brand-700">
@@ -427,7 +428,7 @@ function Presupuesto({
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         <Button asChild variant="secondary">
-          <Link href={`/finanzas/${c.codigo}`}>Ver su ejecución mes a mes</Link>
+          <Link href={enlace.capitulo(c.codigo)}>Ver su ejecución mes a mes</Link>
         </Button>
       </div>
       {hermanas.length > 0 && (
@@ -502,7 +503,7 @@ async function Compras({ institucion: i }: { institucion: Institucion }) {
               <li key={p.rpe || p.nombre}>
                 <div className="flex items-baseline justify-between gap-2">
                   {p.rpe ? (
-                    <Link href={`/proveedores/${p.rpe}`} className="min-w-0 truncate hover:text-brand-700">
+                    <Link href={enlace.proveedor(p.rpe)} className="min-w-0 truncate hover:text-brand-700">
                       {p.nombre}
                     </Link>
                   ) : (
@@ -566,7 +567,7 @@ function ListaAdjudicaciones({ contratos }: { contratos: Adjudicacion[] }) {
     <ul className="divide-y divide-hairline px-5 sm:px-6">
       {contratos.map((c) => (
         <li key={c.codigo_contrato} className="py-2.5 text-sm">
-          <Link href={`/procesos/${c.codigo_proceso}`} className="group block">
+          <Link href={enlace.proceso(c.codigo_proceso)} className="group block">
             <span className="line-clamp-2 leading-snug group-hover:text-brand-700">
               {c.descripcion || c.codigo_proceso}
             </span>

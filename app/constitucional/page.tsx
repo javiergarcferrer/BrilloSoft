@@ -12,6 +12,7 @@ import { Paginador } from "@/components/paginador";
 import { Card } from "@/components/ui/card";
 import Plegable from "@/components/plegable";
 import Antiguedad from "@/components/antiguedad";
+import { TextoEnlazado } from "@/components/texto-enlazado";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/constitucional" },
@@ -201,7 +202,7 @@ export default async function ConstitucionalPage({
                   <Antiguedad iso={s.fecha} />
                 </span>
                 <span className="mt-1 block text-[15px] leading-snug text-ink [overflow-wrap:anywhere]">
-                  {s.relativo || "Sin resumen en el listado"}
+                  {s.relativo ? <TextoEnlazado texto={s.relativo} soloForma /> : "Sin resumen en el listado"}
                 </span>
                 {s.expediente && (
                   <span className="mt-1 block font-mono text-xs text-ink-soft [overflow-wrap:anywhere]">

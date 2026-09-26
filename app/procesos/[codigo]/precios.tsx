@@ -5,6 +5,7 @@ import { formatFecha, formatMonto } from "@/lib/format";
 import Plegable from "@/components/plegable";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { enlace } from "@/lib/grafo";
 
 /**
  * Precios históricos de adjudicación por subclase UNSPSC.
@@ -152,7 +153,7 @@ async function SubclaseStats({
                         {e.descripcion_usuario || e.descripcion_articulo}
                       </span>
                       <Link
-                        href={`/procesos/${encodeURIComponent(e.codigo_proceso)}`}
+                        href={enlace.proceso(e.codigo_proceso)}
                         className="font-mono text-brand-700 estira hover:underline"
                       >
                         {e.codigo_proceso}

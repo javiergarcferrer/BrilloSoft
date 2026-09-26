@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { enlace } from "@/lib/grafo";
 
 /**
  * La historia de un proveedor o de una institución en el sistema de compras,
@@ -218,7 +219,7 @@ export async function HistoriaDeInstitucion({ uc, nombre }: { uc: number; nombre
           <ol className="mt-1 divide-y divide-hairline">
             {h.top.map(([rpe, nombreProv, n, monto]) => (
               <li key={rpe} className="relative flex min-h-11 items-baseline justify-between gap-3 py-2 text-sm">
-                <Link href={`/proveedores/${rpe}`} className="min-w-0 text-ink estira hover:text-brand-700">
+                <Link href={enlace.proveedor(rpe)} className="min-w-0 text-ink estira hover:text-brand-700">
                   {desdeMayusculas(nombreProv) || `RPE ${rpe}`}
                 </Link>
                 <span className="shrink-0 text-right font-mono tabular-nums">

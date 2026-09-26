@@ -4,6 +4,7 @@ import { formatPesos, tituloLegible } from "@/lib/format";
 import { MarcaEstado } from "@/components/marca-estado";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { enlace } from "@/lib/grafo";
 
 /**
  * «¿De qué obra es esta compra?» — el eslabón proceso → SNIP → obra.
@@ -34,7 +35,7 @@ export async function ObraDelProceso({ codigo, snip }: { codigo: string; snip?: 
               <span className="text-xs text-ink-soft">según {segun.join(" y ")}</span>
             </div>
             <Link
-              href={`/obras/${o.snip}`}
+              href={enlace.obra(o.snip)}
               className="mt-1.5 block text-[15px] leading-snug text-ink estira hover:text-brand-700"
             >
               {tituloLegible(o.nombre)}

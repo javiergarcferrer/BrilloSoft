@@ -24,6 +24,7 @@ import { Resaltado } from "@/components/resaltado";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import { IconArrowRight, IconExternal } from "@/components/icons";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/buscar" },
@@ -359,7 +360,7 @@ async function Diputados({ q }: { q: string }) {
         {lista.map((i) => (
           <li key={i.id}>
             <Fila
-              href={`/congreso/${i.id}`}
+              href={enlace.iniciativa(i.id)}
               titulo={desdeMayusculas(i.titulo)}
               detalle={[i.numero?.completo, marcaDeIniciativa(i).label].filter(Boolean).join(" · ")}
             />

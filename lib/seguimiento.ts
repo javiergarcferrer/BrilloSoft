@@ -23,6 +23,7 @@
  */
 
 import * as z from "zod/mini";
+import { enlace } from "@/lib/grafo";
 
 const KEY = "lrd:seguimiento";
 const EVENTO = "lrd:seguimiento-cambio";
@@ -138,7 +139,7 @@ const ENTRADA = z.object({
 const esRutaPropia = (h: string | undefined): h is string => !!h && h.startsWith("/") && !h.startsWith("//");
 
 function hrefProceso(codigo: string): string {
-  return `/procesos/${encodeURIComponent(codigo)}`;
+  return enlace.proceso(codigo);
 }
 
 /** Normaliza lo que haya en el almacenamiento, venga de la forma que venga. */

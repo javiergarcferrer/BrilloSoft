@@ -35,6 +35,7 @@ import { IconArrowRight } from "@/components/icons";
 import { Resaltado } from "@/components/resaltado";
 import BuscadorProveedores from "./buscador";
 import { Portada } from "@/components/portada";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/proveedores" },
@@ -266,7 +267,7 @@ async function RankingPorMonto() {
                 {i + 1}
               </span>
               <Link
-                href={`/proveedores/${p.rpe}`}
+                href={enlace.proveedor(p.rpe)}
                 title={p.razonSocial}
                 className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 estira hover:underline"
               >
@@ -362,7 +363,7 @@ async function RankingPorContratos() {
                 {i + 1}
               </span>
               <Link
-                href={`/proveedores/${p.rpe}`}
+                href={enlace.proveedor(p.rpe)}
                 title={p.razonSocial}
                 className="line-clamp-1 min-w-0 flex-1 text-sm font-medium text-brand-700 estira hover:underline"
               >
@@ -439,7 +440,7 @@ async function QuienesSon() {
             >
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <Link
-                  href={`/proveedores/${p.rpe}`}
+                  href={enlace.proveedor(p.rpe)}
                   className="text-sm font-medium text-brand-700 estira hover:underline"
                 >
                   {f.razonSocial}
@@ -691,7 +692,7 @@ function FichaEncontrada({
         </p>
 
         <Button asChild className="mt-4">
-          <Link href={`/proveedores/${registro.rpe}`}>
+          <Link href={enlace.proveedor(registro.rpe)}>
             Ver su historial completo
             <IconArrowRight className="h-4 w-4" />
           </Link>
@@ -763,7 +764,7 @@ function FilaCoincidencia({ p }: { p: ProveedorEnMercado }) {
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <Link
-          href={`/proveedores/${p.rpe}`}
+          href={enlace.proveedor(p.rpe)}
           className="text-sm font-medium text-brand-700 estira hover:underline"
         >
           {p.razonSocial}

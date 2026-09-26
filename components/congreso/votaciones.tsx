@@ -4,6 +4,7 @@ import { formatFecha } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/cn";
+import { enlace } from "@/lib/grafo";
 
 /**
  * Una votación del pleno de Diputados, en una fila.
@@ -33,7 +34,7 @@ export function FilaVotacion({
       <div className="px-4 py-3.5 sm:px-5">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
           <Link
-            href={`/congreso/votaciones/${votacion.id}`}
+            href={enlace.votacion(votacion.id)}
             className="font-mono text-xs font-semibold tabular-nums text-brand-700 estira hover:underline"
           >
             {votacion.titulo}

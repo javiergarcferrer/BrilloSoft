@@ -37,6 +37,7 @@ import { insertMultiple, load, search, type AnyOrama } from "@orama/orama";
 import { Tokenizer } from "@huggingface/tokenizers";
 import { aDocumento, etiquetaCorpus, indiceVacio } from "@/lib/busqueda-esquema";
 import { sinTildes } from "@/lib/raiz";
+import { enlace } from "@/lib/grafo";
 
 export type TipoResultado = "institucion" | "proveedor" | "norma" | "obra" | "documento" | "dato" | "cargo";
 
@@ -536,7 +537,7 @@ function aResultado(c: Corpus, d: Entrada, via: Via, formatos?: string[]): Resul
     titulo: d.ti,
     detalle: (formatos ? formatos.join(" · ") : proveedor ? detalleProveedor(d) : d.d) || null,
     origen: d.o === undefined ? null : c.origenes[d.o],
-    href: proveedor && d.r ? `/proveedores/${d.r}` : (d.h ?? null),
+    href: proveedor && d.r ? enlace.proveedor(d.r) : (d.h ?? null),
     externo: d.e === 1,
     fecha: d.f ?? null,
     valor: d.v ?? null,

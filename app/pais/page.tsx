@@ -22,6 +22,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import Plegable from "@/components/plegable";
 import { Portada, PortadaCifra, PortadaCifras } from "@/components/portada";
 import { Barras } from "@/components/barras";
+import { enlace } from "@/lib/grafo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/pais" },
@@ -54,7 +55,7 @@ function pct(parte: number, total: number): string {
 function NombreProvincia({ nombre }: { nombre: string }) {
   const p = provinciaDeTexto(nombre);
   return p ? (
-    <Link href={`/provincias/${p.slug}`} className="text-ink hover:text-brand-700 hover:underline">
+    <Link href={enlace.provincia(p.slug)} className="text-ink hover:text-brand-700 hover:underline">
       {p.nombre}
     </Link>
   ) : (

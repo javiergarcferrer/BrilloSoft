@@ -54,6 +54,7 @@ import { ComercioExterior } from "@/components/fuentes-nuevas/comercio-exterior"
 import { InflacionTurismo } from "@/components/fuentes-nuevas/inflacion-turismo";
 import { IndicadoresBanca } from "@/components/fuentes-nuevas/indicadores-banca";
 import { EstadisticasJudiciales } from "@/components/fuentes-nuevas/estadisticas-judiciales";
+import { enlace } from "@/lib/grafo";
 
 export const revalidate = 1800;
 
@@ -343,7 +344,7 @@ async function PuertaNormativa() {
         <ul className="mt-2 flex-1 divide-y divide-hairline">
           {recientes.map((d) => (
             <li key={d.numero} className="py-2">
-              <Link href={`/normativa/decreto/${d.numero}`} className="group block">
+              <Link href={enlace.norma("decreto", d.numero) ?? "/normativa"} className="group block">
                 <span className="font-mono text-xs font-semibold tabular-nums text-brand-700">
                   Decreto {d.numero}
                 </span>
@@ -623,7 +624,7 @@ async function PanelCierran() {
           {cierranPronto.slice(0, 5).map(({ p, dias }) => (
             <li key={p.codigo_proceso}>
               <Link
-                href={`/procesos/${encodeURIComponent(p.codigo_proceso)}`}
+                href={enlace.proceso(p.codigo_proceso)}
                 className="flex items-start gap-3 px-5 py-3 transition-colors hover:bg-canvas/60"
               >
                 <Badge
@@ -677,7 +678,7 @@ async function PanelPerencion({
           {resumen.enRiesgo.slice(0, 5).map((ini) => (
             <li key={ini.id}>
               <Link
-                href={`/congreso/${ini.id}`}
+                href={enlace.iniciativa(ini.id)}
                 className="block px-5 py-3 transition-colors hover:bg-canvas/60"
               >
                 <span className="line-clamp-2 block text-sm text-ink">{ini.titulo}</span>
