@@ -26,7 +26,7 @@
 import { provinciaDeTexto, type Provincia } from "./provincias";
 import { MESES } from "@/lib/format";
 import { z } from "zod";
-import { pedirJson } from "@/lib/pedir";
+import { filas, pedirJson } from "@/lib/pedir";
 
 const BASE = "https://opsevi.intrant.gob.do/api";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (muertes en las vias; herramienta independiente)";
@@ -60,16 +60,15 @@ function pedir<T>(ruta: string, esquema: z.ZodType<T>): Promise<T | null> {
 /*
   La forma de cada respuesta, validada: si OPSEVI renombra un campo, la
   lectura falla con su motivo en el registro y la tarjeta se degrada, en vez
-  de pintar ceros. Los números pueden venir nulos: el cálculo ya los salta.
+  de pintar ceros. Una fila con otra forma se descarta sola (`filas`) y los
+  números pueden venir nulos: el cálculo ya los salta.
 */
 const NACIONAL = z.looseObject({
-  monthly: z.array(z.looseObject({ month: z.string(), fatalities: z.number().nullable() })).optional(),
-  "vehicle-types": z
-    .array(z.looseObject({ vehicleType: z.string(), fatalities: z.number().nullable() }))
-    .optional(),
+  monthly: filas(z.looseObject({ month: z.string(), fatalities: z.number().nullish() })).nullish(),
+  "vehicle-types": filas(z.looseObject({ vehicleType: z.string(), fatalities: z.number().nullish() })).nullish(),
 });
 type Nacional = z.infer<typeof NACIONAL>;
-const PROVINCIAS = z.array(z.looseObject({ provinceName: z.string().nullable(), deaths: z.number().nullable() }));
+const PROVINCIAS = filas(z.looseObject({ provinceName: z.string().nullish(), deaths: z.number().nullish() }));
 const RESUMEN = z.looseObject({
   fatalities: z.number().nullish(),
   injuries: z.number().nullish(),

@@ -160,10 +160,12 @@ Every UI that shows them states the source's cut date.
   `consultado`. `/gestion` shows the full ranking; `SismapDeInstitucion` the
   institution's row.
 - **`lib/combustibles.ts`** and **`lib/tasa.ts`** are *live* sources, not
-  snapshots (fetch `revalidate: 3600`, 25 s, one retry, content-type checked):
-  the MICM front page (six prices + the week, parsed from its markup) and the
-  BCRD reference-rate `.xlsx` on its CDN (daily sheet, only the tail parsed with
-  `leerZip` exported from `lib/deuda.ts`). The panorama indicators live in
+  snapshots (through `lib/pedir.ts`: 25 s, one retry, content-type checked):
+  the MICM front page (six prices + the week, parsed from its markup, fetch
+  `revalidate: 3600`) and the BCRD reference-rate `.xlsx` on its CDN (the
+  whole daily sheet read with `lib/xlsx.ts`, ~0.5 s for 9,000 rows, so the
+  parsed rate is kept one hour with `unstable_cache` and the download itself is
+  `no-store`). The panorama indicators live in
   `components/fuentes-nuevas/indicadores-bolsillo.tsx` (`SeccionBolsillo`).
 
 ## Tercera pasada — el Estado entero (`docs/AUDITORIA.md` §G)

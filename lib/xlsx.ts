@@ -42,7 +42,8 @@ const parser = new XMLParser({
   trimValues: false,
   // Las entidades las decodifica `entities`, numéricas incluidas.
   processEntities: false,
-  isArray: (nombre) => COMO_LISTA.has(nombre),
+  // Solo elementos: un atributo `r` (la referencia de la celda) no es lista.
+  isArray: (nombre, _ruta, _hoja, esAtributo) => !esAtributo && COMO_LISTA.has(nombre),
 });
 
 /** El texto de un `<t>`, de un `<si>`/`<is>` con sus trozos `<r>`, o vacío. */
@@ -51,11 +52,13 @@ function textoDe(nodo: unknown): string {
   if (typeof nodo === "string" || typeof nodo === "number") return String(nodo);
   if (typeof nodo !== "object") return "";
   const o = nodo as Record<string, unknown>;
-  if ("#text" in o) return String(o["#text"] ?? "");
   // `<si>`/`<is>`: texto plano en `t`, o enriquecido en trozos `r`, cada uno
-  // con su `t`. `rPh` (la lectura fonética) no es parte del texto.
+  // con su `t`. `rPh` (la lectura fonética) no es parte del texto. Van antes
+  // que `#text`: en un XML sangrado, el `<si>` trae también un `#text` de
+  // puro espacio, y leerlo primero dejaba todas las cadenas en blanco.
   if ("t" in o) return textoDe(o.t);
   if (Array.isArray(o.r)) return o.r.map((r) => textoDe((r as Record<string, unknown>).t)).join("");
+  if ("#text" in o) return String(o["#text"] ?? "");
   return "";
 }
 

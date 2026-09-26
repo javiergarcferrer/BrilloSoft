@@ -47,7 +47,9 @@ function bajar(): Promise<ArrayBuffer | null> {
     fuente: "tasa",
     ua: USER_AGENT,
     tipo: /octet-stream|spreadsheetml|excel/i,
-    revalidate: 3600,
+    // La hora la cuenta `unstable_cache` sobre el resultado; guardar también
+    // la descarga otra hora dejaría la tasa hasta dos horas atrás.
+    cache: "no-store",
     firma: "zip",
   });
 }
@@ -64,7 +66,7 @@ const leerTasa = unstable_cache(
     const puntos: PuntoTasa[] = [];
     for (const { celdas } of filasDe(hoja)) {
       const anio = Number(celdas.get("A"));
-      const mes = numeroMes(celdas.get("B") ?? "");
+      const mes = numeroMes(celdas.get("B") ?? "", { abreviado: true });
       const dia = Number(celdas.get("C"));
       const compra = Number(celdas.get("D"));
       const venta = Number(celdas.get("E"));

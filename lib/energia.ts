@@ -23,7 +23,7 @@
  */
 
 import { z } from "zod";
-import { pedirJson } from "@/lib/pedir";
+import { filas, pedirJson } from "@/lib/pedir";
 
 const BASE = "https://apps.oc.org.do/wsOCWebsiteChart/Service.asmx";
 const USER_AGENT = "Socratico-Inteligencia/1.0 (generacion electrica del OC; herramienta independiente)";
@@ -53,18 +53,16 @@ function pedir<T>(ruta: string, esquema: z.ZodType<T>): Promise<T | null> {
 
 /*
   La forma de las dos respuestas del OC, validada: un campo renombrado deja
-  la tarjeta en «no disponible» con su motivo en el registro. Una hora con un
-  número nulo no invalida el resto; la cuenta de 24 horas completas decide.
+  la tarjeta en «no disponible» con su motivo en el registro. Una hora rara
+  se descarta sola (`filas`); la cuenta de 24 horas completas decide.
 */
 const GENERACION = z.looseObject({
-  GetGeneracionReprogramada: z
-    .array(z.looseObject({ PERIODO: z.number(), PROGRAMADO: z.number().nullable(), GENERACION: z.number().nullable() }))
-    .optional(),
+  GetGeneracionReprogramada: filas(
+    z.looseObject({ PERIODO: z.number(), PROGRAMADO: z.number().nullish(), GENERACION: z.number().nullish() }),
+  ).nullish(),
 });
 const MARGINAL = z.looseObject({
-  GetCentralMarginalPonderada: z
-    .array(z.looseObject({ PERIODO: z.number(), CENTRAL: z.string().nullable() }))
-    .optional(),
+  GetCentralMarginalPonderada: filas(z.looseObject({ PERIODO: z.number(), CENTRAL: z.string().nullish() })).nullish(),
 });
 
 /** Ayer en Santo Domingo, como ISO y como `MM/DD/YYYY` para el servicio. */

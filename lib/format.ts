@@ -43,23 +43,37 @@ export const MESES_CORTOS: readonly string[] = MESES.map((m) => m.slice(0, 3));
 
 /**
  * El mes que nombra la **primera palabra** de un texto: «Ago», «AGOSTO 2/»,
- * «*Setiembre», «Sept.» → el número; otra cosa → 0. La palabra tiene que ser
- * el nombre o una abreviatura de él (tres letras o más): «Mayor» o «Total»
- * no son meses. Las hojas del BCRD mezclan abreviaturas inglesas.
+ * «*Setiembre», «Sept.» → el número; otra cosa → 0.
+ *
+ * Estricto por defecto: la palabra tiene que ser el nombre o una abreviatura
+ * de él (tres letras o más), así que «Mayor», «Total» o «Enero-Agosto» no
+ * son un mes. Con `{ abreviado: true }` basta con las tres primeras letras,
+ * que es como leen sus columnas de mes la hoja de la tasa del BCRD y el visor
+ * del TSE: así pasan «Novienbre», «Septiempre» y los nombres ingleses
+ * («June», «October»).
  */
-export function numeroMes(texto: string): number {
-  const w =
+export function numeroMes(texto: string, { abreviado = false }: { abreviado?: boolean } = {}): number {
+  const w = (
     texto
-      .normalize("NFD")
+      .trim()
+      .split(/\s+/)[0]
+      ?.normalize("NFD")
       .replace(/\p{M}/gu, "")
-      .toLowerCase()
-      .split(/[^a-z]+/)
-      .find(Boolean) ?? "";
-  if (w.length < 3) return 0;
+      .toLowerCase() ?? ""
+  )
+    // «*Septiembre» o «Sept.»: los signos alrededor no son parte de la palabra;
+    // uno en medio («Enero-Agosto») sí la cambia.
+    .replace(/^[^a-z]+|[^a-z]+$/g, "");
+  if (w.length < 3 || /[^a-z]/.test(w)) return 0;
+  const OTRAS: Record<string, number> = { jan: 1, apr: 4, aug: 8, dec: 12 };
+  if (abreviado) {
+    const t = w.slice(0, 3);
+    return t === "set" ? 9 : MESES_CORTOS.indexOf(t) + 1 || OTRAS[t] || 0;
+  }
   if (w.startsWith("set") && "setiembre".startsWith(w)) return 9;
   const i = MESES.findIndex((m) => m.startsWith(w));
   if (i >= 0) return i + 1;
-  return ({ jan: 1, apr: 4, aug: 8, dec: 12 } as Record<string, number>)[w] ?? 0;
+  return OTRAS[w] ?? 0;
 }
 
 /** «ene» → «Ene». */

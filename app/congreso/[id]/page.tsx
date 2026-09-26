@@ -252,18 +252,17 @@ export default async function IniciativaPage({ params }: Props) {
         columna y partía el ancho con los trámites. En el teléfono, que es de
         una sola columna, el orden no cambia.
       */}
-      {agregado && (
-        <div className="mt-5 lg:col-span-2">
-          <VotoWidget
-            camara="diputados"
-            refIni={ref}
-            numero={ini.numero?.completo ?? null}
-            titulo={ini.titulo}
-            grupo={ini.grupo}
-            inicial={agregado}
-          />
-        </div>
-      )}
+      {/* Sin recuento se vota igual: el widget dice «no disponible». */}
+      <div className="mt-5 lg:col-span-2">
+        <VotoWidget
+          camara="diputados"
+          refIni={ref}
+          numero={ini.numero?.completo ?? null}
+          titulo={ini.titulo}
+          grupo={ini.grupo}
+          inicial={agregado}
+        />
+      </div>
 
         <div className="flex flex-col gap-5">
           <Panel titulo="Trámites" nota={tramites.length > 0 ? String(tramites.length) : undefined}>

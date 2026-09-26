@@ -153,18 +153,17 @@ export default async function ExpedienteSenadoPage({ params }: Props) {
         <SeccionDocumento cuatrienio={ficha.cuatrienio} id={ficha.id} />
       </Suspense>
 
-      {agregado && (
-        <div className="mt-5">
-          <VotoWidget
-            camara="senado"
-            refIni={ref}
-            numero={ficha.numero?.completo ?? null}
-            titulo={ficha.titulo}
-            grupo={ficha.materia}
-            inicial={agregado}
-          />
-        </div>
-      )}
+      {/* Sin recuento se vota igual: el widget dice «no disponible». */}
+      <div className="mt-5">
+        <VotoWidget
+          camara="senado"
+          refIni={ref}
+          numero={ficha.numero?.completo ?? null}
+          titulo={ficha.titulo}
+          grupo={ficha.materia}
+          inicial={agregado}
+        />
+      </div>
 
       {/*
         Nueve celdas de taxonomía cruda son el bloque de mayor densidad y menor

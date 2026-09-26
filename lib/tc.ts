@@ -174,6 +174,8 @@ async function leerAnio(anio: number): Promise<SentenciasTC> {
     cabeceras: { Accept: "text/html" },
     cache: "no-store",
     espera: TIMEOUT_MS,
+    // Un 200 sin la tabla se reintenta una vez, como antes.
+    comprobar: (h) => (parsearListadoTC(h) ? null : "la página no trae la tabla de sentencias"),
   });
   const leido = parsearListadoTC(html);
   if (!leido) throw new Error("la página no trae la tabla de sentencias");

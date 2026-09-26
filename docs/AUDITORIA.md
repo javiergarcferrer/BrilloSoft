@@ -809,8 +809,9 @@ indicador `IndicadorTasa` para el panorama). Re-verificación:
   `application/octet-stream`, 357 KB, `last-modified: 21-sep-2026`. Siete
   hojas; la primera, «Diaria», trae Año | Mes | Día | Compra | Venta desde el
   2-ene-1991 (8,967 filas); último dato 21-sep-2026: compra 59.1740, venta
-  59.4618. Se lee con el mini-lector de XLSX de `lib/deuda.ts`, sin
-  dependencias, y solo la cola de la hoja.
+  59.4618. Se lee entera con `lib/xlsx.ts` (`fflate` + `fast-xml-parser`,
+  desde el 2026-09-26; antes, un mini-lector propio que solo leía la cola) y
+  el resultado se guarda una hora.
 
 ### A.7 SISMAP — no hay SPA: las tablas vienen servidas
 

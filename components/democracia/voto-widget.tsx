@@ -41,10 +41,11 @@ export default function VotoWidget({
   numero?: string | null;
   titulo?: string | null;
   grupo?: string | null;
-  inicial: Agregado;
+  /** `null`: el recuento no se pudo leer. Se puede votar igual; no se inventan ceros. */
+  inicial: Agregado | null;
 }) {
   const [estado, setEstado] = useState<Estado>("cargando");
-  const [agg, setAgg] = useState<Agregado>(inicial);
+  const [agg, setAgg] = useState<Agregado | null>(inicial);
   const [miVoto, setMiVoto] = useState<-1 | 1 | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,6 +111,7 @@ export default function VotoWidget({
 
     // Optimista sobre el agregado.
     setAgg((a) => {
+      if (!a) return a; // sin recuento no hay a qué sumar: lo trae el refresco
       const next = { ...a };
       if (previo === 1) next.a_favor -= 1;
       if (previo === -1) next.en_contra -= 1;
@@ -143,8 +145,8 @@ export default function VotoWidget({
     setEnviando(false);
   }
 
-  const total = agg.total;
-  const pctFavor = total > 0 ? Math.round((agg.a_favor / total) * 100) : 0;
+  const total = agg?.total ?? 0;
+  const pctFavor = agg && total > 0 ? Math.round((agg.a_favor / total) * 100) : 0;
 
   return (
     <Card as="section" className="border-brand-100 bg-brand-50/50 p-4 sm:p-5">
@@ -166,9 +168,11 @@ export default function VotoWidget({
           </p>
         </div>
         <span className="font-mono shrink-0 text-xs tabular-nums text-ink-soft sm:text-right">
-          {miVoto === null
-            ? `${total.toLocaleString("es-DO")} ${total === 1 ? "persona ya opinó" : "personas ya opinaron"}`
-            : `${total.toLocaleString("es-DO")} ${total === 1 ? "voto" : "votos"}`}
+          {!agg
+            ? "Recuento no disponible por ahora"
+            : miVoto === null
+              ? `${total.toLocaleString("es-DO")} ${total === 1 ? "persona ya opinó" : "personas ya opinaron"}`
+              : `${total.toLocaleString("es-DO")} ${total === 1 ? "voto" : "votos"}`}
         </span>
       </div>
 
@@ -178,7 +182,7 @@ export default function VotoWidget({
         votación pública—, y esta plataforma dice que la conclusión la saca el
         lector. El ranking de /democracia sigue siendo el sitio del agregado.
       */}
-      {total > 0 && miVoto !== null && (
+      {agg && total > 0 && miVoto !== null && (
         <div className="mt-4">
           <Progress
             value={pctFavor}
@@ -259,7 +263,7 @@ export default function VotoWidget({
           disabled={enviando || !puedeVotar}
           onClick={() => votar(1)}
           tono="favor"
-          conteo={miVoto === null ? null : agg.a_favor}
+          conteo={miVoto === null || !agg ? null : agg.a_favor}
         >
           A favor
         </BotonVoto>
@@ -268,7 +272,7 @@ export default function VotoWidget({
           disabled={enviando || !puedeVotar}
           onClick={() => votar(-1)}
           tono="contra"
-          conteo={miVoto === null ? null : agg.en_contra}
+          conteo={miVoto === null || !agg ? null : agg.en_contra}
         >
           En contra
         </BotonVoto>

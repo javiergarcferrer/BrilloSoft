@@ -124,13 +124,10 @@ export type Params = Record<string, string | number | boolean | undefined | null
  * como lista (o `null` cuando no hay resultados) y los totales.
  */
 const ENVOLTURA = z.looseObject({
-  code: z.number().optional(),
-  hasError: z.boolean().optional(),
-  payload: z.looseObject({ content: z.array(z.unknown()).nullable().optional() }).nullable().optional(),
-  page: z.number().nullable().optional(),
-  limit: z.number().nullable().optional(),
-  totalResults: z.number().nullable().optional(),
-  pages: z.number().nullable().optional(),
+  hasError: z.unknown(),
+  payload: z.looseObject({ content: z.array(z.unknown()).nullish() }).nullish(),
+  totalResults: z.number().nullish(),
+  pages: z.number().nullish(),
 });
 
 export async function dgcpFetch<T>(
@@ -153,11 +150,12 @@ export async function dgcpFetch<T>(
       cabeceras: { Accept: "application/json" },
       revalidate,
       esquema: ENVOLTURA,
+      // `hasError` suele ser un tropiezo del origen: se reintenta una vez.
+      comprobar: (d) => (d.hasError === true ? "la API marcó hasError" : null),
     });
   } catch (err) {
     throw new Error(`DGCP ${path}: ${err instanceof Error ? err.message : String(err)}`);
   }
-  if (crudo.hasError) throw new Error(`DGCP devolvió un error para ${path}`);
   const data = crudo as unknown as DgcpResponse<T>;
   // Cuando no hay resultados la API devuelve payload.content = null.
   if (!data.payload) data.payload = { content: [] };

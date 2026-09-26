@@ -81,7 +81,10 @@ export function refIniciativa(camara: Camara, id: string | number, cuatrienio?: 
 export async function getAgregado(camara: Camara, ref: string): Promise<Agregado | null> {
   const filtro = `camara=eq.${camara}&ref=eq.${encodeURIComponent(ref)}`;
   const rows = await rest(`agregados_publicos?${filtro}&select=*`, 30, AGREGADOS);
-  return rows?.[0] ?? { camara, ref, a_favor: 0, en_contra: 0, total: 0, verificados: 0 };
+  // Sin filas es «nadie votó todavía»: ceros de verdad. Sin respuesta es «no
+  // pudimos mirar»: `null`, y el widget lo dice en vez de publicar cero votos.
+  if (!rows) return null;
+  return rows[0] ?? { camara, ref, a_favor: 0, en_contra: 0, total: 0, verificados: 0 };
 }
 
 export interface RankingItem extends Agregado {

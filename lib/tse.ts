@@ -118,7 +118,7 @@ export function urlListadoTSE(anio: number, pagina = 1): string {
 function fechaISO(texto: string): string | null {
   const m = /^(\d{1,2})\s+([a-záéíóú]+)\.?\s+(\d{4})$/i.exec(texto);
   if (!m) return null;
-  const mes = numeroMes(m[2]);
+  const mes = numeroMes(m[2], { abreviado: true });
   const dia = Number(m[1]);
   if (!mes || dia < 1 || dia > 31) return null;
   return `${m[3]}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
@@ -182,6 +182,8 @@ function leerPagina(url: string): Promise<NonNullable<ReturnType<typeof parsearP
     cabeceras: { Accept: "text/html" },
     cache: "no-store",
     espera: TIMEOUT_MS,
+    // Un 200 sin la tabla se reintenta una vez, como antes.
+    comprobar: (h) => (parsearPaginaTSE(h) ? null : "la página no trae la tabla de sentencias"),
   }).then((html) => {
     const leido = parsearPaginaTSE(html);
     if (!leido) throw new Error("la página no trae la tabla de sentencias");

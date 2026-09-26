@@ -8,10 +8,13 @@
  * un tipo equivocado y otras no, unas leían el cuerpo dentro del reintento y
  * otras fuera. Aquí la política es una y está dicha:
  *
- *  · se reintenta una vez un fallo de red, un plazo vencido, un estado que no
- *    es 2xx o un cuerpo que no se pudo leer;
- *  · **no** se reintenta lo que no mejora repitiendo: un `content-type`
- *    equivocado, una firma de archivo que no casa o un JSON con otra forma.
+ *  · se reintenta una vez un fallo de red, un plazo vencido, un 5xx, un 408 o
+ *    un 429, un cuerpo que no se pudo leer, o una comprobación de la capa
+ *    («200 sin la tabla», «hasError») que suele ser un tropiezo del origen;
+ *  · **no** se reintenta lo que no mejora repitiendo: el resto de los 4xx
+ *    (un 403 o un 470 es un bloqueo, y repetirlo no lo levanta), un
+ *    `content-type` equivocado, una firma de archivo que no casa o un JSON
+ *    con otra forma.
  *
  * Dos sabores: `…OLanzar` lanza `FalloLectura` (para las capas que distinguen
  * la caída dentro de un `unstable_cache`, que no guarda excepciones), y el
@@ -23,7 +26,7 @@
  * documento.
  */
 
-import type { ZodType } from "zod";
+import { z, type ZodType } from "zod";
 
 export interface Pedido {
   /** La etiqueta del registro: «deuda» → `[deuda] …`. */
@@ -85,12 +88,13 @@ async function conContrato<T>(url: string, p: Pedido, leer: (res: Response) => P
         signal: AbortSignal.timeout(p.espera ?? 25_000),
       });
       if (!res.ok) {
-        res.body?.cancel();
-        throw new FalloLectura(`respondió ${motivo(res)}`, false, res.status);
+        res.body?.cancel().catch(() => {});
+        const repetible = res.status >= 500 || res.status === 408 || res.status === 429;
+        throw new FalloLectura(`respondió ${motivo(res)}`, !repetible, res.status);
       }
       const ct = res.headers.get("content-type") ?? "";
       if (!p.tipo.test(ct)) {
-        res.body?.cancel();
+        res.body?.cancel().catch(() => {});
         throw new FalloLectura(`content-type inesperado «${ct || "ninguno"}»`, true, res.status);
       }
       return await leer(res);
@@ -118,12 +122,42 @@ async function bytes(res: Response, p: Pedido): Promise<ArrayBuffer> {
   return buf;
 }
 
-export function pedirJsonOLanzar<T>(url: string, p: Pedido & { esquema?: ZodType<T> }): Promise<T> {
-  return conContrato(url, p, async (res) => validar(await res.json(), p.esquema));
+/**
+ * Una comprobación de la capa sobre lo leído: devuelve el motivo si no vale
+ * («la página no trae la tabla»), y la lectura se reintenta una vez.
+ */
+export type Comprobacion<T> = (leido: T) => string | null;
+
+function comprobar<T>(leido: T, c: Comprobacion<T> | undefined): T {
+  const motivo = c?.(leido);
+  if (motivo) throw new FalloLectura(motivo);
+  return leido;
 }
 
-export function pedirTextoOLanzar(url: string, p: Pedido): Promise<string> {
-  return conContrato(url, p, (res) => res.text());
+export function pedirJsonOLanzar<T>(
+  url: string,
+  p: Pedido & { esquema?: ZodType<T>; comprobar?: Comprobacion<T> },
+): Promise<T> {
+  return conContrato(url, p, async (res) => comprobar(validar(await res.json(), p.esquema), p.comprobar));
+}
+
+export function pedirTextoOLanzar(url: string, p: Pedido & { comprobar?: Comprobacion<string> }): Promise<string> {
+  return conContrato(url, p, async (res) => comprobar(await res.text(), p.comprobar));
+}
+
+/**
+ * Una lista cuyas filas se validan **una por una**: la que no tiene la forma
+ * se descarta y las demás siguen. Una fila rara del origen no apaga la
+ * tarjeta entera —como hacían las capas antes, que saltaban la fila—; una
+ * envoltura que cambió sí falla, porque entonces ya no es una lista.
+ */
+export function filas<T>(fila: ZodType<T>) {
+  return z.array(z.unknown()).transform((xs) =>
+    xs.flatMap((x) => {
+      const r = fila.safeParse(x);
+      return r.success ? [r.data] : [];
+    }),
+  );
 }
 
 function anotar(p: Pedido, url: string, err: unknown): null {

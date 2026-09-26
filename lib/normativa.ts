@@ -24,7 +24,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { unstable_cache } from "next/cache";
 import { z } from "zod";
-import { pedirJsonOLanzar } from "@/lib/pedir";
+import { filas, pedirJsonOLanzar } from "@/lib/pedir";
 
 const BASE = "https://www.consultoria.gov.do";
 
@@ -91,7 +91,7 @@ interface FilaBuscador {
 
 /** Entrada del repositorio `/api/documents` (solo los campos que se leen). */
 interface EntradaRepositorio {
-  id?: string;
+  id?: string | null;
   title?: string | null;
   fileUrl?: string | null;
   year?: number | null;
@@ -122,10 +122,11 @@ function aDocumento(f: FilaBuscador): Documento {
 /*
   La forma de las dos respuestas, validada con `zod`: una lista de filas con
   los campos que se leen (todos pueden faltar o venir nulos; `aDocumento` y
-  `gacetasDelAnio` ya lo toleran). Si la Consultoría devuelve otra cosa, la
-  lectura falla con su motivo y se cae a la instantánea.
+  `gacetasDelAnio` ya lo toleran). Una fila con otra forma se descarta sola
+  (`filas`); si lo que llega no es una lista, la lectura falla con su motivo
+  y se cae a la instantánea.
 */
-const FILAS_BUSCADOR = z.array(
+const FILAS_BUSCADOR = filas(
   z.looseObject({
     DocId: z.number().nullish(),
     Institucion: z.string().nullish(),
@@ -137,9 +138,9 @@ const FILAS_BUSCADOR = z.array(
     FechaPromulgacion: z.string().nullish(),
   }),
 );
-const REPOSITORIO = z.array(
+const REPOSITORIO = filas(
   z.looseObject({
-    id: z.string().optional(),
+    id: z.string().nullish(),
     title: z.string().nullish(),
     fileUrl: z.string().nullish(),
     year: z.number().nullish(),

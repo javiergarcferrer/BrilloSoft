@@ -28,10 +28,15 @@ import type { OrdenProceso } from "@/lib/dgcp";
 /*
   La misma enumeración que la ruta usa de allowlist (`ORDENES` en lib/dgcp.ts).
   Se repite como literal porque importar el valor metería el adaptador entero
-  en el bundle del navegador; el `satisfies` hace que TypeScript avise si una
-  de las dos listas se queda atrás.
+  en el bundle del navegador. El `satisfies` avisa si la lista tiene un orden
+  que el tipo no conoce; `_TodosLosOrdenes` avisa del lado contrario —un
+  orden nuevo en `OrdenProceso` que aquí falta y que un enlace compartido
+  perdería en silencio—.
 */
 const ORDENES_URL = ["recientes", "cierre", "monto_desc", "monto_asc"] as const satisfies readonly OrdenProceso[];
+type _TodosLosOrdenes = Exclude<OrdenProceso, (typeof ORDENES_URL)[number]> extends never ? true : never;
+const _todosLosOrdenes: _TodosLosOrdenes = true;
+void _todosLosOrdenes;
 
 /** `mipyme=1` y nada más: cualquier otro valor, o su ausencia, es «no». */
 const parseAsUno = createParser({
