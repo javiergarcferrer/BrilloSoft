@@ -3,15 +3,21 @@
 buscador de toda la plataforma (`/buscar`, la paleta ⌘K, `/api/buscar`).
 
 No lee ninguna fuente: junta en un solo corpus lo que ya traen las
-instantáneas —instituciones, normativa, obras, documentos, datos abiertos y
-cargos de nómina— y calcula para cada entrada su vector semántico con el
-modelo podado de `scripts/build-modelo-semantico.py`. El servidor construye
+instantáneas —instituciones, normativa, obras, documentos, datos abiertos,
+cargos de nómina y proveedores con contratos desde 2015— y calcula para cada
+entrada su vector semántico con el modelo podado de
+`scripts/build-modelo-semantico.py`. Los proveedores no llevan vector: un
+nombre de empresa («Plaza Lama, SA») no dice de qué trata, y sus ~32 mil
+filas pesarían ~4 MB para acercar razones sociales por su sonido. Van al
+final del corpus, y `vectorizados` dice hasta dónde hay vector. El servidor construye
 sobre esto un índice de texto (Orama: BM25, raíces del español, tolerancia a
 erratas) y compara vectores por coseno; `lib/busqueda.ts` funde las dos
 listas. Nada de esto es una base de datos: es un archivo versionado más.
 
 Se corre **después** de regenerar cualquiera de esas instantáneas (el orden
-semanal: normativa → instituciones → este). Si no se corre, el buscador
+semanal: normativa → instituciones → este), y **detrás** de él
+`node scripts/build-indice-busqueda.mjs`, que guarda el índice por palabra ya
+construido. Si no se corre, el buscador
 sigue funcionando con el corpus anterior y dice su fecha.
 
 Los vectores se calculan con el tokenizador de Rust (`tokenizers`); el del
@@ -25,6 +31,7 @@ Uso:
     python3 scripts/build-busqueda.py
 """
 import datetime
+import hashlib
 import json
 import pathlib
 import re
@@ -214,6 +221,48 @@ def cargos() -> tuple[list[dict], str]:
     return out, crudo["generatedAt"][:10]
 
 
+def proveedores() -> tuple[list[dict], str]:
+    """Los proveedores con al menos un contrato desde 2015 (la historia de
+    `scripts/build-historico.py`): los que tienen ficha con algo que ver. El
+    padrón del RPE entero (~138 mil inscritos) no entra: la mayoría nunca
+    vendió al Estado, y su ficha estaría vacía. Del padrón de la DGII, solo
+    el RNC cuando el cruce lo trae (`scripts/build-rnc.py`); ni teléfono ni
+    correo, que ninguna de las dos instantáneas guarda."""
+    rnc: dict[str, str] = {}
+    for n in range(10):
+        f = json.loads((DATOS / "rnc" / f"{n}.json").read_text())
+        rnc.update({rpe: fila[0] for rpe, fila in f["filas"].items()})
+    out = []
+    corte = ""
+    for n in range(10):
+        f = json.loads((DATOS / "historico" / "proveedores" / f"{n}.json").read_text())
+        corte = f["corte"]
+        for rpe, p in f["filas"].items():
+            nombre = re.sub(r"\s+", " ", p["n"] or "").strip()
+            if not nombre:
+                continue
+            doc = rnc.get(rpe)
+            # Son 32 mil filas: sin enlace ni detalle escritos, que el
+            # servidor deriva del RPE (`r`) y el RNC (`c`); el índice los
+            # busca a los dos como texto auxiliar.
+            out.append(
+                {
+                    "t": "proveedor",
+                    "ti": nombre,
+                    "r": rpe,
+                    "c": doc,
+                    "k": sum(a[1] for a in p["s"]),
+                    "a": [int(p["d"][:4]), int(p["h"][:4])] if p.get("d") and p.get("h") else None,
+                    # Un proveedor que se llama como una institución o una
+                    # obra va detrás de ellas.
+                    "p": 1,
+                }
+            )
+    # Orden estable: el mismo corpus da el mismo archivo.
+    out.sort(key=lambda d: int(d["r"]))
+    return out, corte
+
+
 def main() -> None:
     tok = Tokenizer.from_file(str(SALIDA / "tokenizer.json"))
     tok.no_padding()
@@ -237,12 +286,16 @@ def main() -> None:
     }.items():
         docs += lista
         fechas[tipo] = fecha
+    # Con vector, todo lo anterior; los proveedores, sin él y al final.
+    vectorizados = len(docs)
+    lista, fechas["proveedor"] = proveedores()
+    docs += lista
 
     # El vector es el del título en minúsculas —la consulta también se
     # embebe en minúsculas: un título en MAYÚSCULAS se trocea en piezas
     # raras y cae lejos de su tema—.
-    textos = [d["ti"].lower() for d in docs]
-    vec = np.zeros((len(docs), dim), dtype=np.float32)
+    textos = [d["ti"].lower() for d in docs[:vectorizados]]
+    vec = np.zeros((vectorizados, dim), dtype=np.float32)
     for inicio in range(0, len(textos), 5000):
         for j, e in enumerate(tok.encode_batch(textos[inicio : inicio + 5000], add_special_tokens=False)):
             ids = [i for i in e.ids if i not in especiales]
@@ -258,11 +311,16 @@ def main() -> None:
 
     # Sin claves vacías: el archivo viaja entero en cada arranque en frío.
     limpios = [{k: v for k, v in d.items() if v not in (None, "")} for d in docs]
+    # La huella ata el índice guardado (`build-indice-busqueda.mjs`) a este
+    # corpus: si no coinciden, el servidor construye el índice en memoria.
+    huella = hashlib.sha256(json.dumps(limpios, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
     corpus = {
         "generado": datetime.date.today().isoformat(),
+        "huella": huella,
         "instantaneas": fechas,
         "dimensiones": dim,
         "piezas": n,
+        "vectorizados": vectorizados,
         "origenes": ORIGENES,
         "docs": limpios,
     }

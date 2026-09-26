@@ -13,9 +13,10 @@
  *     `potion-multilingual-128M`, MIT, podado al español por
  *     `scripts/build-modelo-semantico.py`): la consulta se tokeniza con
  *     `@huggingface/tokenizers` y se promedia su tabla; los vectores de las
- *     35 mil entradas vienen hechos de `scripts/build-busqueda.py`. «Agua
- *     potable» encuentra los conjuntos de CORAMON aunque se llamen
- *     «Producción de agua».
+ *     36 mil entradas que lo llevan (todas menos los proveedores, cuyo
+ *     nombre no dice de qué tratan) vienen hechos de
+ *     `scripts/build-busqueda.py`. «Agua potable» encuentra los conjuntos de
+ *     CORAMON aunque se llamen «Producción de agua».
  *
  * Se funden por **rango recíproco** (RRF), que no pide que BM25 y coseno
  * hablen en la misma escala. Cada resultado dice por qué salió: sus
@@ -23,21 +24,26 @@
  * interfaz; no se hace pasar por una coincidencia.
  *
  * Nada de esto es una base de datos (CLAUDE.md, la invariante): el corpus,
- * los vectores y el modelo son archivos versionados en `public/data/busqueda`,
- * leídos una vez por instancia y guardados en memoria.
+ * los vectores, el modelo y el índice por palabra ya construido
+ * (`indice.json.br`, de `scripts/build-indice-busqueda.mjs`) son archivos
+ * versionados en `public/data/busqueda`, leídos una vez por instancia y
+ * guardados en memoria.
  */
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { create, insertMultiple, search, type AnyOrama } from "@orama/orama";
+import { brotliDecompressSync } from "node:zlib";
+import { insertMultiple, load, search, type AnyOrama } from "@orama/orama";
 import { Tokenizer } from "@huggingface/tokenizers";
-import { lematizar, PALABRAS_VACIAS, sinTildes } from "@/lib/raiz";
+import { aDocumento, etiquetaCorpus, indiceVacio } from "@/lib/busqueda-esquema";
+import { sinTildes } from "@/lib/raiz";
 
-export type TipoResultado = "institucion" | "norma" | "obra" | "documento" | "dato" | "cargo";
+export type TipoResultado = "institucion" | "proveedor" | "norma" | "obra" | "documento" | "dato" | "cargo";
 
 /** El orden en que se nombran los tipos: el de las verticales en `/buscar`. */
 export const TIPOS_RESULTADO: { clave: TipoResultado; etiqueta: string; plural: string }[] = [
   { clave: "institucion", etiqueta: "Institución", plural: "Instituciones" },
+  { clave: "proveedor", etiqueta: "Proveedor", plural: "Proveedores" },
   { clave: "norma", etiqueta: "Norma", plural: "Normativa" },
   { clave: "obra", etiqueta: "Obra", plural: "Obras públicas" },
   { clave: "documento", etiqueta: "Documento", plural: "Documentos" },
@@ -63,13 +69,22 @@ interface Entrada {
   m?: number;
   p?: number;
   e?: 1;
+  /** Proveedores: RPE, RNC (si el cruce con la DGII lo trae), contratos y años. */
+  r?: string;
+  c?: string;
+  k?: number;
+  a?: [number, number];
 }
 
 interface Corpus {
   generado: string;
+  /** Huella de las entradas: ata el índice guardado a este corpus. */
+  huella?: string;
   instantaneas: Partial<Record<TipoResultado, string>>;
   dimensiones: number;
   piezas: number;
+  /** Las primeras `vectorizados` entradas llevan vector; los proveedores, no. */
+  vectorizados?: number;
   origenes: string[];
   docs: Entrada[];
 }
@@ -108,6 +123,8 @@ interface Motor {
   tokenizer: Tokenizer;
   especiales: Set<number>;
   dim: number;
+  /** Cuántas entradas, desde la primera, tienen vector. */
+  vectorizados: number;
   /** Tabla del modelo: filas int8 × su escala. */
   tabla: Int8Array;
   escalaTabla: Float32Array;
@@ -125,6 +142,37 @@ function partir(buf: Buffer, n: number, dim: number): [Int8Array, Float32Array] 
   return [filas, escalas];
 }
 
+/**
+ * El índice por palabra: el guardado si es de este corpus, o construido aquí.
+ * Cargar el guardado cuesta ~0.7 s; construirlo, ~3.8 s (68 mil entradas).
+ * Si falta, está roto o su etiqueta no es la del corpus —alguien regeneró el
+ * corpus y no el índice—, se construye: más lento, nunca distinto.
+ */
+async function indicePorPalabra(corpus: Corpus): Promise<AnyOrama> {
+  const guardado = await readFile(path.join(DIR, "indice.json.br")).catch(() => null);
+  if (guardado) {
+    try {
+      const texto = brotliDecompressSync(guardado).toString("utf8");
+      const corte = texto.indexOf("\n");
+      if (texto.slice(0, corte) === etiquetaCorpus(corpus)) {
+        const db = indiceVacio();
+        load(db, JSON.parse(texto.slice(corte + 1)));
+        return db;
+      }
+      console.warn("[busqueda] indice.json.br es de otro corpus: se construye en memoria (corre scripts/build-indice-busqueda.mjs)");
+    } catch (err) {
+      console.warn(`[busqueda] indice.json.br no se pudo leer: se construye en memoria (${String(err)})`);
+    }
+  }
+  const db = indiceVacio();
+  await insertMultiple(
+    db,
+    corpus.docs.map((d, i) => aDocumento(d, i, corpus.origenes)),
+    2000,
+  );
+  return db;
+}
+
 async function cargar(): Promise<Motor> {
   const [crudoCorpus, crudoTok, crudoMeta, bufModelo, bufVectores] = await Promise.all([
     readFile(path.join(DIR, "corpus.json"), "utf8"),
@@ -140,33 +188,20 @@ async function cargar(): Promise<Motor> {
     throw new Error("corpus y modelo no coinciden: vuelve a correr scripts/build-busqueda.py");
   }
   const dim = meta.dimensiones;
+  const vectorizados = corpus.vectorizados ?? corpus.docs.length;
+  if (bufVectores.length !== vectorizados * (dim + 4)) {
+    throw new Error("corpus y vectores no coinciden: vuelve a correr scripts/build-busqueda.py");
+  }
   const [tabla, escalaTabla] = partir(bufModelo, meta.piezas, dim);
-  const [vectores, escalaVectores] = partir(bufVectores, corpus.docs.length, dim);
-
-  const db = create({
-    schema: { t: "enum", ti: "string", x: "string", o: "string" } as const,
-    components: {
-      tokenizer: { language: "spanish", stemming: true, stemmer: lematizar, stopWords: PALABRAS_VACIAS },
-    },
-  });
-  await insertMultiple(
-    db,
-    corpus.docs.map((d, i) => ({
-      id: String(i),
-      t: d.t,
-      ti: d.ti,
-      x: d.x ?? "",
-      o: d.o === undefined ? "" : corpus.origenes[d.o],
-    })),
-    2000,
-  );
+  const [vectores, escalaVectores] = partir(bufVectores, vectorizados, dim);
 
   return {
     corpus,
-    db,
+    db: await indicePorPalabra(corpus),
     tokenizer: new Tokenizer(JSON.parse(crudoTok), {}),
     especiales: new Set(meta.especiales),
     dim,
+    vectorizados,
     tabla,
     escalaTabla,
     vectores,
@@ -219,7 +254,8 @@ function porTema(m: Motor, v: Float32Array | null, tipo?: TipoResultado): { i: n
   const docs = m.corpus.docs;
   const mejores: { i: number; s: number }[] = [];
   let piso = UMBRAL_TEMA;
-  for (let i = 0; i < docs.length; i++) {
+  // Los proveedores van al final y sin vector: el tema no los alcanza.
+  for (let i = 0; i < m.vectorizados; i++) {
     if (tipo && docs[i].t !== tipo) continue;
     const base = i * m.dim;
     let s = 0;
@@ -482,13 +518,23 @@ export async function buscarEnTodo(
   }
 }
 
+const ENTERO = new Intl.NumberFormat("es-DO");
+
+/** «RNC 101786159 · 37 contratos, 2015–2022»: lo que el corpus no escribe. */
+function detalleProveedor(d: Entrada): string {
+  const contratos = d.k ? `${ENTERO.format(d.k)} ${d.k === 1 ? "contrato" : "contratos"}` : null;
+  const anios = d.a ? (d.a[0] === d.a[1] ? `${d.a[0]}` : `${d.a[0]}–${d.a[1]}`) : null;
+  return [d.c && `RNC ${d.c}`, [contratos, anios].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
+}
+
 function aResultado(c: Corpus, d: Entrada, via: Via, formatos?: string[]): Resultado {
+  const proveedor = d.t === "proveedor";
   return {
     tipo: d.t,
     titulo: d.ti,
-    detalle: (formatos ? formatos.join(" · ") : d.d) || null,
+    detalle: (formatos ? formatos.join(" · ") : proveedor ? detalleProveedor(d) : d.d) || null,
     origen: d.o === undefined ? null : c.origenes[d.o],
-    href: d.h ?? null,
+    href: proveedor && d.r ? `/proveedores/${d.r}` : (d.h ?? null),
     externo: d.e === 1,
     fecha: d.f ?? null,
     valor: d.v ?? null,

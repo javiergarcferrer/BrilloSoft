@@ -236,15 +236,59 @@ Pendiente, por valor ÷ esfuerzo (archivo:línea verificados el 2026-09-26):
 9. **Fechas**: nueve tablas de meses en español. → `Intl.DateTimeFormat`
    (sin dependencia).
 
-Del buscador, lo siguiente:
-- **Índice de Orama persistido** (`@orama/plugin-data-persistence`): el
-  arranque en frío baja de ~2 s a ~0.5 s a cambio de ~25 MB más en el
-  repositorio por regeneración. Medido; no se hizo por ese peso.
-- **Proveedores (padrón RNC) en el índice**: hoy solo por RNC exacto o en su
-  vertical.
-- **Tema con contexto**: un modelo de frases (p. ej. `multilingual-e5-small`
-  en ONNX) entendería «quién audita las cuentas»; exige ejecutar una red en la
-  función (~120 MB, onnxruntime). Solo si el estático se queda corto en uso.
+Del buscador, lo siguiente (resuelto el 2026-09-26):
+- ✅ **Índice de Orama guardado** (`public/data/busqueda/indice.json.br`,
+  `scripts/build-indice-busqueda.mjs`): 2.8 MB en el repositorio por
+  regeneración, no 25. El peso se fue quitando lo que no se usa —el índice
+  de orden (9.8 MB) y la copia de los documentos (8.9 MB)— y comprimiendo con
+  brotli (26.9 → 2.8 MB); el script comprueba que 14 consultas den los mismos
+  ids y puntuaciones que el índice recién construido. Primera consulta de
+  una instancia con `next start`: ~1.2–1.5 s, contra ~4.5 s construyéndolo
+  (ya con los proveedores: 68 mil entradas). Si el archivo falta o es de
+  otro corpus (etiqueta fecha | huella | entradas), el servidor lo construye.
+  El plugin `@orama/plugin-data-persistence` 3.1.18 se midió y **no** se usa:
+  `restore` crea la base con esquema de relleno y tokenizador por defecto
+  (perdería el lematizador español), `dpack` y `seqproto` fallan a este
+  tamaño, y `binary` es msgpack en hexadecimal (50.7 MB) que tarda ~2 s en
+  decodificar contra ~0.65 s de `JSON.parse`. Se usa lo que el plugin
+  envuelve: `save`/`load` de Orama. Detalle en `docs/ARQUITECTURA.md`
+  §Búsqueda.
+- ✅ **Proveedores en el índice**: los 32,152 con al menos un contrato desde
+  2015 (`public/data/historico/proveedores/`), por nombre, RNC o RPE, con
+  contratos y años en el detalle y enlace a `/proveedores/[rpe]`. No el RPE
+  entero (~138 mil inscritos, casi todos sin contrato). Sin vector: un
+  nombre de empresa no aporta tema, y ahorra ~4 MB. El corpus pasa de 7.5 a
+  10.9 MB.
+- ❌ **Tema con contexto** — evaluado el 2026-09-26 y **no** adoptado.
+  `Xenova/multilingual-e5-small` cuantizado (q8, ONNX) por
+  `@huggingface/transformers` 4.3.0 + `onnxruntime-node` 1.30.0, contra el
+  Model2Vec podado, sobre las 35,754 entradas con vector y 17 consultas de
+  uso («quién audita las cuentas del Estado», «corrupción», «escuelas en
+  construcción», «agua para el campo», «seguridad ciudadana», «hospitales
+  del gobierno», «cuánto se debe del préstamo», «ayuda a los pobres»,
+  «precio de la gasolina», «carreteras dañadas», «violencia contra la
+  mujer», «apagones y electricidad», «vivienda barata», «medicamentos
+  gratis», «empleo para jóvenes», «basura en las calles», «turismo»),
+  leyendo los 8 primeros de cada uno. **Calidad**: mejor en 7 (trae la
+  Cámara de Cuentas para «quién audita…», el decreto del Sistema Nacional de
+  Seguridad Ciudadana, las carreteras «afectadas por» lluvias y huracanes,
+  hospitales para «hospitales del gobierno»), peor en 5 (sus piezas de
+  palabra meten ruido: «ayuda a los pobres» → «AYUDANTE DE ALMACEN»,
+  «vivienda barata» → «BARREDORA RESIDENCIAL», «basura en las calles» →
+  «BARREDOR CALLE COLON»; el conjunto «Precios de combustibles» se cae del
+  primer puesto) e igual en 5. Sus cosenos se apiñan entre 0.84 y 0.89, así
+  que no hay umbral que separe tema de ruido como el 0.55 del estático.
+  **Coste**: cargar el modelo 1.5–2.2 s más en frío; 4–68 ms por consulta
+  (mediana ~13) contra microsegundos; 197 s para embeber el corpus en build.
+  **Tamaño**: modelo 118 MB + tokenizador 17 MB + `libonnxruntime` linux-x64
+  45 MB + `sharp`/libvips 19 MB (transformers lo importa en node) + 7 MB de
+  JS + vectores de 384 dimensiones (~14 MB) ≈ 220 MB más, sobre los ~31 MB
+  del índice: en el borde de los 250 MB de una función de Vercel, y el
+  trazado de `onnxruntime-node` arrastra los binarios de todas las
+  plataformas (290 MB) si no se excluyen a mano. No es claramente mejor y no
+  cabe con holgura. Se reevalúa si aparece un modelo de frases estático o
+  destilado a Model2Vec que entienda frases, o si el uso muestra que el
+  estático se queda corto.
 
 ## 7. Guardarraíles para quien ejecute
 
