@@ -328,7 +328,7 @@ ve es un nodo que se puede pulsar e investigar, cada ficha dice con qué está
 conectada, los números se dibujan con un solo sistema de visualización, y
 cada pantalla es encontrable por lo que significa. Cuatro frentes, en orden:
 
-**G1. Modelo de entidades y enlace universal.** `lib/grafo.ts`: los tipos de
+**G1. Modelo de entidades y enlace universal.** ✅ (2026-09-26) `lib/grafo.ts`: los tipos de
 nodo (institución, proveedor, proceso, contrato, norma, iniciativa,
 legislador, votación, expediente del Senado, obra, provincia, capítulo,
 cargo, documento, sentencia TC/TSE), su clave, su `href` canónico y cómo se
@@ -342,12 +342,35 @@ Hoy (medido): las normas y los proyectos no enlazan instituciones ni
 legisladores por su texto; las fichas de proceso, proveedor, institución y
 obra sí se enlazan entre ellas.
 
+  Hecho: `enlace.*` es la única dirección de cada tipo (unos setenta `href`
+  a mano migrados) y el gate («graph») rechaza el que se arme fuera; la
+  primitiva es `components/texto-enlazado.tsx` (`TextoEnlazado`, en vez de
+  `<Entidad>` + `enlazarTexto()`: un solo componente que reconoce y pinta),
+  aplicada a los títulos de normas, iniciativas, expedientes del Senado,
+  sentencias del TC y del TSE y a la descripción de un proceso. Reconoce
+  citas de normas (también varias en una frase), códigos de proceso, SNIP y
+  nombres completos de institución. La segunda mitad del criterio la vigila
+  `scripts/menciones-sin-enlace.mjs`, contra un servidor en marcha: recorre
+  una ficha de cada tipo y falla si una cita de norma, un código de proceso
+  o un SNIP aparece fuera de un enlace y su destino no está enlazado en la
+  página (no es parte de `verificar.sh` porque necesita el servidor). Su
+  primera pasada encontró las dos leyes del pie de página, ya enlazadas.
+  Los contratos y los documentos no tienen ficha propia: enlazan a su
+  proceso y a su archivo.
+
 **G2. Vecindario en cada ficha.** Un bloque «Conectado con» por ficha, con
 las aristas que las fuentes ya dan: institución ↔ proveedores ↔ procesos ↔
 obras ↔ normas que la nombran ↔ nómina ↔ capítulo; norma ↔ proyecto ↔
 legisladores proponentes ↔ votaciones; provincia ↔ obras ↔ instituciones.
 Solo aristas verificadas (un cruce adivinado es peor que ninguno, como en
 `institucionesNombradasEn`), cada una con su fuente y su cuenta.
+
+  ✅ (2026-09-26) `components/conectado-con.tsx` en las fichas de
+  institución, proveedor, proceso, norma, iniciativa, expediente del Senado,
+  legislador, obra, provincia y capítulo; la cuenta de cada arista es la de
+  la lista que abre. La votación no lo lleva: su primer bloque son las
+  piezas votadas. No se añadió ninguna lectura nueva a una fuente viva: las
+  aristas salen de lo que la ficha ya leía y de las instantáneas.
 
 **G3. Sistema de visualización.** ✅ (2026-09-26) `components/graficos/`: barras
 horizontales, serie en el tiempo, tira de cifras, barra apilada al 100 %,
@@ -390,6 +413,15 @@ a la pantalla por su significado. Se revisa la taxonomía tema × tarea con
 las consultas reales como prueba (qué se busca y dónde termina) y se
 reordena el menú donde no casan. Hecho cuando: una batería de 60 preguntas
 en llano llega a la pantalla correcta entre los tres primeros resultados.
+
+  ✅ (2026-09-26) `lib/pantallas.ts` + `buscarPantallas` (vectores calculados
+  al cargar con el mismo modelo, sin archivo nuevo); la batería
+  (`scripts/bateria-pantallas.json`, `scripts/probar-pantallas.mjs`) da
+  60/60. Las fichas no entran como pantalla: se llega a ellas por su nombre,
+  y el índice ya las tiene una por una. La taxonomía: la columna «Quién es
+  quién» (ocho enlaces) se partió en «Quién es quién» y «El país y sus
+  datos». Una pregunta de la batería (el sueldo de un policía) no tiene
+  respuesta: la Policía Nacional no está en ninguna de las dos nóminas.
 
 Orden: G1 → G4 (índice de pantallas, barato y visible) → G2 → G3. Nada de
 esto guarda datos: el grafo se deriva en cada lectura de las mismas fuentes e

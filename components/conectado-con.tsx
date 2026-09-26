@@ -53,16 +53,14 @@ export function ConectadoCon({
               className="group flex min-h-11 items-center gap-3 px-5 py-3 transition-colors hover:bg-canvas/60 active:bg-canvas sm:px-6"
             >
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-ink">
-                  {a.etiqueta}
-                  {typeof a.cuenta === "number" && (
-                    <span className="ml-1.5 font-mono text-xs tabular-nums text-ink-soft">{formatInt(a.cuenta)}</span>
-                  )}
-                </span>
+                <span className="block text-sm font-medium text-ink">{a.etiqueta}</span>
                 <span className="block truncate text-xs text-ink-soft">
                   {a.nombre ? `${a.nombre} · ${a.fuente}` : a.fuente}
                 </span>
               </span>
+              {typeof a.cuenta === "number" && (
+                <span className="shrink-0 font-mono text-sm tabular-nums text-ink">{formatInt(a.cuenta)}</span>
+              )}
               <IconArrowRight className="h-4 w-4 shrink-0 text-ink-soft transition-transform group-hover:translate-x-0.5" />
             </Link>
           </li>

@@ -324,7 +324,14 @@ versionados y dos bibliotecas abiertas.
   Todas las palabras tienen que estar, **en cualquier campo**: el
   `threshold: 0` de Orama lo exige dentro de un mismo campo, así que se
   busca cada palabra, se cruzan los conjuntos y se ordena por el BM25 de la
-  consulta entera. Con un tipo elegido, la búsqueda se hace dentro del tipo
+  consulta entera. ✅ (2026-09-26) La pertenencia se lee del árbol del
+  índice con la raíz **exacta** (`documentosCon`): `search` de Orama busca
+  por prefijo y «agua» (`agu`) traía Aguirre, Aguja y Agustín; el prefijo
+  solo vale en la última palabra mientras se escribe («minis» →
+  ministerio), si el lematizador no la tocó y no es un número. Una consulta
+  de solo palabras vacías no busca tema, una cita («Ley 80-25») tampoco, y
+  la cita exacta de una norma va primera. Los filtros cuentan lo mismo que
+  abren: sin tope práctico de fusión y con los vecinos por tema de «Todo». Con un tipo elegido, la búsqueda se hace dentro del tipo
   (`where`), para que la lista llegue tan lejos como su cuenta. Una errata
   se perdona solo si lo exacto no trajo nada y la consulta es de una o dos
   palabras de seis letras o más: la tolerancia actúa sobre la raíz, y «agua»
@@ -339,7 +346,8 @@ versionados y dos bibliotecas abiertas.
 - **Fusión**: rango recíproco (RRF, k = 60; el tema pesa 0.6), un bono al
   nombre o a las siglas exactas, y un peso menor para hospitales,
   ayuntamientos y cargos. Solo se juntan copias de verdad: el **mismo
-  archivo** (URL sin extensión) en PDF y XLSX es una fila con dos formatos;
+  archivo** (sitio, nombre sin extensión ni el «-1» que WordPress pone a una
+  segunda subida, y título) en PDF y XLSX es una fila con dos formatos;
   dos decretos «Que otorga exequátur» o dos obras homónimas con distinto
   SNIP son filas distintas. Cada resultado dice su vía: `palabra`, `tema` o `ambas`; la
   interfaz marca «Por tema» lo que no lleva todas las palabras.
@@ -351,6 +359,32 @@ versionados y dos bibliotecas abiertas.
   tanto (y «Toda la plataforma» sigue ahí), y si `/api/buscar` falla lo dice
   en una línea: «no respondió» no es «no hay nada». `next.config.ts` declara los
   archivos en `outputFileTracingIncludes` de las dos rutas que los leen.
+- **Pantallas** (G4, `lib/pantallas.ts`): cada destino de `lib/indice.ts`
+  con lo que ofrece y las preguntas que contesta. `buscarPantallas` las pasa
+  por el mismo modelo al cargar (~40 pantallas, ~150 frases; no hay archivo
+  que regenerar) y puntúa el mayor coseno con alguna frase más la mitad de
+  la parte de las palabras que aparecen; umbral 0.5 (medido: «xyzqwe» llega
+  a 0.36). `/buscar` y la paleta abren con «Pantallas que lo responden». La
+  prueba es `node --no-warnings scripts/probar-pantallas.mjs`: sesenta
+  preguntas de `scripts/bateria-pantallas.json`, redactadas aparte de las
+  declaradas, 60/60 entre las tres primeras.
+- **El atajo** (`lib/buscar.ts` → `middleware.ts`): un RNC, «Ley 47-20» (o
+  «ley 47 20»), un código de proceso o unas siglas exactas son un **307**
+  desde el middleware; dentro de la página, `redirect()` llegaba después de
+  que `app/loading.tsx` empezara a enviar y la respuesta era un 200. Por eso
+  `lib/buscar.ts` lee el cruce de instituciones del JSON y no de
+  `lib/instituciones.ts`.
+- **El mismo criterio en cada vertical** (`lib/raiz.ts`: `agujas`,
+  `contieneTodas`, `coincideConsulta`, `pruebas`): todas las palabras, en
+  cualquier orden, sin tildes, por raíz y al **comienzo de palabra**, con los
+  números enteros («1-26» no encuentra «11-26»). Lo usan instituciones,
+  obras (con las siglas de quien ejecuta), finanzas, gestión, luz,
+  auditorías (con el nombre detrás de las siglas), nómina (cada palabra en
+  cualquiera de los campos), nómina general, documentos, datos, normativa,
+  TC, TSE, legisladores y licitaciones. Diputados y Senado comparan letra
+  por letra en el origen: `variantesAcento` prueba las formas con tilde y se
+  filtra en casa (`buscarIniciativasTolerante`, `conOtrasFormas`), con lo
+  leído declarado. `recortar` corta lo tecleado sin partir un emoji.
 - ⚠️ **Límite del tema**: un embedding estático entiende vecindad de
   palabras («agua potable» ↔ «acueducto», «escuelas» ↔ «educación»), no
   frases: «corrupción» no llega a «Cámara de Cuentas». Por eso acompaña a la
@@ -641,6 +675,31 @@ identidad, no opcionales:
 - `formatPesos` y `formatMagnitud` — magnitud escrita, nunca abreviada: en uso
   dominicano «MM» se lee *millones*, así que abreviar mil millones así se
   equivoca por tres órdenes de magnitud en las cifras que más pesan.
+
+## El grafo — `lib/grafo.ts`, `lib/grafo-servidor.ts` (docs/PLAN-ACCESO.md §6 ter)
+Todo lo que se ve es un nodo que se pulsa. Nada se guarda: el grafo se
+deriva en cada lectura de las mismas fuentes e instantáneas.
+
+- **Una dirección por tipo de nodo** (`enlace.institucion`, `.proveedor`,
+  `.proceso`, `.norma`, `.iniciativa`, `.expedienteSenado`, `.legislador`,
+  `.votacion`, `.obra`, `.provincia`, `.capitulo`, `.cargo`), escrita solo
+  ahí; el gate (`verificar.sh`, «graph») rechaza un `href` de entidad armado
+  a mano. `enlace.norma` canoniza el año («47-2025» → «47-25») y devuelve
+  `null` si el tipo o el número no tienen ficha.
+- **Reconocer menciones**: `reconocerPorForma` (citas de normas, también
+  «Leyes núms. 506-19 y 68-20»; códigos de proceso; SNIP) es de cliente;
+  `reconocerTodo` suma los nombres completos de institución (18 letras o
+  más, sin hospitales ni gobiernos locales) y es de servidor.
+  `components/texto-enlazado.tsx` pinta un párrafo con sus menciones como
+  enlaces: títulos de normas, proyectos, expedientes, sentencias y la
+  descripción de un proceso.
+- **Vecindario** (`components/conectado-con.tsx`): «Conectado con» en cada
+  ficha, una fila entera por arista con su cuenta y su fuente; las aristas
+  sin nada al otro lado se callan, y la cuenta es siempre la de la lista que
+  abre. La votación no lo lleva: su primer bloque ya son las piezas votadas.
+- Una norma citada que no podemos leer (fuera del alcance de la Consultoría)
+  no es un 404: `NormaFueraDeAlcance` dice qué pasa y enseña los proyectos
+  que la citan.
 
 ## Primitivas compartidas — el sistema, en un sitio
 La identidad se diluyó dos veces por la misma causa (`docs/IDENTIDAD.md` §8):
