@@ -1,19 +1,28 @@
 import Link from "next/link";
-import { Fragment, Suspense } from "react";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { buscarCargos, buscarNormas, buscarObras, rutaDirecta } from "@/lib/buscar";
-import { buscarDocumentos, getIndiceBiblioteca, sinTildes } from "@/lib/biblioteca";
-import { getCatalogo, hrefConjunto } from "@/lib/catalogo";
-import { formatPesos } from "@/lib/format";
-import { buscarInstituciones, hrefInstitucion } from "@/lib/instituciones";
+import { rutaDirecta } from "@/lib/buscar";
+import {
+  buscarEnTodo,
+  esTipoResultado,
+  TIPOS_RESULTADO,
+  type Resultado,
+  type TipoResultado,
+} from "@/lib/busqueda";
 import { buscarIniciativas, desdeMayusculas, marcaDeIniciativa, normalizarIniciativa } from "@/lib/congreso";
-import { formatFecha, hace } from "@/lib/format";
+import { formatFecha, formatPesos } from "@/lib/format";
 import { formatInt } from "@/lib/nomina";
 import { BUSQUEDAS } from "@/lib/secciones";
+import Antiguedad from "@/components/antiguedad";
 import { BuscadorUrl } from "@/components/buscador-url";
-import { Card, CardTitle } from "@/components/ui/card";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { EsqueletoFilas } from "@/components/esqueleto";
+import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
+import { Paginador } from "@/components/paginador";
+import { Resaltado } from "@/components/resaltado";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardTitle } from "@/components/ui/card";
 import { IconArrowRight, IconExternal } from "@/components/icons";
 
 export const metadata: Metadata = {
@@ -22,195 +31,36 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
   title: "Buscar en toda la plataforma",
   description:
-    "Una sola caja para instituciones, normativa, nómina, Congreso y compras públicas del Estado dominicano.",
+    "Una sola caja para instituciones, normativa, obras, documentos, datos abiertos, nómina y Congreso del Estado dominicano, por palabra y por tema.",
 };
 
 /**
  * Buscar en toda la plataforma. Si lo tecleado tiene forma inequívoca —un RNC,
- * «Ley 47-20», un código de proceso, unas siglas— lleva directo; si no, junta
- * por vertical lo que se puede leer sin barrer una API entera y dice, para el
- * resto, dónde seguir y con qué alcance (`lib/buscar.ts`).
+ * «Ley 47-20», un código de proceso, unas siglas— lleva directo
+ * (`lib/buscar.ts`). Si no, el índice de `lib/busqueda.ts` ordena en una sola
+ * lista, por palabra y por tema, lo que traen seis instantáneas; Diputados se
+ * lee en vivo aparte, y lo que exige barrer una API entera (licitaciones,
+ * proveedores, Senado) se ofrece como enlace con su alcance, no se finge.
+ *
+ * Dos vistas del mismo resultado: «Todo» junta los mejores de cada tipo, en
+ * el orden de su mejor acierto —se ve de un vistazo en qué vertical vive lo
+ * buscado—; un tipo elegido es la lista entera de ese tipo, paginada. Los
+ * filtros son enlaces: la vista se comparte y vuelve con «atrás».
  */
 export default async function BuscarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; tipo?: string; pagina?: string }>;
 }) {
-  const q = ((await searchParams).q ?? "").trim().slice(0, 120);
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim().slice(0, 120);
+  const tipo = esTipoResultado(sp.tipo) ? sp.tipo : undefined;
+  const pagina = Math.max(1, Number.parseInt(sp.pagina ?? "1", 10) || 1);
   if (q) {
     const directa = rutaDirecta(q);
     if (directa) redirect(directa);
   }
-
-  const [instituciones, normas, cargos, obras] = q
-    ? await Promise.all([buscarInstituciones(q, 8), buscarNormas(q), buscarCargos(q), buscarObras(q)])
-    : [[], { normas: [], total: 0, generadoEn: null }, [], { obras: [], total: 0 }];
-  const [documentos, indiceDocs, catalogo] = q
-    ? await Promise.all([buscarDocumentos({ q }), getIndiceBiblioteca(), getCatalogo()])
-    : [null, null, null];
-  const nombreFuente = (host: string) => indiceDocs?.fuentes.find((f) => f.host === host)?.nombre ?? host;
-  const palabras = sinTildes(q).split(/[^a-z0-9ñ]+/).filter((w) => w.length > 1);
-  const conjuntos = catalogo && palabras.length
-    ? catalogo.conjuntos.filter((c) => {
-        const k = sinTildes(`${c.titulo} ${c.org}`);
-        return palabras.every((w) => k.includes(w));
-      })
-    : [];
   const sigue = BUSQUEDAS.filter((d) => d.href !== "/buscar");
-
-  const grupos = [
-    {
-      titulo: "Instituciones",
-      vacio: instituciones.length === 0,
-      el: (
-        <Grupo titulo="Instituciones" nota="Por nombre o siglas.">
-          <ul className="divide-y divide-hairline">
-            {instituciones.map((i) => (
-              <li key={i.id}>
-                <Fila href={hrefInstitucion(i)} titulo={i.nombre} detalle={[i.acronimo, i.tipo].filter(Boolean).join(" · ")} />
-              </li>
-            ))}
-          </ul>
-        </Grupo>
-      ),
-    },
-    {
-      titulo: "Normativa",
-      vacio: normas.normas.length === 0,
-      el: (
-        <Grupo
-          titulo="Normativa"
-          nota={
-            normas.total > normas.normas.length
-              ? `${formatInt(normas.total)} normas de los últimos cuatro años mencionan «${q}» en el título; estas son las más recientes.`
-              : "En el título de leyes, decretos y resoluciones de los últimos cuatro años."
-          }
-        >
-          <ul className="divide-y divide-hairline">
-            {normas.normas.map((n) => (
-              <li key={`${n.tipo}-${n.numero}-${n.fecha ?? ""}`}>
-                <Fila
-                  href={n.href}
-                  titulo={desdeMayusculas(n.titulo)}
-                  detalle={`${n.tipo} ${n.numero}${n.fecha ? ` · ${formatFecha(n.fecha)}` : ""}`}
-                />
-              </li>
-            ))}
-          </ul>
-        </Grupo>
-      ),
-    },
-    {
-      titulo: "Obras públicas",
-      vacio: obras.obras.length === 0,
-      el: (
-        <Grupo
-          titulo="Obras públicas"
-          nota={
-            obras.total > obras.obras.length
-              ? `${formatInt(obras.total)} proyectos de inversión coinciden; estos son los de mayor valor.`
-              : "Proyectos de inversión de MapaInversiones, por nombre, entidad o SNIP."
-          }
-          mas={obras.total > obras.obras.length ? `/obras?q=${encodeURIComponent(q)}` : undefined}
-        >
-          <ul className="divide-y divide-hairline">
-            {obras.obras.map((o) => (
-              <li key={o.snip}>
-                <Fila
-                  href={`/obras/${o.snip}`}
-                  titulo={desdeMayusculas(o.nombre)}
-                  detalle={`SNIP ${o.snip} · ${o.estado} · ${formatPesos(o.valor)}`}
-                />
-              </li>
-            ))}
-          </ul>
-        </Grupo>
-      ),
-    },
-    {
-      titulo: "Documentos",
-      vacio: !documentos || documentos.total === 0,
-      el: (
-        <Grupo
-          titulo="Documentos"
-          nota={
-            documentos && documentos.total > 6
-              ? `${formatInt(documentos.total)} documentos publicados por las instituciones lo mencionan en el título; estos son los más recientes.`
-              : "En el título de los documentos que publican las instituciones en sus sitios."
-          }
-          mas={documentos && documentos.total > 6 ? `/documentos?q=${encodeURIComponent(q)}` : undefined}
-        >
-          <ul className="divide-y divide-hairline">
-            {documentos?.docs.slice(0, 6).map((d) => (
-              <li key={d.url}>
-                <Fila externo href={d.url} titulo={d.titulo} detalle={`${d.tipo.toUpperCase()} · ${nombreFuente(d.host)}${d.fecha ? ` · subido ${hace(d.fecha) ?? `el ${formatFecha(d.fecha)}`}` : ""}`} />
-              </li>
-            ))}
-          </ul>
-        </Grupo>
-      ),
-    },
-    {
-      titulo: "Datos abiertos",
-      vacio: conjuntos.length === 0,
-      el: (
-        <Grupo
-          titulo="Datos abiertos"
-          nota={
-            conjuntos.length > 6
-              ? `${formatInt(conjuntos.length)} conjuntos de datos.gob.do coinciden; estos son los primeros.`
-              : "En el título y la organización de los conjuntos de datos.gob.do."
-          }
-          mas={conjuntos.length > 6 ? `/datos?q=${encodeURIComponent(q)}` : undefined}
-        >
-          <ul className="divide-y divide-hairline">
-            {conjuntos.slice(0, 6).map((c) => (
-              <li key={c.slug}>
-                <Fila externo href={hrefConjunto(c.slug)} titulo={c.titulo} detalle={`${c.org} · ${c.formatos.slice(0, 3).join(", ")}`} />
-              </li>
-            ))}
-          </ul>
-        </Grupo>
-      ),
-    },
-    {
-      titulo: "Cargos en la nómina",
-      vacio: cargos.length === 0,
-      el: (
-        <Grupo
-          titulo="Cargos en la nómina"
-          nota="En la foto de nómina de las instituciones que la publican en formato procesable."
-        >
-          <ul className="divide-y divide-hairline">
-            {cargos.map((c) => (
-              <li key={c.cargo}>
-                <Fila
-                  href={`/nomina?q=${encodeURIComponent(c.cargo)}`}
-                  titulo={desdeMayusculas(c.cargo)}
-                  detalle={`${formatInt(c.plazas)} plazas en ${c.instituciones} ${c.instituciones === 1 ? "institución" : "instituciones"}`}
-                />
-              </li>
-            ))}
-          </ul>
-        </Grupo>
-      ),
-    },
-  ];
-  const llenos = grupos.filter((g) => !g.vacio);
-  const vacios = grupos.filter((g) => g.vacio);
-
-  const sigueBuscando = (
-    <Card as="section" className="p-5">
-      <CardTitle>Sigue buscando «{q}» en</CardTitle>
-      <ul className="mt-2 divide-y divide-hairline">
-        {sigue.map((d) => (
-          <li key={d.href}>
-            <Fila href={`${d.href}?q=${encodeURIComponent(q)}`} titulo={d.etiqueta} detalle={d.alcance} />
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -226,49 +76,244 @@ export default async function BuscarPage({
         <BuscadorUrl
           etiqueta="Buscar en toda la plataforma"
           placeholder="MINERD, Ley 47-20, agua potable, chofer, 101000000…"
-          ayuda="Instituciones, normativa, obras, nómina, documentos y datos abiertos se buscan aquí mismo; Diputados, en vivo. Licitaciones, proveedores y Senado se abren en su vertical."
+          ayuda="Instituciones, normativa, obras, documentos, datos abiertos y cargos de nómina, por palabra y por tema; Diputados, en vivo. Licitaciones, proveedores y Senado se abren en su vertical."
         />
       </Suspense>
 
       {q && (
         <>
           {/*
-            Los grupos vacíos no se pintan uno por uno. Cinco tarjetas que dicen
-            «Nada aquí.» empujaban fuera de la pantalla lo único útil —dónde
-            seguir buscando— y obligaban a leer cinco veces lo mismo; ahora se
-            nombran juntos en una línea.
+            El índice se carga una vez por instancia (unos dos segundos en
+            frío): la cabecera y la caja no lo esperan.
           */}
-          {llenos.map((g) => (
-            <Fragment key={g.titulo}>{g.el}</Fragment>
-          ))}
-          {vacios.length > 0 && (
-            <SinCoincidencias q={q} donde={vacios.map((g) => g.titulo)} />
-          )}
+          <Suspense
+            key={`${q}|${tipo ?? ""}|${pagina}`}
+            fallback={
+              <Card as="section" className="p-5" aria-busy="true">
+                <EsqueletoFilas n={6} />
+              </Card>
+            }
+          >
+            <Resultados q={q} tipo={tipo} pagina={pagina} />
+          </Suspense>
 
           {/*
             Diputados se lee en vivo y llega aparte. Su vacío se dice en la
             misma línea corta que los demás; su caída, no: «el SIL no
-            respondió» es otra pantalla, y se queda en su tarjeta.
+            respondió» es otra pantalla, y se queda en su tarjeta. Solo en
+            «Todo»: un tipo elegido es una lista de ese tipo.
           */}
-          <Suspense
-            fallback={
-              <Card as="section" className="p-5" aria-busy="true">
-                <CardTitle>Diputados</CardTitle>
-                <EsqueletoFilas n={3} className="mt-3" />
-              </Card>
-            }
-          >
-            <Diputados q={q} />
-          </Suspense>
+          {!tipo && (
+            <Suspense
+              fallback={
+                <Card as="section" className="p-5" aria-busy="true">
+                  <CardTitle>Diputados</CardTitle>
+                  <EsqueletoFilas n={3} className="mt-3" />
+                </Card>
+              }
+            >
+              <Diputados q={q} />
+            </Suspense>
+          )}
 
           {/*
             Al final, siempre: Diputados llega aparte y puede traer lo único
             que se encontró; «Sigue buscando» antes lo empujaría por debajo.
           */}
-          {sigueBuscando}
+          <Card as="section" className="p-5">
+            <CardTitle>Sigue buscando «{q}» en</CardTitle>
+            <ul className="mt-2 divide-y divide-hairline">
+              {sigue.map((d) => (
+                <li key={d.href}>
+                  <Fila href={`${d.href}?q=${encodeURIComponent(q)}`} titulo={d.etiqueta} detalle={d.alcance} />
+                </li>
+              ))}
+            </ul>
+          </Card>
         </>
       )}
     </div>
+  );
+}
+
+function hrefBusqueda(q: string, tipo?: TipoResultado, pagina?: number): string {
+  const p = new URLSearchParams({ q });
+  if (tipo) p.set("tipo", tipo);
+  if (pagina && pagina > 1) p.set("pagina", String(pagina));
+  return `/buscar?${p.toString()}`;
+}
+
+/** Las plazas se cuentan en la foto de nómina, no en todo el Estado. */
+const NOTA_CARGOS =
+  "Plazas contadas en la foto de nómina de las instituciones que la publican en formato procesable, no en todo el Estado.";
+
+const PLURAL = Object.fromEntries(TIPOS_RESULTADO.map((t) => [t.clave, t.plural])) as Record<TipoResultado, string>;
+
+async function Resultados({ q, tipo, pagina }: { q: string; tipo?: TipoResultado; pagina: number }) {
+  const h = await buscarEnTodo(q, { tipo, pagina });
+  if (!h) {
+    return (
+      <EstadoVacio
+        variante="caida"
+        titulo="El índice de búsqueda no cargó"
+        accion={
+          <Link href={`/instituciones?q=${encodeURIComponent(q)}`} className="font-medium text-brand-700 hover:underline">
+            Buscar «{q}» en Instituciones
+          </Link>
+        }
+      >
+        No es que no haya nada: es que esta vez no pudimos mirar. Cada vertical
+        conserva su propio buscador, abajo.
+      </EstadoVacio>
+    );
+  }
+
+  const todos = TIPOS_RESULTADO.reduce((n, t) => n + h.porTipo[t.clave], 0);
+  const llenos = TIPOS_RESULTADO.filter((t) => h.porTipo[t.clave] > 0);
+  const vacios = TIPOS_RESULTADO.filter((t) => h.porTipo[t.clave] === 0).map((t) => t.plural);
+  const fechaIndice = formatFecha(h.generado);
+
+  if (todos === 0) {
+    return (
+      <EstadoVacio titulo={<>Nada con «{q}» en el índice</>}>
+        Ni por palabra ni por tema en instituciones, normativa, obras,
+        documentos, datos abiertos o cargos de nómina (índice del {fechaIndice}).
+        Prueba con menos palabras, o sigue en una vertical.
+      </EstadoVacio>
+    );
+  }
+
+  return (
+    <>
+      {/*
+        Los filtros dicen cuánto hay detrás antes del toque: un filtro que
+        promete y devuelve cero es un control sin efecto. Los tipos vacíos no
+        se ofrecen; se nombran juntos abajo.
+      */}
+      <NavFiltros etiqueta="Qué tipo de resultado">
+        <FiltroEnlace href={hrefBusqueda(q)} activo={!tipo}>
+          Todo <span className="font-mono tabular-nums">{formatInt(todos)}</span>
+        </FiltroEnlace>
+        {llenos.map((t) => (
+          <FiltroEnlace key={t.clave} href={hrefBusqueda(q, t.clave)} activo={tipo === t.clave}>
+            {t.plural} <span className="font-mono tabular-nums">{formatInt(h.porTipo[t.clave])}</span>
+          </FiltroEnlace>
+        ))}
+      </NavFiltros>
+
+      <p aria-live="polite" className="px-1 text-xs leading-relaxed text-ink-soft">
+        {h.conErrata && <>No había «{q}» tal cual: estos llevan una palabra a una letra de diferencia. </>}
+        Por palabra —sin tildes, con plurales y conjugaciones— y por tema, en el
+        índice del {fechaIndice}.
+        {h.soloTema > 0 && <> Lo marcado «por tema» no lleva todas tus palabras: trata de algo parecido.</>}
+        {h.truncado && <> Hay más coincidencias de las que se ordenan: la lista recorre las mil más pertinentes.</>}
+      </p>
+
+      {tipo ? (
+        h.resultados.length === 0 ? (
+          <EstadoVacio titulo={<>Nada con «{q}» en {PLURAL[tipo]}</>}>
+            <Link href={hrefBusqueda(q)} className="font-medium text-brand-700 hover:underline">
+              Ver todos los tipos
+            </Link>
+          </EstadoVacio>
+        ) : (
+          <Card as="section" className="p-5">
+            <CardTitle>{PLURAL[tipo]}</CardTitle>
+            {tipo === "cargo" && <p className="mt-1 text-xs leading-relaxed text-ink-soft">{NOTA_CARGOS}</p>}
+            <ul className="mt-2 divide-y divide-hairline">
+              {h.resultados.map((r) => (
+                <li key={`${r.tipo}-${r.href ?? r.titulo}`}>
+                  <FilaResultado r={r} q={q} />
+                </li>
+              ))}
+            </ul>
+            {h.paginas > 1 && (
+              <Paginador
+                pagina={h.pagina}
+                paginas={h.paginas}
+                href={(p) => hrefBusqueda(q, tipo, p)}
+                etiqueta={`Páginas de ${PLURAL[tipo].toLowerCase()}`}
+                className="mt-3"
+              />
+            )}
+          </Card>
+        )
+      ) : (
+        <>
+          {h.grupos.map((g) => (
+            <Grupo
+              key={g.tipo}
+              titulo={PLURAL[g.tipo]}
+              nota={g.tipo === "cargo" ? NOTA_CARGOS : undefined}
+              mas={
+                g.total > g.resultados.length
+                  ? { href: hrefBusqueda(q, g.tipo), texto: `Ver los ${formatInt(g.total)}` }
+                  : undefined
+              }
+            >
+              <ul className="divide-y divide-hairline">
+                {g.resultados.map((r) => (
+                  <li key={`${r.tipo}-${r.href ?? r.titulo}`}>
+                    <FilaResultado r={r} q={q} />
+                  </li>
+                ))}
+              </ul>
+            </Grupo>
+          ))}
+          {vacios.length > 0 && <SinCoincidencias q={q} donde={vacios} />}
+        </>
+      )}
+    </>
+  );
+}
+
+/** Lo que cada tipo dice debajo del título, con las primitivas de formato. */
+function detalleDe(r: Resultado): React.ReactNode {
+  switch (r.tipo) {
+    case "norma":
+      return [r.detalle, r.fecha && formatFecha(r.fecha)].filter(Boolean).join(" · ");
+    case "obra":
+      return [r.detalle, r.valor ? formatPesos(r.valor) : null].filter(Boolean).join(" · ");
+    case "documento":
+      return (
+        <>
+          {[r.detalle, r.origen].filter(Boolean).join(" · ")}
+          {r.fecha && (
+            <>
+              {" · "}
+              <Antiguedad iso={r.fecha} prefijo="subido" />
+            </>
+          )}
+        </>
+      );
+    case "dato":
+      return [r.origen, r.detalle].filter(Boolean).join(" · ");
+    case "cargo":
+      return r.plazas
+        ? `${formatInt(r.plazas)} ${r.plazas === 1 ? "plaza" : "plazas"} en ${r.instituciones ?? 0} ${r.instituciones === 1 ? "institución" : "instituciones"}`
+        : null;
+    default:
+      return r.detalle;
+  }
+}
+
+function FilaResultado({ r, q }: { r: Resultado; q: string }) {
+  // Normas, obras y cargos llegan de su fuente en MAYÚSCULAS.
+  const titulo = r.tipo === "norma" || r.tipo === "obra" || r.tipo === "cargo" ? desdeMayusculas(r.titulo) : r.titulo;
+  return (
+    <Fila
+      href={r.href}
+      externo={r.externo}
+      titulo={<Resaltado texto={titulo} consulta={q} />}
+      detalle={detalleDe(r)}
+      marca={
+        r.via === "tema" ? (
+          <Badge variant="contorno" title="No lleva todas tus palabras: trata de algo parecido.">
+            Por tema
+          </Badge>
+        ) : null
+      }
+    />
   );
 }
 
@@ -298,7 +343,7 @@ async function Diputados({ q }: { q: string }) {
           ? `${formatInt(pagina.total)} iniciativas de la Cámara lo mencionan; estas son las primeras.`
           : "En la descripción de las iniciativas de la Cámara de Diputados."
       }
-      mas={pagina.total > lista.length ? `/congreso?q=${encodeURIComponent(q)}` : undefined}
+      mas={pagina.total > lista.length ? { href: `/congreso?q=${encodeURIComponent(q)}`, texto: "Ver todas" } : undefined}
     >
       <ul className="divide-y divide-hairline">
         {lista.map((i) => (
@@ -322,8 +367,8 @@ function Grupo({
   children,
 }: {
   titulo: string;
-  nota: string;
-  mas?: string;
+  nota?: string;
+  mas?: { href: string; texto: string };
   children: React.ReactNode;
 }) {
   return (
@@ -331,12 +376,12 @@ function Grupo({
       <div className="flex items-baseline justify-between gap-3">
         <CardTitle>{titulo}</CardTitle>
         {mas && (
-          <Link href={mas} className="text-xs font-medium text-brand-700 hover:underline">
-            Ver todas
+          <Link href={mas.href} className="shrink-0 text-xs font-medium text-brand-700 hover:underline">
+            {mas.texto}
           </Link>
         )}
       </div>
-      <p className="mt-1 text-xs leading-relaxed text-ink-soft">{nota}</p>
+      {nota && <p className="mt-1 text-xs leading-relaxed text-ink-soft">{nota}</p>}
       <div className="mt-2">{children}</div>
     </Card>
   );
@@ -361,11 +406,14 @@ function Fila({
   href,
   titulo,
   detalle,
+  marca,
   externo = false,
 }: {
   href: string | null;
-  titulo: string;
-  detalle?: string;
+  titulo: React.ReactNode;
+  detalle?: React.ReactNode;
+  /** Una marca al lado del detalle: «Por tema». */
+  marca?: React.ReactNode;
   /** Un archivo o una ficha en el sitio de otra institución: pestaña nueva y su icono. */
   externo?: boolean;
 }) {
@@ -376,7 +424,12 @@ function Fila({
         <span className="line-clamp-2 block text-sm leading-snug text-ink [overflow-wrap:anywhere] group-hover:text-brand-700">
           {titulo}
         </span>
-        {detalle && <span className="mt-0.5 block text-xs text-ink-soft">{detalle}</span>}
+        {(detalle || marca) && (
+          <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
+            {detalle && <span className="min-w-0">{detalle}</span>}
+            {marca}
+          </span>
+        )}
       </span>
       {href && <Icono className="mt-0.5 h-4 w-4 shrink-0 text-ink-soft" />}
     </>

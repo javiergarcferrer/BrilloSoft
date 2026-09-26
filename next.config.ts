@@ -11,9 +11,17 @@ import type { NextConfig } from "next";
     con un despliegue: el navegador las guarda una hora y las renueva en
     segundo plano una vez pasada.
   · Sin cabecera `x-powered-by`: no aporta nada y pesa en cada respuesta.
+  · El índice del buscador (`public/data/busqueda`: corpus, vectores y modelo,
+    ~24 MB) se lee con `fs` desde `lib/busqueda.ts`. Se declara aquí para que
+    el trazado de archivos lo meta en la función de las dos rutas que lo usan
+    y solo en ellas, sin depender de que adivine la ruta.
 */
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/buscar": ["./public/data/busqueda/**"],
+    "/api/buscar": ["./public/data/busqueda/**"],
+  },
   experimental: {
     staleTimes: { dynamic: 30, static: 300 },
   },

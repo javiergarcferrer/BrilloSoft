@@ -691,6 +691,24 @@ export default async function FuentesPage() {
           </p>
         </Fuente>
 
+        <Fuente nombre="Buscador de toda la plataforma — por palabra y por tema" estado="activa" etiqueta="Instantánea local">
+          <p>
+            <Link href="/buscar" className="font-medium text-brand-700 hover:underline">
+              El buscador
+            </Link>{" "}
+            no lee ninguna fuente nueva: junta en un índice las instantáneas de
+            instituciones, normativa, obras, documentos, datos abiertos y cargos de
+            nómina, y dice la fecha en que se armó. Busca por palabra —sin tildes,
+            con plurales y conjugaciones, y una errata perdonada en palabras
+            largas— y por tema, con un modelo abierto de vectores
+            (Model2Vec, licencia MIT) reducido al español y guardado junto a los
+            datos: no hay servicio externo ni clave. Lo que sale solo por tema se
+            marca así. Licitaciones, proveedores por nombre y el Senado no están
+            en el índice: se buscan en su vertical, y Diputados se consulta en
+            vivo.
+          </p>
+        </Fuente>
+
         <Fuente nombre="Tribunal Constitucional — sentencias" estado="activa" etiqueta="Conectada">
           <p>
             El buscador de sentencias del Tribunal sirve cada año entero en una

@@ -1,0 +1,11 @@
+{
+ "modelo": "minishlab/potion-multilingual-128M",
+ "licencia": "MIT",
+ "piezas": 72837,
+ "dimensiones": 128,
+ "varianza": 0.7919,
+ "especiales": [
+  0,
+  1
+ ]
+}

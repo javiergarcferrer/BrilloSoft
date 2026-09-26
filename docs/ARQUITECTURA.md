@@ -241,6 +241,60 @@ and `feed/congreso/[id]` renders a bill's SIL history as RSS. Processes are
 read through `procesos?proceso=`; an institution's new processes are already
 `feed?uc=`.
 
+`buscar?q=&n=&tipo=` wraps `buscarEnTodo` (`lib/busqueda.ts`) for the palette:
+the first `n` rows of any type, at most half from one type when no `tipo` is
+given.
+
+## Búsqueda — `lib/busqueda.ts` + `public/data/busqueda/`
+El índice de toda la plataforma, sin base de datos ni clave: tres archivos
+versionados y dos bibliotecas abiertas.
+
+- **Corpus** (`corpus.json`, ~7.5 MB): 35,754 entradas de seis instantáneas
+  —instituciones, normativa, obras, documentos, datos abiertos y cargos de
+  nómina (las grafías de un mismo cargo se juntan)—, con título, texto
+  auxiliar, quién publica (tabla `origenes`), enlace y fecha. Lo escribe
+  `scripts/build-busqueda.py`, que se corre **después** de regenerar
+  cualquiera de ellas.
+- **Por palabra**: Orama (`@orama/orama`, Apache-2.0) construye en memoria,
+  una vez por instancia, un BM25 sobre título (×3), texto auxiliar y origen.
+  `lib/raiz.ts` le da el lematizador español (`@orama/stemmers`) **después
+  de quitar tildes** —al revés, «Educación» daba `educ` y «educacion»
+  `educacion`— y la lista de palabras vacías de `@orama/stopwords` **menos
+  las de contenido** que trae (trabajo, estado, empleo, general, poder,
+  cuenta, trata, valor…): con ellas, «ministerio trabajo» era «ministerio».
+  Todas las palabras tienen que estar, **en cualquier campo**: el
+  `threshold: 0` de Orama lo exige dentro de un mismo campo, así que se
+  busca cada palabra, se cruzan los conjuntos y se ordena por el BM25 de la
+  consulta entera. Con un tipo elegido, la búsqueda se hace dentro del tipo
+  (`where`), para que la lista llegue tan lejos como su cuenta. Una errata
+  se perdona solo si lo exacto no trajo nada y la consulta es de una o dos
+  palabras de seis letras o más: la tolerancia actúa sobre la raíz, y «agua»
+  (`agu`) a distancia uno es `agr`.
+- **Por tema**: Model2Vec `potion-multilingual-128M` (MIT), un embedding
+  **estático** —una tabla por pieza, sin red que ejecutar—, podado al español
+  por `scripts/build-modelo-semantico.py` (72,837 piezas, PCA 256→128, int8:
+  `modelo.bin` 9.6 MB + `tokenizer.json` 2.7 MB). La consulta se tokeniza con
+  `@huggingface/tokenizers` (JS, Apache-2.0; mismos ids que el de Rust,
+  verificado en 6,000 títulos) y se promedia; se compara por coseno contra
+  `vectores.bin` (4.7 MB). Umbral 0.55: por debajo, el parecido es ruido.
+- **Fusión**: rango recíproco (RRF, k = 60; el tema pesa 0.6), un bono al
+  nombre o a las siglas exactas, y un peso menor para hospitales,
+  ayuntamientos y cargos. Solo se juntan copias de verdad: el **mismo
+  archivo** (URL sin extensión) en PDF y XLSX es una fila con dos formatos;
+  dos decretos «Que otorga exequátur» o dos obras homónimas con distinto
+  SNIP son filas distintas. Cada resultado dice su vía: `palabra`, `tema` o `ambas`; la
+  interfaz marca «Por tema» lo que no lleva todas las palabras.
+- **Coste**: ~2.4 s y ~350 MB en frío (Orama inserta 36 mil entradas en ~2
+  s); 15–120 ms por consulta en caliente. `/buscar` pone los resultados en un
+  `Suspense` para que la caja no espere; la paleta no muestra nada mientras
+  tanto (y «Toda la plataforma» sigue ahí), y si `/api/buscar` falla lo dice
+  en una línea: «no respondió» no es «no hay nada». `next.config.ts` declara los
+  archivos en `outputFileTracingIncludes` de las dos rutas que los leen.
+- ⚠️ **Límite del tema**: un embedding estático entiende vecindad de
+  palabras («agua potable» ↔ «acueducto», «escuelas» ↔ «educación»), no
+  frases: «corrupción» no llega a «Cámara de Cuentas». Por eso acompaña a la
+  palabra y nunca la sustituye.
+
 ## Congreso data layer — `lib/congreso.ts`
 Same contract as `lib/dgcp.ts`. The SIL is the portal's **internal** API, not a
 documented public one, so three rules are enforced in `silFetch`:
@@ -565,9 +619,10 @@ del archivo que las lleva:
 | `components/marca.tsx` | El contrasello: `Sello`, `SelloCompacto`, `Logotipo`. |
 | `components/plegable.tsx` | Revelación progresiva sobre `ui/collapsible`; el botón dice **cuántos hay**, nunca «ver más». |
 | `components/bottom-sheet.tsx` | La hoja de filtros del teléfono, sobre `ui/sheet`. |
-| `components/paleta.tsx` | «Buscar» en la cabecera de todas las páginas: «¿a dónde vas?», sobre `ui/dialog` + `ui/command` (⌘K, Ctrl K, «/»): todo el índice de `lib/indice.ts` agrupado por tarea y filtrable sin tildes (también por verbo: «votar», «comparar»), y lo tecleado ofrecido a **cada** búsqueda de `BUSQUEDAS` con su alcance debajo. No es un buscador global —no hay índice propio— y no lo finge. |
+| `components/paleta.tsx` | «Buscar» en la cabecera de todas las páginas: «¿a dónde vas?», sobre `ui/dialog` + `ui/command` (⌘K, Ctrl K, «/»): todo el índice de `lib/indice.ts` agrupado por tarea y filtrable sin tildes (también por verbo: «votar», «comparar»), lo que el índice de `lib/busqueda.ts` encuentra («En la plataforma», vía `/api/buscar`, a lo sumo la mitad de un mismo tipo), y lo tecleado ofrecido a **cada** búsqueda de `BUSQUEDAS` con su alcance debajo. Lo que el índice no cubre —licitaciones, proveedores, las cámaras— no se finge. |
 | `components/ruta.tsx` | La ruta de una ficha sobre `ui/breadcrumb`: la miga entera desde `sm`, solo la vuelta a 44 px en el teléfono. Si se vino de esa vista (`components/rastro.tsx`), volver es el «atrás» del navegador y conserva filtros y posición. |
 | `components/paginador.tsx` | Anterior · página · siguiente, con enlaces (`href`) o con estado (`onPage`). Mandos a 44 px en los bordes; el que no aplica se apaga, no desaparece. |
+| `components/resaltado.tsx` | Las palabras buscadas en negrita dentro de un título, por raíz (el lematizador español del índice): «escuelas» marca «ESCUELA». Solo servidor. |
 | `components/antiguedad.tsx` | La fecha de una fila de listado: `<time>` real, relativa a la vista, exacta en el `title`. |
 | `components/esqueleto.tsx` | Las siluetas de **esta** plataforma —ficha, listado, tira de indicadores— compuestas con `ui/skeleton`, con las alturas del contenido. |
 | `lib/estados.ts` | **La única** tabla de color de estado, nombrada por significado (`accionable`, `contexto`, `cumplido`, `aviso`, `anulado`). Cada fuente traduce a esos cinco y no guarda tabla propia. También las **etapas** de un proceso de compras (`ETAPAS`, `etapaDe`): la otra traducción de `estado_proceso`, por predicado y no por literal, de la que salen tanto el color como `abierto`. |

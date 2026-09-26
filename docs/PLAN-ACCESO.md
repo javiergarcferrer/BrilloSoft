@@ -82,7 +82,8 @@ legible. El resto se apoya en esas tres.
 **Entregado el 2026-09-23 (horizonte 1).** 1.1: `/instituciones` y
 `/instituciones/[id]` sobre `lib/instituciones.ts`; las señales de 2.3 viven en
 su bloque «Cómo compra». 1.2: `/buscar` (`lib/buscar.ts`) y la paleta ⌘K como
-puerta, con sugerencias de institución por `/api/instituciones`. 1.4: todas las
+puerta, con sugerencias de institución por `/api/instituciones` (desde el
+2026-09-26, sugerencias de cualquier tipo por `/api/buscar`; ver §6 bis). 1.4: todas las
 fichas enlazan a la institución; ley ↔ proyecto ↔ Senado; una pieza enlaza a
 las instituciones que nombra por su nombre completo. 1.7: caja de búsqueda y
 fila de Instituciones, Normativa y Democracia en la portada; `app/sitemap.ts`.
@@ -189,6 +190,61 @@ deja preparados los pasos.
 - **Instantáneas al día sin sesión humana**: una rutina programada que
   regenere normativa (semanal), deuda y fiscal (mensual) y entregue por el
   gate. Consume sesiones en la nube; lo aprueba el dueño.
+
+## 6 bis. Bibliotecas abiertas en vez de código propio (auditoría 2026-09-26)
+
+Criterio: si una biblioteca madura, sin clave ni servicio, hace lo que un
+archivo de `lib/` hace a mano, se usa la biblioteca (shadcn es el
+precedente). Ninguna de estas rompe la invariante.
+
+- ✅ **Buscador de toda la plataforma** — `/buscar` y la paleta pasan de
+  «todas las palabras como subcadena, por vertical» a un índice con ranking:
+  Orama (BM25, raíces del español, erratas) + Model2Vec (tema) fundidos por
+  RRF; filtros por tipo con su cuenta, vista «Todo» por grupos, palabras en
+  negrita, «Por tema» declarado (`docs/ARQUITECTURA.md` §Búsqueda).
+
+Pendiente, por valor ÷ esfuerzo (archivo:línea verificados el 2026-09-26):
+
+1. **ZIP/XLSX a mano** — `lib/deuda.ts:94-122` lee el tamaño de la cabecera
+   local del ZIP: un XLSX escrito en streaming (tamaño 0 + descriptor) deja
+   la fuente muda sin error; ZIP64 no se lee. Tres lectores de hoja por regex
+   (`deuda.ts:158-190`, `tasa.ts:79-100`, `aduanas.ts:222-260`) ignoran
+   `inlineStr` y texto enriquecido. → `fflate` (`unzipSync`, directorio
+   central) y `read-excel-file`.
+2. **Entidades HTML, nueve copias que discrepan** (`tc.ts:117`, `tse.ts:123`,
+   `cortes.ts:154`, `senado.ts:203`, `deuda.ts:374`, `aduanas.ts:211`,
+   `alertas.ts:79`, `combustibles.ts:43`, `macro.ts:133`): varias solo
+   conocen `&amp;` y dejan `&eacute;` sin decodificar. → `entities`.
+3. **HTML por regex** (`tc.ts:136-170`, `tse.ts:160-190`, `senado.ts:313,
+   416, 567-584`): un cambio de comillas en el portal reduce filas en
+   silencio. → `node-html-parser` (solo servidor).
+4. **fetch + timeout + un reintento, ~12 copias** (`dgcp.ts:128`,
+   `congreso.ts:109`, `siniestralidad.ts:49`, …): el contrato de
+   `.claude/rules/fuentes.md` escrito doce veces con diferencias. → `ky` o
+   un `lib/pedir.ts` propio.
+5. **JSON externo con `as T`** (`dgcp.ts:138`, `congreso.ts:134`,
+   `normativa.ts:168`, `banca.ts:80`, …): un campo renombrado llega como
+   `undefined` a la interfaz en vez de degradar a `null`. → `zod` (o
+   `valibot` para `lib/seguimiento.ts`, que viaja al navegador).
+6. **URL ↔ estado, tres mecánicas** (`app/buscador.tsx:156-257`,
+   `components/nomina/explorer.tsx:176-210`,
+   `components/campo-licitaciones.tsx:78-107`). → `nuqs`.
+7. **Virtualización con alto fijo** (`components/nomina/data-table.tsx:60-125`):
+   la fila se pliega a dos líneas en el teléfono. → `@tanstack/react-virtual`.
+8. **Arrastre de la hoja** (`components/ui/sheet.tsx:80-125`). → `vaul`, que
+   es lo que usa el `Drawer` de shadcn.
+9. **Fechas**: nueve tablas de meses en español. → `Intl.DateTimeFormat`
+   (sin dependencia).
+
+Del buscador, lo siguiente:
+- **Índice de Orama persistido** (`@orama/plugin-data-persistence`): el
+  arranque en frío baja de ~2 s a ~0.5 s a cambio de ~25 MB más en el
+  repositorio por regeneración. Medido; no se hizo por ese peso.
+- **Proveedores (padrón RNC) en el índice**: hoy solo por RNC exacto o en su
+  vertical.
+- **Tema con contexto**: un modelo de frases (p. ej. `multilingual-e5-small`
+  en ONNX) entendería «quién audita las cuentas»; exige ejecutar una red en la
+  función (~120 MB, onnxruntime). Solo si el estático se queda corto en uso.
 
 ## 7. Guardarraíles para quien ejecute
 

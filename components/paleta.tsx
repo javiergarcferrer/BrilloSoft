@@ -8,7 +8,7 @@ import { TAREAS } from "@/lib/tareas";
 import { getBusquedas, onBusquedasCambio, type Busqueda } from "@/lib/busquedas";
 import { getRecientes } from "@/lib/recientes";
 import { cn } from "@/lib/cn";
-import { IconArrowRight, IconBookmark, IconClock, IconSearch } from "./icons";
+import { IconArrowRight, IconBookmark, IconClock, IconExternal, IconSearch } from "./icons";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,16 +39,30 @@ import {
  * teclear, y el texto tecleado ofrecido a **cada** búsqueda de la plataforma.
  * La lista es el índice de `lib/indice.ts`, agrupado por tarea.
  *
- * Lo que no hace es fingir un índice. La plataforma no tiene uno propio —no
- * tiene base de datos, y no la va a tener—, así que lo tecleado se ofrece a
- * cada destino y cada fila dice debajo qué recorre; «Toda la plataforma»
- * (`/buscar`) encabeza y declara igual su alcance. Es la trampa del campo de
+ * Lo que no hace es fingir un índice de todo. El de la plataforma
+ * (`lib/busqueda.ts`: instituciones, normativa, obras, documentos, datos
+ * abiertos y cargos, por palabra y por tema) sugiere sus primeras filas en
+ * «En la plataforma»; lo que vive fuera de él —licitaciones, proveedores, las
+ * dos cámaras— no se finge: lo tecleado se ofrece a cada destino y cada fila
+ * dice debajo qué recorre; «Toda la plataforma» (`/buscar`) encabeza y
+ * declara igual su alcance. Es la trampa del campo de
  * licitaciones que vivía en la cabecera, evitada al revés: el alcance no se
  * esconde tras un campo único, se declara en cada opción.
  *
  * Se abre con el botón del header, con ⌘K / Ctrl K y con «/» fuera de un
  * campo, que es la tecla que la web ya enseñó para buscar.
  */
+/** Una fila de `/api/buscar`. */
+interface Sugerida {
+  tipo: string;
+  etiqueta: string;
+  titulo: string;
+  detalle: string | null;
+  href: string | null;
+  externo: boolean;
+  via: "palabra" | "tema" | "ambas";
+}
+
 export default function Paleta() {
   const router = useRouter();
   const pathname = usePathname();
@@ -92,21 +106,31 @@ export default function Paleta() {
     setRecientes(getRecientes());
   }, [abierta]);
 
-  // Instituciones que coinciden, pedidas al servidor a medida que se teclea:
-  // el cruce entero no viaja al navegador.
-  const [sugeridas, setSugeridas] = useState<{ href: string; nombre: string; detalle: string }[]>([]);
+  // Lo que el índice de la plataforma encuentra (`/api/buscar`), pedido al
+  // servidor a medida que se teclea: el corpus y el modelo no viajan al
+  // navegador.
+  const [sugeridas, setSugeridas] = useState<Sugerida[]>([]);
+  // «No respondió» no es «no hay nada»: se dice, en una línea.
+  const [fallo, setFallo] = useState(false);
   useEffect(() => {
     const q = texto.trim();
+    setFallo(false);
     if (!abierta || q.length < 2) {
       setSugeridas([]);
       return;
     }
     const control = new AbortController();
     const t = setTimeout(() => {
-      fetch(`/api/instituciones?q=${encodeURIComponent(q)}`, { signal: control.signal })
-        .then((r) => (r.ok ? r.json() : []))
-        .then((filas) => setSugeridas(Array.isArray(filas) ? filas : []))
-        .catch(() => {});
+      fetch(`/api/buscar?q=${encodeURIComponent(q)}&n=6`, { signal: control.signal })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((r: { resultados?: Sugerida[] } | null) => {
+          setFallo(r === null);
+          setSugeridas(Array.isArray(r?.resultados) ? r.resultados.filter((s) => s.href) : []);
+        })
+        .catch((err: unknown) => {
+          // Abortar al seguir tecleando no es una caída.
+          if ((err as { name?: string })?.name !== "AbortError") setFallo(true);
+        });
     }, 180);
     return () => {
       clearTimeout(t);
@@ -117,6 +141,13 @@ export default function Paleta() {
   const ir = (href: string) => {
     setAbierta(false);
     router.push(href);
+  };
+  // Un documento o un conjunto de datos vive en el sitio de su institución.
+  const abrir = (s: Sugerida) => {
+    if (!s.href) return;
+    if (!s.externo) return ir(s.href);
+    setAbierta(false);
+    window.open(s.href, "_blank", "noopener,noreferrer");
   };
 
   const consulta = texto.trim();
@@ -253,22 +284,39 @@ export default function Paleta() {
               </CommandGroup>
             ))}
 
+            {/*
+              Lo encontrado, de cualquier tipo, ya ordenado por el índice: la
+              fila dice de qué tipo es y, si no lleva las palabras tecleadas,
+              que salió por tema. Todo lo demás está a un Intro en «Toda la
+              plataforma».
+            */}
             {consulta && sugeridas.length > 0 && (
-              <CommandGroup heading="Instituciones">
-                {sugeridas.map((i) => (
+              <CommandGroup heading="En la plataforma">
+                {sugeridas.map((s, n) => (
                   <CommandItem
-                    key={i.href}
-                    value={`buscar:inst:${i.href}`}
-                    onSelect={() => ir(i.href)}
+                    key={`${n}:${s.href}`}
+                    value={`buscar:res:${n}:${s.href}`}
+                    onSelect={() => abrir(s)}
                   >
                     <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-ink" />
-                    <span className="min-w-0 flex-1 truncate font-medium">{i.nombre}</span>
-                    <span className="hidden shrink-0 truncate text-xs text-ink-soft sm:inline">
-                      {i.detalle}
+                    <span className="min-w-0 flex-1 truncate">
+                      <span className="font-medium">{s.titulo}</span>
+                      {s.detalle && <span className="hidden text-ink-soft sm:inline"> · {s.detalle}</span>}
                     </span>
+                    <span className="shrink-0 text-xs text-ink-soft">
+                      {s.via === "tema" ? `${s.etiqueta} · por tema` : s.etiqueta}
+                    </span>
+                    {s.externo && <IconExternal className="h-3.5 w-3.5 shrink-0 text-ink-soft" />}
                   </CommandItem>
                 ))}
               </CommandGroup>
+            )}
+
+            {consulta && fallo && (
+              <p className="px-2.5 pb-1 pt-2 text-xs text-alerta-700">
+                La búsqueda en la plataforma no respondió: no es que no haya
+                nada. «Toda la plataforma», abajo, lo vuelve a intentar.
+              </p>
             )}
 
             {/*

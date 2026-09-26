@@ -8,6 +8,10 @@
     "start": "next start"
   },
   "dependencies": {
+    "@huggingface/tokenizers": "^0.2.0",
+    "@orama/orama": "^3.1.18",
+    "@orama/stemmers": "^3.1.18",
+    "@orama/stopwords": "^3.1.18",
     "@radix-ui/react-checkbox": "^1.3.11",
     "@radix-ui/react-collapsible": "^1.1.20",
     "@radix-ui/react-dialog": "^1.1.23",
