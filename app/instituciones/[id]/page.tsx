@@ -38,6 +38,8 @@ import Plegable from "@/components/plegable";
 import AccionesFicha from "@/components/acciones-ficha";
 import { FiltroEnlace, NavFiltros } from "@/components/nav-filtros";
 import { enlace } from "@/lib/grafo";
+import { ConectadoCon } from "@/components/conectado-con";
+import { filtrarInformes, getAuditorias, informesDe } from "@/lib/auditorias";
 
 /** Normas a la vista en «Lo que decreta el Ejecutivo»; el resto, plegado. */
 const NORMAS_A_LA_VISTA = 2;
@@ -85,7 +87,7 @@ export default async function InstitucionPage({ params }: Props) {
   const i = institucionDeSlug((await params).id);
   if (!i) notFound();
 
-  const [fiscal, nomina, resumenNomina, normas, obras, sismap, historia, sinAsignar, documentos, general] = await Promise.all([
+  const [fiscal, nomina, resumenNomina, normas, obras, sismap, historia, sinAsignar, documentos, general, auditorias] = await Promise.all([
     i.capitulo ? getInstitucionFiscal(i.capitulo) : null,
     i.nomina ? getNominaDeInstitucion(i.nomina) : null,
     // Solo para decir de cuántas se lee la nómina cuando esta no está.
@@ -97,10 +99,13 @@ export default async function InstitucionPage({ params }: Props) {
     prefijoSinAsignar(i.nombre),
     documentosDeInstitucion(i.id),
     nominaGeneralDeInstitucion(i.id),
+    getAuditorias(),
   ]);
   const conHistoria = Boolean(historia?.historia.serie.some((f) => f[1] > 0)) || Boolean(sinAsignar);
   const hermanas = i.capitulo ? institucionesDelCapitulo(i.capitulo).filter((h) => h.id !== i.id) : [];
   const nObras = obras?.obras.length ?? 0;
+  // La misma consulta que abre la arista: la cuenta es la de la lista.
+  const nAuditorias = auditorias ? filtrarInformes(informesDe(auditorias), { q: i.nombre }).length : 0;
 
   /*
     El índice de la ficha: una entrada por sección que de verdad está en la
@@ -150,6 +155,51 @@ export default async function InstitucionPage({ params }: Props) {
           ))}
         </NavFiltros>
       </Card>
+
+      <ConectadoCon
+        aristas={[
+          i.capitulo && {
+            etiqueta: "Capítulo del presupuesto",
+            href: enlace.capitulo(i.capitulo),
+            nombre: fiscal ? fiscal.institucion.nombreLegible : `Capítulo ${i.capitulo}`,
+            fuente: "SIGEF",
+          },
+          hermanas.length > 0 && i.capitulo && {
+            etiqueta: "Otras unidades del mismo capítulo",
+            href: enlace.capitulo(i.capitulo),
+            cuenta: hermanas.length,
+            fuente: "DGCP ↔ SIGEF",
+          },
+          { etiqueta: "Obras que ejecuta", href: `/obras?uc=${i.id}`, cuenta: nObras, fuente: "MapaInversiones" },
+          {
+            etiqueta: "Normas que la nombran",
+            href: "#decretos",
+            cuenta: normas.docs.length,
+            fuente: "Consultoría Jurídica",
+          },
+          {
+            etiqueta: "Informes de auditoría",
+            href: `/auditorias?q=${encodeURIComponent(i.nombre)}`,
+            cuenta: nAuditorias,
+            fuente: "Contraloría y Cámara de Cuentas",
+          },
+          nomina
+            ? { etiqueta: "Plazas en su nómina", href: `/nomina?inst=${encodeURIComponent(nomina.codigo)}`, cuenta: nomina.plazas, fuente: `Nómina de ${nomina.periodo}` }
+            : general && {
+                etiqueta: "Plazas en su nómina",
+                href: `/nomina/general?inst=${claveInstitucion(general.inst.nombre)}`,
+                cuenta: general.inst.plazas,
+                fuente: "Nómina general del MAP",
+              },
+          documentos && {
+            etiqueta: "Documentos que publica",
+            href: `/documentos?inst=${encodeURIComponent(documentos.fuente.host)}`,
+            cuenta: documentos.fuente.documentos,
+            fuente: documentos.fuente.host,
+          },
+          sismap && { etiqueta: "Su lugar en el ranking de gestión", href: `/gestion?q=${encodeURIComponent(i.nombre)}`, fuente: "SISMAP del MAP" },
+        ]}
+      />
 
       <div id="presupuesto">
         {fiscal ? (

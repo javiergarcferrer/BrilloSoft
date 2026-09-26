@@ -17,6 +17,8 @@ import { FichaRnc } from "@/components/fuentes-nuevas/ficha-rnc";
 import { HistoriaDeProveedor } from "@/components/fuentes-nuevas/historia-compras";
 import { diasEntre, getRegistroTributario } from "@/lib/rnc";
 import { enlace } from "@/lib/grafo";
+import { ConectadoCon } from "@/components/conectado-con";
+import { provinciaDeTexto } from "@/lib/provincias";
 
 /** Días o años, en llano. */
 function plazoDias(dias: number): string {
@@ -123,6 +125,9 @@ export default async function ProveedorPage({
     )
     .slice(0, 25);
 
+  const principal = topInstituciones.find(([, a]) => a.href)?.[1] ?? null;
+  const provincia = provinciaDeTexto(registro?.provincia);
+
   return (
     <div className="space-y-5">
       {/* 44 px de alto en el teléfono: es la única salida de esta ficha. */}
@@ -171,6 +176,24 @@ export default async function ProveedorPage({
           a contratos vigentes (sin cancelados ni rescindidos).
         </p>
       </Card>
+
+      <ConectadoCon
+        aristas={[
+          principal?.href && {
+            etiqueta: "Su mayor cliente",
+            href: principal.href,
+            nombre: titulizar(principal.nombre),
+            fuente: `${principal.n.toLocaleString("es-DO")} contratos · DGCP`,
+          },
+          { etiqueta: "Instituciones que le compran", href: "#clientes", cuenta: porInstitucion.size, fuente: "DGCP" },
+          provincia && {
+            etiqueta: "Provincia de su domicilio",
+            href: enlace.provincia(provincia.slug),
+            nombre: provincia.nombre,
+            fuente: "Registro de Proveedores",
+          },
+        ]}
+      />
 
       {registro && (
         <Card as="section" className="p-6">
@@ -349,7 +372,7 @@ export default async function ProveedorPage({
       )}
 
       <div className="grid gap-5 lg:grid-cols-5">
-        <Card as="section" className="p-6 lg:col-span-2">
+        <Card as="section" id="clientes" className="p-6 lg:col-span-2">
           <CardTitle className="text-[15px]">Sus principales clientes</CardTitle>
           <ul className="mt-3 space-y-2 text-sm">
             {topInstituciones.map(([inst, a]) => (
